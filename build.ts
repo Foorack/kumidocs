@@ -33,9 +33,13 @@ Example:
 	process.exit(0);
 }
 
-const toCamelCase = (str: string): string => str.replace(/-([a-z])/g, (g) => g[1]!.toUpperCase());
+const toCamelCase = (str: string): string =>
+	str.replace(/-([a-z])/g, (g) => {
+		const char = g[1];
+		return char ? char.toUpperCase() : g;
+	});
 
-const parseValue = (value: string): any => {
+const parseValue = (value: string): string | number | boolean | string[] => {
 	if (value === 'true') return true;
 	if (value === 'false') return false;
 
@@ -84,7 +88,7 @@ function parseArgs(): Partial<Bun.BuildConfig> {
 			const [parentKey, childKey] = key.split('.');
 			if (!parentKey || !childKey) continue;
 			const configRecord = config as Record<string, Record<string, unknown>>;
-			configRecord[parentKey] = configRecord[parentKey] || {};
+			configRecord[parentKey] = configRecord[parentKey] ?? {};
 			configRecord[parentKey][childKey] = parseValue(value);
 		} else {
 			(config as Record<string, unknown>)[key] = parseValue(value);
@@ -104,13 +108,14 @@ const formatFileSize = (bytes: number): string => {
 		unitIndex++;
 	}
 
-	return `${size.toFixed(2)} ${units[unitIndex]}`;
+	const unit = units[unitIndex] ?? 'B';
+	return `${size.toFixed(2)} ${unit}`;
 };
 
 console.log('\n🚀 Starting build process...\n');
 
 const cliConfig = parseArgs();
-const outdir = cliConfig.outdir || path.join(process.cwd(), 'dist');
+const outdir = cliConfig.outdir ?? path.join(process.cwd(), 'dist');
 
 if (existsSync(outdir)) {
 	console.log(`🗑️ Cleaning previous build at ${outdir}`);
@@ -123,7 +128,9 @@ const entrypoints = [...new Bun.Glob('**.html').scanSync('src')]
 	.map((a) => path.resolve('src', a))
 	.filter((dir) => !dir.includes('node_modules'));
 console.log(
-	`📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? 'file' : 'files'} to process\n`,
+	`📄 Found ${String(entrypoints.length)} HTML ${
+		entrypoints.length === 1 ? 'file' : 'files'
+	} to process\n`,
 );
 
 const result = await Bun.build({
