@@ -13,15 +13,15 @@ const app = (
 );
 
 // import.meta.hot is available in Bun dev (HMR) mode; undefined after production bundling
+// Note: import.meta.hot.data must be accessed directly (Bun restriction — no aliasing via variable)
 interface HotData {
 	root?: ReturnType<typeof createRoot>;
 }
-interface BunHot {
-	data: HotData;
-}
-const hot = import.meta.hot as BunHot | undefined;
-if (hot) {
-	const root = (hot.data.root ??= createRoot(elem));
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Bun types import.meta.hot as always-truthy but it is undefined after production bundling
+if (import.meta.hot) {
+	const data = import.meta.hot.data as HotData;
+	const root = (data.root ??= createRoot(elem));
 	root.render(app);
 } else {
 	createRoot(elem).render(app);
