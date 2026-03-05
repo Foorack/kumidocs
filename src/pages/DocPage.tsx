@@ -122,7 +122,9 @@ export default function DocPage() {
 	}, []);
 
 	useEffect(() => {
-		loadDoc(filePath);
+		loadDoc(filePath).catch((err: unknown) => {
+			console.error('Failed to load document:', err);
+		});
 	}, [filePath, loadDoc]);
 
 	// Tell server which page we're on
@@ -141,7 +143,9 @@ export default function DocPage() {
 		}
 		if (msg.type === 'page_changed' && msg.pageId === filePath) {
 			if (!isDirty) {
-				loadDoc(filePath);
+				loadDoc(filePath).catch((err: unknown) => {
+					console.error('Failed to reload document after remote change:', err);
+				});
 				toast.info(`Page updated by ${msg.changedByName}`);
 			} else {
 				setRemoteBanner(`${msg.changedByName} saved this page remotely`);
@@ -149,11 +153,15 @@ export default function DocPage() {
 		}
 		if (msg.type === 'page_deleted' && msg.pageId === filePath) {
 			toast.warning('This page was deleted');
-			navigate('/p/README.md');
+			navigate('/p/README.md')?.catch((err: unknown) => {
+				console.error('Navigation failed:', err);
+			});
 		}
 		if (msg.type === 'save_conflict_lost' && msg.pageId === filePath) {
 			toast.error('Your changes were lost due to a remote conflict.');
-			loadDoc(filePath);
+			loadDoc(filePath).catch((err: unknown) => {
+				console.error('Failed to reload document after conflict:', err);
+			});
 		}
 	});
 
@@ -183,7 +191,9 @@ export default function DocPage() {
 				} else if (res.status === 409) {
 					setSaveStatus('error');
 					toast.error('Conflict: changes were reverted by a remote update.');
-					loadDoc(filePath);
+					loadDoc(filePath).catch((err: unknown) => {
+						console.error('Failed to reload document after conflict:', err);
+					});
 				} else {
 					setSaveStatus('error');
 					toast.error('Save failed.');
@@ -202,14 +212,20 @@ export default function DocPage() {
 			setContent(val);
 			setSaveStatus('unsaved');
 			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-			autoSaveTimer.current = setTimeout(() => doSave(val), AUTO_SAVE_DELAY);
+			autoSaveTimer.current = setTimeout(() => {
+				doSave(val).catch((err: unknown) => {
+					console.error('Auto-save failed:', err);
+				});
+			}, AUTO_SAVE_DELAY);
 		},
 		[doSave],
 	);
 
 	// Ctrl+S
 	const handleSave = useCallback(() => {
-		doSave(content);
+		doSave(content).catch((err: unknown) => {
+			console.error('Manual save failed:', err);
+		});
 	}, [doSave, content]);
 
 	// Edit mode toggle
@@ -237,7 +253,9 @@ export default function DocPage() {
 		if (res.ok) {
 			toast.success('Page deleted');
 			reloadTree();
-			navigate('/p/README.md');
+			navigate('/p/README.md')?.catch((err: unknown) => {
+				console.error('Navigation failed after delete:', err);
+			});
 		} else {
 			toast.error('Delete failed');
 		}
@@ -256,7 +274,9 @@ export default function DocPage() {
 		if (res.ok) {
 			toast.success('Page renamed');
 			reloadTree();
-			navigate(`/p/${toPath}`);
+			navigate(`/p/${toPath}`)?.catch((err: unknown) => {
+				console.error('Navigation failed after rename:', err);
+			});
 		} else {
 			toast.error('Rename failed');
 		}
@@ -278,7 +298,9 @@ export default function DocPage() {
 		if (res.ok) {
 			toast.success('Page created');
 			reloadTree();
-			navigate(`/p/${p}`);
+			navigate(`/p/${p}`)?.catch((err: unknown) => {
+				console.error('Navigation failed after page creation:', err);
+			});
 		} else if (res.status === 409) {
 			toast.error('A page at that path already exists.');
 		} else {
@@ -361,7 +383,15 @@ export default function DocPage() {
 							>
 								Cancel
 							</Button>
-							<Button onClick={handleNewPage}>Create</Button>
+							<Button
+								onClick={() => {
+									handleNewPage().catch((err: unknown) => {
+										console.error('Failed to create page:', err);
+									});
+								}}
+							>
+								Create
+							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
@@ -380,7 +410,9 @@ export default function DocPage() {
 						variant="outline"
 						className="h-6 text-xs"
 						onClick={() => {
-							loadDoc(filePath);
+							loadDoc(filePath).catch((err: unknown) => {
+								console.error('Failed to reload document:', err);
+							});
 							setRemoteBanner(null);
 						}}
 					>
@@ -442,7 +474,15 @@ export default function DocPage() {
 				)}
 
 				{editMode ? (
-					<Button size="sm" className="h-7 gap-1 text-xs" onClick={exitEdit}>
+					<Button
+						size="sm"
+						className="h-7 gap-1 text-xs"
+						onClick={() => {
+							exitEdit().catch((err: unknown) => {
+								console.error('Failed to exit edit mode:', err);
+							});
+						}}
+					>
 						<CheckmarkRegular className="w-3.5 h-3.5" />
 						Done
 					</Button>
@@ -453,15 +493,15 @@ export default function DocPage() {
 							variant="outline"
 							className="h-7 gap-1 text-xs"
 							onClick={enterEdit}
-							disabled={!!(editLocked && editLocked.id !== user?.id)}
+							disabled={!!(editLocked && editLocked.id !== user.id)}
 							title={
-								editLocked && editLocked.id !== user?.id
+								editLocked && editLocked.id !== user.id
 									? `${editLocked.name} is editing`
 									: undefined
 							}
 						>
 							<EditRegular className="w-3.5 h-3.5" />
-							{editLocked && editLocked.id !== user?.id
+							{editLocked && editLocked.id !== user.id
 								? `${editLocked.name} editing…`
 								: 'Edit'}
 						</Button>
@@ -547,7 +587,14 @@ export default function DocPage() {
 						>
 							Cancel
 						</Button>
-						<Button variant="destructive" onClick={handleDelete}>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								handleDelete().catch((err: unknown) => {
+									console.error('Failed to delete page:', err);
+								});
+							}}
+						>
 							Delete
 						</Button>
 					</DialogFooter>
@@ -582,7 +629,15 @@ export default function DocPage() {
 						>
 							Cancel
 						</Button>
-						<Button onClick={handleRename}>Rename</Button>
+						<Button
+							onClick={() => {
+								handleRename().catch((err: unknown) => {
+									console.error('Failed to rename page:', err);
+								});
+							}}
+						>
+							Rename
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

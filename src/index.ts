@@ -5,6 +5,7 @@ import { join } from 'path';
 import index from './index.html';
 import { getConfig } from './server/config';
 import { parseUser, setPermissions } from './server/auth';
+import type { KumiDocsPermissions } from './server/auth';
 import { loadFilestore } from './server/filestore';
 import { initSearch, rebuildIndex } from './server/search';
 import { gitPull, gitFetchAndRebase, gitStageAndCommit } from './server/git';
@@ -45,7 +46,7 @@ async function loadPermissions() {
 	const configPath = join(config.repoPath, '.kumidocs.json');
 	try {
 		const raw = await readFile(configPath, 'utf-8');
-		setPermissions(JSON.parse(raw));
+		setPermissions(JSON.parse(raw) as KumiDocsPermissions);
 	} catch (err: unknown) {
 		// If file doesn't exist, create it with default config
 		if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {

@@ -1,12 +1,11 @@
 import { Editor } from '@bytemd/react';
 import gfm from '@bytemd/plugin-gfm';
 import highlight from '@bytemd/plugin-highlight';
+import type { KeyMap } from 'codemirror';
 import 'bytemd/dist/index.css';
 import 'highlight.js/styles/github-dark.css';
 
 const plugins = [gfm(), highlight()];
-
-type KeyMap = Record<string, (() => boolean) | (() => undefined)>;
 
 interface MarkdownEditorProps {
 	value: string;
@@ -25,9 +24,13 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 				editorConfig={{
 					readOnly: disabled,
 
-					keyMap: {
-						'Ctrl-S': () => onSave?.(),
-						'Cmd-S': () => onSave?.(),
+					extraKeys: {
+						'Ctrl-S': () => {
+							onSave?.();
+						},
+						'Cmd-S': () => {
+							onSave?.();
+						},
 					} as KeyMap,
 				}}
 			/>

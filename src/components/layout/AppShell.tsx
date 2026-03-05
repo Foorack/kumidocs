@@ -23,23 +23,29 @@ export function AppShell() {
 		if (user) wsClient.connect(user.id);
 	}, [user?.id]);
 
-	// Reload full file tree for sidebar
-	const loadTree = useCallback(async () => {
-		const res = await fetch('/api/tree');
-		if (res.ok) {
-			const data = (await res.json()) as TreeNode[];
-			setTree(data);
-		}
+	// Reload full file tree for sidebar.
+	// Returns void so it's safe to pass as event handler or onCreated callback.
+	const loadTree = useCallback((): void => {
+		fetch('/api/tree')
+			.then((r) => r.json() as Promise<TreeNode[]>)
+			.then((data) => {
+				setTree(data);
+			})
+			.catch((err: unknown) => {
+				console.error('Failed to load file tree:', err);
+			});
 	}, []);
 
 	// Load user/instance info
 	useEffect(() => {
 		fetch('/api/me')
-			.then((r) => r.json())
-			.then((data: { instanceName?: string }) => {
+			.then((r) => r.json() as Promise<{ instanceName?: string }>)
+			.then((data) => {
 				if (data.instanceName) setInstanceName(data.instanceName);
 			})
-			.catch(() => {});
+			.catch((err: unknown) => {
+				console.error('Failed to load instance info:', err);
+			});
 		loadTree();
 	}, [loadTree]);
 

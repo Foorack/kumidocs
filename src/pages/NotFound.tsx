@@ -11,7 +11,14 @@ export default function NotFound() {
 			<p className="text-muted-foreground text-sm max-w-xs">
 				The path you navigated to doesn't match any known route.
 			</p>
-			<Button variant="outline" onClick={() => navigate('/p/README.md')}>
+			<Button
+				variant="outline"
+				onClick={() => {
+					navigate('/p/README.md')?.catch((err: unknown) => {
+						console.error('Navigation failed:', err);
+					});
+				}}
+			>
 				<ArrowLeftRegular className="mr-2 w-4 h-4" />
 				Go to home
 			</Button>

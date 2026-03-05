@@ -77,7 +77,7 @@ function TreeNodeRow({
 					<div>
 						<div
 							className="flex items-center gap-1 px-2 py-[3px] rounded text-sm cursor-pointer select-none hover:bg-accent/50 text-muted-foreground hover:text-foreground"
-							style={{ paddingLeft: `${8 + depth * 12}px` }}
+							style={{ paddingLeft: `${String(8 + depth * 12)}px` }}
 							onClick={() => {
 								setOpen((o) => !o);
 							}}
@@ -148,7 +148,7 @@ function TreeNodeRow({
 					? 'bg-accent text-accent-foreground font-medium'
 					: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
 			}`}
-			style={{ paddingLeft: `${8 + depth * 12 + 12}px` }}
+			style={{ paddingLeft: `${String(8 + depth * 12 + 12)}px` }}
 		>
 			<FileIcon node={node} />
 			<Link to={href} className="truncate flex-1 min-w-0" title={displayTitle}>

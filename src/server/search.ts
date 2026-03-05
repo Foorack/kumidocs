@@ -99,15 +99,9 @@ export function removeFromIndex(path: string): void {
 
 export function searchDocs(query: string, limit = 20): SearchResult[] {
 	if (!index || !query.trim()) return [];
-	interface MiniSearchOptions {
-		limit?: number;
-	}
-	const results = index.search(query, { limit } as MiniSearchOptions) as (Record<
-		string,
-		unknown
-	> & {
-		score: number;
-	})[];
+	const results = (
+		index.search(query) as unknown as (Record<string, unknown> & { score: number })[]
+	).slice(0, limit);
 	return results.map((r) => ({
 		path: r.path as string,
 		title: r.title as string,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -42,28 +42,14 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 	const [pageType, setPageType] = useState<PageType>('markdown');
 	const [creating, setCreating] = useState(false);
 
-	// Reset state when dialog opens
-	useEffect(() => {
-		if (open) {
-			setTitle('');
-			setSlug('');
-			setSlugEdited(false);
-			setPageType('markdown');
-			setCreating(false);
-		}
-	}, [open]);
+	// Auto-derive slug from title unless user has manually edited it (derived state, no effect needed)
+	const effectiveSlug = slugEdited ? slug : slugify(title);
 
-	// Auto-derive slug from title unless user has manually edited it
-	useEffect(() => {
-		if (!slugEdited) {
-			setSlug(slugify(title));
-		}
-	}, [title, slugEdited]);
-
-	const finalPath = slug ? `${parentDir ? parentDir + '/' : ''}${slug}.md` : '';
+	const finalPath = effectiveSlug ? `${parentDir ? parentDir + '/' : ''}${effectiveSlug}.md` : '';
 
 	const handleCreate = useCallback(async () => {
-		if (!title.trim() || !slug) return;
+		const resolvedSlug = slugEdited ? slug : slugify(title);
+		if (!title.trim() || !resolvedSlug) return;
 		setCreating(true);
 
 		const marpHeader = pageType === 'slides' ? 'marp: true\n' : '';
@@ -81,22 +67,39 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 			toast.success('Page created');
 			onCreated?.();
 			onClose();
-			navigate(`/p/${finalPath}`);
+			navigate(`/p/${finalPath}`)?.catch((err: unknown) => {
+				console.error('Navigation failed:', err);
+			});
 		} else if (res.status === 409) {
 			toast.error('A page at that path already exists.');
 		} else {
 			toast.error('Failed to create page');
 		}
-	}, [title, slug, pageType, finalPath, navigate, onCreated, onClose]);
+	}, [title, slug, slugEdited, pageType, finalPath, navigate, onCreated, onClose]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter' && !creating && title.trim() && slug) {
-			handleCreate();
+		if (e.key === 'Enter' && !creating && title.trim() && effectiveSlug) {
+			handleCreate().catch((err: unknown) => {
+				console.error('Failed to create page:', err);
+			});
 		}
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(v) => {
+				if (v) {
+					setTitle('');
+					setSlug('');
+					setSlugEdited(false);
+					setPageType('markdown');
+					setCreating(false);
+				} else {
+					onClose();
+				}
+			}}
+		>
 			<DialogContent className="sm:max-w-md" onKeyDown={handleKeyDown}>
 				<DialogHeader>
 					<DialogTitle>New page</DialogTitle>
@@ -177,7 +180,14 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 					<Button variant="outline" onClick={onClose} disabled={creating}>
 						Cancel
 					</Button>
-					<Button onClick={handleCreate} disabled={creating || !title.trim() || !slug}>
+					<Button
+						onClick={() => {
+							handleCreate().catch((err: unknown) => {
+								console.error('Failed to create page:', err);
+							});
+						}}
+						disabled={creating || !title.trim() || !effectiveSlug}
+					>
 						{creating ? 'Creating…' : 'Create'}
 					</Button>
 				</DialogFooter>

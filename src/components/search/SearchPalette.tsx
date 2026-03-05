@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useLayoutEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	CommandDialog,
@@ -22,25 +22,26 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
 
-	useEffect(() => {
-		if (!open) {
-			setQuery('');
-			setResults([]);
-		}
-	}, [open]);
-
-	useEffect(() => {
+	useLayoutEffect(() => {
 		if (!query.trim()) {
-			setResults([]);
 			return;
 		}
-		const timer = setTimeout(async () => {
+		const timer = setTimeout(() => {
 			setLoading(true);
-			try {
-				const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-				if (res.ok) setResults((await res.json()) as SearchResult[]);
-			} catch {}
-			setLoading(false);
+			fetch(`/api/search?q=${encodeURIComponent(query)}`)
+				.then((res) => {
+					if (!res.ok) throw new Error(`Search HTTP ${String(res.status)}`);
+					return res.json() as Promise<SearchResult[]>;
+				})
+				.then((data) => {
+					setResults(data);
+				})
+				.catch((err: unknown) => {
+					console.error('Search failed:', err);
+				})
+				.finally(() => {
+					setLoading(false);
+				});
 		}, 150);
 		return () => {
 			clearTimeout(timer);
@@ -52,16 +53,31 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 			onClose();
 			const ext = path.split('.').pop();
 			if (ext === 'md') {
-				navigate(`/p/${path}`);
+				navigate(`/p/${path}`)?.catch((err: unknown) => {
+					console.error('Navigation failed:', err);
+				});
 			} else {
-				navigate(`/code/${path}`);
+				navigate(`/code/${path}`)?.catch((err: unknown) => {
+					console.error('Navigation failed:', err);
+				});
 			}
 		},
 		[navigate, onClose],
 	);
 
+	const activeResults = query.trim() ? results : [];
+
 	return (
-		<CommandDialog open={open} onOpenChange={(o) => !o && onClose()}>
+		<CommandDialog
+			open={open}
+			onOpenChange={(o) => {
+				if (!o) {
+					setQuery('');
+					setResults([]);
+					onClose();
+				}
+			}}
+		>
 			<CommandInput placeholder="Search pages..." value={query} onValueChange={setQuery} />
 			<CommandList>
 				{loading && (
@@ -69,12 +85,12 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 						Searching...
 					</div>
 				)}
-				{!loading && query && results.length === 0 && (
+				{!loading && query && activeResults.length === 0 && (
 					<CommandEmpty>No results for "{query}".</CommandEmpty>
 				)}
-				{results.length > 0 && (
+				{activeResults.length > 0 && (
 					<CommandGroup heading="Pages">
-						{results.map((r) => (
+						{activeResults.map((r) => (
 							<CommandItem
 								key={r.path}
 								value={r.path}
