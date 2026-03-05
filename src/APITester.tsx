@@ -25,16 +25,23 @@ export function APITester() {
 			const method = formData.get('method') as string;
 			const res = await fetch(url, { method });
 
-			const data = await res.json();
-			responseInputRef.current!.value = JSON.stringify(data, null, 2);
+			const data = (await res.json()) as unknown;
+			const textArea = responseInputRef.current;
+			if (textArea) textArea.value = JSON.stringify(data, null, 2);
 		} catch (error) {
-			responseInputRef.current!.value = String(error);
+			const textArea = responseInputRef.current;
+			if (textArea) textArea.value = String(error);
 		}
 	};
 
 	return (
 		<div className="flex flex-col gap-6">
-			<form onSubmit={testEndpoint} className="flex items-center gap-2">
+			<form
+				onSubmit={(e) => {
+					void testEndpoint(e);
+				}}
+				className="flex items-center gap-2"
+			>
 				<Label htmlFor="method" className="sr-only">
 					Method
 				</Label>
