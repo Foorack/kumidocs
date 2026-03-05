@@ -127,11 +127,16 @@ export default function DocPage() {
 		});
 	}, [filePath, loadDoc]);
 
+	// Track editMode in a ref so the cleanup can read the latest value
+	// without adding editMode to the effect deps (which would re-run joinPage on every keystroke).
+	const editModeRef = useRef(editMode);
+	editModeRef.current = editMode;
+
 	// Tell server which page we're on
 	useEffect(() => {
 		if (user) wsClient.joinPage(filePath);
 		return () => {
-			if (editMode) wsClient.stopEditing(filePath);
+			if (editModeRef.current) wsClient.stopEditing(filePath);
 		};
 	}, [filePath, user]);
 

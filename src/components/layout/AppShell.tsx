@@ -21,7 +21,7 @@ export function AppShell() {
 	// Connect WS once user loads
 	useEffect(() => {
 		if (user) wsClient.connect(user.id);
-	}, [user?.id]);
+	}, [user]);
 
 	// Reload full file tree for sidebar.
 	// Returns void so it's safe to pass as event handler or onCreated callback.
