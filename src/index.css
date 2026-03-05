@@ -1,0 +1,85 @@
+@import '../styles/globals.css';
+
+@layer base {
+	:root {
+		@apply font-sans;
+	}
+
+	html,
+	body,
+	#root {
+		@apply h-full w-full m-0 p-0 overflow-hidden bg-background text-foreground;
+	}
+}
+
+/* ── ByteMD editor layout inside our flex shell ── */
+.bytemd-wrapper .bytemd {
+	height: 100%;
+	border: none;
+	border-radius: 0;
+	font-family: inherit;
+}
+
+.bytemd-wrapper .bytemd .CodeMirror {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 13.5px;
+	line-height: 1.6;
+}
+
+/* Dark mode for ByteMD */
+.dark .bytemd {
+	background: hsl(var(--background));
+	color: hsl(var(--foreground));
+	border-color: hsl(var(--border));
+}
+
+.dark .bytemd .bytemd-toolbar {
+	background: hsl(var(--card));
+	border-bottom-color: hsl(var(--border));
+}
+
+.dark .bytemd .bytemd-toolbar-icon svg {
+	color: hsl(var(--muted-foreground));
+}
+
+.dark .bytemd .CodeMirror {
+	background: hsl(var(--background));
+	color: hsl(var(--foreground));
+}
+
+.dark .bytemd .CodeMirror-cursor {
+	border-left-color: hsl(var(--foreground));
+}
+
+.dark .bytemd-preview {
+	background: hsl(var(--background));
+}
+
+/* ── Viewer / markdown content styles ── */
+.bytemd-viewer .markdown-body {
+	background: transparent;
+	color: inherit;
+}
+
+.dark .bytemd-viewer .markdown-body {
+	color: hsl(var(--foreground));
+}
+
+.dark .bytemd-viewer .markdown-body pre,
+.dark .bytemd-viewer .markdown-body code {
+	background: hsl(var(--muted));
+}
+
+.dark .bytemd-viewer .markdown-body blockquote {
+	border-left-color: hsl(var(--border));
+	color: hsl(var(--muted-foreground));
+}
+
+.dark .bytemd-viewer .markdown-body table td,
+.dark .bytemd-viewer .markdown-body table th {
+	border-color: hsl(var(--border));
+}
+
+.dark .bytemd-viewer .markdown-body hr {
+	background-color: hsl(var(--border));
+}

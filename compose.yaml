@@ -1,0 +1,42 @@
+services:
+    kumidocs:
+        image: oven/bun:latest
+        working_dir: /app
+        command: sh -c "bun install && bun --hot src/index.ts"
+        network_mode: host
+        volumes:
+            - .:/app
+            - /app/node_modules
+            - /tmp/kumidocs-test:/repo
+        environment:
+            - NODE_ENV=development
+            - KUMIDOCS_REPO_PATH=/repo
+            - KUMIDOCS_PORT=3000
+            - KUMIDOCS_INSTANCE_NAME=${KUMIDOCS_INSTANCE_NAME:-KumiDocs}
+            - KUMIDOCS_AUTH_HEADER=X-Forwarded-User
+            - KUMIDOCS_AUTO_SAVE_DELAY=5000
+            - KUMIDOCS_PULL_INTERVAL=60000
+        restart: unless-stopped
+
+    sso-proxy:
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2-alpine
+        restart: always
+        network_mode: host
+        entrypoint: ['/bin/sh', '-c']
+        command:
+            - |
+                exec oauth2-proxy \
+                  --http-address=0.0.0.0:8080 \
+                  --upstream=http://localhost:3000 \
+                  --reverse-proxy=true \
+                  --provider=${SSO_PROXY_PROVIDER:-github} \
+                  --client-id=${SSO_PROXY_CLIENT_ID} \
+                  --client-secret=${SSO_PROXY_CLIENT_SECRET} \
+                  --redirect-url=${SSO_PROXY_REDIRECT_URL:-http://localhost:8080/oauth2/callback} \
+                  --email-domain=* \
+                  --set-xauthrequest=true \
+                  --pass-user-headers=true \
+                  --skip-provider-button=true \
+                  --cookie-secure=${SSO_PROXY_COOKIE_SECURE:-false} \
+                  --cookie-domain=${SSO_PROXY_COOKIE_DOMAIN:-localhost} \
+                  --cookie-secret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_')"
