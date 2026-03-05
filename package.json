@@ -16,6 +16,7 @@
     "@bytemd/plugin-highlight": "1.22.0",
     "@bytemd/react": "1.22.0",
     "@fluentui/react-icons": "2.0.320",
+    "@lobehub/fluent-emoji": "^4.1.0",
     "@radix-ui/react-label": "2.1.8",
     "@radix-ui/react-select": "2.2.6",
     "@radix-ui/react-slot": "1.2.4",

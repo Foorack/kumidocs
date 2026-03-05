@@ -8,7 +8,8 @@ import {
 	CommandItem,
 	CommandList,
 } from '../ui/command';
-import { TextBulletListSquare20Filled, SlideTextSparkle20Filled } from '@fluentui/react-icons';
+import { TextBulletListSquare20Color, SlideTextSparkle20Color } from '@fluentui/react-icons';
+import { FluentEmoji } from '@lobehub/fluent-emoji';
 import type { SearchResult } from '../../lib/types';
 
 interface SearchPaletteProps {
@@ -101,11 +102,11 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 							>
 								<span className="shrink-0">
 									{r.emoji ? (
-										<span className="text-base">{r.emoji}</span>
+										<FluentEmoji emoji={r.emoji} size={18} type="modern" />
 									) : r.path.endsWith('.md') ? (
-										<TextBulletListSquare20Filled className="w-4 h-4" />
+										<TextBulletListSquare20Color className="w-4 h-4" />
 									) : (
-										<SlideTextSparkle20Filled className="w-4 h-4" />
+										<SlideTextSparkle20Color className="w-4 h-4" />
 									)}
 								</span>
 								<div className="flex flex-col min-w-0">

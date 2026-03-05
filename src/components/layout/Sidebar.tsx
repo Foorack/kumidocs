@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-	TextBulletListSquare20Filled,
-	SlideTextSparkle20Filled,
+	TextBulletListSquare20Color,
+	SlideTextSparkle20Color,
 	AddRegular,
 	ChevronRightRegular,
 	ChevronDownRegular,
@@ -13,6 +13,7 @@ import {
 	DocumentRegular,
 	ImageRegular,
 } from '@fluentui/react-icons';
+import { FluentEmoji } from '@lobehub/fluent-emoji';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -43,16 +44,14 @@ function sortNodes(nodes: TreeNode[]): TreeNode[] {
 
 function FileIcon({ node }: { node: TreeNode }) {
 	const emoji = node.fileEntry?.emoji;
-	if (emoji) return <span className="shrink-0 text-base leading-none">{emoji}</span>;
+	if (emoji) return <FluentEmoji emoji={emoji} size={16} type="modern" />;
 
 	const type = node.fileEntry?.type;
-	if (type === 'slide')
-		return <SlideTextSparkle20Filled className="w-4 h-4 shrink-0 text-primary" />;
+	if (type === 'slide') return <SlideTextSparkle20Color className="w-4 h-4 shrink-0" />;
 	if (type === 'code') return <CodeRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 	if (type === 'image')
 		return <ImageRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
-	if (type === 'doc')
-		return <TextBulletListSquare20Filled className="w-4 h-4 shrink-0 text-primary" />;
+	if (type === 'doc') return <TextBulletListSquare20Color className="w-4 h-4 shrink-0" />;
 	return <DocumentRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 }
 
