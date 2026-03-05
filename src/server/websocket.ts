@@ -144,7 +144,11 @@ export function broadcastPageChanged(
 		changedBy,
 		changedByName,
 	};
-	for (const ws of sessions.values()) send(ws, msg);
+	// Skip the session that triggered the save — they already updated their state
+	// from the HTTP response and don't need a WS echo causing a spurious "saved remotely" banner.
+	for (const [, ws] of sessions) {
+		if (ws.data.user.id !== changedBy) send(ws, msg);
+	}
 }
 
 export function broadcastPageDeleted(pageId: string): void {

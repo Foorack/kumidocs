@@ -89,7 +89,12 @@ export default function DocPage() {
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
 
 	const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Mutex: chain saves so they never run concurrently (prevents double-commit 409)
+	const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
 	const isDirty = content !== savedContent;
+	// Keep a ref to latest content so exitEdit can read it without stale closure
+	const contentRef = useRef(content);
+	contentRef.current = content;
 
 	// Load document
 	const loadDoc = useCallback(async (path: string) => {
@@ -170,43 +175,53 @@ export default function DocPage() {
 		}
 	});
 
-	// Save function
+	// Save function — serialised via savePromiseRef so two saves never run concurrently.
+	// Concurrent saves (e.g. auto-save fires + user presses Done simultaneously) would
+	// produce two git commits on the same file, causing the second one to 409-conflict.
 	const doSave = useCallback(
-		async (currentContent: string) => {
-			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-			setSaveStatus('saving');
-			try {
-				// Reconstruct full content with frontmatter
-				const fullContent =
-					Object.keys(originalFrontmatter).length > 0
-						? matter.stringify(currentContent, originalFrontmatter)
-						: currentContent;
-
-				const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ content: fullContent }),
-				});
-				if (res.ok) {
-					const data = (await res.json()) as { sha: string };
-					setSavedContent(currentContent);
-					setSaveStatus('saved');
-					setLastSha(data.sha);
-					reloadTree();
-				} else if (res.status === 409) {
-					setSaveStatus('error');
-					toast.error('Conflict: changes were reverted by a remote update.');
-					loadDoc(filePath).catch((err: unknown) => {
-						console.error('Failed to reload document after conflict:', err);
-					});
-				} else {
-					setSaveStatus('error');
-					toast.error('Save failed.');
-				}
-			} catch {
-				setSaveStatus('error');
-				toast.error('Save failed — network error.');
+		(currentContent: string): Promise<void> => {
+			if (autoSaveTimer.current) {
+				clearTimeout(autoSaveTimer.current);
+				autoSaveTimer.current = null;
 			}
+			// Chain behind any in-flight save
+			const next = savePromiseRef.current.then(async () => {
+				setSaveStatus('saving');
+				try {
+					// Reconstruct full content with frontmatter
+					const fullContent =
+						Object.keys(originalFrontmatter).length > 0
+							? matter.stringify(currentContent, originalFrontmatter)
+							: currentContent;
+
+					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ content: fullContent }),
+					});
+					if (res.ok) {
+						const data = (await res.json()) as { sha: string };
+						setSavedContent(currentContent);
+						setSaveStatus('saved');
+						setLastSha(data.sha);
+						reloadTree();
+					} else if (res.status === 409) {
+						setSaveStatus('error');
+						toast.error('Conflict: changes were reverted by a remote update.');
+						loadDoc(filePath).catch((err: unknown) => {
+							console.error('Failed to reload document after conflict:', err);
+						});
+					} else {
+						setSaveStatus('error');
+						toast.error('Save failed.');
+					}
+				} catch {
+					setSaveStatus('error');
+					toast.error('Save failed — network error.');
+				}
+			});
+			savePromiseRef.current = next;
+			return next;
 		},
 		[filePath, reloadTree, loadDoc, originalFrontmatter],
 	);
@@ -245,10 +260,21 @@ export default function DocPage() {
 	}, [user, editLocked, filePath]);
 
 	const exitEdit = useCallback(async () => {
-		if (isDirty) await doSave(content);
+		// Always await the save promise: if a save is already in-flight (e.g. auto-save
+		// fired just before Done was pressed) we wait for it rather than starting a second
+		// concurrent save that would cause a git 409 conflict.
+		// Use contentRef.current to get the latest content, not a stale closure value.
+		const latestContent = contentRef.current;
+		const latestIsDirty = latestContent !== savedContent;
+		if (latestIsDirty) {
+			await doSave(latestContent);
+		} else {
+			// Even if not dirty, wait for any in-flight auto-save to finish
+			await savePromiseRef.current;
+		}
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
-	}, [isDirty, content, doSave, filePath]);
+	}, [savedContent, doSave, filePath]);
 
 	// Delete
 	const handleDelete = useCallback(async () => {
