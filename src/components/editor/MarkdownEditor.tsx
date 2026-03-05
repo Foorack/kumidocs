@@ -6,6 +6,8 @@ import 'highlight.js/styles/github-dark.css';
 
 const plugins = [gfm(), highlight()];
 
+type KeyMap = Record<string, (() => boolean) | (() => undefined)>;
+
 interface MarkdownEditorProps {
 	value: string;
 	onChange: (val: string) => void;
@@ -26,7 +28,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 					keyMap: {
 						'Ctrl-S': () => onSave?.(),
 						'Cmd-S': () => onSave?.(),
-					} as any,
+					} as KeyMap,
 				}}
 			/>
 		</div>
