@@ -12,7 +12,7 @@ interface DocEntry {
 	content: string;
 }
 
-let index: MiniSearch<DocEntry>;
+let index: MiniSearch<DocEntry> | undefined;
 
 export function initSearch(): void {
 	index = new MiniSearch<DocEntry>({
@@ -32,7 +32,7 @@ export function rebuildIndex(): void {
 	index.removeAll();
 	const docs = buildDocs(getAllPaths());
 	if (docs.length > 0) index.addAll(docs);
-	console.log(`Search: indexed ${docs.length} documents`);
+	console.log(`Search: indexed ${String(docs.length)} documents`);
 }
 
 function buildDocs(paths: string[]): DocEntry[] {
@@ -51,7 +51,9 @@ function buildDocs(paths: string[]): DocEntry[] {
 				if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 				if (parsed.data.description) description = parsed.data.description as string;
 				body = parsed.content;
-			} catch {}
+			} catch (err: unknown) {
+				console.warn('Failed to parse frontmatter:', err);
+			}
 
 			const stripped = body
 				.replace(/```[\s\S]*?```/g, ' ')
@@ -70,12 +72,19 @@ export function updateInIndex(path: string): void {
 	if (!index || !path.endsWith('.md')) return;
 	try {
 		index.remove({ id: path } as DocEntry);
-	} catch {}
+	} catch (err: unknown) {
+		console.warn('Failed to remove from index:', err);
+	}
 	const docs = buildDocs([path]);
 	if (docs.length > 0) {
-		try {
-			index.add(docs[0]!);
-		} catch {}
+		const doc = docs[0];
+		if (doc) {
+			try {
+				index.add(doc);
+			} catch (err: unknown) {
+				console.warn('Failed to add to index:', err);
+			}
+		}
 	}
 }
 
@@ -83,12 +92,20 @@ export function removeFromIndex(path: string): void {
 	if (!index) return;
 	try {
 		index.remove({ id: path } as DocEntry);
-	} catch {}
+	} catch (err: unknown) {
+		console.warn('Failed to remove from index:', err);
+	}
 }
 
 export function searchDocs(query: string, limit = 20): SearchResult[] {
 	if (!index || !query.trim()) return [];
-	const results = index.search(query, { limit } as any) as (Record<string, unknown> & {
+	interface MiniSearchOptions {
+		limit?: number;
+	}
+	const results = index.search(query, { limit } as MiniSearchOptions) as (Record<
+		string,
+		unknown
+	> & {
 		score: number;
 	})[];
 	return results.map((r) => ({

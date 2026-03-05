@@ -43,7 +43,9 @@ export async function apiFileGet(url: URL, config: Config) {
 			const parsed = matter(content);
 			frontmatter = parsed.data as Record<string, unknown>;
 			body = parsed.content;
-		} catch {}
+		} catch (err: unknown) {
+			console.warn('Failed to parse frontmatter:', err);
+		}
 	}
 
 	const sha = await getHeadSha(config);

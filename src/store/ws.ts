@@ -36,7 +36,9 @@ class WsClient {
 			try {
 				const msg = JSON.parse(e.data as string) as WsServerMessage;
 				for (const l of this.listeners) l(msg);
-			} catch {}
+			} catch (err: unknown) {
+				console.error('WebSocket message parse error:', err);
+			}
 		};
 
 		this.ws.onclose = () => {

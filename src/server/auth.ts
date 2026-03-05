@@ -29,7 +29,13 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 	if (parts.length === 3) {
 		try {
 			const paddedPart = (parts[1] ?? '').replace(/-/g, '+').replace(/_/g, '/');
-			const payload = JSON.parse(atob(paddedPart));
+			interface JWTPayload {
+				sub?: string;
+				email?: string;
+				name?: string;
+				preferred_username?: string;
+			}
+			const payload = JSON.parse(atob(paddedPart)) as JWTPayload;
 			id = payload.sub ?? value;
 			email = payload.email ?? '';
 			name = payload.name ?? payload.preferred_username ?? payload.sub ?? value;
@@ -42,7 +48,7 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 		id = value;
 	}
 
-	const displayName = name.trim() || email.split('@')[0] || id;
+	const displayName = (name.trim() || email.split('@')[0]) ?? id;
 
 	const initials =
 		displayName

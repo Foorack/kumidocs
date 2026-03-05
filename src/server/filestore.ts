@@ -78,7 +78,7 @@ const TEXT_EXT = new Set([
 export async function loadFilestore(config: Config): Promise<void> {
 	fileCache.clear();
 	await scanDir(config.repoPath, config.repoPath);
-	console.log(`Filestore: loaded ${fileCache.size} files`);
+	console.log(`Filestore: loaded ${String(fileCache.size)} files`);
 }
 
 async function scanDir(basePath: string, dirPath: string): Promise<void> {
@@ -183,7 +183,8 @@ export function buildFileTree(): TreeNode[] {
 		let cumPath = '';
 
 		for (let i = 0; i < parts.length; i++) {
-			const part = parts[i]!;
+			const part = parts[i];
+			if (!part) continue;
 			cumPath = cumPath ? `${cumPath}/${part}` : part;
 			const isLast = i === parts.length - 1;
 
@@ -199,7 +200,8 @@ export function buildFileTree(): TreeNode[] {
 					current.push(dirNode);
 					nodeMap.set(cumPath, dirNode);
 				}
-				current = dirNode.children!;
+				const children = dirNode.children;
+				if (children) current = children;
 			}
 		}
 	}
@@ -227,7 +229,9 @@ export function parseFileEntry(path: string): FileEntry {
 			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 			if (parsed.data.description) description = parsed.data.description as string;
 			if (parsed.data.marp === true) type = 'slide';
-		} catch {}
+		} catch (err: unknown) {
+			console.warn('Failed to parse frontmatter:', err);
+		}
 	} else if (
 		[
 			'.ts',

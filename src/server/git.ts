@@ -170,7 +170,7 @@ export async function gitFetchAndRebase(
 	const changed: string[] = [];
 	if (advanced) {
 		try {
-			const _commits = await git.log({
+			await git.log({
 				fs,
 				dir: config.repoPath,
 				ref: 'HEAD',
@@ -178,7 +178,9 @@ export async function gitFetchAndRebase(
 			});
 			// Get changed files from recent commits
 			// This is a simplified approach - for now, mark as advanced but don't enumerate files
-		} catch {}
+		} catch (err: unknown) {
+			console.warn('Failed to get git log:', err);
+		}
 	}
 
 	return { changed, sha, advanced };

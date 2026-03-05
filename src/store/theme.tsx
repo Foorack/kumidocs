@@ -7,7 +7,12 @@ interface ThemeContextValue {
 	toggle: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextValue>({ theme: 'light', toggle: () => {} });
+const ThemeContext = createContext<ThemeContextValue>({
+	theme: 'light',
+	toggle: () => {
+		// Default no-op, will be replaced by provider
+	},
+});
 
 function getInitialTheme(): Theme {
 	const stored = localStorage.getItem('kumidocs-theme');

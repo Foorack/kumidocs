@@ -17,7 +17,9 @@ const pageEditors = new Map<string, string>(); // pageId -> sessionId holding ed
 function send(ws: ServerWebSocket<WsData>, msg: WsServerMessage): void {
 	try {
 		ws.send(JSON.stringify(msg));
-	} catch {}
+	} catch (err: unknown) {
+		console.error('WebSocket send error:', err);
+	}
 }
 
 function broadcastToPage(pageId: string, msg: WsServerMessage, except?: string): void {
@@ -86,7 +88,8 @@ export function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): vo
 			if (ws.data.pageId !== msg.pageId) leaveCurrentPage(ws);
 			ws.data.pageId = msg.pageId;
 			if (!pageViewers.has(msg.pageId)) pageViewers.set(msg.pageId, new Set());
-			pageViewers.get(msg.pageId)!.add(sid);
+			const viewers = pageViewers.get(msg.pageId);
+			if (viewers) viewers.add(sid);
 			// Send presence to everyone on this page (including the new joiner)
 			const update = presenceUpdate(msg.pageId);
 			broadcastToPage(msg.pageId, update);
