@@ -4,7 +4,7 @@ import { createCodePlugin } from '@streamdown/code';
 import 'streamdown/styles.css';
 
 const code = createCodePlugin({
-  themes: ['github-light', 'github-dark'], // [light, dark]
+	themes: ['github-light', 'github-dark'], // [light, dark]
 });
 
 interface DocViewerProps {

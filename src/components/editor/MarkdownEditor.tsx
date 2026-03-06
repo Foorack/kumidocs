@@ -130,7 +130,8 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		if (!preview) return;
 		const scrollable = ta.scrollHeight - ta.clientHeight;
 		if (scrollable <= 0) return;
-		preview.scrollTop = (ta.scrollTop / scrollable) * (preview.scrollHeight - preview.clientHeight);
+		preview.scrollTop =
+			(ta.scrollTop / scrollable) * (preview.scrollHeight - preview.clientHeight);
 	}, []);
 
 	return (
@@ -229,7 +230,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 						onChange={(e) => {
 							onChange(e.target.value);
 						}}
-					onScroll={handleEditorScroll}
+						onScroll={handleEditorScroll}
 						onKeyDown={handleKeyDown}
 						disabled={disabled}
 						spellCheck

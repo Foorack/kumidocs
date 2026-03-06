@@ -170,7 +170,7 @@ export default function DocPage() {
 			setContent(parsed.content);
 			setSavedContent(parsed.content);
 			isDirtyRef.current = false;
-			setMeta(parsed.data as DocMeta);
+			setMeta(parsed.data);
 			setLastSha(data.sha);
 			setSaveStatus('saved');
 			setEditMode(false);
