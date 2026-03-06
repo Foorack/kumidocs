@@ -5,8 +5,6 @@ import {
 	ChevronRightRegular,
 	ChevronDownRegular,
 	CircleFilled,
-	FolderRegular,
-	FolderOpenRegular,
 	RenameRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
@@ -30,7 +28,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import type { TreeNode, PresenceUser } from '../../lib/types';
+import type { TreeNode, FileEntry, PresenceUser } from '../../lib/types';
 
 interface SidebarProps {
 	tree: TreeNode[];
@@ -45,179 +43,216 @@ interface MoveDialogState {
 	to: string;
 }
 
-/** Sort: README.md first, then dirs alphabetically, then files alphabetically. */
-function sortNodes(nodes: TreeNode[]): TreeNode[] {
-	return [...nodes].sort((a, b) => {
-		if (a.name === 'README.md') return -1;
-		if (b.name === 'README.md') return 1;
-		if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
-		return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+/**
+ * A PageNode represents a page in the sidebar — either a real .md file or a
+ * virtual "ghost" that has sub-pages but no .md file of its own.
+ * This gives Confluence-style nesting: pages contain sub-pages, no folder UI.
+ */
+interface PageNode {
+	path: string; // always a .md path (may not exist on disk for virtual nodes)
+	displayTitle: string;
+	fileEntry?: FileEntry;
+	children: PageNode[];
+	isVirtual: boolean; // true = no .md file on disk
+}
+
+// Names always hidden from sidebar
+const HIDDEN_NAMES = new Set(['_sidebar.md']);
+
+/**
+ * Merge TreeNode[] (mixed files + dirs) into PageNode[]:
+ * - dir "test-3/" + "test-3.md" → one PageNode with children
+ * - dir with no matching .md → virtual ghost PageNode
+ * - .md file with no matching dir → leaf PageNode
+ */
+function buildPageTree(nodes: TreeNode[]): PageNode[] {
+	const filtered = nodes.filter((n) => !HIDDEN_NAMES.has(n.name));
+
+	const fileMap = new Map<string, TreeNode>(); // baseName → file node
+	const dirMap = new Map<string, TreeNode>(); // dirName → dir node
+
+	for (const node of filtered) {
+		if (node.type === 'dir') {
+			dirMap.set(node.name, node);
+		} else {
+			fileMap.set(node.name.replace(/\.md$/i, ''), node);
+		}
+	}
+
+	const result: PageNode[] = [];
+
+	// Real file nodes (with optional dir children)
+	for (const [baseName, fileNode] of fileMap) {
+		const dir = dirMap.get(baseName);
+		result.push({
+			path: fileNode.path,
+			displayTitle: fileNode.fileEntry?.title ?? baseName.replace(/[-_]/g, ' '),
+			fileEntry: fileNode.fileEntry,
+			children: dir ? buildPageTree(dir.children ?? []) : [],
+			isVirtual: false,
+		});
+	}
+
+	// Orphan dirs (no matching .md) → virtual ghost page
+	for (const [name, dirNode] of dirMap) {
+		if (fileMap.has(name)) continue;
+		result.push({
+			path: `${dirNode.path}.md`,
+			displayTitle: name.replace(/[-_]/g, ' '),
+			fileEntry: undefined,
+			children: buildPageTree(dirNode.children ?? []),
+			isVirtual: true,
+		});
+	}
+
+	// Sort: README first, then alphabetically by display title
+	return result.sort((a, b) => {
+		if (a.path === 'README.md') return -1;
+		if (b.path === 'README.md') return 1;
+		return a.displayTitle.localeCompare(b.displayTitle, undefined, { sensitivity: 'base' });
 	});
 }
 
-function TreeNodeRow({
+function PageNodeRow({
 	node,
 	depth,
 	editingPages,
 	onNewSubPage,
 	onMove,
 }: {
-	node: TreeNode;
+	node: PageNode;
 	depth: number;
 	editingPages: Map<string, PresenceUser>;
 	onNewSubPage: (parentDir: string) => void;
 	onMove: (path: string) => void;
 }) {
 	const location = useLocation();
-	const [open, setOpen] = useState(node.name === 'README.md' || depth === 0);
+	const hasChildren = node.children.length > 0;
+	const [open, setOpen] = useState(depth === 0);
 
-	if (node.type === 'dir') {
-		return (
+	const href = node.fileEntry?.type === 'code' ? `/code/${node.path}` : `/p/${node.path}`;
+	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
+	const beingEdited = node.isVirtual ? undefined : editingPages.get(node.path);
+	const indent = 8 + depth * 14;
+
+	return (
+		<div>
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
-					<div>
-						<div
-							className="flex items-center gap-1 px-2 py-[3px] rounded text-sm cursor-pointer select-none hover:bg-accent/50 text-muted-foreground hover:text-foreground"
-							style={{ paddingLeft: `${String(8 + depth * 12)}px` }}
-							onClick={() => {
-								setOpen((o) => !o);
+					<div
+						className={`flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none ${
+							isActive
+								? 'bg-accent text-accent-foreground font-medium'
+								: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
+						}`}
+						style={{ paddingLeft: `${String(indent)}px` }}
+					>
+						{/* Chevron — toggles expand without navigating */}
+						<span
+							className="shrink-0 w-3 h-3 flex items-center justify-center cursor-pointer"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								if (hasChildren) setOpen((o) => !o);
 							}}
 						>
-							{open ? (
-								<ChevronDownRegular className="w-3 h-3 shrink-0" />
-							) : (
-								<ChevronRightRegular className="w-3 h-3 shrink-0" />
-							)}
-							{open ? (
-								<FolderOpenRegular className="w-4 h-4 shrink-0 text-amber-500" />
-							) : (
-								<FolderRegular className="w-4 h-4 shrink-0 text-amber-500" />
-							)}
-							<span className="truncate flex-1 min-w-0 font-medium text-foreground/80">
-								{node.name}
-							</span>
-						</div>
-						{open && (
-							<div>
-								{sortNodes(node.children ?? []).map((child) => (
-									<TreeNodeRow
-										key={child.path}
-										node={child}
-										depth={depth + 1}
-										editingPages={editingPages}
-										onNewSubPage={onNewSubPage}
-										onMove={onMove}
-									/>
+							{hasChildren &&
+								(open ? (
+									<ChevronDownRegular className="w-3 h-3" />
+								) : (
+									<ChevronRightRegular className="w-3 h-3" />
 								))}
-							</div>
+						</span>
+
+						{/* Page icon */}
+						<span className={node.isVirtual ? 'opacity-40 shrink-0' : 'shrink-0'}>
+							<KumiIcon
+								emoji={node.fileEntry?.emoji}
+								fileType={node.fileEntry?.type ?? 'doc'}
+								size={16}
+							/>
+						</span>
+
+						{/* Title navigates on click */}
+						<Link
+							to={href}
+							className={`truncate flex-1 min-w-0 ${node.isVirtual ? 'italic opacity-50' : ''}`}
+							title={node.displayTitle}
+						>
+							{node.displayTitle}
+						</Link>
+
+						{beingEdited && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<CircleFilled className="w-2 h-2 shrink-0 text-amber-500 animate-pulse" />
+								</TooltipTrigger>
+								<TooltipContent>{beingEdited.name} is editing</TooltipContent>
+							</Tooltip>
 						)}
 					</div>
 				</ContextMenuTrigger>
+
 				<ContextMenuContent>
-					<ContextMenuItem
-						onClick={() => {
-							onNewSubPage(node.path);
-						}}
-					>
-						<AddRegular className="mr-2 w-4 h-4" />
-						New page in this folder
-					</ContextMenuItem>
+					{node.isVirtual ? (
+						<ContextMenuItem asChild>
+							<Link to={href}>Create this page</Link>
+						</ContextMenuItem>
+					) : (
+						<>
+							<ContextMenuItem
+								onClick={() => {
+									onNewSubPage(node.path.replace(/\.md$/i, ''));
+								}}
+							>
+								<AddRegular className="mr-2 w-4 h-4" />
+								Create subpage
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									const dir = node.path.includes('/')
+										? node.path.substring(0, node.path.lastIndexOf('/'))
+										: '';
+									onNewSubPage(dir);
+								}}
+							>
+								<AddRegular className="mr-2 w-4 h-4" />
+								Create page alongside
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									onMove(node.path);
+								}}
+							>
+								<RenameRegular className="mr-2 w-4 h-4" />
+								Move / Rename
+							</ContextMenuItem>
+						</>
+					)}
 				</ContextMenuContent>
 			</ContextMenu>
-		);
-	}
 
-	// File node
-	const href =
-		node.fileEntry?.type === 'code'
-			? `/code/${node.path}`
-			: node.fileEntry?.type === 'slide'
-				? `/p/${node.path}`
-				: `/p/${node.path}`;
-
-	const isActive =
-		location.pathname === href ||
-		location.pathname === `/p/${node.path}` ||
-		location.pathname === `/slides/${node.path}`;
-
-	const beingEdited = editingPages.get(node.path);
-	const displayTitle = node.fileEntry?.title ?? node.name.replace(/\.[^.]+$/, '');
-
-	const rowContent = (
-		<div
-			className={`flex items-center gap-1.5 px-2 py-[3px] rounded text-sm select-none ${
-				isActive
-					? 'bg-accent text-accent-foreground font-medium'
-					: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
-			}`}
-			style={{ paddingLeft: `${String(8 + depth * 12 + 12)}px` }}
-		>
-			<KumiIcon emoji={node.fileEntry?.emoji} fileType={node.fileEntry?.type} size={20} />
-			<Link to={href} className="truncate flex-1 min-w-0" title={displayTitle}>
-				{displayTitle}
-			</Link>
-			{beingEdited && (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<CircleFilled className="w-2 h-2 shrink-0 text-amber-500 animate-pulse" />
-					</TooltipTrigger>
-					<TooltipContent>{beingEdited.name} is editing</TooltipContent>
-				</Tooltip>
+			{/* Children rendered outside ContextMenu so right-click doesn't bubble */}
+			{hasChildren && open && (
+				<div>
+					{node.children.map((child) => (
+						<PageNodeRow
+							key={child.path}
+							node={child}
+							depth={depth + 1}
+							editingPages={editingPages}
+							onNewSubPage={onNewSubPage}
+							onMove={onMove}
+						/>
+					))}
+				</div>
 			)}
 		</div>
 	);
-
-	return (
-		<ContextMenu>
-			<ContextMenuTrigger asChild>{rowContent}</ContextMenuTrigger>
-			<ContextMenuContent>
-				<ContextMenuItem
-					onClick={() => {
-						// Subpage lives inside a folder named after this file (minus .md)
-						const subDir = node.path.replace(/\.md$/i, '');
-						onNewSubPage(subDir);
-					}}
-				>
-					<AddRegular className="mr-2 w-4 h-4" />
-					Create subpage
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => {
-						const dir = node.path.includes('/')
-							? node.path.substring(0, node.path.lastIndexOf('/'))
-							: '';
-						onNewSubPage(dir);
-					}}
-				>
-					<AddRegular className="mr-2 w-4 h-4" />
-					Create page alongside
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => {
-						onMove(node.path);
-					}}
-				>
-					<RenameRegular className="mr-2 w-4 h-4" />
-					Move / Rename
-				</ContextMenuItem>
-			</ContextMenuContent>
-		</ContextMenu>
-	);
-}
-
-// Files to hide from the sidebar (legacy / internal)
-const HIDDEN_NAMES = new Set(['_sidebar.md']);
-
-function filterTree(nodes: TreeNode[]): TreeNode[] {
-	return nodes
-		.filter((n) => !HIDDEN_NAMES.has(n.name))
-		.map((n) =>
-			n.type === 'dir' && n.children ? { ...n, children: filterTree(n.children) } : n,
-		);
 }
 
 export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: SidebarProps) {
-	const visible = filterTree(sortNodes(tree));
+	const pages = buildPageTree(tree);
 	const [moveDialog, setMoveDialog] = useState<MoveDialogState>({
 		open: false,
 		from: '',
@@ -259,15 +294,15 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: Sidebar
 		<>
 			<aside className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
 				<ScrollArea className="flex-1 px-1 py-2">
-					{visible.length === 0 ? (
+					{pages.length === 0 ? (
 						<div className="px-3 py-4 text-xs text-muted-foreground text-center">
 							No pages yet.
 							<br />
 							Create your first page below.
 						</div>
 					) : (
-						visible.map((node) => (
-							<TreeNodeRow
+						pages.map((node) => (
+							<PageNodeRow
 								key={node.path}
 								node={node}
 								depth={0}

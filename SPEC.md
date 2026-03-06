@@ -164,10 +164,11 @@ User object: `{ id, email, name, displayName, avatarInitials }`
 
 - Sidebar is **auto-generated from the full file tree** (`/api/tree`) on startup and after every commit.
 - No manual `_sidebar.md` curation — every file in the repo appears automatically.
-- Hierarchy = **real filesystem folders**. Sub-pages are `.md` files inside subdirectories.
-- Sort order per level: `README.md` first, then folders alphabetically, then files alphabetically.
-- `_sidebar.md` (legacy GitLab wiki nav file) is hidden from the sidebar if present.
-- `.kumidocs.json` is always hidden.
+- **Confluence-style hierarchy**: filesystem folders are never rendered as folders in the UI. A directory `foo/` and its sibling `foo.md` are merged into a single expandable page whose children are the files inside `foo/`.
+- If a directory exists but `<dirname>.md` does not, a **virtual ghost page** is shown (italic, muted) — clicking it opens DocPage which shows "This page doesn't exist yet — Create it?".
+- Sort order per level: `README.md` first, then alphabetically by page title.
+- `_sidebar.md` (legacy file) is hidden. `.kumidocs.json` is always hidden.
+- Right-click a page for: **Create subpage**, **Create page alongside**, **Move / Rename**.
 
 ### 6.3 Sidebar Icons (default, overridable via `emoji` frontmatter)
 
@@ -558,31 +559,38 @@ SPEC.md
 
 ## 17. Implementation Phases
 
-### Phase 1 — Foundation
+### Phase 1 — Foundation ✅ Complete
 
-- [ ] Bun server: HTTP routing, static serving, auth middleware
-- [ ] Git operations: read tree, read file, commit, push, pull, rebase
-- [ ] In-memory filestore + dirty tracking
-- [ ] WebSocket: connect, hello, presence, disconnect/flush
-- [ ] REST API: `/api/me`, `/api/tree`, `/api/file`
-- [ ] React SPA: basic routing + AppShell
+- [x] Bun server: HTTP routing, static serving, auth middleware
+- [x] Git operations: read tree, read file, commit, push, pull, rebase
+- [x] In-memory filestore + dirty tracking
+- [x] WebSocket: connect, hello, presence, disconnect/flush
+- [x] REST API: `/api/me`, `/api/tree`, `/api/file`
+- [x] React SPA: basic routing + AppShell
 
-### Phase 2 — Editor Core
+### Phase 2 — Editor Core ✅ Complete
 
-- [ ] ByteMD editor with plugin set
-- [ ] `@docmd/parser` read-only view (iframe)
-- [ ] Save flow: Ctrl+S, debounce, disconnect flush
-- [ ] Edit-lock via WebSocket
-- [ ] Dark mode (Tailwind + iframe sync)
+- [x] ByteMD editor with plugin set (GFM, highlight, math, mermaid, frontmatter)
+- [x] `@docmd/parser` read-only view (iframe, dark mode sync)
+- [x] Save flow: Ctrl+S, auto-save debounce, save mutex (no 409 race)
+- [x] Edit-lock via WebSocket
+- [x] Dark mode (Tailwind + iframe sync)
 
-### Phase 3 — UI Polish
+### Phase 3 — UI Polish 🔄 In Progress
 
-- [ ] Sidebar from `_sidebar.md` (parse + render)
-- [ ] Presence avatars (sidebar + page header)
-- [ ] Search: MiniSearch index + Ctrl+K palette
-- [ ] Toast notifications
-- [ ] Create / Delete / Rename pages
+- [x] Sidebar auto-generated from `/api/tree` (Confluence-style hierarchy, no folder UI)
+- [x] Virtual ghost pages for dirs without a matching `.md`
+- [x] Page icons: FluentColor system icons + FluentEmoji page icons (`KumiIcon`)
+- [x] Presence editing dot in sidebar (amber animated dot)
+- [x] Search: MiniSearch index + Ctrl+K palette
+- [x] Toast notifications (sonner)
+- [x] Create page (modal, slug auto-derive, type: markdown / slides)
+- [x] Create subpage / Create page alongside (right-click context menu)
+- [x] Delete page (confirmation modal in DocPage)
+- [x] Move / Rename page (sidebar context menu + DocPage overflow menu)
+- [ ] Presence avatars in page header (`AvatarGroup`)
 - [ ] Drag-and-drop image upload
+- [ ] Resizable sidebar width (persisted in `localStorage`)
 
 ### Phase 4 — Slides & Code
 
@@ -590,3 +598,9 @@ SPEC.md
 - [ ] Slide viewer (fullscreen, navigation, Present button)
 - [ ] Code file editor (CodeMirror + language packs)
 - [ ] Marp PDF export (Playwright, Chromium-gated)
+
+### Phase 5 — Packaging
+
+- [ ] Dockerfile
+- [ ] `compose.yaml` (final)
+- [ ] README with setup & deployment instructions
