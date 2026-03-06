@@ -2,7 +2,6 @@ import { join, extname } from 'path';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { createHash } from 'crypto';
 import { createTwoFilesPatch } from 'diff';
-import matter from 'gray-matter';
 import type { Config } from './config';
 import type { User } from '../lib/types';
 import {
@@ -43,20 +42,8 @@ export async function apiFileGet(url: URL, config: Config) {
 	if (content === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
 
 	const entry = parseFileEntry(path);
-	let frontmatter: Record<string, unknown> = {};
-	let body = content;
-	if (path.endsWith('.md')) {
-		try {
-			const parsed = matter(content);
-			frontmatter = parsed.data as Record<string, unknown>;
-			body = parsed.content;
-		} catch (err: unknown) {
-			console.warn('Failed to parse frontmatter:', err);
-		}
-	}
-
 	const sha = await getHeadSha(config);
-	return Response.json({ path, content, body, frontmatter, entry, sha });
+	return Response.json({ path, content, entry, sha });
 }
 
 // PUT /api/file?path=<path>   body: { content: string }

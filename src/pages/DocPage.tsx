@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
+import matter from 'gray-matter';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
 import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
@@ -140,18 +141,15 @@ export default function DocPage() {
 			}
 			const data = (await res.json()) as {
 				content: string;
-				body: string;
-				frontmatter: DocMeta & Record<string, unknown>;
 				sha: string;
 			};
-			// Extract raw frontmatter prefix by slicing content before the body.
-			// This avoids any serialization — we store the original bytes and prepend them verbatim on save.
-			const bodyIndex = data.body ? data.content.lastIndexOf(data.body) : -1;
+			const parsed = matter(data.content);
+			const bodyIndex = parsed.content ? data.content.lastIndexOf(parsed.content) : -1;
 			setFrontmatterPrefix(bodyIndex > 0 ? data.content.slice(0, bodyIndex) : '');
-			setContent(data.body);
-			setSavedContent(data.body);
+			setContent(parsed.content);
+			setSavedContent(parsed.content);
 			isDirtyRef.current = false;
-			setMeta(data.frontmatter);
+			setMeta(parsed.data as DocMeta);
 			setLastSha(data.sha);
 			setSaveStatus('saved');
 			setEditMode(false);
