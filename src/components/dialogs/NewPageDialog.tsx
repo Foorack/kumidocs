@@ -162,7 +162,7 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 							value={slug}
 							onChange={(e) => {
 								setSlug(e.target.value);
-								setSlugEdited(true);
+								setSlugEdited(e.target.value !== '');
 							}}
 							placeholder="my-new-page"
 						/>
