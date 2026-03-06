@@ -133,7 +133,7 @@ User object: `{ id, email, name, displayName, gravatarHash, canEdit }`
 
 - `id` = lowercased email
 - `displayName` = derived from email local part: split by `.`, capitalise each word
-  (`max.faxalv@sony.com` → `Max Faxalv`, `max@foorack.com` → `Max`)
+  (`max.faxalv@example.com` → `Max Faxalv`, `max@foorack.com` → `Max`)
 - `gravatarHash` = MD5(lowercased email)
 
 ### 5.2 Avatar Color Convention

@@ -8,7 +8,7 @@
  */
 
 /** Derive a display name from an email address.
- *  "max.faxalv@sony.com" → "Max Faxalv"
+ *  "max.faxalv@example.com" → "Max Faxalv"
  *  "max@foorack.com"     → "Max"
  */
 export function emailToDisplayName(email: string): string {
