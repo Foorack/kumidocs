@@ -159,7 +159,7 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 						<Label htmlFor="np-slug">Filename slug</Label>
 						<Input
 							id="np-slug"
-							value={slug}
+							value={effectiveSlug}
 							onChange={(e) => {
 								setSlug(e.target.value);
 								setSlugEdited(e.target.value !== '');
