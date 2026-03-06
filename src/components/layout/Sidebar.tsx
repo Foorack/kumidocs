@@ -13,7 +13,7 @@ import {
 	DocumentRegular,
 	ImageRegular,
 } from '@fluentui/react-icons';
-import { FluentEmoji } from '@lobehub/fluent-emoji';
+import { KumiIcon } from '../ui/KumiIcon';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -44,14 +44,14 @@ function sortNodes(nodes: TreeNode[]): TreeNode[] {
 
 function FileIcon({ node }: { node: TreeNode }) {
 	const emoji = node.fileEntry?.emoji;
-	if (emoji) return <FluentEmoji emoji={emoji} size={16} type="modern" />;
+	if (emoji) return <KumiIcon emoji={emoji} size={16} />;
 
 	const type = node.fileEntry?.type;
-	if (type === 'slide') return <SlideTextSparkle20Color className="w-4 h-4 shrink-0" />;
+	if (type === 'slide') return <KumiIcon icon={SlideTextSparkle20Color} size={16} />;
 	if (type === 'code') return <CodeRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 	if (type === 'image')
 		return <ImageRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
-	if (type === 'doc') return <TextBulletListSquare20Color className="w-4 h-4 shrink-0" />;
+	if (type === 'doc') return <KumiIcon icon={TextBulletListSquare20Color} size={16} />;
 	return <DocumentRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 }
 

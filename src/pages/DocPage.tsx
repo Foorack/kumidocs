@@ -10,7 +10,7 @@ import {
 	MoreHorizontalRegular,
 	SaveRegular,
 } from '@fluentui/react-icons';
-import { FluentEmoji } from '@lobehub/fluent-emoji';
+import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
@@ -465,7 +465,7 @@ export default function DocPage() {
 
 			{/* Page header */}
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-				<FluentEmoji emoji={emoji ?? '📄'} size={24} type="modern" />
+				<KumiIcon emoji={emoji ?? '📄'} size={24} />
 				<h1 className="font-semibold text-base flex-1 truncate">{title}</h1>
 
 				{/* Viewers */}

@@ -9,7 +9,7 @@ import {
 	CommandList,
 } from '../ui/command';
 import { TextBulletListSquare20Color, SlideTextSparkle20Color } from '@fluentui/react-icons';
-import { FluentEmoji } from '@lobehub/fluent-emoji';
+import { KumiIcon } from '../ui/KumiIcon';
 import type { SearchResult } from '../../lib/types';
 
 interface SearchPaletteProps {
@@ -102,11 +102,11 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 							>
 								<span className="shrink-0">
 									{r.emoji ? (
-										<FluentEmoji emoji={r.emoji} size={18} type="modern" />
+										<KumiIcon emoji={r.emoji} size={18} />
 									) : r.path.endsWith('.md') ? (
-										<TextBulletListSquare20Color className="w-4 h-4" />
+										<KumiIcon icon={TextBulletListSquare20Color} size={18} />
 									) : (
-										<SlideTextSparkle20Color className="w-4 h-4" />
+										<KumiIcon icon={SlideTextSparkle20Color} size={18} />
 									)}
 								</span>
 								<div className="flex flex-col min-w-0">
