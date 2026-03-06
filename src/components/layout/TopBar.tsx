@@ -39,9 +39,9 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 					<TooltipTrigger asChild>
 						<Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggle}>
 							{theme === 'dark' ? (
-								<WeatherSunnyLowColor className="w-4 h-4" />
-							) : (
 								<span className="text-base leading-none">🌙</span>
+							) : (
+								<WeatherSunnyLowColor className="w-4 h-4" />
 							)}
 						</Button>
 					</TooltipTrigger>
