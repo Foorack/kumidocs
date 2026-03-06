@@ -302,26 +302,36 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: Sidebar
 	return (
 		<>
 			<aside className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
-				<ScrollArea className="flex-1 px-1 py-2">
-					{pages.length === 0 ? (
-						<div className="px-3 py-4 text-xs text-muted-foreground text-center">
-							No pages yet.
-							<br />
-							Create your first page below.
-						</div>
-					) : (
-						pages.map((node) => (
-							<PageNodeRow
-								key={node.path}
-								node={node}
-								depth={0}
-								editingPages={editingPages}
-								onNewSubPage={onNewSubPage}
-								onMove={openMove}
-							/>
-						))
-					)}
-				</ScrollArea>
+				<ContextMenu>
+					<ContextMenuTrigger asChild>
+						<ScrollArea className="flex-1 px-1 py-2">
+							{pages.length === 0 ? (
+								<div className="px-3 py-4 text-xs text-muted-foreground text-center">
+									No pages yet.
+									<br />
+									Create your first page below.
+								</div>
+							) : (
+								pages.map((node) => (
+									<PageNodeRow
+										key={node.path}
+										node={node}
+										depth={0}
+										editingPages={editingPages}
+										onNewSubPage={onNewSubPage}
+										onMove={openMove}
+									/>
+								))
+							)}
+						</ScrollArea>
+					</ContextMenuTrigger>
+					<ContextMenuContent>
+						<ContextMenuItem onClick={onNewPage}>
+							<AddRegular className="mr-2 w-4 h-4" />
+							Create page
+						</ContextMenuItem>
+					</ContextMenuContent>
+				</ContextMenu>
 
 				<div className="p-2 border-t border-border shrink-0">
 					<Button
