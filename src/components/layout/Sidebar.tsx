@@ -7,7 +7,10 @@ import {
 	MoreHorizontalRegular,
 	MoreHorizontalFilled,
 	RenameRegular,
-	InfoRegular,
+	CopyRegular,
+	OpenRegular,
+	LinkRegular,
+	ArrowMoveRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import { ScrollArea } from '../ui/scroll-area';
@@ -17,12 +20,14 @@ import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
+	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from '../ui/context-menu';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import {
@@ -145,6 +150,37 @@ function PageNodeRow({
 	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
 	const presenceUsers = presenceByPage.get(node.path) ?? [];
 	const indent = 8 + depth * 14;
+	const parentDir = node.path.includes('/')
+		? node.path.substring(0, node.path.lastIndexOf('/'))
+		: '';
+
+	const handleDuplicate = async () => {
+		try {
+			const res = await fetch(`/api/file?path=${encodeURIComponent(node.path)}`);
+			if (!res.ok) {
+				toast.error('Duplicate failed');
+				return;
+			}
+			const data = (await res.json()) as { content: string };
+			const base = node.path.replace(/\.md$/i, '');
+			const newPath = `${base}-copy.md`;
+			const saveRes = await fetch('/api/file', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ path: newPath, content: data.content }),
+			});
+			if (saveRes.ok) {
+				toast.success('Page duplicated');
+				void navigate(`/p/${newPath}`);
+			} else if (saveRes.status === 409) {
+				toast.error('A copy already exists at that path');
+			} else {
+				toast.error('Duplicate failed');
+			}
+		} catch {
+			toast.error('Duplicate failed');
+		}
+	};
 
 	return (
 		<div>
@@ -241,49 +277,61 @@ function PageNodeRow({
 									<>
 										<DropdownMenuItem
 											onClick={() => {
-												const dir = node.path.includes('/')
-													? node.path.substring(
-															0,
-															node.path.lastIndexOf('/'),
-														)
-													: '';
-												onNewSubPage(dir);
-											}}
-										>
-											<AddRegular className="mr-2 w-4 h-4" />
-											Create new page
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
 												onNewSubPage(node.path.replace(/\.md$/i, ''));
 											}}
 										>
-											<ChevronRightRegular className="mr-2 w-4 h-4" />
-											Create subpage
+											<AddRegular className="mr-2 w-4 h-4" />
+											New subpage
 										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												onNewSubPage(parentDir);
+											}}
+										>
+											<AddRegular className="mr-2 w-4 h-4 opacity-0" />
+											New page
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												void handleDuplicate();
+											}}
+										>
+											<CopyRegular className="mr-2 w-4 h-4" />
+											Duplicate
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onClick={() => {
+												window.open(href, '_blank');
+											}}
+										>
+											<OpenRegular className="mr-2 w-4 h-4" />
+											Open in new tab
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												void navigator.clipboard
+													.writeText(window.location.origin + href)
+													.then(() => {
+														toast.success('Link copied');
+													});
+											}}
+										>
+											<LinkRegular className="mr-2 w-4 h-4" />
+											Copy link
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
 										<DropdownMenuItem
 											onClick={() => {
 												onMove(node.path, node.displayTitle);
 											}}
 										>
 											<RenameRegular className="mr-2 w-4 h-4" />
-											Move / Rename
+											Rename / Move
 										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												localStorage.setItem('kumidocs:info-open', 'true');
-												window.dispatchEvent(
-													new CustomEvent('kumidocs:open-info', {
-														detail: node.path,
-													}),
-												);
-												if (window.location.pathname !== href) {
-													void navigate(href);
-												}
-											}}
-										>
-											<InfoRegular className="mr-2 w-4 h-4" />
-											Page info
+										<DropdownMenuItem disabled>
+											<ArrowMoveRegular className="mr-2 w-4 h-4" />
+											Rearrange
 										</DropdownMenuItem>
 									</>
 								)}
@@ -301,46 +349,61 @@ function PageNodeRow({
 						<>
 							<ContextMenuItem
 								onClick={() => {
-									const dir = node.path.includes('/')
-										? node.path.substring(0, node.path.lastIndexOf('/'))
-										: '';
-									onNewSubPage(dir);
-								}}
-							>
-								<AddRegular className="mr-2 w-4 h-4" />
-								Create new page
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
 									onNewSubPage(node.path.replace(/\.md$/i, ''));
 								}}
 							>
-								<ChevronRightRegular className="mr-2 w-4 h-4" />
-								Create subpage
+								<AddRegular className="mr-2 w-4 h-4" />
+								New subpage
 							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									onNewSubPage(parentDir);
+								}}
+							>
+								<AddRegular className="mr-2 w-4 h-4 opacity-0" />
+								New page
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									void handleDuplicate();
+								}}
+							>
+								<CopyRegular className="mr-2 w-4 h-4" />
+								Duplicate
+							</ContextMenuItem>
+							<ContextMenuSeparator />
+							<ContextMenuItem
+								onClick={() => {
+									window.open(href, '_blank');
+								}}
+							>
+								<OpenRegular className="mr-2 w-4 h-4" />
+								Open in new tab
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									void navigator.clipboard
+										.writeText(window.location.origin + href)
+										.then(() => {
+											toast.success('Link copied');
+										});
+								}}
+							>
+								<LinkRegular className="mr-2 w-4 h-4" />
+								Copy link
+							</ContextMenuItem>
+							<ContextMenuSeparator />
 							<ContextMenuItem
 								onClick={() => {
 									onMove(node.path, node.displayTitle);
 								}}
 							>
 								<RenameRegular className="mr-2 w-4 h-4" />
-								Move / Rename
+								Rename / Move
 							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
-									localStorage.setItem('kumidocs:info-open', 'true');
-									window.dispatchEvent(
-										new CustomEvent('kumidocs:open-info', {
-											detail: node.path,
-										}),
-									);
-									if (window.location.pathname !== href) {
-										void navigate(href);
-									}
-								}}
-							>
-								<InfoRegular className="mr-2 w-4 h-4" />
-								Page info
+							<ContextMenuItem disabled>
+								<ArrowMoveRegular className="mr-2 w-4 h-4" />
+								Rearrange
 							</ContextMenuItem>
 						</>
 					)}
