@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';import { Streamdown } from 'streamdown';
-import 'streamdown/styles.css';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Block, parseMarkdownIntoBlocks } from 'streamdown';import 'streamdown/styles.css';
 import { Button } from '../ui/button';
 import {
 	Select,
@@ -15,37 +15,19 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '../ui/dialog';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '../ui/scroll-area'; // kept for potential future use
 import { useTheme } from '../../store/theme';
 
 // ── Active-block tracking ────────────────────────────────────────────────────
 
 /**
- * Given the markdown source and the 0-based line the cursor is on, return the
- * 0-based index of the blank-line-separated block that contains that line.
- * Blank lines between blocks resolve to the preceding block.
+ * Use parseMarkdownIntoBlocks on text up to the cursor line to determine
+ * which block index the cursor is currently in.
  */
 function getActiveBlock(source: string, cursorLine: number): number {
-	const lines = source.split('\n');
-	let blockIndex = 0;
-	let lastBlockIndex = 0;
-	let inBlock = false;
-
-	for (let i = 0; i <= cursorLine && i < lines.length; i++) {
-		const blank = (lines[i] ?? '').trim() === '';
-		if (!blank) {
-			if (!inBlock) inBlock = true;
-			if (i === cursorLine) return blockIndex;
-		} else {
-			if (inBlock) {
-				lastBlockIndex = blockIndex;
-				blockIndex++;
-				inBlock = false;
-			}
-			if (i === cursorLine) return lastBlockIndex;
-		}
-	}
-	return blockIndex;
+	const upToCursor = source.split('\n').slice(0, cursorLine + 1).join('\n');
+	const blocks = parseMarkdownIntoBlocks(upToCursor);
+	return Math.max(0, blocks.length - 1);
 }
 
 // ── Toolbar action helpers ────────────────────────────────────────────────────
@@ -133,29 +115,12 @@ const HEADING_OPTIONS = [
 export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEditorProps) {
 	const { theme } = useTheme();
 	const taRef = useRef<HTMLTextAreaElement>(null);
-	const previewRef = useRef<HTMLDivElement>(null);
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [activeLine, setActiveLine] = useState(0);
 
-	const activeBlock = useMemo(
-		() => getActiveBlock(value, activeLine),
-		[value, activeLine],
-	);
-
-	// Stamp data-active-block on the matching preview child after every render.
-	useEffect(() => {
-		const prose = previewRef.current;
-		if (!prose) return;
-		const children = Array.from(prose.children);
-		children.forEach((el, i) => {
-			if (i === activeBlock) {
-				el.setAttribute('data-active-block', 'true');
-			} else {
-				el.removeAttribute('data-active-block');
-			}
-		});
-	}, [activeBlock, value]);
+	const blocks = useMemo(() => parseMarkdownIntoBlocks(value), [value]);
+	const activeBlock = useMemo(() => getActiveBlock(value, activeLine), [value, activeLine]);
 
 	// Dispatch a synthetic change so React picks up imperative textarea edits.
 	const syncChange = useCallback(() => {
@@ -311,8 +276,24 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 
 				{/* Right — live preview */}
 				<div className="flex-1 min-w-0 overflow-y-auto" data-color-mode={theme}>
-					<div ref={previewRef} className="prose prose-sm dark:prose-invert max-w-none px-8 py-6 active-block-host">
-						<Streamdown>{value}</Streamdown>
+					<div className="prose prose-sm dark:prose-invert max-w-none px-8 py-6">
+						{blocks.map((block, i) => (
+							<div
+								key={i}
+								style={i === activeBlock
+									? { boxShadow: '-3px 0 0 0 oklch(0.6 0.2 264)', transition: 'box-shadow 0.15s ease' }
+									: { transition: 'box-shadow 0.15s ease' }
+								}
+							>
+								<Block
+									content={block}
+									shouldParseIncompleteMarkdown={false}
+									shouldNormalizeHtmlIndentation={false}
+									index={i}
+									isIncomplete={false}
+								/>
+							</div>
+						))}
 					</div>
 				</div>
 			</div>
