@@ -584,7 +584,7 @@ export default function DocPage() {
 					{/* Dedicated info button */}
 					<Button
 						size="sm"
-						variant={infoOpen ? 'secondary' : 'ghost'}
+						variant={infoOpen && !editMode ? 'secondary' : 'ghost'}
 						className="h-7 gap-1 text-xs px-2"
 						onClick={() => {
 							setInfoOpen((v) => {
@@ -645,7 +645,7 @@ export default function DocPage() {
 						</ScrollArea>
 					)}
 				</div>
-				{infoOpen && (
+				{infoOpen && !editMode && (
 					<PageInfoPanel
 						key={filePath}
 						filePath={filePath}
