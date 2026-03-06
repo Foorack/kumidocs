@@ -146,6 +146,7 @@ function PageNodeRow({
 	const hasChildren = node.children.length > 0;
 	const [open, setOpen] = useState(depth === 0);
 	const [dotsHovered, setDotsHovered] = useState(false);
+	const [dotsOpen, setDotsOpen] = useState(false);
 
 	const href = node.fileEntry?.type === 'code' ? `/code/${node.path}` : `/p/${node.path}`;
 	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
@@ -257,7 +258,7 @@ function PageNodeRow({
 						)}
 
 						{/* 3-dot menu — visible on hover, same actions as right-click */}
-						<DropdownMenu>
+						<DropdownMenu onOpenChange={setDotsOpen}>
 							<DropdownMenuTrigger asChild>
 								<button
 									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
@@ -271,7 +272,7 @@ function PageNodeRow({
 										setDotsHovered(false);
 									}}
 								>
-									{dotsHovered ? (
+									{dotsHovered || dotsOpen ? (
 										<MoreHorizontalFilled className="w-4 h-4" />
 									) : (
 										<MoreHorizontalRegular className="w-4 h-4" />
