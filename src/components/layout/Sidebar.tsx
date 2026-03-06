@@ -5,6 +5,7 @@ import {
 	ChevronRightRegular,
 	ChevronDownRegular,
 	MoreHorizontalRegular,
+	MoreHorizontalFilled,
 	RenameRegular,
 	InfoRegular,
 } from '@fluentui/react-icons';
@@ -222,12 +223,13 @@ function PageNodeRow({
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<button
-									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
+									className="group/dots opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
 									onClick={(e) => {
 										e.stopPropagation();
 									}}
 								>
-									<MoreHorizontalRegular className="w-3 h-3" />
+									<MoreHorizontalRegular className="w-4 h-4 group-hover/dots:hidden" />
+									<MoreHorizontalFilled className="w-4 h-4 hidden group-hover/dots:block" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent side="right" align="start">
