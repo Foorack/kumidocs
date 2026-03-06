@@ -145,6 +145,7 @@ function PageNodeRow({
 	const navigate = useNavigate();
 	const hasChildren = node.children.length > 0;
 	const [open, setOpen] = useState(depth === 0);
+	const [dotsHovered, setDotsHovered] = useState(false);
 
 	const href = node.fileEntry?.type === 'code' ? `/code/${node.path}` : `/p/${node.path}`;
 	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
@@ -259,13 +260,22 @@ function PageNodeRow({
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<button
-									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity [&:hover>svg:first-child]:hidden [&>svg:last-child]:hidden [&:hover>svg:last-child]:block"
+									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
 									onClick={(e) => {
 										e.stopPropagation();
 									}}
+									onMouseEnter={() => {
+										setDotsHovered(true);
+									}}
+									onMouseLeave={() => {
+										setDotsHovered(false);
+									}}
 								>
-									<MoreHorizontalRegular className="w-4 h-4" />
-									<MoreHorizontalFilled className="w-4 h-4" />
+									{dotsHovered ? (
+										<MoreHorizontalFilled className="w-4 h-4" />
+									) : (
+										<MoreHorizontalRegular className="w-4 h-4" />
+									)}
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent side="right" align="start">
