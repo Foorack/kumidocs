@@ -12,7 +12,6 @@ export interface FileEntry {
 	type: 'doc' | 'slide' | 'code' | 'image' | 'other';
 	title: string;
 	emoji?: string;
-	description?: string;
 }
 
 export interface TreeNode {

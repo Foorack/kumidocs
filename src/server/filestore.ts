@@ -245,7 +245,6 @@ export function parseFileEntry(path: string): FileEntry {
 	let type: FileEntry['type'] = 'other';
 	let title = titleFromName;
 	let emoji: string | undefined;
-	let description: string | undefined;
 
 	if (ext === '.md') {
 		type = 'doc';
@@ -255,7 +254,6 @@ export function parseFileEntry(path: string): FileEntry {
 			const headingTitle = extractHeadingTitle(parsed.body);
 			if (headingTitle) title = headingTitle;
 			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
-			if (parsed.data.description) description = parsed.data.description as string;
 			if (parsed.data.marp === true) type = 'slide';
 		} catch (err: unknown) {
 			console.warn('Failed to parse frontmatter:', err);
@@ -290,5 +288,5 @@ export function parseFileEntry(path: string): FileEntry {
 		type = 'image';
 	}
 
-	return { path, type, title, emoji, description };
+	return { path, type, title, emoji };
 }
