@@ -4,7 +4,7 @@ import {
 	AddRegular,
 	ChevronRightRegular,
 	ChevronDownRegular,
-	CircleFilled,
+	MoreHorizontalRegular,
 	RenameRegular,
 	InfoRegular,
 } from '@fluentui/react-icons';
@@ -19,6 +19,12 @@ import {
 	ContextMenuTrigger,
 } from '../ui/context-menu';
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -29,13 +35,14 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
+import { avatarColor, avatarInitials } from '../../lib/avatar';
 import type { TreeNode, FileEntry, PresenceUser } from '../../lib/types';
 
 interface SidebarProps {
 	tree: TreeNode[];
 	onNewPage: () => void;
 	onNewSubPage: (parentDir: string) => void;
-	editingPages: Map<string, PresenceUser>;
+	presenceByPage: Map<string, PresenceUser[]>;
 }
 
 interface MoveDialogState {
@@ -118,13 +125,13 @@ function buildPageTree(nodes: TreeNode[]): PageNode[] {
 function PageNodeRow({
 	node,
 	depth,
-	editingPages,
+	presenceByPage,
 	onNewSubPage,
 	onMove,
 }: {
 	node: PageNode;
 	depth: number;
-	editingPages: Map<string, PresenceUser>;
+	presenceByPage: Map<string, PresenceUser[]>;
 	onNewSubPage: (parentDir: string) => void;
 	onMove: (path: string, title: string) => void;
 }) {
@@ -135,7 +142,7 @@ function PageNodeRow({
 
 	const href = node.fileEntry?.type === 'code' ? `/code/${node.path}` : `/p/${node.path}`;
 	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
-	const beingEdited = node.isVirtual ? undefined : editingPages.get(node.path);
+	const presenceUsers = presenceByPage.get(node.path) ?? [];
 	const indent = 8 + depth * 14;
 
 	return (
@@ -143,7 +150,7 @@ function PageNodeRow({
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
 					<div
-						className={`flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none ${
+						className={`group flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none ${
 							isActive
 								? 'bg-accent text-accent-foreground font-medium'
 								: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
@@ -187,14 +194,96 @@ function PageNodeRow({
 							{node.displayTitle}
 						</Link>
 
-						{beingEdited && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<CircleFilled className="w-2 h-2 shrink-0 text-amber-500 animate-pulse" />
-								</TooltipTrigger>
-								<TooltipContent>{beingEdited.name} is editing</TooltipContent>
-							</Tooltip>
+						{/* Presence avatars — users currently on this page */}
+						{presenceUsers.length > 0 && (
+							<div className="flex items-center shrink-0 -space-x-1">
+								{presenceUsers.slice(0, 3).map((u) => (
+									<Tooltip key={u.id}>
+										<TooltipTrigger asChild>
+											<div
+												className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-sidebar shrink-0 cursor-default"
+												style={{ backgroundColor: avatarColor(u.name) }}
+											>
+												{avatarInitials(u.name)}
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>{u.name}</TooltipContent>
+									</Tooltip>
+								))}
+								{presenceUsers.length > 3 && (
+									<div className="w-[18px] h-[18px] rounded-full bg-muted flex items-center justify-center text-[7px] font-bold ring-1 ring-sidebar text-muted-foreground cursor-default shrink-0">
+										+{presenceUsers.length - 3}
+									</div>
+								)}
+							</div>
 						)}
+
+						{/* 3-dot menu — visible on hover, same actions as right-click */}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<button
+									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
+									onClick={(e) => {
+										e.stopPropagation();
+									}}
+								>
+									<MoreHorizontalRegular className="w-3 h-3" />
+								</button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent side="right" align="start">
+								{node.isVirtual ? (
+									<DropdownMenuItem asChild>
+										<Link to={href}>Create this page</Link>
+									</DropdownMenuItem>
+								) : (
+									<>
+										<DropdownMenuItem
+											onClick={() => {
+												const dir = node.path.includes('/')
+													? node.path.substring(0, node.path.lastIndexOf('/'))
+													: '';
+												onNewSubPage(dir);
+											}}
+										>
+											<AddRegular className="mr-2 w-4 h-4" />
+											Create new page
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												onNewSubPage(node.path.replace(/\.md$/i, ''));
+											}}
+										>
+											<ChevronRightRegular className="mr-2 w-4 h-4" />
+											Create subpage
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												onMove(node.path, node.displayTitle);
+											}}
+										>
+											<RenameRegular className="mr-2 w-4 h-4" />
+											Move / Rename
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => {
+												localStorage.setItem('kumidocs:info-open', 'true');
+												window.dispatchEvent(
+													new CustomEvent('kumidocs:open-info', {
+														detail: node.path,
+													}),
+												);
+												if (window.location.pathname !== href) {
+													void navigate(href);
+												}
+											}}
+										>
+											<InfoRegular className="mr-2 w-4 h-4" />
+											Page info
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 				</ContextMenuTrigger>
 
@@ -261,7 +350,7 @@ function PageNodeRow({
 							key={child.path}
 							node={child}
 							depth={depth + 1}
-							editingPages={editingPages}
+							presenceByPage={presenceByPage}
 							onNewSubPage={onNewSubPage}
 							onMove={onMove}
 						/>
@@ -272,7 +361,7 @@ function PageNodeRow({
 	);
 }
 
-export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: SidebarProps) {
+export function Sidebar({ tree, onNewPage, onNewSubPage, presenceByPage }: SidebarProps) {
 	const pages = buildPageTree(tree);
 	const navigate = useNavigate();
 	const [moveDialog, setMoveDialog] = useState<MoveDialogState>({
@@ -337,7 +426,7 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: Sidebar
 										key={node.path}
 										node={node}
 										depth={0}
-										editingPages={editingPages}
+										presenceByPage={presenceByPage}
 										onNewSubPage={onNewSubPage}
 										onMove={openMove}
 									/>

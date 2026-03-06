@@ -14,7 +14,7 @@ export function AppShell() {
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [tree, setTree] = useState<TreeNode[]>([]);
 	const [instanceName, setInstanceName] = useState('KumiDocs');
-	const [editingPages, setEditingPages] = useState<Map<string, PresenceUser>>(new Map());
+	const [presenceByPage, setPresenceByPage] = useState<Map<string, PresenceUser[]>>(new Map());
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPageParentDir, setNewPageParentDir] = useState<string | undefined>(undefined);
 
@@ -49,13 +49,25 @@ export function AppShell() {
 		loadTree();
 	}, [loadTree]);
 
-	// Update editing pages map from WS presence updates
+	// Update per-page presence map from WS presence updates
 	useWsListener((msg) => {
 		if (msg.type === 'presence_update') {
-			setEditingPages((prev) => {
+			setPresenceByPage((prev) => {
 				const next = new Map(prev);
-				if (msg.editor) {
-					next.set(msg.pageId, msg.editor);
+				// Merge viewers + editor, deduplicated, minus self
+				const all: PresenceUser[] = [];
+				const seen = new Set<string>();
+				for (const u of msg.viewers) {
+					if (!seen.has(u.id) && u.id !== user?.id) {
+						all.push(u);
+						seen.add(u.id);
+					}
+				}
+				if (msg.editor && !seen.has(msg.editor.id) && msg.editor.id !== user?.id) {
+					all.push(msg.editor);
+				}
+				if (all.length > 0) {
+					next.set(msg.pageId, all);
 				} else {
 					next.delete(msg.pageId);
 				}
@@ -105,7 +117,7 @@ export function AppShell() {
 						setNewPageParentDir(parentDir || undefined);
 						setNewPageOpen(true);
 					}}
-					editingPages={editingPages}
+					presenceByPage={presenceByPage}
 				/>
 
 				<main className="flex-1 overflow-hidden flex flex-col">
