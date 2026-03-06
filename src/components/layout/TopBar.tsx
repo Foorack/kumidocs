@@ -5,6 +5,7 @@ import { useUser } from '../../store/user';
 import { UserAvatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Kbd, KbdGroup } from '../ui/kbd';
 
 interface TopBarProps {
 	instanceName: string;
@@ -29,10 +30,10 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 			>
 				<SearchRegular className="w-3.5 h-3.5 shrink-0" />
 				<span>Search...</span>
-				<span className="ml-auto flex items-center gap-0.5">
-					<kbd className="inline-flex items-center justify-center text-xs bg-muted border border-border rounded px-1 py-0.5 font-mono leading-none">⌘</kbd>
-					<kbd className="inline-flex items-center justify-center text-xs bg-muted border border-border rounded px-1 py-0.5 font-mono leading-none">K</kbd>
-				</span>
+				<KbdGroup className="ml-auto">
+					<Kbd>⌘</Kbd>
+					<Kbd>K</Kbd>
+				</KbdGroup>
 			</Button>
 
 			<div className="ml-auto flex items-center gap-1">
