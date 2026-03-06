@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import matter from 'gray-matter';
 import {
 	DeleteRegular,
-	RenameRegular,
 	MoreHorizontalRegular,
 	SaveRegular,
 	InfoRegular,
@@ -598,15 +597,6 @@ export default function DocPage() {
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem
-									onClick={() => {
-										setNewName(filePath);
-										setRenameOpen(true);
-									}}
-								>
-									<RenameRegular className="mr-2 w-4 h-4" />
-									Rename / Move
-								</DropdownMenuItem>
 								<DropdownMenuItem
 									className="text-destructive focus:text-destructive"
 									onClick={() => {
