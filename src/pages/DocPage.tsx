@@ -531,7 +531,26 @@ export default function DocPage() {
 					</div>
 				)}
 
-				{/* Right: viewers + save status + info + dropdown */}
+				{/* Save status – inline next to Edit button */}
+				{editMode && (
+					<Badge
+						variant="outline"
+						className={`text-xs h-5 shrink-0${
+							saveStatus === 'saved'
+								? ' border-green-600 text-green-600 dark:border-green-500 dark:text-green-500'
+								: saveStatus === 'error'
+									? ' border-destructive text-destructive'
+									: ''
+						}`}
+					>
+						{saveStatus === 'saved' && 'Saved'}
+						{saveStatus === 'saving' && 'Saving…'}
+						{saveStatus === 'unsaved' && 'Unsaved'}
+						{saveStatus === 'error' && 'Error'}
+					</Badge>
+				)}
+
+				{/* Right: viewers + info + dropdown */}
 				<div className="flex items-center gap-2 flex-1 justify-end min-w-0">
 					{/* Viewers */}
 					<div className="flex -space-x-1">
@@ -549,29 +568,6 @@ export default function DocPage() {
 							</Tooltip>
 						))}
 					</div>
-
-					{/* Save status (in edit mode) */}
-					{editMode && (
-						<Badge
-							variant={
-								saveStatus === 'saving'
-									? 'outline'
-									: saveStatus === 'error'
-										? 'destructive'
-										: 'outline'
-							}
-							className={`text-xs h-5 shrink-0${
-								saveStatus === 'saved'
-									? ' border-green-600 text-green-600 dark:border-green-500 dark:text-green-500'
-									: ''
-							}`}
-						>
-							{saveStatus === 'saved' && 'Saved'}
-							{saveStatus === 'saving' && 'Saving…'}
-							{saveStatus === 'unsaved' && 'Unsaved'}
-							{saveStatus === 'error' && 'Error'}
-						</Badge>
-					)}
 
 					{/* Dedicated info button */}
 					<Button

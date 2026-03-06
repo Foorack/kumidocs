@@ -38,28 +38,20 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 
 	// Group commits by calendar date with human-readable labels
 	const commitGroups = useMemo(() => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const yesterday = new Date(today);
-		yesterday.setDate(today.getDate() - 1);
-
 		const groups = new Map<string, { label: string; commits: CommitEntry[] }>();
 		for (const c of commits) {
 			const d = new Date(c.date);
 			d.setHours(0, 0, 0, 0);
 			const key = d.toISOString().slice(0, 10);
 			if (!groups.has(key)) {
-				let label: string;
-				if (d.getTime() === today.getTime()) label = 'Today';
-				else if (d.getTime() === yesterday.getTime()) label = 'Yesterday';
-				else
-					label = d.toLocaleDateString(undefined, {
-						month: 'short',
-						day: 'numeric',
-						year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
-					});
+                const label = d.toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                });
 				groups.set(key, { label, commits: [] });
 			}
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- we just ensured this
 			groups.get(key)!.commits.push(c);
 		}
 		return [...groups.entries()];
@@ -156,7 +148,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 										<div key={key}>
 											{/* Date group header */}
 											<button
-												className="w-full flex items-center gap-1 px-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
+												className="w-full flex items-center gap-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
 												onClick={() => {
 													toggleGroup(key);
 												}}
@@ -177,7 +169,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 													{groupCommits.map((c) => (
 														<button
 															key={c.sha}
-															className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
+															className="w-full text-left rounded py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
 															onClick={() => {
 																openDiff(c.sha);
 															}}
