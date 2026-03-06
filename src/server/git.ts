@@ -25,7 +25,7 @@ export async function gitStageAndCommit(
 	message: string,
 	authorName: string,
 	authorEmail: string,
-): Promise<{ sha: string; error?: string }> {
+): Promise<{ sha: string; error?: string; committed?: boolean }> {
 	try {
 		// Stage files
 		for (const fp of filePaths) {
@@ -44,7 +44,7 @@ export async function gitStageAndCommit(
 				dir: config.repoPath,
 				ref: 'HEAD',
 			});
-			return { sha: sha.slice(0, 7) };
+			return { sha: sha.slice(0, 7), committed: false };
 		}
 
 		// Commit
@@ -55,7 +55,8 @@ export async function gitStageAndCommit(
 			author: { name: authorName, email: authorEmail },
 		});
 
-		return await pushWithRetry(config, sha);
+		const result = await pushWithRetry(config, sha);
+		return { ...result, committed: true };
 	} catch (err) {
 		try {
 			const sha = await git.resolveRef({

@@ -114,9 +114,11 @@ export default function DocPage() {
 	// Mutex: chain saves so they never run concurrently (prevents double-commit 409)
 	const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
 	const isDirty = content !== savedContent;
-	// Keep a ref to latest content so exitEdit can read it without stale closure
+	// Keep refs to latest content/savedContent so exitEdit can read them without stale closures
 	const contentRef = useRef(content);
 	contentRef.current = content;
+	const savedContentRef = useRef(savedContent);
+	savedContentRef.current = savedContent;
 
 	// Load document
 	const loadDoc = useCallback(async (path: string) => {
@@ -282,12 +284,12 @@ export default function DocPage() {
 	}, [user, editLocked, filePath]);
 
 	const exitEdit = useCallback(async () => {
-		// Always await the save promise: if a save is already in-flight (e.g. auto-save
-		// fired just before Done was pressed) we wait for it rather than starting a second
-		// concurrent save that would cause a git 409 conflict.
-		// Use contentRef.current to get the latest content, not a stale closure value.
+		// Use refs to always read the latest content/savedContent values regardless of
+		// when React last re-rendered — eliminates the stale-closure 409 race where
+		// clicking Read before the post-Ctrl+S render would see stale savedContent and
+		// incorrectly trigger a second save of already-committed content.
 		const latestContent = contentRef.current;
-		const latestIsDirty = latestContent !== savedContent;
+		const latestIsDirty = latestContent !== savedContentRef.current;
 		if (latestIsDirty) {
 			await doSave(latestContent);
 		} else {
@@ -296,7 +298,7 @@ export default function DocPage() {
 		}
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
-	}, [savedContent, doSave, filePath]);
+	}, [doSave, filePath]);
 
 	// Delete
 	const handleDelete = useCallback(async () => {
@@ -550,15 +552,17 @@ export default function DocPage() {
 					{editMode && (
 						<Badge
 							variant={
+								saveStatus === 'saving'
+									? 'outline'
+									: saveStatus === 'error'
+										? 'destructive'
+										: 'outline'
+								}
+							className={`text-xs h-5 shrink-0${
 								saveStatus === 'saved'
-									? 'secondary'
-									: saveStatus === 'saving'
-										? 'outline'
-										: saveStatus === 'error'
-											? 'destructive'
-											: 'outline'
-							}
-							className="text-xs h-5 shrink-0"
+									? ' border-green-600 text-green-600 dark:border-green-500 dark:text-green-500'
+									: ''
+							}`}
 						>
 							{saveStatus === 'saved' && 'Saved'}
 							{saveStatus === 'saving' && 'Saving…'}

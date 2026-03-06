@@ -96,7 +96,10 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 		);
 	}
 
-	broadcastPageChanged(path, result.sha, user.id, user.displayName);
+	// Only broadcast if a new commit was actually made — skip no-op saves
+	if (result.committed !== false) {
+		broadcastPageChanged(path, result.sha, user.id, user.displayName);
+	}
 	return Response.json({ sha: result.sha });
 }
 
