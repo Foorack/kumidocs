@@ -13,6 +13,7 @@ import {
 	ArrowMoveRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
+import { UserAvatar } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -41,7 +42,6 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { avatarColor, avatarInitials } from '../../lib/avatar';
 import type { TreeNode, FileEntry, PresenceUser } from '../../lib/types';
 
 interface SidebarProps {
@@ -239,12 +239,11 @@ function PageNodeRow({
 								{presenceUsers.slice(0, 3).map((u) => (
 									<Tooltip key={u.id}>
 										<TooltipTrigger asChild>
-											<div
-												className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold text-white ring-1 ring-sidebar shrink-0 cursor-default"
-												style={{ backgroundColor: avatarColor(u.name) }}
-											>
-												{avatarInitials(u.name)}
-											</div>
+											<UserAvatar
+												name={u.name}
+												size="xs"
+												className="ring-1 ring-sidebar cursor-default"
+											/>
 										</TooltipTrigger>
 										<TooltipContent>{u.name}</TooltipContent>
 									</Tooltip>

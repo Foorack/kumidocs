@@ -2,8 +2,7 @@ import { SearchRegular } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
-import { Avatar, AvatarFallback } from '../ui/avatar';
-import { avatarColor } from '../../lib/avatar';
+import { UserAvatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
@@ -54,14 +53,13 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 						<span className="text-xs text-foreground select-none">
 							{user.displayName}
 						</span>
-						<Avatar className="h-7 w-7 cursor-default">
-							<AvatarFallback
-								className="text-[10px] text-white"
-								style={{ backgroundColor: avatarColor(user.displayName) }}
-							>
-								{user.initials}
-							</AvatarFallback>
-						</Avatar>
+						<UserAvatar
+							name={user.displayName}
+							initials={user.initials}
+							gravatarHash={user.gravatarHash}
+							size="md"
+							className="cursor-default"
+						/>
 					</div>
 				)}
 			</div>

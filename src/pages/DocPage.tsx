@@ -27,7 +27,7 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
@@ -36,7 +36,6 @@ import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
-import { avatarColor } from '../lib/avatar';
 
 interface OutletCtx {
 	reloadTree: () => void;
@@ -535,14 +534,12 @@ export default function DocPage() {
 						{viewers.slice(0, 5).map((v) => (
 							<Tooltip key={v.id}>
 								<TooltipTrigger asChild>
-									<Avatar className="h-6 w-6 border border-background ring-1 ring-border">
-										<AvatarFallback
-											className="text-[9px] text-white"
-											style={{ backgroundColor: avatarColor(v.name) }}
-										>
-											{v.initials}
-										</AvatarFallback>
-									</Avatar>
+									<UserAvatar
+										name={v.name}
+										initials={v.initials}
+										size="sm"
+										className="border border-background ring-1 ring-border"
+									/>
 								</TooltipTrigger>
 								<TooltipContent>{v.name}</TooltipContent>
 							</Tooltip>

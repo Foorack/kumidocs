@@ -1,94 +1,73 @@
 import * as React from 'react';
 import { Avatar as AvatarPrimitive } from 'radix-ui';
-
 import { cn } from '@/lib/utils';
+import { avatarColor, avatarInitials } from '@/lib/avatar';
 
-function Avatar({
+type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';
+
+const sizeMap: Record<AvatarSize, { circle: string; text: string }> = {
+	xs: { circle: 'h-[18px] w-[18px]', text: 'text-[8px]' },
+	sm: { circle: 'h-6 w-6', text: 'text-[9px]' },
+	md: { circle: 'h-7 w-7', text: 'text-[10px]' },
+	lg: { circle: 'h-10 w-10', text: 'text-xs' },
+};
+
+export interface UserAvatarProps extends React.ComponentProps<typeof AvatarPrimitive.Root> {
+	/** Display name — used for initials fallback and background color. */
+	name: string;
+	/** Pre-computed initials override (e.g. from server). Falls back to avatarInitials(name). */
+	initials?: string;
+	/** MD5 hash of the user's email for Gravatar. If omitted or image fails, shows initials. */
+	gravatarHash?: string;
+	size?: AvatarSize;
+}
+
+/**
+ * A self-contained user avatar.
+ * Shows a Gravatar photo when `gravatarHash` is provided and a matching Gravatar exists;
+ * otherwise shows coloured initials derived deterministically from `name`.
+ *
+ * Usage:
+ *   <UserAvatar name="Jane Doe" size="sm" />
+ *   <UserAvatar name={user.displayName} initials={user.initials} gravatarHash={user.gravatarHash} />
+ */
+export function UserAvatar({
+	name,
+	initials,
+	gravatarHash,
+	size = 'md',
 	className,
-	size = 'default',
 	...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root> & {
-	size?: 'default' | 'sm' | 'lg';
-}) {
+}: UserAvatarProps) {
+	const { circle, text } = sizeMap[size];
+	const displayInitials = initials ?? avatarInitials(name);
+	const color = avatarColor(name);
+
 	return (
 		<AvatarPrimitive.Root
-			data-slot="avatar"
-			data-size={size}
 			className={cn(
-				'group/avatar relative flex size-8 shrink-0 overflow-hidden rounded-full select-none data-[size=lg]:size-10 data-[size=sm]:size-6',
+				'relative flex shrink-0 overflow-hidden rounded-full select-none',
+				circle,
 				className,
 			)}
 			{...props}
-		/>
-	);
-}
-
-function AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
-	return (
-		<AvatarPrimitive.Image
-			data-slot="avatar-image"
-			className={cn('aspect-square size-full', className)}
-			{...props}
-		/>
-	);
-}
-
-function AvatarFallback({
-	className,
-	...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
-	return (
-		<AvatarPrimitive.Fallback
-			data-slot="avatar-fallback"
-			className={cn(
-				'flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs',
-				className,
+		>
+			{gravatarHash && (
+				<AvatarPrimitive.Image
+					className="aspect-square size-full"
+					src={`https://www.gravatar.com/avatar/${gravatarHash}?s=80&d=404`}
+					alt={name}
+				/>
 			)}
-			{...props}
-		/>
+			<AvatarPrimitive.Fallback
+				className={cn(
+					'flex size-full items-center justify-center rounded-full font-bold text-white',
+					text,
+				)}
+				style={{ backgroundColor: color }}
+			>
+				{displayInitials}
+			</AvatarPrimitive.Fallback>
+		</AvatarPrimitive.Root>
 	);
 }
-
-function AvatarBadge({ className, ...props }: React.ComponentProps<'span'>) {
-	return (
-		<span
-			data-slot="avatar-badge"
-			className={cn(
-				'absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-background select-none',
-				'group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden',
-				'group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2',
-				'group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2',
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
-
-function AvatarGroup({ className, ...props }: React.ComponentProps<'div'>) {
-	return (
-		<div
-			data-slot="avatar-group"
-			className={cn(
-				'group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background',
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
-
-function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) {
-	return (
-		<div
-			data-slot="avatar-group-count"
-			className={cn(
-				'relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3',
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
-
-export { Avatar, AvatarImage, AvatarFallback, AvatarBadge, AvatarGroup, AvatarGroupCount };

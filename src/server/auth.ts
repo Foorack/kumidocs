@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import type { User } from '../lib/types';
 import { avatarInitials } from '../lib/avatar';
 
@@ -51,11 +52,14 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 	const displayName = (name.trim() || email.split('@')[0]) ?? id;
 
 	const initials = avatarInitials(displayName) || '?';
+	const gravatarHash = email
+		? createHash('md5').update(email.trim().toLowerCase()).digest('hex')
+		: undefined;
 
 	const editors = perms.editors ?? [];
 
 	// If no editors configured at all, everyone can edit
 	const canEdit = editors.length === 0 || editors.includes(email) || editors.includes(id);
 
-	return { id, email, name: displayName, displayName, initials, canEdit };
+	return { id, email, name: displayName, displayName, initials, gravatarHash, canEdit };
 }

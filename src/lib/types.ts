@@ -4,6 +4,7 @@ export interface User {
 	name: string;
 	displayName: string;
 	initials: string;
+	gravatarHash?: string;
 	canEdit: boolean;
 }
 
