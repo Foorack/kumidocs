@@ -120,3 +120,26 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* ── Active-block indicator in the markdown editor preview pane ── */
+.active-block-host {
+	/* Allow the ::before pseudo-element to overflow into the left padding */
+	position: relative;
+}
+
+.active-block-host > [data-active-block] {
+	position: relative;
+}
+
+.active-block-host > [data-active-block]::before {
+	content: '';
+	position: absolute;
+	left: -1.25rem;   /* sits inside the px-8 padding of the prose div */
+	top: 0.1em;
+	bottom: 0.1em;
+	width: 3px;
+	border-radius: 9999px;
+	background-color: var(--color-primary, hsl(221 83% 53%));
+	opacity: 0.75;
+	transition: top 0.1s ease, bottom 0.1s ease;
+}

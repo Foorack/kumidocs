@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
-import { Streamdown } from 'streamdown';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';import { Streamdown } from 'streamdown';
 import 'streamdown/styles.css';
 import { Button } from '../ui/button';
 import {
@@ -18,6 +17,36 @@ import {
 } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { useTheme } from '../../store/theme';
+
+// ── Active-block tracking ────────────────────────────────────────────────────
+
+/**
+ * Given the markdown source and the 0-based line the cursor is on, return the
+ * 0-based index of the blank-line-separated block that contains that line.
+ * Blank lines between blocks resolve to the preceding block.
+ */
+function getActiveBlock(source: string, cursorLine: number): number {
+	const lines = source.split('\n');
+	let blockIndex = 0;
+	let lastBlockIndex = 0;
+	let inBlock = false;
+
+	for (let i = 0; i <= cursorLine && i < lines.length; i++) {
+		const blank = (lines[i] ?? '').trim() === '';
+		if (!blank) {
+			if (!inBlock) inBlock = true;
+			if (i === cursorLine) return blockIndex;
+		} else {
+			if (inBlock) {
+				lastBlockIndex = blockIndex;
+				blockIndex++;
+				inBlock = false;
+			}
+			if (i === cursorLine) return lastBlockIndex;
+		}
+	}
+	return blockIndex;
+}
 
 // ── Toolbar action helpers ────────────────────────────────────────────────────
 
@@ -104,8 +133,29 @@ const HEADING_OPTIONS = [
 export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEditorProps) {
 	const { theme } = useTheme();
 	const taRef = useRef<HTMLTextAreaElement>(null);
+	const previewRef = useRef<HTMLDivElement>(null);
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
+	const [activeLine, setActiveLine] = useState(0);
+
+	const activeBlock = useMemo(
+		() => getActiveBlock(value, activeLine),
+		[value, activeLine],
+	);
+
+	// Stamp data-active-block on the matching preview child after every render.
+	useEffect(() => {
+		const prose = previewRef.current;
+		if (!prose) return;
+		const children = Array.from(prose.children);
+		children.forEach((el, i) => {
+			if (i === activeBlock) {
+				el.setAttribute('data-active-block', 'true');
+			} else {
+				el.removeAttribute('data-active-block');
+			}
+		});
+	}, [activeBlock, value]);
 
 	// Dispatch a synthetic change so React picks up imperative textarea edits.
 	const syncChange = useCallback(() => {
@@ -150,6 +200,12 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		},
 		[onSave],
 	);
+
+	const handleCursorMove = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+		const ta = e.currentTarget;
+		const line = ta.value.slice(0, ta.selectionStart).split('\n').length - 1;
+		setActiveLine(line);
+	}, []);
 
 	return (
 		<div className="flex flex-col h-full">
@@ -241,9 +297,10 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 					<textarea
 						ref={taRef}
 						value={value}
-						onChange={(e) => {
-							onChange(e.target.value);
-						}}
+						onChange={(e) => { onChange(e.target.value); }}
+						onKeyUp={handleCursorMove}
+						onMouseUp={handleCursorMove}
+						onSelect={handleCursorMove}
 						onKeyDown={handleKeyDown}
 						disabled={disabled}
 						spellCheck
@@ -254,7 +311,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 
 				{/* Right — live preview */}
 				<div className="flex-1 min-w-0 overflow-y-auto" data-color-mode={theme}>
-					<div className="prose prose-sm dark:prose-invert max-w-none px-8 py-6">
+					<div ref={previewRef} className="prose prose-sm dark:prose-invert max-w-none px-8 py-6 active-block-host">
 						<Streamdown>{value}</Streamdown>
 					</div>
 				</div>
