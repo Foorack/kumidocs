@@ -123,15 +123,14 @@ Header name configured via `KUMIDOCS_AUTH_HEADER`. The header value **must alway
 - **Plain string** → treated directly as the user's email (lowercased).
 - **JWT** (detected by exactly two `.` separator characters) → Base64url-decode the payload, extract claims. **No signature validation.**
 
-JWT email resolution (first non-empty value wins):
+JWT email resolution (first non-empty value wins, `sub` is **never** used):
 
-| Priority | Claim                | Notes                                |
-| -------- | -------------------- | ------------------------------------ |
-| 1        | `email`              | Preferred — explicit email claim     |
-| 2        | `preferred_username` | Used when `email` is absent          |
-| 3        | `sub`                | Last resort — may not be an email    |
+| Priority | Claim                | Notes                            |
+| -------- | -------------------- | -------------------------------- |
+| 1        | `email`              | Preferred — explicit email claim |
+| 2        | `preferred_username` | Used when `email` is absent      |
 
-If the header is absent → HTTP 401.
+If neither claim is present in the JWT → HTTP 401.
 
 User object: `{ id, email, name, displayName, gravatarHash, canEdit }`
 
@@ -144,9 +143,9 @@ User object: `{ id, email, name, displayName, gravatarHash, canEdit }`
 
 Avatars use a deterministic color from **`src/lib/avatar.ts`**:
 
-| Function            | Rule                                                          |
-| ------------------- | ------------------------------------------------------------- |
-| `avatarColor(name)` | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color. |
+| Function               | Rule                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `avatarColor(name)`    | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color.          |
 | `avatarInitials(name)` | Fallback when Gravatar unavailable. Multi-word → first+last initial. Single-word → first 2 chars. |
 
 Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials are the fallback, computed client-side from `displayName` via `avatarInitials`.

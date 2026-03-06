@@ -41,13 +41,13 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 		try {
 			const paddedPart = (parts[1] ?? '').replace(/-/g, '+').replace(/_/g, '/');
 			interface JWTPayload {
-				sub?: string;
 				email?: string;
-				name?: string;
 				preferred_username?: string;
 			}
 			const payload = JSON.parse(atob(paddedPart)) as JWTPayload;
-			email = (payload.email ?? payload.preferred_username ?? payload.sub ?? value).trim().toLowerCase();
+			const raw = payload.email ?? payload.preferred_username;
+			if (!raw) return null; // JWT present but no usable email claim
+			email = raw.trim().toLowerCase();
 		} catch {
 			// fall through to plain string handling
 			email = value.trim().toLowerCase();

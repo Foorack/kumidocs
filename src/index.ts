@@ -126,6 +126,16 @@ const server = serve<WsData>({
 			},
 		},
 
+		'/api/headers': {
+			GET(req: Request) {
+				const headers: Record<string, string> = {};
+				req.headers.forEach((value, key) => {
+					headers[key] = value;
+				});
+				return Response.json(headers);
+			},
+		},
+
 		'/api/tree': {
 			GET(req: Request) {
 				const user = requireUser(req);
