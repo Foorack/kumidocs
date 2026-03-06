@@ -27,6 +27,13 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../components/ui/select';
 import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
@@ -89,7 +96,9 @@ export default function DocPage() {
 	// Modals
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [renameOpen, setRenameOpen] = useState(false);
-	const [newName, setNewName] = useState('');
+	const [renameParent, setRenameParent] = useState('');
+	const [renameSlug, setRenameSlug] = useState('');
+	const [renameDirs, setRenameDirs] = useState<string[]>([]);
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
@@ -331,9 +340,37 @@ export default function DocPage() {
 	}, [filePath, navigate, reloadTree]);
 
 	// Rename
+	const openRenameDialog = useCallback(async () => {
+		const parts = filePath.replace(/\.md$/, '').split('/');
+		const slug = parts.pop() ?? '';
+		const parent = parts.join('/');
+		setRenameSlug(slug);
+		setRenameParent(parent);
+		try {
+			const res = await fetch('/api/tree');
+			const entries = (await res.json()) as { path: string; type: string }[];
+			const dirs = new Set<string>();
+			entries.forEach(({ path, type }) => {
+				if (type === 'dir') {
+					dirs.add(path);
+				} else {
+					const segs = path.split('/');
+					for (let i = 1; i < segs.length; i++) {
+						dirs.add(segs.slice(0, i).join('/'));
+					}
+				}
+			});
+			setRenameDirs(Array.from(dirs).sort());
+		} catch {
+			setRenameDirs([]);
+		}
+		setRenameOpen(true);
+	}, [filePath]);
+
 	const handleRename = useCallback(async () => {
-		if (!newName.trim()) return;
-		const toPath = newName.trim().endsWith('.md') ? newName.trim() : `${newName.trim()}.md`;
+		const slug = renameSlug.trim().replace(/\.md$/, '');
+		if (!slug) return;
+		const toPath = renameParent ? `${renameParent}/${slug}.md` : `${slug}.md`;
 		const res = await fetch('/api/file/rename', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -349,7 +386,7 @@ export default function DocPage() {
 			toast.error('Rename failed');
 		}
 		setRenameOpen(false);
-	}, [filePath, newName, navigate, reloadTree]);
+	}, [filePath, renameParent, renameSlug, navigate, reloadTree]);
 
 	// Create new page
 	const handleNewPage = useCallback(async () => {
@@ -609,6 +646,15 @@ export default function DocPage() {
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
+									onClick={() => {
+										openRenameDialog().catch((err: unknown) => {
+											console.error('Failed to open rename dialog:', err);
+										});
+									}}
+								>
+									Move / Rename page
+								</DropdownMenuItem>
+								<DropdownMenuItem
 									className="text-destructive focus:text-destructive"
 									onClick={() => {
 										setDeleteOpen(true);
@@ -706,20 +752,39 @@ export default function DocPage() {
 			<Dialog open={renameOpen} onOpenChange={setRenameOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Rename / Move page</DialogTitle>
-						<DialogDescription>
-							Enter the new file path (relative to repo root).
-						</DialogDescription>
+						<DialogTitle>Move / Rename page</DialogTitle>
 					</DialogHeader>
-					<div>
-						<Label>New path</Label>
-						<Input
-							value={newName}
-							onChange={(e) => {
-								setNewName(e.target.value);
-							}}
-							placeholder="docs/new-name.md"
-						/>
+					<div className="space-y-4">
+						<div className="space-y-1.5">
+							<Label>Parent directory</Label>
+							<Select value={renameParent} onValueChange={setRenameParent}>
+								<SelectTrigger>
+									<SelectValue placeholder="(root)" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">(root)</SelectItem>
+									{renameDirs.map((dir) => (
+										<SelectItem key={dir} value={dir}>
+											{dir}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="space-y-1.5">
+							<Label>Filename</Label>
+							<Input
+								value={renameSlug}
+								onChange={(e) => {
+									setRenameSlug(e.target.value);
+								}}
+								placeholder="page-name"
+							/>
+							<p className="text-xs text-muted-foreground">
+								→{' '}
+								{renameParent ? `${renameParent}/` : ''}{renameSlug || 'page-name'}.md
+							</p>
+						</div>
 					</div>
 					<DialogFooter>
 						<Button

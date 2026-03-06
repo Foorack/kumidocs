@@ -18,19 +18,19 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 
 ## 2. Tech Stack
 
-| Layer           | Choice                                                 | Notes                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime         | **Bun**                                                | Server + build + git                                                                                                                                                                     |
-| Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                                                                      |
-| Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                                                                          |
-| Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                                                                            |
-| Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves.                                               |
-| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation. |
-| Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                                                                |
-| Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                                                                      |
-| Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                                                                        |
-| Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                                                                   |
-| Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                                                                          |
+| Layer           | Choice                                                 | Notes                                                                                                                                      |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Runtime         | **Bun**                                                | Server + build + git                                                                                                                       |
+| Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                        |
+| Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                            |
+| Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                              |
+| Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
+| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation.                      |
+| Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                  |
+| Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                        |
+| Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                          |
+| Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                     |
+| Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                            |
 
 ---
 
