@@ -36,6 +36,14 @@ export function rebuildIndex(): void {
 	console.log(`Search: indexed ${String(docs.length)} documents`);
 }
 
+/** Return the text of the first `# Heading` line in a markdown body, or null. */
+function extractHeadingTitle(body: string): string | null {
+	for (const line of body.split('\n')) {
+		if (line.startsWith('# ')) return line.slice(2).trim();
+	}
+	return null;
+}
+
 function buildDocs(paths: string[]): DocEntry[] {
 	return paths
 		.filter((p) => p.endsWith('.md') && !p.startsWith('.'))
@@ -49,11 +57,12 @@ function buildDocs(paths: string[]): DocEntry[] {
 
 			try {
 				const parsed = matter(raw);
-				if (parsed.data.title) title = parsed.data.title as string;
 				if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 				if (parsed.data.description) description = parsed.data.description as string;
 				if (parsed.data.marp) type = 'slide';
 				body = parsed.content;
+				const headingTitle = extractHeadingTitle(body);
+				if (headingTitle) title = headingTitle;
 			} catch (err: unknown) {
 				console.warn('Failed to parse frontmatter:', err);
 			}

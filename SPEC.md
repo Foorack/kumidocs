@@ -88,11 +88,12 @@ Any `.md` with `marp: true` frontmatter is a slide deck.
 ```yaml
 ---
 emoji: 📄 # sidebar/tab icon (optional, defaults by type — see §6.2)
-title: My Page # display title (optional, overrides filename-derived title)
 description: ... # subtitle shown in search results
 marp: true # marks file as a Marp slide deck
 ---
 ```
+
+**Title** is not stored in frontmatter. It is derived at runtime from the first `# ` heading in the document body. If no `# ` heading is found, the filename (with hyphens/underscores replaced by spaces) is used as a fallback.
 
 ### 4.2 `.kumidocs.json`
 

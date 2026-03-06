@@ -209,6 +209,14 @@ export function buildFileTree(): TreeNode[] {
 	return root;
 }
 
+/** Return the text of the first `# Heading` line in a markdown body, or null. */
+function extractHeadingTitle(body: string): string | null {
+	for (const line of body.split('\n')) {
+		if (line.startsWith('# ')) return line.slice(2).trim();
+	}
+	return null;
+}
+
 export function parseFileEntry(path: string): FileEntry {
 	const ext = extname(path).toLowerCase();
 	const fileName = path.split('/').pop() ?? path;
@@ -225,7 +233,8 @@ export function parseFileEntry(path: string): FileEntry {
 		const content = fileCache.get(path) ?? '';
 		try {
 			const parsed = matter(content);
-			if (parsed.data.title) title = parsed.data.title as string;
+			const headingTitle = extractHeadingTitle(parsed.content);
+			if (headingTitle) title = headingTitle;
 			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 			if (parsed.data.description) description = parsed.data.description as string;
 			if (parsed.data.marp === true) type = 'slide';

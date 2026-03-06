@@ -103,16 +103,15 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 	return Response.json({ sha: result.sha });
 }
 
-// POST /api/file   body: { path: string, content: string, title?: string }
+// POST /api/file   body: { path: string, content: string }
 export async function apiFileCreate(req: Request, user: User, config: Config) {
 	if (!user.canEdit) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-	let body: { path?: string; content?: string; title?: string };
+	let body: { path?: string; content?: string };
 	try {
 		body = (await req.json()) as {
 			path?: string;
 			content?: string;
-			title?: string;
 		};
 	} catch {
 		return Response.json({ error: 'Invalid JSON' }, { status: 400 });
@@ -166,78 +165,41 @@ export async function apiFileDelete(url: URL, user: User, config: Config) {
 }
 
 // POST /api/file/rename   body: { from: string, to: string }
-/**
- * Update YAML frontmatter `title` field, or prepend a frontmatter block if none exists.
- */
-function upsertFrontmatterTitle(content: string, title: string): string {
-	const escaped = title.replace(/"/g, '\\"');
-	const fmRe = /^---\r?\n([\s\S]*?)\n---\r?\n?/;
-	const match = fmRe.exec(content);
-	if (match?.[1] !== undefined) {
-		const body = match[1];
-		const fm = /^title:/m.test(body)
-			? body.replace(/^title:.*$/m, `title: "${escaped}"`)
-			: `title: "${escaped}"\n${body}`;
-		return content.replace(match[0], `---\n${fm}\n---\n`);
-	}
-	return `---\ntitle: "${escaped}"\n---\n${content}`;
-}
-
 export async function apiFileRename(req: Request, user: User, config: Config) {
 	if (!user.canEdit) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-	let body: { from?: string; to?: string; title?: string };
+	let body: { from?: string; to?: string };
 	try {
-		body = (await req.json()) as { from?: string; to?: string; title?: string };
+		body = (await req.json()) as { from?: string; to?: string };
 	} catch {
 		return Response.json({ error: 'Invalid JSON' }, { status: 400 });
 	}
 
-	const { from, to, title } = body;
+	const { from, to } = body;
 	if (!from || !to) return Response.json({ error: 'from and to required' }, { status: 400 });
+	if (from === to) return Response.json({ sha: null, from, to });
 
-	let content = getFile(from) ?? '';
-	if (title) content = upsertFrontmatterTitle(content, title);
+	const content = getFile(from) ?? '';
 
-	const pathChanged = to !== from;
+	// Write new path + delete old from disk, then git move
+	await writeFileToRepo(to, content, config);
+	await deleteFileFromRepo(from, config);
+	removeFromIndex(from);
+	updateInIndex(to);
 
-	if (pathChanged) {
-		// Write new path + delete old from disk, then git move
-		await writeFileToRepo(to, content, config);
-		await deleteFileFromRepo(from, config);
-		removeFromIndex(from);
-		updateInIndex(to);
+	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
+	const result = await gitMoveAndCommit(
+		config,
+		from,
+		to,
+		msg,
+		user.email,
+		user.email || 'kumidocs@localhost',
+	);
 
-		const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
-		const result = await gitMoveAndCommit(
-			config,
-			from,
-			to,
-			msg,
-			user.email,
-			user.email || 'kumidocs@localhost',
-		);
-
-		broadcastPageDeleted(from);
-		broadcastPageCreated(to, to);
-		return Response.json({ sha: result.sha, from, to });
-	} else {
-		// Title-only change: overwrite in place
-		await writeFileToRepo(from, content, config);
-		updateInIndex(from);
-
-		const msg = `docs: update title of ${from} by ${user.displayName}`;
-		const result = await gitStageAndCommit(
-			config,
-			[from],
-			msg,
-			user.email,
-			user.email || 'kumidocs@localhost',
-		);
-
-		broadcastPageChanged(from, result.sha, user.id, user.displayName);
-		return Response.json({ sha: result.sha, from, to });
-	}
+	broadcastPageDeleted(from);
+	broadcastPageCreated(to, to);
+	return Response.json({ sha: result.sha, from, to });
 }
 
 // GET /api/search?q=<query>

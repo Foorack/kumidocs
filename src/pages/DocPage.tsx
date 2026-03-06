@@ -50,10 +50,17 @@ function pathToTitle(path: string): string {
 }
 
 interface DocMeta {
-	title?: string;
 	emoji?: string;
 	description?: string;
 	marp?: boolean;
+}
+
+/** Return the text of the first `# Heading` line in a markdown body, or null. */
+function extractHeadingTitle(body: string): string | null {
+	for (const line of body.split('\n')) {
+		if (line.startsWith('# ')) return line.slice(2).trim();
+	}
+	return null;
 }
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
@@ -346,7 +353,8 @@ export default function DocPage() {
 		const p = newPagePath.trim().endsWith('.md')
 			? newPagePath.trim()
 			: `${newPagePath.trim()}.md`;
-		const stub = `---\ntitle: ${newPageTitle || pathToTitle(p)}\n---\n\n# ${newPageTitle || pathToTitle(p)}\n`;
+		const pageHeading = newPageTitle || pathToTitle(p);
+		const stub = `# ${pageHeading}\n`;
 		const res = await fetch('/api/file', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -368,7 +376,7 @@ export default function DocPage() {
 		setNewPageTitle('');
 	}, [newPagePath, newPageTitle, navigate, reloadTree]);
 
-	const title = meta.title ?? pathToTitle(filePath);
+	const title = extractHeadingTitle(content) ?? pathToTitle(filePath);
 	const emoji = meta.emoji;
 	const fileType = meta.marp ? 'slide' : 'doc';
 

@@ -52,13 +52,13 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 		if (!title.trim() || !resolvedSlug) return;
 		setCreating(true);
 
-		const marpHeader = pageType === 'slides' ? 'marp: true\n' : '';
-		const stub = `---\ntitle: ${title.trim()}\n${marpHeader}---\n\n# ${title.trim()}\n`;
+		const marpHeader = pageType === 'slides' ? '---\nmarp: true\n---\n\n' : '';
+		const stub = `${marpHeader}# ${title.trim()}\n`;
 
 		const res = await fetch('/api/file', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ path: finalPath, content: stub, title: title.trim() }),
+			body: JSON.stringify({ path: finalPath, content: stub }),
 		});
 
 		setCreating(false);
