@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { parseDiff, Diff, Hunk } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { ChevronRightRegular, DismissRegular, DocumentRegular } from '@fluentui/react-icons';
+import {
+	ChevronDownRegular,
+	ChevronRightRegular,
+	DismissRegular,
+	DocumentRegular,
+} from '@fluentui/react-icons';
 import type { CommitEntry } from '../../lib/types';
 import { emailToDisplayName } from '../../lib/avatar';
 import { UserAvatar } from '../ui/avatar';
@@ -26,9 +31,48 @@ interface PageInfoPanelProps {
 export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) {
 	const [commits, setCommits] = useState<CommitEntry[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 	const [diffOpen, setDiffOpen] = useState(false);
 	const [diffData, setDiffData] = useState<DiffData | null>(null);
 	const [diffLoading, setDiffLoading] = useState(false);
+
+	// Group commits by calendar date with human-readable labels
+	const commitGroups = useMemo(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const yesterday = new Date(today);
+		yesterday.setDate(today.getDate() - 1);
+
+		const groups = new Map<string, { label: string; commits: CommitEntry[] }>();
+		for (const c of commits) {
+			const d = new Date(c.date);
+			d.setHours(0, 0, 0, 0);
+			const key = d.toISOString().slice(0, 10);
+			if (!groups.has(key)) {
+				let label: string;
+				if (d.getTime() === today.getTime()) label = 'Today';
+				else if (d.getTime() === yesterday.getTime()) label = 'Yesterday';
+				else
+					label = d.toLocaleDateString(undefined, {
+						month: 'short',
+						day: 'numeric',
+						year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+					});
+				groups.set(key, { label, commits: [] });
+			}
+			groups.get(key)!.commits.push(c);
+		}
+		return [...groups.entries()];
+	}, [commits]);
+
+	const toggleGroup = (key: string) => {
+		setCollapsedGroups((prev) => {
+			const next = new Set(prev);
+			if (next.has(key)) next.delete(key);
+			else next.add(key);
+			return next;
+		});
+	};
 
 	useEffect(() => {
 		fetch(`/api/file/history?path=${encodeURIComponent(filePath)}`)
@@ -105,54 +149,71 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 						) : commits.length === 0 ? (
 							<p className="text-xs text-muted-foreground py-2">No commits yet.</p>
 						) : (
-							<div className="space-y-0.5">
-								{commits.map((c) => {
+							<div className="space-y-1">
+								{commitGroups.map(([key, { label, commits: groupCommits }]) => {
+									const isCollapsed = collapsedGroups.has(key);
 									return (
-										<button
-											key={c.sha}
-											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
-											onClick={() => {
-												openDiff(c.sha);
-											}}
-										>
-											<UserAvatar
-												name={emailToDisplayName(c.author)}
-												gravatarHash={c.gravatarHash}
-												size="xs"
-												className="shrink-0 mt-0.5"
-											/>
-											<span className="flex-1 min-w-0">
-												<span className="text-foreground line-clamp-2 block">
-													{c.message}
-												</span>
-												<span className="text-muted-foreground block">
-													{new Date(c.date).toLocaleDateString(
-														undefined,
-														{
-															month: 'short',
-															day: 'numeric',
-															year: 'numeric',
-														},
-													)}
-												</span>
-												{(c.added !== undefined ||
-													c.removed !== undefined) && (
-													<span className="flex gap-1 mt-0.5">
-														{(c.added ?? 0) > 0 && (
-															<span className="text-green-600 dark:text-green-400 font-mono">
-																+{c.added}
-															</span>
-														)}
-														{(c.removed ?? 0) > 0 && (
-															<span className="text-red-600 dark:text-red-400 font-mono">
-																-{c.removed}
-															</span>
-														)}
-													</span>
+										<div key={key}>
+											{/* Date group header */}
+											<button
+												className="w-full flex items-center gap-1 px-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
+												onClick={() => {
+													toggleGroup(key);
+												}}
+											>
+												{isCollapsed ? (
+													<ChevronRightRegular className="w-3 h-3 shrink-0" />
+												) : (
+													<ChevronDownRegular className="w-3 h-3 shrink-0" />
 												)}
-											</span>
-											<ChevronRightRegular className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-										</button>
+												<span className="font-medium">{label}</span>
+												<span className="ml-auto tabular-nums">
+													{groupCommits.length}
+												</span>
+											</button>
+											{/* Commits */}
+											{!isCollapsed && (
+												<div className="space-y-0.5">
+													{groupCommits.map((c) => (
+														<button
+															key={c.sha}
+															className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
+															onClick={() => {
+																openDiff(c.sha);
+															}}
+														>
+															<UserAvatar
+																name={emailToDisplayName(c.author)}
+																gravatarHash={c.gravatarHash}
+																size="xs"
+																className="shrink-0 mt-0.5"
+															/>
+															<span className="flex-1 min-w-0">
+																<span className="text-foreground line-clamp-2 block">
+																	{c.message}
+																</span>
+																{(c.added !== undefined ||
+																	c.removed !== undefined) && (
+																	<span className="flex gap-1 mt-0.5">
+																		{(c.added ?? 0) > 0 && (
+																			<span className="text-green-600 dark:text-green-400 font-mono">
+																				+{c.added}
+																			</span>
+																		)}
+																		{(c.removed ?? 0) > 0 && (
+																			<span className="text-red-600 dark:text-red-400 font-mono">
+																				-{c.removed}
+																			</span>
+																		)}
+																	</span>
+																)}
+															</span>
+															<ChevronRightRegular className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+														</button>
+													))}
+												</div>
+											)}
+										</div>
 									);
 								})}
 							</div>
