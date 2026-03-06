@@ -316,7 +316,12 @@ export async function apiFileHistory(url: URL, config: Config) {
 				if (line.startsWith('+') && !line.startsWith('+++')) added++;
 				else if (line.startsWith('-') && !line.startsWith('---')) removed++;
 			}
-			return { ...c, added, removed, gravatarHash: createHash('md5').update(c.author).digest('hex') };
+			return {
+				...c,
+				added,
+				removed,
+				gravatarHash: createHash('md5').update(c.author).digest('hex'),
+			};
 		}),
 	);
 	return Response.json(enriched);

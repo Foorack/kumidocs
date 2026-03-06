@@ -226,6 +226,7 @@ export default function DocPage() {
 					if (res.ok) {
 						const data = (await res.json()) as { sha: string };
 						setSavedContent(currentContent);
+						savedContentRef.current = currentContent; // update ref immediately, don't wait for re-render
 						setSaveStatus('saved');
 						setLastSha(data.sha);
 						reloadTree();
@@ -284,17 +285,14 @@ export default function DocPage() {
 	}, [user, editLocked, filePath]);
 
 	const exitEdit = useCallback(async () => {
-		// Use refs to always read the latest content/savedContent values regardless of
-		// when React last re-rendered — eliminates the stale-closure 409 race where
-		// clicking Read before the post-Ctrl+S render would see stale savedContent and
-		// incorrectly trigger a second save of already-committed content.
+		// Always drain any in-flight save first (e.g. auto-save that fired just before
+		// Read was clicked). After this resolves, savedContentRef.current is up-to-date
+		// because doSave updates it imperatively on success.
+		await savePromiseRef.current;
+		// Only save if there is genuinely new content since the last completed save.
 		const latestContent = contentRef.current;
-		const latestIsDirty = latestContent !== savedContentRef.current;
-		if (latestIsDirty) {
+		if (latestContent !== savedContentRef.current) {
 			await doSave(latestContent);
-		} else {
-			// Even if not dirty, wait for any in-flight auto-save to finish
-			await savePromiseRef.current;
 		}
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
