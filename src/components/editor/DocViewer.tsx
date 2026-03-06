@@ -4,12 +4,13 @@
  * Security model:
  *   • XSS  — Streamdown's built-in rehype-harden strips all dangerous HTML /
  *             event-handler attributes before anything hits the DOM.
- *   • CSS   — Content is rendered inside a same-origin sandbox iframe, so the
+ *   • CSS   — Content is rendered inside a same-origin sandbox iframe so the
  *             host app's layout styles cannot bleed in and vice-versa.
  *
- * Note: allow-same-origin + allow-scripts together means the sandboxed document
- * shares the parent's origin. The real XSS barrier is Streamdown's sanitisation
- * pipeline; the iframe primarily provides CSS containment.
+ * Sandbox flags:
+ *   • allow-same-origin — lets the parent frame access contentDocument to
+ *     inject styles and mount the React root.  No scripts run inside the
+ *     iframe itself (allow-scripts is intentionally absent).
  */
 import { memo, useEffect, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -82,9 +83,12 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 			if (theme === 'dark') doc.documentElement.classList.add('dark');
 
 			// 4. Mount React root and do the first render.
+			// Guard against HMR re-mounts where the container already has a root.
 			const container = doc.getElementById('root');
 			if (!container) return;
-			rootRef.current = createRoot(container);
+			if (!rootRef.current) {
+				rootRef.current = createRoot(container);
+			}
 			readyRef.current = true;
 			rootRef.current.render(renderContent(value));
 
@@ -131,7 +135,7 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 		<iframe
 			ref={iframeRef}
 			srcDoc={BASE_SRCDOC}
-			sandbox="allow-same-origin allow-scripts"
+			sandbox="allow-same-origin"
 			className="w-full border-none block"
 			style={{ height: height > 0 ? height : undefined, minHeight: 120 }}
 			title="Document viewer"

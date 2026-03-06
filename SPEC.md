@@ -24,14 +24,13 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                                                                      |
 | Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                                                                          |
 | Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                                                                            |
-| Markdown editor | **Custom split-pane editor** | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
+| Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves.                                               |
 | Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM for read-only view. Mounted inside a sandboxed same-origin `<iframe>` for CSS isolation. Built-in `rehype-harden` sanitisation. |
 | Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                                                                |
 | Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                                                                      |
 | Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                                                                        |
 | Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                                                                   |
 | Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                                                                          |
-
 
 ---
 
@@ -213,7 +212,7 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 
 - Read-only. Default for everyone on page load.
 - `streamdown` renders markdown → React DOM via a remark/rehype pipeline.
-- Rendered inside a same-origin `<iframe sandbox="allow-same-origin allow-scripts">` whose DOM is initialised with the host app's compiled Tailwind styles injected as a `<style>` tag. Provides CSS isolation — host layout styles cannot bleed in or out.
+- Rendered inside a `<iframe sandbox="allow-same-origin">` whose DOM is initialised with the host app's compiled Tailwind styles injected as a `<style>` tag. Provides CSS isolation — host layout styles cannot bleed in or out. `allow-scripts` is intentionally absent; the React root is mounted from the parent frame via `contentDocument`, so no scripts run inside the iframe itself.
 - XSS protection via Streamdown's built-in `rehype-harden` (strips all event handlers, dangerous attributes, and unsafe HTML before it reaches the DOM).
 - Dark mode class synced into the iframe's `<html>` element to match app theme.
 - `@tailwindcss/typography` (`prose prose-sm dark:prose-invert`) provides full typographic styles (headings, lists, code, tables, blockquotes).
