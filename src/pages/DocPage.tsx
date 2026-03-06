@@ -90,7 +90,7 @@ export default function DocPage() {
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
 	const [infoOpen, setInfoOpen] = useState(
-		() => localStorage.getItem('kumidocs:info-open') === 'true',
+		() => localStorage.getItem('kumidocs-info-open') === 'true',
 	);
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
 
@@ -101,8 +101,8 @@ export default function DocPage() {
 			if (detail === filePath) {
 				setInfoOpen((v) => {
 					const next = !v;
-					if (next) localStorage.setItem('kumidocs:info-open', 'true');
-					else localStorage.removeItem('kumidocs:info-open');
+					if (next) localStorage.setItem('kumidocs-info-open', 'true');
+					else localStorage.removeItem('kumidocs-info-open');
 					return next;
 				});
 			}
@@ -577,8 +577,8 @@ export default function DocPage() {
 									setInfoOpen((v) => {
 										const next = !v;
 										if (next)
-											localStorage.setItem('kumidocs:info-open', 'true');
-										else localStorage.removeItem('kumidocs:info-open');
+											localStorage.setItem('kumidocs-info-open', 'true');
+										else localStorage.removeItem('kumidocs-info-open');
 										return next;
 									});
 								}}
