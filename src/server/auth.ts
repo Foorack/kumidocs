@@ -21,7 +21,7 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 	const value = headers.get(authHeader);
 	if (!value) return null;
 
-	let email = '';
+	let email: string;
 
 	// Detect JWT (two dots = three Base64url segments)
 	const parts = value.split('.');
@@ -44,7 +44,6 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 		email = value.trim().toLowerCase();
 	}
 
-	const id = email;
 	const displayName = emailToDisplayName(email);
 	const gravatarHash = createHash('md5').update(email).digest('hex');
 
@@ -53,5 +52,5 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 	// If no editors configured at all, everyone can edit
 	const canEdit = editors.length === 0 || editors.includes(email);
 
-	return { id, email, name: displayName, displayName, gravatarHash, canEdit };
+	return { id: email, email, name: displayName, displayName, gravatarHash, canEdit };
 }
