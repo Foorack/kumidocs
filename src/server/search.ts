@@ -8,6 +8,7 @@ interface DocEntry {
 	path: string;
 	title: string;
 	emoji?: string;
+	type: string;
 	description?: string;
 	content: string;
 }
@@ -17,7 +18,7 @@ let index: MiniSearch<DocEntry> | undefined;
 export function initSearch(): void {
 	index = new MiniSearch<DocEntry>({
 		fields: ['title', 'content', 'description', 'path'],
-		storeFields: ['title', 'path', 'emoji', 'description'],
+		storeFields: ['title', 'path', 'emoji', 'type', 'description'],
 		searchOptions: {
 			boost: { title: 3, description: 1.5 },
 			fuzzy: 0.2,
@@ -42,6 +43,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 			const raw = getFile(path) ?? '';
 			let title = path.replace(/\.md$/, '').split('/').pop()?.replace(/[-_]/g, ' ') ?? path;
 			let emoji: string | undefined;
+			let type = 'doc';
 			let description: string | undefined;
 			let body = raw;
 
@@ -50,6 +52,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 				if (parsed.data.title) title = parsed.data.title as string;
 				if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 				if (parsed.data.description) description = parsed.data.description as string;
+				if (parsed.data.marp) type = 'slide';
 				body = parsed.content;
 			} catch (err: unknown) {
 				console.warn('Failed to parse frontmatter:', err);
@@ -64,7 +67,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 				.replace(/\s+/g, ' ')
 				.trim();
 
-			return { id: path, path, title, emoji, description, content: stripped };
+			return { id: path, path, title, emoji, type, description, content: stripped };
 		});
 }
 
@@ -106,6 +109,7 @@ export function searchDocs(query: string, limit = 20): SearchResult[] {
 		path: r.path as string,
 		title: r.title as string,
 		emoji: r.emoji as string | undefined,
+		type: (r.type as string | undefined) ?? 'doc',
 		snippet: buildSnippet(r.path as string, query),
 		score: r.score,
 	}));

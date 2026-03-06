@@ -8,7 +8,6 @@ import {
 	CommandItem,
 	CommandList,
 } from '../ui/command';
-import { TextBulletListSquare20Color, SlideTextSparkle20Color } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import type { SearchResult } from '../../lib/types';
 
@@ -101,13 +100,11 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 								className="gap-2"
 							>
 								<span className="shrink-0">
-									{r.emoji ? (
-										<KumiIcon emoji={r.emoji} size={20} />
-									) : r.path.endsWith('.md') ? (
-										<KumiIcon icon={TextBulletListSquare20Color} size={20} />
-									) : (
-										<KumiIcon icon={SlideTextSparkle20Color} size={20} />
-									)}
+									<KumiIcon
+										emoji={r.emoji}
+										fileType={r.type ?? 'doc'}
+										size={20}
+									/>
 								</span>
 								<div className="flex flex-col min-w-0">
 									<span className="font-medium text-sm">{r.title}</span>

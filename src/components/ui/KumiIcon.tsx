@@ -24,6 +24,9 @@ import {
 	TextBulletListSquare20Color,
 	SlideTextSparkle20Color,
 	NumberSymbolSquare20Color,
+	CodeRegular,
+	ImageRegular,
+	DocumentRegular,
 } from '@fluentui/react-icons';
 
 // Map specific emoji codepoints → Fluent Color icon components
@@ -34,17 +37,28 @@ const EMOJI_ICON_OVERRIDES: Record<string, FC<{ style?: CSSProperties; className
 	'\u0023\uFE0F\u20E3': NumberSymbolSquare20Color, // #️⃣ Keycap #
 };
 
+// File type strings for KumiIcon — well-known values listed for autocomplete, open to any string
+export type KumiFileType = 'doc' | 'slide' | 'code' | 'image' | (string & {});
+const FILE_TYPE_ICONS: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
+	doc: TextBulletListSquare20Color,
+	slide: SlideTextSparkle20Color,
+	code: CodeRegular,
+	image: ImageRegular,
+};
+
 interface KumiIconProps {
 	/** Emoji character to render (may be overridden to a Color icon). */
 	emoji?: string;
-	/** Fluent React Icon component to render directly. */
+	/** File type string ('doc' | 'slide' | 'code' | 'image') — rendered when no emoji is set. */
+	fileType?: KumiFileType;
+	/** Fluent React Icon component to render directly (lowest priority). */
 	icon?: FC<{ style?: CSSProperties; className?: string }>;
 	/** Pixel size for both the icon and the emoji. Default: 16. */
 	size?: number;
 	className?: string;
 }
 
-export function KumiIcon({ emoji, icon, size = 16, className }: KumiIconProps) {
+export function KumiIcon({ emoji, fileType, icon, size = 16, className }: KumiIconProps) {
 	const wrapStyle: CSSProperties = {
 		display: 'inline-flex',
 		alignItems: 'center',
@@ -67,6 +81,17 @@ export function KumiIcon({ emoji, icon, size = 16, className }: KumiIconProps) {
 				</span>
 			);
 		return <FluentEmoji emoji={emoji} size={size} type="modern" />;
+	}
+
+	// File-type path — resolve icon from central map, fall back to DocumentRegular
+	if (fileType) {
+		const TypeIcon = FILE_TYPE_ICONS[fileType] ?? DocumentRegular;
+		const isMuted = fileType === 'code' || fileType === 'image';
+		return (
+			<span style={wrapStyle} className={isMuted ? 'text-muted-foreground' : className}>
+				<TypeIcon style={innerStyle} />
+			</span>
+		);
 	}
 
 	// Explicit icon path

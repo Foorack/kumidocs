@@ -27,6 +27,7 @@ export interface SearchResult {
 	path: string;
 	title: string;
 	emoji?: string;
+	type?: string;
 	snippet: string;
 	score: number;
 }
