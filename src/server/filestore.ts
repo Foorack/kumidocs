@@ -125,6 +125,8 @@ export function getAllPaths(): string[] {
 	return [...fileCache.keys()].sort();
 }
 
+const BINARY_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.pdf']);
+
 export async function writeFileToRepo(
 	path: string,
 	content: string,
@@ -132,7 +134,8 @@ export async function writeFileToRepo(
 ): Promise<void> {
 	const fullPath = join(config.repoPath, path);
 	await mkdir(dirname(fullPath), { recursive: true });
-	const normalised = content.endsWith('\n') ? content : `${content}\n`;
+	const isBinary = BINARY_EXT.has(extname(path).toLowerCase());
+	const normalised = isBinary || content.endsWith('\n') ? content : `${content}\n`;
 	await writeFile(fullPath, normalised, 'utf-8');
 	fileCache.set(path, content);
 }
