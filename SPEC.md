@@ -25,7 +25,7 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                                                                          |
 | Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                                                                            |
 | Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves.                                               |
-| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM for read-only view. Mounted inside a sandboxed same-origin `<iframe>` for CSS isolation. Built-in `rehype-harden` sanitisation. |
+| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation. |
 | Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                                                                |
 | Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                                                                      |
 | Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                                                                        |
@@ -212,10 +212,8 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 ### 7.2 View Mode — streamdown
 
 - Read-only. Default for everyone on page load.
-- `streamdown` renders markdown → React DOM via a remark/rehype pipeline.
-- Rendered inside a `<iframe sandbox="allow-same-origin">` whose DOM is initialised with the host app's compiled Tailwind styles injected as a `<style>` tag. Provides CSS isolation — host layout styles cannot bleed in or out. `allow-scripts` is intentionally absent; the React root is mounted from the parent frame via `contentDocument`, so no scripts run inside the iframe itself.
+- `streamdown` renders markdown → React DOM via a remark/rehype pipeline, mounted directly in the page.
 - XSS protection via Streamdown's built-in `rehype-harden` (strips all event handlers, dangerous attributes, and unsafe HTML before it reaches the DOM).
-- Dark mode class synced into the iframe's `<html>` element to match app theme.
 - `@tailwindcss/typography` (`prose prose-sm dark:prose-invert`) provides full typographic styles (headings, lists, code, tables, blockquotes).
 
 ### 7.3 Save Behavior
@@ -442,7 +440,7 @@ Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, 
 │   _sidebar   ├───────────────────────────────────────────┤
 │  navigation  │                                           │
 │   (left)     │   page content                            │
-│              │   (view:  streamdown → sandboxed iframe)          │
+│              │   (view:  streamdown → direct render)              │
 │              │   (edit:  custom split-pane editor)        │
 │              │                                           │
 │              ├───────────────────────────────────────────┤
@@ -594,7 +592,7 @@ SPEC.md
 ### Phase 2 — Editor Core ✅ Complete
 
 - [x] Custom split-pane editor (textarea + Streamdown live preview, toolbar: heading selector / Bold / Italic / Blockquote / Cheatsheet, Ctrl+S save)
-- [x] `streamdown` read-only view (sandboxed iframe, dark mode sync, rehype-harden XSS protection)
+- [x] `streamdown` read-only view (direct render, rehype-harden XSS protection)
 - [x] Save flow: Ctrl+S, auto-save debounce, save mutex (no 409 race)
 - [x] Edit-lock via WebSocket
 - [x] Dark mode (Tailwind + iframe sync)
