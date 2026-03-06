@@ -1,25 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Block, parseMarkdownIntoBlocks } from 'streamdown';
-import 'streamdown/styles.css';
+import { useCallback, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { useTheme } from '../../store/theme';
-
-// ── Active-block tracking ────────────────────────────────────────────────────
-
-/**
- * Use parseMarkdownIntoBlocks on text up to the cursor line to determine
- * which block index the cursor is currently in.
- */
-function getActiveBlock(source: string, cursorLine: number): number {
-	const upToCursor = source
-		.split('\n')
-		.slice(0, cursorLine + 1)
-		.join('\n');
-	const blocks = parseMarkdownIntoBlocks(upToCursor);
-	return Math.max(0, blocks.length - 1);
-}
+import { DocViewer } from './DocViewer';
 
 // ── Toolbar action helpers ────────────────────────────────────────────────────
 
@@ -92,14 +75,10 @@ const HEADING_OPTIONS = [
 ];
 
 export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEditorProps) {
-	const { theme } = useTheme();
 	const taRef = useRef<HTMLTextAreaElement>(null);
+	const previewRef = useRef<HTMLDivElement>(null);
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
-	const [activeLine, setActiveLine] = useState(0);
-
-	const blocks = useMemo(() => parseMarkdownIntoBlocks(value), [value]);
-	const activeBlock = useMemo(() => getActiveBlock(value, activeLine), [value, activeLine]);
 
 	// Dispatch a synthetic change so React picks up imperative textarea edits.
 	const syncChange = useCallback(() => {
@@ -145,10 +124,13 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		[onSave],
 	);
 
-	const handleCursorMove = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+	const handleEditorScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
 		const ta = e.currentTarget;
-		const line = ta.value.slice(0, ta.selectionStart).split('\n').length - 1;
-		setActiveLine(line);
+		const preview = previewRef.current;
+		if (!preview) return;
+		const scrollable = ta.scrollHeight - ta.clientHeight;
+		if (scrollable <= 0) return;
+		preview.scrollTop = (ta.scrollTop / scrollable) * (preview.scrollHeight - preview.clientHeight);
 	}, []);
 
 	return (
@@ -247,9 +229,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 						onChange={(e) => {
 							onChange(e.target.value);
 						}}
-						onKeyUp={handleCursorMove}
-						onMouseUp={handleCursorMove}
-						onSelect={handleCursorMove}
+					onScroll={handleEditorScroll}
 						onKeyDown={handleKeyDown}
 						disabled={disabled}
 						spellCheck
@@ -259,30 +239,8 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 				</div>
 
 				{/* Right — live preview */}
-				<div className="flex-1 min-w-0 overflow-y-auto" data-color-mode={theme}>
-					<div className="prose prose-sm dark:prose-invert max-w-none px-8 py-6">
-						{blocks.map((block, i) => (
-							<div
-								key={i}
-								style={
-									i === activeBlock
-										? {
-												boxShadow: '-3px 0 0 0 oklch(0.6 0.2 264)',
-												transition: 'box-shadow 0.15s ease',
-											}
-										: { transition: 'box-shadow 0.15s ease' }
-								}
-							>
-								<Block
-									content={block}
-									shouldParseIncompleteMarkdown={false}
-									shouldNormalizeHtmlIndentation={false}
-									index={i}
-									isIncomplete={false}
-								/>
-							</div>
-						))}
-					</div>
+				<div ref={previewRef} className="flex-1 min-w-0 overflow-y-auto">
+					<DocViewer value={value} />
 				</div>
 			</div>
 		</div>
