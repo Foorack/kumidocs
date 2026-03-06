@@ -51,6 +51,9 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 
 				{user && (
 					<div className="flex items-center gap-1.5">
+						<span className="text-xs text-foreground select-none">
+							{user.displayName}
+						</span>
 						<Avatar className="h-7 w-7 cursor-default">
 							<AvatarFallback
 								className="text-[10px] text-white"
@@ -59,9 +62,6 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 								{user.initials}
 							</AvatarFallback>
 						</Avatar>
-						<span className="text-xs text-foreground select-none">
-							{user.displayName}
-						</span>
 					</div>
 				)}
 			</div>

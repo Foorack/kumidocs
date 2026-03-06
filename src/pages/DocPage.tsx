@@ -368,6 +368,7 @@ export default function DocPage() {
 
 	const title = meta.title ?? pathToTitle(filePath);
 	const emoji = meta.emoji;
+	const fileType = meta.marp ? 'slide' : 'doc';
 
 	// Breadcrumb
 	const breadcrumb = filePath.replace(/\.md$/, '').split('/').slice(0, -1);
@@ -490,7 +491,7 @@ export default function DocPage() {
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
 				{/* Left: icon + title */}
 				<div className="flex items-center gap-2 flex-1 min-w-0">
-					<KumiIcon emoji={emoji ?? '📄'} size={24} />
+					<KumiIcon emoji={emoji} fileType={fileType} size={24} />
 					<h1 className="font-semibold text-base truncate">{title}</h1>
 				</div>
 
