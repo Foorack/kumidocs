@@ -53,7 +53,6 @@ async function loadPermissions() {
 			const defaultConfig = {
 				instanceName: config.instanceName,
 				editors: [],
-				admins: [],
 			};
 			await writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
 			setPermissions(defaultConfig);

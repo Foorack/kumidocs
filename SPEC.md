@@ -103,13 +103,12 @@ marp: true # marks file as a Marp slide deck
 ```json
 {
 	"instanceName": "KumiDocs",
-	"editors": ["alice@example.com", "bob@example.com"],
-	"admins": []
+	"editors": ["alice@example.com", "bob@example.com"]
 }
 ```
 
 - **Any authenticated user can VIEW.**
-- **Only users in `editors` (or `admins`) can EDIT.**
+- **Only users in `editors` can EDIT.**
 - Re-read from disk after every background pull (changes take effect within `KUMIDOCS_PULL_INTERVAL`).
 - **Never served via API. Never shown in the file tree or UI.**
 
@@ -591,9 +590,3 @@ SPEC.md
 - [ ] Slide viewer (fullscreen, navigation, Present button)
 - [ ] Code file editor (CodeMirror + language packs)
 - [ ] Marp PDF export (Playwright, Chromium-gated)
-
-### Phase 5 — Packaging
-
-- [ ] Dockerfile
-- [ ] `compose.yaml` (final)
-- [ ] README with setup & deployment instructions

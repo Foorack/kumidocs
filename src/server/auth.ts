@@ -3,7 +3,6 @@ import type { User } from '../lib/types';
 export interface KumiDocsPermissions {
 	instanceName?: string;
 	editors?: string[];
-	admins?: string[];
 }
 
 let perms: KumiDocsPermissions = {};
@@ -59,12 +58,9 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 			.join('') || '?';
 
 	const editors = perms.editors ?? [];
-	const admins = perms.admins ?? [];
-	const allEditors = [...editors, ...admins];
 
 	// If no editors configured at all, everyone can edit
-	const canEdit =
-		allEditors.length === 0 || allEditors.includes(email) || allEditors.includes(id);
+	const canEdit = editors.length === 0 || editors.includes(email) || editors.includes(id);
 
 	return { id, email, name: displayName, displayName, initials, canEdit };
 }

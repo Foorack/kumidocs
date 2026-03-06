@@ -7,6 +7,7 @@ import {
 	CircleFilled,
 	FolderRegular,
 	FolderOpenRegular,
+	RenameRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import { ScrollArea } from '../ui/scroll-area';
@@ -18,6 +19,17 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from '../ui/context-menu';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { toast } from 'sonner';
 import type { TreeNode, PresenceUser } from '../../lib/types';
 
 interface SidebarProps {
@@ -25,6 +37,12 @@ interface SidebarProps {
 	onNewPage: () => void;
 	onNewSubPage: (parentDir: string) => void;
 	editingPages: Map<string, PresenceUser>;
+}
+
+interface MoveDialogState {
+	open: boolean;
+	from: string;
+	to: string;
 }
 
 /** Sort: README.md first, then dirs alphabetically, then files alphabetically. */
@@ -37,20 +55,18 @@ function sortNodes(nodes: TreeNode[]): TreeNode[] {
 	});
 }
 
-function FileIcon({ node }: { node: TreeNode }) {
-	return <KumiIcon emoji={node.fileEntry?.emoji} fileType={node.fileEntry?.type} size={18} />;
-}
-
 function TreeNodeRow({
 	node,
 	depth,
 	editingPages,
 	onNewSubPage,
+	onMove,
 }: {
 	node: TreeNode;
 	depth: number;
 	editingPages: Map<string, PresenceUser>;
 	onNewSubPage: (parentDir: string) => void;
+	onMove: (path: string) => void;
 }) {
 	const location = useLocation();
 	const [open, setOpen] = useState(node.name === 'README.md' || depth === 0);
@@ -90,6 +106,7 @@ function TreeNodeRow({
 										depth={depth + 1}
 										editingPages={editingPages}
 										onNewSubPage={onNewSubPage}
+										onMove={onMove}
 									/>
 								))}
 							</div>
@@ -135,7 +152,7 @@ function TreeNodeRow({
 			}`}
 			style={{ paddingLeft: `${String(8 + depth * 12 + 12)}px` }}
 		>
-			<FileIcon node={node} />
+			<KumiIcon emoji={node.fileEntry?.emoji} fileType={node.fileEntry?.type} size={20} />
 			<Link to={href} className="truncate flex-1 min-w-0" title={displayTitle}>
 				{displayTitle}
 			</Link>
@@ -156,7 +173,16 @@ function TreeNodeRow({
 			<ContextMenuContent>
 				<ContextMenuItem
 					onClick={() => {
-						// Parent dir: strip filename from path
+						// Subpage lives inside a folder named after this file (minus .md)
+						const subDir = node.path.replace(/\.md$/i, '');
+						onNewSubPage(subDir);
+					}}
+				>
+					<AddRegular className="mr-2 w-4 h-4" />
+					Create subpage
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() => {
 						const dir = node.path.includes('/')
 							? node.path.substring(0, node.path.lastIndexOf('/'))
 							: '';
@@ -165,6 +191,14 @@ function TreeNodeRow({
 				>
 					<AddRegular className="mr-2 w-4 h-4" />
 					Create page alongside
+				</ContextMenuItem>
+				<ContextMenuItem
+					onClick={() => {
+						onMove(node.path);
+					}}
+				>
+					<RenameRegular className="mr-2 w-4 h-4" />
+					Move / Rename
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
@@ -184,40 +218,132 @@ function filterTree(nodes: TreeNode[]): TreeNode[] {
 
 export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: SidebarProps) {
 	const visible = filterTree(sortNodes(tree));
+	const [moveDialog, setMoveDialog] = useState<MoveDialogState>({
+		open: false,
+		from: '',
+		to: '',
+	});
+	const [moving, setMoving] = useState(false);
+
+	const openMove = (path: string) => {
+		setMoveDialog({ open: true, from: path, to: path });
+	};
+
+	const handleMove = async () => {
+		const raw = moveDialog.to.trim();
+		if (!raw || raw === moveDialog.from) {
+			setMoveDialog((d) => ({ ...d, open: false }));
+			return;
+		}
+		const toPath = raw.endsWith('.md') ? raw : `${raw}.md`;
+		setMoving(true);
+		try {
+			const res = await fetch('/api/file/rename', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ from: moveDialog.from, to: toPath }),
+			});
+			if (res.ok) {
+				toast.success('Page moved');
+			} else {
+				toast.error('Move failed');
+			}
+		} catch {
+			toast.error('Move failed');
+		}
+		setMoving(false);
+		setMoveDialog((d) => ({ ...d, open: false }));
+	};
 
 	return (
-		<aside className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
-			<ScrollArea className="flex-1 px-1 py-2">
-				{visible.length === 0 ? (
-					<div className="px-3 py-4 text-xs text-muted-foreground text-center">
-						No pages yet.
-						<br />
-						Create your first page below.
-					</div>
-				) : (
-					visible.map((node) => (
-						<TreeNodeRow
-							key={node.path}
-							node={node}
-							depth={0}
-							editingPages={editingPages}
-							onNewSubPage={onNewSubPage}
-						/>
-					))
-				)}
-			</ScrollArea>
+		<>
+			<aside className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
+				<ScrollArea className="flex-1 px-1 py-2">
+					{visible.length === 0 ? (
+						<div className="px-3 py-4 text-xs text-muted-foreground text-center">
+							No pages yet.
+							<br />
+							Create your first page below.
+						</div>
+					) : (
+						visible.map((node) => (
+							<TreeNodeRow
+								key={node.path}
+								node={node}
+								depth={0}
+								editingPages={editingPages}
+								onNewSubPage={onNewSubPage}
+								onMove={openMove}
+							/>
+						))
+					)}
+				</ScrollArea>
 
-			<div className="p-2 border-t border-border shrink-0">
-				<Button
-					variant="ghost"
-					size="sm"
-					className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
-					onClick={onNewPage}
-				>
-					<AddRegular className="w-3.5 h-3.5" />
-					New page
-				</Button>
-			</div>
-		</aside>
+				<div className="p-2 border-t border-border shrink-0">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+						onClick={onNewPage}
+					>
+						<AddRegular className="w-3.5 h-3.5" />
+						New page
+					</Button>
+				</div>
+			</aside>
+
+			<Dialog
+				open={moveDialog.open}
+				onOpenChange={(v) => {
+					if (!v) setMoveDialog((d) => ({ ...d, open: false }));
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Move / Rename page</DialogTitle>
+						<DialogDescription>
+							Enter the new file path (relative to repo root).
+						</DialogDescription>
+					</DialogHeader>
+					<div className="grid gap-1.5">
+						<Label>New path</Label>
+						<Input
+							value={moveDialog.to}
+							onChange={(e) => {
+								setMoveDialog((d) => ({ ...d, to: e.target.value }));
+							}}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter' && !moving) {
+									handleMove().catch((err: unknown) => {
+										console.error('Move failed:', err);
+									});
+								}
+							}}
+							placeholder="docs/new-name.md"
+						/>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setMoveDialog((d) => ({ ...d, open: false }));
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							disabled={moving}
+							onClick={() => {
+								handleMove().catch((err: unknown) => {
+									console.error('Move failed:', err);
+								});
+							}}
+						>
+							{moving ? 'Moving…' : 'Move'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
