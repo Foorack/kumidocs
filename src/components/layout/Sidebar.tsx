@@ -234,7 +234,7 @@ function PageNodeRow({
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() => {
-									localStorage.setItem('kumidocs:info-open', node.path);
+									localStorage.setItem('kumidocs:info-open', 'true');
 									window.dispatchEvent(
 										new CustomEvent('kumidocs:open-info', {
 											detail: node.path,

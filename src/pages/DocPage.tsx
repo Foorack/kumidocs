@@ -90,7 +90,7 @@ export default function DocPage() {
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
 	const [infoOpen, setInfoOpen] = useState(
-		() => localStorage.getItem('kumidocs:info-open') === filePath,
+		() => localStorage.getItem('kumidocs:info-open') === 'true',
 	);
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
 
@@ -101,7 +101,7 @@ export default function DocPage() {
 			if (detail === filePath) {
 				setInfoOpen((v) => {
 					const next = !v;
-					if (next) localStorage.setItem('kumidocs:info-open', filePath);
+					if (next) localStorage.setItem('kumidocs:info-open', 'true');
 					else localStorage.removeItem('kumidocs:info-open');
 					return next;
 				});
@@ -574,7 +574,13 @@ export default function DocPage() {
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
 								onClick={() => {
-									setInfoOpen((v) => !v);
+									setInfoOpen((v) => {
+										const next = !v;
+										if (next)
+											localStorage.setItem('kumidocs:info-open', 'true');
+										else localStorage.removeItem('kumidocs:info-open');
+										return next;
+									});
 								}}
 							>
 								<InfoRegular className="mr-2 w-4 h-4" />
