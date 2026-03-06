@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
 	AddRegular,
 	ChevronRightRegular,
@@ -41,6 +41,7 @@ interface MoveDialogState {
 	open: boolean;
 	from: string;
 	to: string;
+	title: string;
 }
 
 /**
@@ -124,7 +125,7 @@ function PageNodeRow({
 	depth: number;
 	editingPages: Map<string, PresenceUser>;
 	onNewSubPage: (parentDir: string) => void;
-	onMove: (path: string) => void;
+	onMove: (path: string, title: string) => void;
 }) {
 	const location = useLocation();
 	const hasChildren = node.children.length > 0;
@@ -221,7 +222,7 @@ function PageNodeRow({
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() => {
-									onMove(node.path);
+									onMove(node.path, node.displayTitle);
 								}}
 							>
 								<RenameRegular className="mr-2 w-4 h-4" />
@@ -253,38 +254,46 @@ function PageNodeRow({
 
 export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: SidebarProps) {
 	const pages = buildPageTree(tree);
+	const navigate = useNavigate();
 	const [moveDialog, setMoveDialog] = useState<MoveDialogState>({
 		open: false,
 		from: '',
 		to: '',
+		title: '',
 	});
 	const [moving, setMoving] = useState(false);
 
-	const openMove = (path: string) => {
-		setMoveDialog({ open: true, from: path, to: path });
+	const openMove = (path: string, title: string) => {
+		setMoveDialog({ open: true, from: path, to: path, title });
 	};
 
 	const handleMove = async () => {
-		const raw = moveDialog.to.trim();
-		if (!raw || raw === moveDialog.from) {
+		const rawPath = moveDialog.to.trim();
+		const rawTitle = moveDialog.title.trim();
+		if (!rawPath) {
 			setMoveDialog((d) => ({ ...d, open: false }));
 			return;
 		}
-		const toPath = raw.endsWith('.md') ? raw : `${raw}.md`;
+		const toPath = rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
 		setMoving(true);
 		try {
 			const res = await fetch('/api/file/rename', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ from: moveDialog.from, to: toPath }),
+				body: JSON.stringify({
+					from: moveDialog.from,
+					to: toPath,
+					title: rawTitle || undefined,
+				}),
 			});
 			if (res.ok) {
-				toast.success('Page moved');
+				toast.success('Page updated');
+				void navigate(`/p/${toPath}`);
 			} else {
-				toast.error('Move failed');
+				toast.error('Update failed');
 			}
 		} catch {
-			toast.error('Move failed');
+			toast.error('Update failed');
 		}
 		setMoving(false);
 		setMoveDialog((d) => ({ ...d, open: false }));
@@ -337,25 +346,39 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: Sidebar
 					<DialogHeader>
 						<DialogTitle>Move / Rename page</DialogTitle>
 						<DialogDescription>
-							Enter the new file path (relative to repo root).
+							Change the display title and/or the file path of this page.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="grid gap-1.5">
-						<Label>New path</Label>
-						<Input
-							value={moveDialog.to}
-							onChange={(e) => {
-								setMoveDialog((d) => ({ ...d, to: e.target.value }));
-							}}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter' && !moving) {
-									handleMove().catch((err: unknown) => {
-										console.error('Move failed:', err);
-									});
-								}
-							}}
-							placeholder="docs/new-name.md"
-						/>
+					<div className="grid gap-3">
+						<div className="grid gap-1.5">
+							<Label htmlFor="move-title">Title</Label>
+							<Input
+								id="move-title"
+								value={moveDialog.title}
+								onChange={(e) => {
+									setMoveDialog((d) => ({ ...d, title: e.target.value }));
+								}}
+								placeholder="Page title"
+							/>
+						</div>
+						<div className="grid gap-1.5">
+							<Label htmlFor="move-path">Path</Label>
+							<Input
+								id="move-path"
+								value={moveDialog.to}
+								onChange={(e) => {
+									setMoveDialog((d) => ({ ...d, to: e.target.value }));
+								}}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter' && !moving) {
+										handleMove().catch((err: unknown) => {
+											console.error('Move failed:', err);
+										});
+									}
+								}}
+								placeholder="docs/new-name.md"
+							/>
+						</div>
 					</div>
 					<DialogFooter>
 						<Button
@@ -374,7 +397,7 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, editingPages }: Sidebar
 								});
 							}}
 						>
-							{moving ? 'Moving…' : 'Move'}
+							{moving ? 'Saving…' : 'Save'}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
