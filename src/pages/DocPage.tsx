@@ -188,6 +188,9 @@ export default function DocPage() {
 			setEditLocked(msg.editor);
 		}
 		if (msg.type === 'page_changed' && msg.pageId === filePath) {
+			// Ignore echoes of our own saves — the server broadcasts to all
+			// clients including the sender, but we've already applied the change.
+			if (msg.changedBy === user?.id) return;
 			if (!isDirty) {
 				loadDoc(filePath).catch((err: unknown) => {
 					console.error('Failed to reload document after remote change:', err);
@@ -269,7 +272,8 @@ export default function DocPage() {
 		(val: string) => {
 			setContent(val);
 			setSaveStatus('unsaved');
-			isDirtyRef.current = true; // mark dirty immediately			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+			isDirtyRef.current = true; // mark dirty immediately
+			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
 			autoSaveTimer.current = setTimeout(() => {
 				doSave(val).catch((err: unknown) => {
 					console.error('Auto-save failed:', err);
