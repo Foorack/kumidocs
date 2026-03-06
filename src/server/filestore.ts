@@ -132,7 +132,8 @@ export async function writeFileToRepo(
 ): Promise<void> {
 	const fullPath = join(config.repoPath, path);
 	await mkdir(dirname(fullPath), { recursive: true });
-	await writeFile(fullPath, content, 'utf-8');
+	const normalised = content.endsWith('\n') ? content : `${content}\n`;
+	await writeFile(fullPath, normalised, 'utf-8');
 	fileCache.set(path, content);
 }
 
