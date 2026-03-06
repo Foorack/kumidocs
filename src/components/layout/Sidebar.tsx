@@ -259,13 +259,13 @@ function PageNodeRow({
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<button
-									className="group/dots opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
+									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity [&:hover>svg:first-child]:hidden [&>svg:last-child]:hidden [&:hover>svg:last-child]:block"
 									onClick={(e) => {
 										e.stopPropagation();
 									}}
 								>
-									<MoreHorizontalRegular className="w-4 h-4 group-hover/dots:hidden" />
-									<MoreHorizontalFilled className="w-4 h-4 hidden group-hover/dots:block" />
+									<MoreHorizontalRegular className="w-4 h-4" />
+									<MoreHorizontalFilled className="w-4 h-4" />
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent side="right" align="start">
