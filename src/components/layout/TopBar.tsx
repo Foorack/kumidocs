@@ -23,7 +23,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 			<Button
 				variant="ghost"
 				size="sm"
-				className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal flex-1 max-w-64 justify-start"
+				className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal flex-1 max-w-64 justify-start bg-muted hover:bg-muted/80"
 				onClick={onSearchOpen}
 			>
 				<SearchRegular className="w-3.5 h-3.5 shrink-0" />
