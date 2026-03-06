@@ -216,29 +216,6 @@ function extractHeadingTitle(body: string): string | null {
 	return null;
 }
 
-/** Parse simple key: value YAML frontmatter without any external library. */
-function parseFrontmatter(content: string): { data: Record<string, unknown>; body: string } {
-	if (!content.startsWith('---\n')) return { data: {}, body: content };
-	const end = content.indexOf('\n---\n', 4);
-	if (end === -1) return { data: {}, body: content };
-	const yaml = content.slice(4, end);
-	const body = content.slice(end + 5);
-	const data: Record<string, unknown> = {};
-	for (const line of yaml.split('\n')) {
-		const colonIdx = line.indexOf(':');
-		if (colonIdx === -1) continue;
-		const key = line.slice(0, colonIdx).trim();
-		const raw = line
-			.slice(colonIdx + 1)
-			.trim()
-			.replace(/^["']|["']$/g, '');
-		if (raw === 'true') data[key] = true;
-		else if (raw === 'false') data[key] = false;
-		else if (raw) data[key] = raw;
-	}
-	return { data, body };
-}
-
 export function parseFileEntry(path: string): FileEntry {
 	const ext = extname(path).toLowerCase();
 	const fileName = path.split('/').pop() ?? path;
@@ -252,15 +229,10 @@ export function parseFileEntry(path: string): FileEntry {
 	if (ext === '.md') {
 		type = 'doc';
 		const content = fileCache.get(path) ?? '';
-		try {
-			const parsed = parseFrontmatter(content);
-			const headingTitle = extractHeadingTitle(parsed.body);
-			if (headingTitle) title = headingTitle;
-			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
-			if (parsed.data.marp === true) type = 'slide';
-		} catch (err: unknown) {
-			console.warn('Failed to parse frontmatter:', err);
-		}
+		emoji = /^emoji:\s*(.+)$/m.exec(content)?.[1]?.trim();
+		if (/^marp:\s*true$/m.test(content)) type = 'slide';
+		const headingTitle = extractHeadingTitle(content);
+		if (headingTitle) title = headingTitle;
 	} else if (
 		[
 			'.ts',
