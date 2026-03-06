@@ -10,7 +10,6 @@ import {
 	parseFileEntry,
 	writeFileToRepo,
 	deleteFileFromRepo,
-	moveInCache,
 	addToCache,
 } from './filestore';
 import { getHeadSha, gitStageAndCommit, gitRemoveAndCommit, gitMoveAndCommit } from './git';
@@ -169,7 +168,10 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	const { from, to } = body;
 	if (!from || !to) return Response.json({ error: 'from and to required' }, { status: 400 });
 
-	moveInCache(from, to);
+	// Write file to new path on disk (also updates cache), delete old from disk
+	const content = getFile(from) ?? '';
+	await writeFileToRepo(to, content, config);
+	await deleteFileFromRepo(from, config);
 	removeFromIndex(from);
 	updateInIndex(to);
 
