@@ -1,4 +1,5 @@
 import { SearchRegular } from '@fluentui/react-icons';
+import { KumiIcon } from '../ui/KumiIcon';
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -39,9 +40,9 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 					<TooltipTrigger asChild>
 						<Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggle}>
 							{theme === 'dark' ? (
-								<span className="text-base leading-none">🌙</span>
+								<KumiIcon emoji="🌙" size={16} />
 							) : (
-								<span className="text-base leading-none">☀️</span>
+								<KumiIcon emoji="☀️" size={16} />
 							)}
 						</Button>
 					</TooltipTrigger>
