@@ -18,19 +18,19 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 
 ## 2. Tech Stack
 
-| Layer           | Choice                          | Notes                                                                                                           |
-| --------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Runtime         | **Bun**                         | Server + build + git                                                                                            |
-| Frontend        | **React + TypeScript**          | SPA                                                                                                             |
-| Styling         | **Tailwind CSS + shadcn/ui**    |                                                                                                                 |
-| Icons           | **@fluentui/react-icons**       | No other Fluent/MS components                                                                                   |
-| Markdown editor | **ByteMD** (`@bytemd/react`)    | Split-pane, React-native, remark/rehype pipeline                                                                |
-| Markdown viewer | **@docmd/parser**               | Isomorphic markdown-it, 43.9 kB. Renders md → HTML for read-only view. Injected into sandboxed `iframe srcdoc`. |
-| Slides          | **@marp-team/marp-core**        | Server-side render → HTML                                                                                       |
-| Code editor     | **@uiw/react-codemirror**       | With language packs                                                                                             |
-| Search          | **MiniSearch**                  | In-memory, full-text, fuzzy, fast                                                                               |
-| Real-time       | **WebSocket** (Bun native)      | Presence + live reload                                                                                          |
-| Deployment      | **Bun process + Docker volume** | Git repo mounted into container                                                                                 |
+| Layer           | Choice                                                 | Notes                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime         | **Bun**                                                | Server + build + git                                                                                                                                                                     |
+| Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                                                                      |
+| Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                                                                          |
+| Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                                                                            |
+| Markdown editor | **ByteMD** (`@bytemd/react`)                           | Split-pane, React-native, remark/rehype pipeline                                                                                                                                         |
+| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM for read-only view. Mounted inside a sandboxed same-origin `<iframe>` for CSS isolation. Built-in `rehype-harden` sanitisation. |
+| Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                                                                |
+| Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                                                                      |
+| Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                                                                        |
+| Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                                                                   |
+| Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                                                                          |
 
 ### Why ByteMD for editing?
 
@@ -215,12 +215,14 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 - Keyboard shortcut: **Ctrl+S** → save.
 - Default page mode is **view**. User clicks "Edit" to enter edit mode (subject to edit-lock and editor permission).
 
-### 7.2 View Mode — @docmd/parser
+### 7.2 View Mode — streamdown
 
 - Read-only. Default for everyone on page load.
-- `@docmd/parser` renders markdown → HTML fragment.
-- Injected into a sandboxed `<iframe srcdoc>` for CSS isolation.
-- Dark mode class injected into iframe `<body>` to match app theme.
+- `streamdown` renders markdown → React DOM via a remark/rehype pipeline.
+- Rendered inside a same-origin `<iframe sandbox="allow-same-origin allow-scripts">` whose DOM is initialised with the host app's compiled Tailwind styles injected as a `<style>` tag. Provides CSS isolation — host layout styles cannot bleed in or out.
+- XSS protection via Streamdown's built-in `rehype-harden` (strips all event handlers, dangerous attributes, and unsafe HTML before it reaches the DOM).
+- Dark mode class synced into the iframe's `<html>` element to match app theme.
+- `@tailwindcss/typography` (`prose prose-sm dark:prose-invert`) provides full typographic styles (headings, lists, code, tables, blockquotes).
 
 ### 7.3 Save Behavior
 
@@ -446,7 +448,7 @@ Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, 
 │   _sidebar   ├───────────────────────────────────────────┤
 │  navigation  │                                           │
 │   (left)     │   page content                            │
-│              │   (view:  @docmd/parser → iframe)         │
+│              │   (view:  streamdown → sandboxed iframe)          │
 │              │   (edit:  ByteMD split-pane)              │
 │              │                                           │
 │              ├───────────────────────────────────────────┤
@@ -598,7 +600,7 @@ SPEC.md
 ### Phase 2 — Editor Core ✅ Complete
 
 - [x] ByteMD editor with plugin set (GFM, highlight, math, mermaid, frontmatter)
-- [x] `@docmd/parser` read-only view (iframe, dark mode sync)
+- [x] `streamdown` read-only view (sandboxed iframe, dark mode sync, rehype-harden XSS protection)
 - [x] Save flow: Ctrl+S, auto-save debounce, save mutex (no 409 race)
 - [x] Edit-lock via WebSocket
 - [x] Dark mode (Tailwind + iframe sync)

@@ -54,32 +54,3 @@
 .dark .bytemd-preview {
 	background: hsl(var(--background));
 }
-
-/* ── Viewer / markdown content styles ── */
-.bytemd-viewer .markdown-body {
-	background: transparent;
-	color: inherit;
-}
-
-.dark .bytemd-viewer .markdown-body {
-	color: hsl(var(--foreground));
-}
-
-.dark .bytemd-viewer .markdown-body pre,
-.dark .bytemd-viewer .markdown-body code {
-	background: hsl(var(--muted));
-}
-
-.dark .bytemd-viewer .markdown-body blockquote {
-	border-left-color: hsl(var(--border));
-	color: hsl(var(--muted-foreground));
-}
-
-.dark .bytemd-viewer .markdown-body table td,
-.dark .bytemd-viewer .markdown-body table th {
-	border-color: hsl(var(--border));
-}
-
-.dark .bytemd-viewer .markdown-body hr {
-	background-color: hsl(var(--border));
-}
