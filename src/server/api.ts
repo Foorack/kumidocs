@@ -321,10 +321,17 @@ export async function apiFileDiff(url: URL, config: Config) {
 	const after = await gitBlobAt(config, commit.fullSha, path);
 	const before = parentCommit ? await gitBlobAt(config, parentCommit.fullSha, path) : '';
 
-	// Generate unified diff string for react-diff-view
-	const unifiedDiff = createTwoFilesPatch(`a/${path}`, `b/${path}`, before, after, '', '', {
+	// Generate unified diff string in git format for react-diff-view's parseDiff
+	const rawPatch = createTwoFilesPatch(`a/${path}`, `b/${path}`, before, after, '', '', {
 		context: 4,
 	});
+	// createTwoFilesPatch emits "Index: ...\n===...\n--- ...\n+++ ...\n@@ ..." which confuses
+	// parseDiff's path extractor. Re-assemble as a proper "diff --git" block instead.
+	const hunkStart = rawPatch.indexOf('\n@@');
+	const unifiedDiff =
+		hunkStart >= 0
+			? `diff --git a/${path} b/${path}\nindex 0000000..0000000 100644\n--- a/${path}\n+++ b/${path}\n${rawPatch.slice(hunkStart + 1)}`
+			: '';
 
 	return Response.json({
 		sha: commit.sha,
