@@ -299,7 +299,24 @@ export async function apiFileHistory(url: URL, config: Config) {
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
 	const commits = await gitFileLog(config, path);
-	return Response.json(commits);
+	const enriched = await Promise.all(
+		commits.map(async (c, idx) => {
+			const parentCommit = commits[idx + 1];
+			const [after, before] = await Promise.all([
+				gitBlobAt(config, c.fullSha, path),
+				parentCommit ? gitBlobAt(config, parentCommit.fullSha, path) : Promise.resolve(''),
+			]);
+			const patch = createTwoFilesPatch('', '', before, after, '', '', { context: 0 });
+			let added = 0;
+			let removed = 0;
+			for (const line of patch.split('\n')) {
+				if (line.startsWith('+') && !line.startsWith('+++')) added++;
+				else if (line.startsWith('-') && !line.startsWith('---')) removed++;
+			}
+			return { ...c, added, removed };
+		}),
+	);
+	return Response.json(enriched);
 }
 
 // GET /api/file/diff?path=<path>&sha=<sha>

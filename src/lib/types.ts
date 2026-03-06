@@ -73,9 +73,12 @@ export interface SidebarItem {
 
 export interface CommitEntry {
 	sha: string;
+	fullSha: string;
 	message: string;
 	author: string;
 	date: string; // ISO 8601
+	added?: number;
+	removed?: number;
 }
 
 export interface FileDiff {

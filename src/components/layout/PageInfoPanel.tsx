@@ -4,8 +4,22 @@ import 'react-diff-view/style/index.css';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { ChevronRightRegular, DocumentRegular } from '@fluentui/react-icons';
+import { ChevronRightRegular, DismissRegular, DocumentRegular } from '@fluentui/react-icons';
 import type { CommitEntry } from '../../lib/types';
+
+function avatarColor(name: string): string {
+	let hash = 0;
+	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+	const hue = Math.abs(hash) % 360;
+	return `hsl(${hue.toString()}, 60%, 42%)`;
+}
+
+function avatarInitials(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	if (parts.length >= 2)
+		return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase();
+	return name.slice(0, 2).toUpperCase();
+}
 
 interface DiffData {
 	sha: string;
@@ -18,9 +32,10 @@ interface DiffData {
 interface PageInfoPanelProps {
 	filePath: string;
 	title: string;
+	onClose?: () => void;
 }
 
-export function PageInfoPanel({ filePath, title }: PageInfoPanelProps) {
+export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) {
 	const [commits, setCommits] = useState<CommitEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [diffOpen, setDiffOpen] = useState(false);
@@ -63,7 +78,16 @@ export function PageInfoPanel({ filePath, title }: PageInfoPanelProps) {
 			<div className="px-3 py-2 border-b border-border shrink-0">
 				<div className="flex items-center gap-2 text-sm font-semibold text-foreground">
 					<DocumentRegular className="w-4 h-4 shrink-0" />
-					Page info
+					<span className="flex-1">Page info</span>
+					{onClose && (
+						<button
+							className="ml-auto p-0.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
+							onClick={onClose}
+							aria-label="Close"
+						>
+							<DismissRegular className="w-3.5 h-3.5" />
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -94,33 +118,58 @@ export function PageInfoPanel({ filePath, title }: PageInfoPanelProps) {
 							<p className="text-xs text-muted-foreground py-2">No commits yet.</p>
 						) : (
 							<div className="space-y-0.5">
-								{commits.map((c) => (
-									<button
-										key={c.sha}
-										className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
-										onClick={() => {
-											openDiff(c.sha);
-										}}
-									>
-										<span className="font-mono text-muted-foreground shrink-0 mt-0.5">
-											{c.sha}
-										</span>
-										<span className="flex-1 min-w-0">
-											<span className="text-foreground line-clamp-2 block">
-												{c.message}
+								{commits.map((c) => {
+									const initials = avatarInitials(c.author);
+									const color = avatarColor(c.author);
+									return (
+										<button
+											key={c.sha}
+											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
+											onClick={() => {
+												openDiff(c.sha);
+											}}
+										>
+											<span
+												className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+												style={{ backgroundColor: color }}
+												title={c.author}
+											>
+												{initials}
 											</span>
-											<span className="text-muted-foreground block">
-												{c.author} ·{' '}
-												{new Date(c.date).toLocaleDateString(undefined, {
-													month: 'short',
-													day: 'numeric',
-													year: 'numeric',
-												})}
+											<span className="flex-1 min-w-0">
+												<span className="text-foreground line-clamp-2 block">
+													{c.message}
+												</span>
+												<span className="text-muted-foreground block">
+													{new Date(c.date).toLocaleDateString(
+														undefined,
+														{
+															month: 'short',
+															day: 'numeric',
+															year: 'numeric',
+														},
+													)}
+												</span>
+												{(c.added !== undefined ||
+													c.removed !== undefined) && (
+													<span className="flex gap-1 mt-0.5">
+														{(c.added ?? 0) > 0 && (
+															<span className="text-green-600 dark:text-green-400 font-mono">
+																+{c.added}
+															</span>
+														)}
+														{(c.removed ?? 0) > 0 && (
+															<span className="text-red-600 dark:text-red-400 font-mono">
+																-{c.removed}
+															</span>
+														)}
+													</span>
+												)}
 											</span>
-										</span>
-										<ChevronRightRegular className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-									</button>
-								))}
+											<ChevronRightRegular className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+										</button>
+									);
+								})}
 							</div>
 						)}
 					</div>

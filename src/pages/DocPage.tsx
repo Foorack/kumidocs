@@ -631,7 +631,17 @@ export default function DocPage() {
 						</ScrollArea>
 					)}
 				</div>
-				{infoOpen && <PageInfoPanel key={filePath} filePath={filePath} title={title} />}
+				{infoOpen && (
+					<PageInfoPanel
+						key={filePath}
+						filePath={filePath}
+						title={title}
+						onClose={() => {
+							setInfoOpen(false);
+							localStorage.removeItem('kumidocs:info-open');
+						}}
+					/>
+				)}
 			</div>
 
 			{/* Footer */}
