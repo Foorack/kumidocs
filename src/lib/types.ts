@@ -35,6 +35,7 @@ export interface SearchResult {
 export interface PresenceUser {
 	id: string;
 	name: string;
+	gravatarHash: string;
 }
 
 // WebSocket message types

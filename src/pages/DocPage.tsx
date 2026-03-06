@@ -540,6 +540,7 @@ export default function DocPage() {
 								<TooltipTrigger asChild>
 									<UserAvatar
 										name={v.name}
+										gravatarHash={v.gravatarHash}
 										size="sm"
 										className="border border-background ring-1 ring-border"
 									/>

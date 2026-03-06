@@ -45,6 +45,7 @@ function presenceUpdate(pageId: string): WsServerMessage {
 		const u: PresenceUser = {
 			id: ws.data.user.id,
 			name: ws.data.user.displayName,
+			gravatarHash: ws.data.user.gravatarHash ?? '',
 		};
 		viewers.push(u);
 		if (sid === editorSid) editor = u;

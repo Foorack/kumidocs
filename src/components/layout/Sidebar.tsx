@@ -241,6 +241,7 @@ function PageNodeRow({
 										<TooltipTrigger asChild>
 											<UserAvatar
 												name={u.name}
+												gravatarHash={u.gravatarHash}
 												size="xs"
 												className="ring-1 ring-sidebar cursor-default"
 											/>
