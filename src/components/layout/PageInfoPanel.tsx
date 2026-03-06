@@ -166,7 +166,23 @@ export function PageInfoPanel({ filePath, title }: PageInfoPanelProps) {
 							{!diffLoading &&
 								diffData &&
 								(() => {
-									const files = parseDiff(diffData.unifiedDiff);
+									if (!diffData.unifiedDiff.trim()) {
+										return (
+											<p className="text-sm text-muted-foreground py-4 text-center">
+												No changes in this commit.
+											</p>
+										);
+									}
+									let files;
+									try {
+										files = parseDiff(diffData.unifiedDiff);
+									} catch {
+										return (
+											<p className="text-sm text-muted-foreground py-4 text-center">
+												No changes in this commit.
+											</p>
+										);
+									}
 									if (files.length === 0) {
 										return (
 											<p className="text-sm text-muted-foreground py-4 text-center">
