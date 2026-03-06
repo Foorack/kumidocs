@@ -488,50 +488,13 @@ export default function DocPage() {
 
 			{/* Page header */}
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-				<KumiIcon emoji={emoji ?? '📄'} size={24} />
-				<h1 className="font-semibold text-base flex-1 truncate">{title}</h1>
-
-				{/* Viewers */}
-				<div className="flex -space-x-1">
-					{viewers.slice(0, 5).map((v) => (
-						<Tooltip key={v.id}>
-							<TooltipTrigger asChild>
-								<Avatar className="h-6 w-6 border border-background ring-1 ring-border">
-									<AvatarFallback
-										className="text-[9px] text-white"
-										style={{ backgroundColor: avatarColor(v.name) }}
-									>
-										{v.initials}
-									</AvatarFallback>
-								</Avatar>
-							</TooltipTrigger>
-							<TooltipContent>{v.name}</TooltipContent>
-						</Tooltip>
-					))}
+				{/* Left: icon + title */}
+				<div className="flex items-center gap-2 flex-1 min-w-0">
+					<KumiIcon emoji={emoji ?? '📄'} size={24} />
+					<h1 className="font-semibold text-base truncate">{title}</h1>
 				</div>
 
-				{/* Save status (in edit mode) */}
-				{editMode && (
-					<Badge
-						variant={
-							saveStatus === 'saved'
-								? 'secondary'
-								: saveStatus === 'saving'
-									? 'outline'
-									: saveStatus === 'error'
-										? 'destructive'
-										: 'outline'
-						}
-						className="text-xs h-5 shrink-0"
-					>
-						{saveStatus === 'saved' && 'Saved'}
-						{saveStatus === 'saving' && 'Saving…'}
-						{saveStatus === 'unsaved' && 'Unsaved'}
-						{saveStatus === 'error' && 'Error'}
-					</Badge>
-				)}
-
-				{/* Read / Edit segmented switch */}
+				{/* Center: Read/Edit segmented switch */}
 				{user?.canEdit && (
 					<div
 						className="flex items-center rounded-md border border-border bg-muted h-7 p-0.5 gap-0.5 shrink-0"
@@ -565,58 +528,97 @@ export default function DocPage() {
 					</div>
 				)}
 
-				{/* Dedicated info button */}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							size="icon"
-							variant={infoOpen ? 'secondary' : 'ghost'}
-							className="h-7 w-7"
-							onClick={() => {
-								setInfoOpen((v) => {
-									const next = !v;
-									if (next) localStorage.setItem('kumidocs:info-open', 'true');
-									else localStorage.removeItem('kumidocs:info-open');
-									return next;
-								});
-							}}
-						>
-							<InfoRegular className="w-4 h-4" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Page info</TooltipContent>
-				</Tooltip>
+				{/* Right: viewers + save status + info + dropdown */}
+				<div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+					{/* Viewers */}
+					<div className="flex -space-x-1">
+						{viewers.slice(0, 5).map((v) => (
+							<Tooltip key={v.id}>
+								<TooltipTrigger asChild>
+									<Avatar className="h-6 w-6 border border-background ring-1 ring-border">
+										<AvatarFallback
+											className="text-[9px] text-white"
+											style={{ backgroundColor: avatarColor(v.name) }}
+										>
+											{v.initials}
+										</AvatarFallback>
+									</Avatar>
+								</TooltipTrigger>
+								<TooltipContent>{v.name}</TooltipContent>
+							</Tooltip>
+						))}
+					</div>
 
-				{/* Advanced / dangerous actions only */}
-				{user?.canEdit && (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button size="icon" variant="ghost" className="h-7 w-7">
-								<MoreHorizontalRegular className="w-4 h-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={() => {
-									setNewName(filePath);
-									setRenameOpen(true);
-								}}
-							>
-								<RenameRegular className="mr-2 w-4 h-4" />
-								Rename / Move
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className="text-destructive focus:text-destructive"
-								onClick={() => {
-									setDeleteOpen(true);
-								}}
-							>
-								<DeleteRegular className="mr-2 w-4 h-4" />
-								Delete page
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				)}
+					{/* Save status (in edit mode) */}
+					{editMode && (
+						<Badge
+							variant={
+								saveStatus === 'saved'
+									? 'secondary'
+									: saveStatus === 'saving'
+										? 'outline'
+										: saveStatus === 'error'
+											? 'destructive'
+											: 'outline'
+							}
+							className="text-xs h-5 shrink-0"
+						>
+							{saveStatus === 'saved' && 'Saved'}
+							{saveStatus === 'saving' && 'Saving…'}
+							{saveStatus === 'unsaved' && 'Unsaved'}
+							{saveStatus === 'error' && 'Error'}
+						</Badge>
+					)}
+
+					{/* Dedicated info button */}
+					<Button
+						size="sm"
+						variant={infoOpen ? 'secondary' : 'ghost'}
+						className="h-7 gap-1 text-xs px-2"
+						onClick={() => {
+							setInfoOpen((v) => {
+								const next = !v;
+								if (next) localStorage.setItem('kumidocs:info-open', 'true');
+								else localStorage.removeItem('kumidocs:info-open');
+								return next;
+							});
+						}}
+					>
+						<InfoRegular className="w-4 h-4" />
+						Info
+					</Button>
+
+					{/* Advanced / dangerous actions only */}
+					{user?.canEdit && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button size="icon" variant="ghost" className="h-7 w-7">
+									<MoreHorizontalRegular className="w-4 h-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => {
+										setNewName(filePath);
+										setRenameOpen(true);
+									}}
+								>
+									<RenameRegular className="mr-2 w-4 h-4" />
+									Rename / Move
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className="text-destructive focus:text-destructive"
+									onClick={() => {
+										setDeleteOpen(true);
+									}}
+								>
+									<DeleteRegular className="mr-2 w-4 h-4" />
+									Delete page
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
+				</div>
 			</div>
 
 			{/* Breadcrumb */}

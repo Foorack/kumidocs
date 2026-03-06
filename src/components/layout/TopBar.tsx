@@ -1,4 +1,4 @@
-import { WeatherSunnyLowColor, WeatherMoonRegular, SearchRegular } from '@fluentui/react-icons';
+import { WeatherSunnyLowColor, SearchRegular } from '@fluentui/react-icons';
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -41,7 +41,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 							{theme === 'dark' ? (
 								<WeatherSunnyLowColor className="w-4 h-4" />
 							) : (
-								<WeatherMoonRegular className="w-4 h-4" />
+								<span className="text-base leading-none">🌙</span>
 							)}
 						</Button>
 					</TooltipTrigger>
