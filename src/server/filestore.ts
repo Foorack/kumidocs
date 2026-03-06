@@ -228,7 +228,10 @@ function parseFrontmatter(content: string): { data: Record<string, unknown>; bod
 		const colonIdx = line.indexOf(':');
 		if (colonIdx === -1) continue;
 		const key = line.slice(0, colonIdx).trim();
-		const raw = line.slice(colonIdx + 1).trim().replace(/^["']|["']$/g, '');
+		const raw = line
+			.slice(colonIdx + 1)
+			.trim()
+			.replace(/^["']|["']$/g, '');
 		if (raw === 'true') data[key] = true;
 		else if (raw === 'false') data[key] = false;
 		else if (raw) data[key] = raw;

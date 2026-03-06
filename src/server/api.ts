@@ -7,7 +7,6 @@ import type { User } from '../lib/types';
 import {
 	getFile,
 	buildFileTree,
-	parseFileEntry,
 	writeFileToRepo,
 	deleteFileFromRepo,
 	addToCache,
@@ -41,9 +40,8 @@ export async function apiFileGet(url: URL, config: Config) {
 	const content = getFile(path);
 	if (content === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
 
-	const entry = parseFileEntry(path);
 	const sha = await getHeadSha(config);
-	return Response.json({ path, content, entry, sha });
+	return Response.json({ path, content, sha });
 }
 
 // PUT /api/file?path=<path>   body: { content: string }
