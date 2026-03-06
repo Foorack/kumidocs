@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
-import matter from 'gray-matter';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
 import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
@@ -48,6 +47,23 @@ function pathToTitle(path: string): string {
 interface DocMeta {
 	emoji?: string;
 	marp?: boolean;
+}
+
+/** Parse only the whitelisted frontmatter fields from a raw markdown string. */
+function parseFrontmatter(raw: string): { data: DocMeta; content: string } {
+	const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
+	if (!match) return { data: {}, content: raw };
+	const block = match[1] ?? '';
+	const content = raw.slice(match[0].length);
+	const data: DocMeta = {};
+	for (const line of block.split('\n')) {
+		const kv = /^(\w+):\s*(.*)$/.exec(line.trim());
+		if (!kv) continue;
+		const [, key, val = ''] = kv;
+		if (key === 'emoji') data.emoji = val.trim();
+		if (key === 'marp' && val.trim() === 'true') data.marp = true;
+	}
+	return { data, content };
 }
 
 /** Reconstruct a frontmatter block from only the whitelisted fields. */
@@ -150,7 +166,7 @@ export default function DocPage() {
 				content: string;
 				sha: string;
 			};
-			const parsed = matter(data.content);
+			const parsed = parseFrontmatter(data.content);
 			setContent(parsed.content);
 			setSavedContent(parsed.content);
 			isDirtyRef.current = false;

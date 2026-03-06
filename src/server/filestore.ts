@@ -3,6 +3,7 @@ import { join, dirname, extname, relative } from 'path';
 import matter from 'gray-matter';
 import type { Config } from './config';
 import type { FileEntry, TreeNode } from '../lib/types';
+import { CODE_TYPES, IMAGE_TYPES } from '@/lib/filetypes';
 
 const fileCache = new Map<string, string>(); // relPath -> content
 
@@ -16,64 +17,6 @@ const IGNORED_NAMES = new Set([
 ]);
 
 const IGNORED_EXT = new Set(['.lock', '.log', '.map']);
-
-const TEXT_EXT = new Set([
-	'.md',
-	'.txt',
-	'.ts',
-	'.tsx',
-	'.js',
-	'.jsx',
-	'.mjs',
-	'.cjs',
-	'.py',
-	'.go',
-	'.rs',
-	'.java',
-	'.c',
-	'.cpp',
-	'.h',
-	'.hpp',
-	'.sh',
-	'.bash',
-	'.zsh',
-	'.fish',
-	'.ps1',
-	'.yaml',
-	'.yml',
-	'.toml',
-	'.json',
-	'.jsonc',
-	'.html',
-	'.htm',
-	'.css',
-	'.scss',
-	'.sass',
-	'.less',
-	'.sql',
-	'.graphql',
-	'.gql',
-	'.xml',
-	'.svg',
-	'.env',
-	'.dockerfile',
-	'.gitignore',
-	'.gitattributes',
-	'.editorconfig',
-	'.prettierrc',
-	'.eslintrc',
-	'.tf',
-	'.hcl',
-	'.Makefile',
-	'.rb',
-	'.php',
-	'.lua',
-	'.vim',
-	'.el',
-	'.r',
-	'.R',
-	'.jl',
-]);
 
 export async function loadFilestore(config: Config): Promise<void> {
 	fileCache.clear();
@@ -101,7 +44,7 @@ async function scanDir(basePath: string, dirPath: string): Promise<void> {
 				const ext = extname(entry.name).toLowerCase();
 				if (IGNORED_EXT.has(ext)) return;
 				// Only read text files; for others store empty string as marker
-				if (TEXT_EXT.has(ext) || ext === '') {
+				if (ext === '.md' || CODE_TYPES.has(ext) || ext === '') {
 					try {
 						const content = await readFile(fullPath, 'utf-8');
 						fileCache.set(relPath, content);
@@ -125,8 +68,6 @@ export function getAllPaths(): string[] {
 	return [...fileCache.keys()].sort();
 }
 
-const BINARY_EXT = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.pdf']);
-
 export async function writeFileToRepo(
 	path: string,
 	content: string,
@@ -134,7 +75,7 @@ export async function writeFileToRepo(
 ): Promise<void> {
 	const fullPath = join(config.repoPath, path);
 	await mkdir(dirname(fullPath), { recursive: true });
-	const isBinary = BINARY_EXT.has(extname(path).toLowerCase());
+	const isBinary = IMAGE_TYPES.has(extname(path).toLowerCase());
 	const normalised = isBinary || content.endsWith('\n') ? content : `${content}\n`;
 	await writeFile(fullPath, normalised, 'utf-8');
 	fileCache.set(path, content);
@@ -243,33 +184,9 @@ export function parseFileEntry(path: string): FileEntry {
 		} catch (err: unknown) {
 			console.warn('Failed to parse frontmatter:', err);
 		}
-	} else if (
-		[
-			'.ts',
-			'.tsx',
-			'.js',
-			'.jsx',
-			'.mjs',
-			'.py',
-			'.go',
-			'.rs',
-			'.java',
-			'.c',
-			'.cpp',
-			'.sh',
-			'.yaml',
-			'.yml',
-			'.toml',
-			'.json',
-			'.html',
-			'.css',
-			'.sql',
-			'.rb',
-			'.php',
-		].includes(ext)
-	) {
+	} else if (CODE_TYPES.has(ext)) {
 		type = 'code';
-	} else if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+	} else if (IMAGE_TYPES.has(ext)) {
 		type = 'image';
 	}
 

@@ -21,6 +21,7 @@ import {
 } from './git';
 import { searchDocs, updateInIndex, removeFromIndex } from './search';
 import { broadcastPageChanged, broadcastPageDeleted, broadcastPageCreated } from './websocket';
+import { IMAGE_TYPES } from '@/lib/filetypes';
 
 // GET /api/me
 export function apiMe(user: User, config: Config) {
@@ -204,7 +205,6 @@ export async function apiUploadImage(req: Request, user: User, config: Config): 
 	if (!user.canEdit) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
 	const MAX = 25 * 1024 * 1024;
-	const ALLOWED = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
 
 	let formData: FormData;
 	try {
@@ -219,7 +219,7 @@ export async function apiUploadImage(req: Request, user: User, config: Config): 
 		return Response.json({ error: 'File too large (max 25 MB)' }, { status: 413 });
 
 	const ext = extname(file.name).toLowerCase();
-	if (!ALLOWED.has(ext))
+	if (!IMAGE_TYPES.has(ext))
 		return Response.json({ error: 'File type not allowed' }, { status: 415 });
 
 	const bytes = await file.arrayBuffer();
