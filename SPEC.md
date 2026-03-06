@@ -423,6 +423,18 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ## 13. UI Layout & Design
 
+### 13.0 Icon & Emoji Rendering Rule
+
+> **NEVER render emoji as raw text or `<span>` elements. ALWAYS use `<KumiIcon emoji="..." size={N} />`.**
+
+`KumiIcon` (`src/components/ui/KumiIcon.tsx`) is the single source of truth for all emoji and icon rendering:
+
+- **`emoji` prop** → renders via `@lobehub/fluent-emoji` (crisp 3D Fluent style at any size)
+- **`fileType` prop** → maps to the correct Fluent Color system icon
+- **`icon` prop** → renders a raw Fluent React Icon component
+
+Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, inconsistent across platforms. All emojis, including UI chrome (theme toggle, status indicators, etc.), must go through `KumiIcon`.
+
 ### 13.1 Overall Layout (Docmost-inspired)
 
 ```
