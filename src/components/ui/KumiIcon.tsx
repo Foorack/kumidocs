@@ -1,13 +1,22 @@
 /**
  * KumiIcon — unified icon/emoji renderer.
  *
- * - Pass `emoji` to render a Fluent Emoji (modern 3D style).
- * - Pass `icon` to render a Fluent React Icon component directly.
- * - Certain "generic" emojis are silently upgraded to the equivalent
- *   high-quality Fluent Color icon so they look sharp at any size.
+ * Two distinct icon libraries serve different purposes in KumiDocs:
  *
- * The `size` prop controls pixel dimensions for both paths, solving the
- * issue where Color SVG icons render smaller than their CSS class implies.
+ *   @fluentui/react-icons  — SYSTEM ICONS
+ *     UI chrome: file-type indicators, buttons, toolbar actions, etc.
+ *     Use the `icon` prop to render one of these directly.
+ *
+ *   @lobehub/fluent-emoji  — SELECTABLE PAGE ICONS
+ *     User-chosen emoji on pages/documents (modern 3D Fluent style).
+ *     Use the `emoji` prop to render a character from this set.
+ *
+ * Certain generic fallback emojis (📄 📝 #️⃣) are automatically promoted
+ * to the equivalent Fluent Color system icon — they look identical to the
+ * user but render crisply at any size via SVG rather than text/bitmap.
+ *
+ * The `size` prop controls pixel dimensions for both paths, working around
+ * the issue where Fluent Color SVGs ignore Tailwind `w-N h-N` classes.
  */
 import type { FC, CSSProperties } from 'react';
 import { FluentEmoji } from '@lobehub/fluent-emoji';
