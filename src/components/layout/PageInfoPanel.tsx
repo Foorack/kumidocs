@@ -107,20 +107,20 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 						) : (
 							<div className="space-y-0.5">
 								{commits.map((c) => {
-								return (
-									<button
-										key={c.sha}
-										className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
-										onClick={() => {
-											openDiff(c.sha);
-										}}
-									>
-										<UserAvatar
-											name={emailToDisplayName(c.author)}
-											gravatarHash={c.gravatarHash}
-											size="xs"
-											className="shrink-0 mt-0.5"
-										/>
+									return (
+										<button
+											key={c.sha}
+											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
+											onClick={() => {
+												openDiff(c.sha);
+											}}
+										>
+											<UserAvatar
+												name={emailToDisplayName(c.author)}
+												gravatarHash={c.gravatarHash}
+												size="xs"
+												className="shrink-0 mt-0.5"
+											/>
 											<span className="flex-1 min-w-0">
 												<span className="text-foreground line-clamp-2 block">
 													{c.message}

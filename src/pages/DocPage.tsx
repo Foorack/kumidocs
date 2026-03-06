@@ -261,7 +261,8 @@ export default function DocPage() {
 	const handleChange = useCallback(
 		(val: string) => {
 			setContent(val);
-			setSaveStatus('unsaved');				isDirtyRef.current = true; // mark dirty immediately			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+			setSaveStatus('unsaved');
+			isDirtyRef.current = true; // mark dirty immediately			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
 			autoSaveTimer.current = setTimeout(() => {
 				doSave(val).catch((err: unknown) => {
 					console.error('Auto-save failed:', err);
@@ -539,7 +540,6 @@ export default function DocPage() {
 								<TooltipTrigger asChild>
 									<UserAvatar
 										name={v.name}
-
 										size="sm"
 										className="border border-background ring-1 ring-border"
 									/>
@@ -558,7 +558,7 @@ export default function DocPage() {
 									: saveStatus === 'error'
 										? 'destructive'
 										: 'outline'
-								}
+							}
 							className={`text-xs h-5 shrink-0${
 								saveStatus === 'saved'
 									? ' border-green-600 text-green-600 dark:border-green-500 dark:text-green-500'
