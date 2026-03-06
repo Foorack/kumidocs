@@ -114,7 +114,11 @@ export default function DocPage() {
 	// Mutex: chain saves so they never run concurrently (prevents double-commit 409)
 	const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
 	const isDirty = content !== savedContent;
-	// Keep refs to latest content/savedContent so exitEdit can read them without stale closures
+	// Explicit dirty flag — set true on any content change, false when a save succeeds.
+	// More reliable than comparing content strings (which can have whitespace/newline
+	// differences introduced by matter.stringify round-tripping).
+	const isDirtyRef = useRef(false);
+	// Keep a ref to latest content so exitEdit/auto-save always read the latest value
 	const contentRef = useRef(content);
 	contentRef.current = content;
 	const savedContentRef = useRef(savedContent);
@@ -141,6 +145,7 @@ export default function DocPage() {
 			setOriginalFrontmatter(data.frontmatter);
 			setContent(data.body);
 			setSavedContent(data.body);
+			isDirtyRef.current = false;
 			setMeta(data.frontmatter);
 			setLastSha(data.sha);
 			setSaveStatus('saved');
@@ -226,7 +231,8 @@ export default function DocPage() {
 					if (res.ok) {
 						const data = (await res.json()) as { sha: string };
 						setSavedContent(currentContent);
-						savedContentRef.current = currentContent; // update ref immediately, don't wait for re-render
+						savedContentRef.current = currentContent;
+						isDirtyRef.current = false; // mark clean immediately
 						setSaveStatus('saved');
 						setLastSha(data.sha);
 						reloadTree();
@@ -255,8 +261,7 @@ export default function DocPage() {
 	const handleChange = useCallback(
 		(val: string) => {
 			setContent(val);
-			setSaveStatus('unsaved');
-			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+			setSaveStatus('unsaved');				isDirtyRef.current = true; // mark dirty immediately			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
 			autoSaveTimer.current = setTimeout(() => {
 				doSave(val).catch((err: unknown) => {
 					console.error('Auto-save failed:', err);
@@ -285,14 +290,12 @@ export default function DocPage() {
 	}, [user, editLocked, filePath]);
 
 	const exitEdit = useCallback(async () => {
-		// Always drain any in-flight save first (e.g. auto-save that fired just before
-		// Read was clicked). After this resolves, savedContentRef.current is up-to-date
-		// because doSave updates it imperatively on success.
+		// Drain any in-flight save first, then check the explicit dirty flag.
+		// isDirtyRef is set true on every keystroke and false immediately when a save
+		// succeeds — so it's always accurate regardless of React render scheduling.
 		await savePromiseRef.current;
-		// Only save if there is genuinely new content since the last completed save.
-		const latestContent = contentRef.current;
-		if (latestContent !== savedContentRef.current) {
-			await doSave(latestContent);
+		if (isDirtyRef.current) {
+			await doSave(contentRef.current);
 		}
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
