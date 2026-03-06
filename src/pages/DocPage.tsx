@@ -2,12 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import matter from 'gray-matter';
-import {
-	DeleteRegular,
-	MoreHorizontalRegular,
-	SaveRegular,
-	InfoRegular,
-} from '@fluentui/react-icons';
+import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
 import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -17,23 +12,17 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
+import { usePageActions } from '../hooks/usePageActions';
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
-	DialogDescription,
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '../components/ui/select';
 import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
@@ -93,12 +82,10 @@ export default function DocPage() {
 	const [loading, setLoading] = useState(true);
 	const [notFound, setNotFound] = useState(false);
 
+	// Shared move/delete actions (dialogs rendered at bottom of JSX)
+	const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
+
 	// Modals
-	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [renameOpen, setRenameOpen] = useState(false);
-	const [renameParent, setRenameParent] = useState('');
-	const [renameSlug, setRenameSlug] = useState('');
-	const [renameDirs, setRenameDirs] = useState<string[]>([]);
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
@@ -321,72 +308,6 @@ export default function DocPage() {
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
 	}, [doSave, filePath]);
-
-	// Delete
-	const handleDelete = useCallback(async () => {
-		const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
-			method: 'DELETE',
-		});
-		if (res.ok) {
-			toast.success('Page deleted');
-			reloadTree();
-			navigate('/p/README.md')?.catch((err: unknown) => {
-				console.error('Navigation failed after delete:', err);
-			});
-		} else {
-			toast.error('Delete failed');
-		}
-		setDeleteOpen(false);
-	}, [filePath, navigate, reloadTree]);
-
-	// Rename
-	const openRenameDialog = useCallback(async () => {
-		const parts = filePath.replace(/\.md$/, '').split('/');
-		const slug = parts.pop() ?? '';
-		const parent = parts.join('/');
-		setRenameSlug(slug);
-		setRenameParent(parent);
-		try {
-			const res = await fetch('/api/tree');
-			const entries = (await res.json()) as { path: string; type: string }[];
-			const dirs = new Set<string>();
-			entries.forEach(({ path, type }) => {
-				if (type === 'dir') {
-					dirs.add(path);
-				} else {
-					const segs = path.split('/');
-					for (let i = 1; i < segs.length; i++) {
-						dirs.add(segs.slice(0, i).join('/'));
-					}
-				}
-			});
-			setRenameDirs(Array.from(dirs).sort());
-		} catch {
-			setRenameDirs([]);
-		}
-		setRenameOpen(true);
-	}, [filePath]);
-
-	const handleRename = useCallback(async () => {
-		const slug = renameSlug.trim().replace(/\.md$/, '');
-		if (!slug) return;
-		const toPath = renameParent ? `${renameParent}/${slug}.md` : `${slug}.md`;
-		const res = await fetch('/api/file/rename', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ from: filePath, to: toPath }),
-		});
-		if (res.ok) {
-			toast.success('Page renamed');
-			reloadTree();
-			navigate(`/p/${toPath}`)?.catch((err: unknown) => {
-				console.error('Navigation failed after rename:', err);
-			});
-		} else {
-			toast.error('Rename failed');
-		}
-		setRenameOpen(false);
-	}, [filePath, renameParent, renameSlug, navigate, reloadTree]);
 
 	// Create new page
 	const handleNewPage = useCallback(async () => {
@@ -647,21 +568,20 @@ export default function DocPage() {
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
 									onClick={() => {
-										openRenameDialog().catch((err: unknown) => {
-											console.error('Failed to open rename dialog:', err);
+										openMove(filePath).catch((err: unknown) => {
+											console.error('Failed to open move dialog:', err);
 										});
 									}}
 								>
-									Move / Rename page
+									Move
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									className="text-destructive focus:text-destructive"
 									onClick={() => {
-										setDeleteOpen(true);
+										openDelete(filePath, title);
 									}}
 								>
-									<DeleteRegular className="mr-2 w-4 h-4" />
-									Delete page
+									Delete
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
@@ -714,99 +634,8 @@ export default function DocPage() {
 				</div>
 			)}
 
-			{/* Delete confirmation */}
-			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Delete "{title}"?</DialogTitle>
-						<DialogDescription>
-							This will permanently delete{' '}
-							<code className="font-mono">{filePath}</code> and commit the change to
-							git. This cannot be undone from the UI.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								setDeleteOpen(false);
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={() => {
-								handleDelete().catch((err: unknown) => {
-									console.error('Failed to delete page:', err);
-								});
-							}}
-						>
-							Delete
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			{/* Rename dialog */}
-			<Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Move / Rename page</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div className="space-y-1.5">
-							<Label>Parent directory</Label>
-							<Select value={renameParent} onValueChange={setRenameParent}>
-								<SelectTrigger>
-									<SelectValue placeholder="(root)" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="">(root)</SelectItem>
-									{renameDirs.map((dir) => (
-										<SelectItem key={dir} value={dir}>
-											{dir}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-						<div className="space-y-1.5">
-							<Label>Filename</Label>
-							<Input
-								value={renameSlug}
-								onChange={(e) => {
-									setRenameSlug(e.target.value);
-								}}
-								placeholder="page-name"
-							/>
-							<p className="text-xs text-muted-foreground">
-								→{' '}
-								{renameParent ? `${renameParent}/` : ''}{renameSlug || 'page-name'}.md
-							</p>
-						</div>
-					</div>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								setRenameOpen(false);
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={() => {
-								handleRename().catch((err: unknown) => {
-									console.error('Failed to rename page:', err);
-								});
-							}}
-						>
-							Rename
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			{/* Move + Delete dialogs (shared hook) */}
+			{pageActionDialogs}
 		</div>
 	);
 }

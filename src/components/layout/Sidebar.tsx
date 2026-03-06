@@ -6,11 +6,9 @@ import {
 	ChevronDownRegular,
 	MoreHorizontalRegular,
 	MoreHorizontalFilled,
-	RenameRegular,
 	CopyRegular,
 	OpenRegular,
 	LinkRegular,
-	ArrowMoveRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import { UserAvatar } from '../ui/avatar';
@@ -31,17 +29,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { toast } from 'sonner';
+import { usePageActions } from '../../hooks/usePageActions';
 import type { TreeNode, FileEntry, PresenceUser } from '../../lib/types';
 
 interface SidebarProps {
@@ -49,13 +38,7 @@ interface SidebarProps {
 	onNewPage: () => void;
 	onNewSubPage: (parentDir: string) => void;
 	presenceByPage: Map<string, PresenceUser[]>;
-}
-
-interface MoveDialogState {
-	open: boolean;
-	from: string;
-	to: string;
-	title: string;
+	reloadTree: () => void;
 }
 
 /**
@@ -134,12 +117,14 @@ function PageNodeRow({
 	presenceByPage,
 	onNewSubPage,
 	onMove,
+	onDelete,
 }: {
 	node: PageNode;
 	depth: number;
 	presenceByPage: Map<string, PresenceUser[]>;
 	onNewSubPage: (parentDir: string) => void;
-	onMove: (path: string, title: string) => void;
+	onMove: (path: string) => void;
+	onDelete: (path: string, title: string) => void;
 }) {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -334,15 +319,18 @@ function PageNodeRow({
 										<DropdownMenuSeparator />
 										<DropdownMenuItem
 											onClick={() => {
-												onMove(node.path, node.displayTitle);
+												onMove(node.path);
 											}}
 										>
-											<RenameRegular className="mr-2 w-4 h-4" />
-											Rename / Move
+											Move
 										</DropdownMenuItem>
-										<DropdownMenuItem disabled>
-											<ArrowMoveRegular className="mr-2 w-4 h-4" />
-											Rearrange
+										<DropdownMenuItem
+											className="text-destructive focus:text-destructive"
+											onClick={() => {
+												onDelete(node.path, node.displayTitle);
+											}}
+										>
+											Delete
 										</DropdownMenuItem>
 									</>
 								)}
@@ -406,15 +394,18 @@ function PageNodeRow({
 							<ContextMenuSeparator />
 							<ContextMenuItem
 								onClick={() => {
-									onMove(node.path, node.displayTitle);
+									onMove(node.path);
 								}}
 							>
-								<RenameRegular className="mr-2 w-4 h-4" />
-								Rename / Move
+								Move
 							</ContextMenuItem>
-							<ContextMenuItem disabled>
-								<ArrowMoveRegular className="mr-2 w-4 h-4" />
-								Rearrange
+							<ContextMenuItem
+								className="text-destructive focus:text-destructive"
+								onClick={() => {
+									onDelete(node.path, node.displayTitle);
+								}}
+							>
+								Delete
 							</ContextMenuItem>
 						</>
 					)}
@@ -432,6 +423,7 @@ function PageNodeRow({
 							presenceByPage={presenceByPage}
 							onNewSubPage={onNewSubPage}
 							onMove={onMove}
+							onDelete={onDelete}
 						/>
 					))}
 				</div>
@@ -440,51 +432,20 @@ function PageNodeRow({
 	);
 }
 
-export function Sidebar({ tree, onNewPage, onNewSubPage, presenceByPage }: SidebarProps) {
+export function Sidebar({
+	tree,
+	onNewPage,
+	onNewSubPage,
+	presenceByPage,
+	reloadTree,
+}: SidebarProps) {
 	const pages = buildPageTree(tree);
-	const navigate = useNavigate();
-	const [moveDialog, setMoveDialog] = useState<MoveDialogState>({
-		open: false,
-		from: '',
-		to: '',
-		title: '',
-	});
-	const [moving, setMoving] = useState(false);
+	const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
-	const openMove = (path: string, title: string) => {
-		setMoveDialog({ open: true, from: path, to: path, title });
-	};
-
-	const handleMove = async () => {
-		const rawPath = moveDialog.to.trim();
-		const rawTitle = moveDialog.title.trim();
-		if (!rawPath) {
-			setMoveDialog((d) => ({ ...d, open: false }));
-			return;
-		}
-		const toPath = rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
-		setMoving(true);
-		try {
-			const res = await fetch('/api/file/rename', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					from: moveDialog.from,
-					to: toPath,
-					title: rawTitle || undefined,
-				}),
-			});
-			if (res.ok) {
-				toast.success('Page updated');
-				void navigate(`/p/${toPath}`);
-			} else {
-				toast.error('Update failed');
-			}
-		} catch {
-			toast.error('Update failed');
-		}
-		setMoving(false);
-		setMoveDialog((d) => ({ ...d, open: false }));
+	const handleOpenMove = (path: string) => {
+		openMove(path).catch((err: unknown) => {
+			console.error('Failed to open move dialog:', err);
+		});
 	};
 
 	return (
@@ -507,7 +468,8 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, presenceByPage }: Sideb
 										depth={0}
 										presenceByPage={presenceByPage}
 										onNewSubPage={onNewSubPage}
-										onMove={openMove}
+										onMove={handleOpenMove}
+										onDelete={openDelete}
 									/>
 								))
 							)}
@@ -534,72 +496,7 @@ export function Sidebar({ tree, onNewPage, onNewSubPage, presenceByPage }: Sideb
 				</div>
 			</aside>
 
-			<Dialog
-				open={moveDialog.open}
-				onOpenChange={(v) => {
-					if (!v) setMoveDialog((d) => ({ ...d, open: false }));
-				}}
-			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Move / Rename page</DialogTitle>
-						<DialogDescription>
-							Change the display title and/or the file path of this page.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="grid gap-3">
-						<div className="grid gap-1.5">
-							<Label htmlFor="move-title">Title</Label>
-							<Input
-								id="move-title"
-								value={moveDialog.title}
-								onChange={(e) => {
-									setMoveDialog((d) => ({ ...d, title: e.target.value }));
-								}}
-								placeholder="Page title"
-							/>
-						</div>
-						<div className="grid gap-1.5">
-							<Label htmlFor="move-path">Path</Label>
-							<Input
-								id="move-path"
-								value={moveDialog.to}
-								onChange={(e) => {
-									setMoveDialog((d) => ({ ...d, to: e.target.value }));
-								}}
-								onKeyDown={(e) => {
-									if (e.key === 'Enter' && !moving) {
-										handleMove().catch((err: unknown) => {
-											console.error('Move failed:', err);
-										});
-									}
-								}}
-								placeholder="docs/new-name.md"
-							/>
-						</div>
-					</div>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => {
-								setMoveDialog((d) => ({ ...d, open: false }));
-							}}
-						>
-							Cancel
-						</Button>
-						<Button
-							disabled={moving}
-							onClick={() => {
-								handleMove().catch((err: unknown) => {
-									console.error('Move failed:', err);
-								});
-							}}
-						>
-							{moving ? 'Saving…' : 'Save'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			{pageActionDialogs}
 		</>
 	);
 }

@@ -109,6 +109,7 @@ export function AppShell() {
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar
 					tree={tree}
+					reloadTree={loadTree}
 					onNewPage={() => {
 						setNewPageParentDir(undefined);
 						setNewPageOpen(true);

@@ -44,11 +44,11 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 			d.setHours(0, 0, 0, 0);
 			const key = d.toISOString().slice(0, 10);
 			if (!groups.has(key)) {
-                const label = d.toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                });
+				const label = d.toLocaleDateString(undefined, {
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric',
+				});
 				groups.set(key, { label, commits: [] });
 			}
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- we just ensured this

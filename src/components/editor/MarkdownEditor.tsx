@@ -1,20 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Block, parseMarkdownIntoBlocks } from 'streamdown';import 'streamdown/styles.css';
+import { Block, parseMarkdownIntoBlocks } from 'streamdown';
+import 'streamdown/styles.css';
 import { Button } from '../ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '../ui/select';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area'; // kept for potential future use
 import { useTheme } from '../../store/theme';
 
@@ -25,7 +14,10 @@ import { useTheme } from '../../store/theme';
  * which block index the cursor is currently in.
  */
 function getActiveBlock(source: string, cursorLine: number): number {
-	const upToCursor = source.split('\n').slice(0, cursorLine + 1).join('\n');
+	const upToCursor = source
+		.split('\n')
+		.slice(0, cursorLine + 1)
+		.join('\n');
 	const blocks = parseMarkdownIntoBlocks(upToCursor);
 	return Math.max(0, blocks.length - 1);
 }
@@ -45,7 +37,10 @@ function insertWrap(ta: HTMLTextAreaElement, before: string, after: string) {
 		ta.value = newVal;
 	}
 	// Restore / place cursor.
-	const cursorPos = selected.length > 0 ? start + before.length + selected.length + after.length : start + before.length;
+	const cursorPos =
+		selected.length > 0
+			? start + before.length + selected.length + after.length
+			: start + before.length;
 	ta.selectionStart = selected.length > 0 ? start + before.length : cursorPos;
 	ta.selectionEnd = cursorPos;
 	ta.focus();
@@ -178,11 +173,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 			<div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border bg-background shrink-0">
 				{/* Left: formatting controls */}
 				<div className="flex items-center gap-1">
-					<Select
-						value={headingValue}
-						onValueChange={handleHeading}
-						disabled={disabled}
-					>
+					<Select value={headingValue} onValueChange={handleHeading} disabled={disabled}>
 						<SelectTrigger size="sm" className="w-32 h-7 text-xs">
 							<SelectValue />
 						</SelectTrigger>
@@ -244,9 +235,16 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 							</DialogHeader>
 							<div className="text-xs space-y-1 mt-2">
 								{CHEATSHEET_ROWS.map(([syntax, label]) => (
-									<div key={label} className="flex items-start gap-3 py-1 border-b border-border/50 last:border-0">
-										<code className="flex-1 font-mono text-muted-foreground whitespace-pre-wrap">{syntax}</code>
-										<span className="text-foreground shrink-0 w-28 text-right">{label}</span>
+									<div
+										key={label}
+										className="flex items-start gap-3 py-1 border-b border-border/50 last:border-0"
+									>
+										<code className="flex-1 font-mono text-muted-foreground whitespace-pre-wrap">
+											{syntax}
+										</code>
+										<span className="text-foreground shrink-0 w-28 text-right">
+											{label}
+										</span>
 									</div>
 								))}
 							</div>
@@ -262,7 +260,9 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 					<textarea
 						ref={taRef}
 						value={value}
-						onChange={(e) => { onChange(e.target.value); }}
+						onChange={(e) => {
+							onChange(e.target.value);
+						}}
 						onKeyUp={handleCursorMove}
 						onMouseUp={handleCursorMove}
 						onSelect={handleCursorMove}
@@ -280,9 +280,13 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 						{blocks.map((block, i) => (
 							<div
 								key={i}
-								style={i === activeBlock
-									? { boxShadow: '-3px 0 0 0 oklch(0.6 0.2 264)', transition: 'box-shadow 0.15s ease' }
-									: { transition: 'box-shadow 0.15s ease' }
+								style={
+									i === activeBlock
+										? {
+												boxShadow: '-3px 0 0 0 oklch(0.6 0.2 264)',
+												transition: 'box-shadow 0.15s ease',
+											}
+										: { transition: 'box-shadow 0.15s ease' }
 								}
 							>
 								<Block
@@ -300,4 +304,3 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		</div>
 	);
 }
-
