@@ -47,8 +47,16 @@ function pathToTitle(path: string): string {
 
 interface DocMeta {
 	emoji?: string;
-	description?: string;
 	marp?: boolean;
+}
+
+/** Reconstruct a frontmatter block from only the whitelisted fields. */
+function buildFrontmatter(meta: DocMeta): string {
+	const lines: string[] = [];
+	if (meta.emoji) lines.push(`emoji: ${meta.emoji}`);
+	if (meta.marp) lines.push('marp: true');
+	if (lines.length === 0) return '';
+	return `---\n${lines.join('\n')}\n---\n`;
 }
 
 /** Return the text of the first `# Heading` line in a markdown body, or null. */
@@ -72,8 +80,7 @@ export default function DocPage() {
 
 	const [content, setContent] = useState('');
 	const [savedContent, setSavedContent] = useState('');
-	// Raw frontmatter block (e.g. "---\ntitle: ...\n---\n") stored as-is for byte-perfect round-trips.
-	const [frontmatterPrefix, setFrontmatterPrefix] = useState('');
+
 	const [meta, setMeta] = useState<DocMeta>({});
 	const [editMode, setEditMode] = useState(false);
 	const [editLocked, setEditLocked] = useState<PresenceUser | null>(null);
@@ -144,8 +151,6 @@ export default function DocPage() {
 				sha: string;
 			};
 			const parsed = matter(data.content);
-			const bodyIndex = parsed.content ? data.content.lastIndexOf(parsed.content) : -1;
-			setFrontmatterPrefix(bodyIndex > 0 ? data.content.slice(0, bodyIndex) : '');
 			setContent(parsed.content);
 			setSavedContent(parsed.content);
 			isDirtyRef.current = false;
@@ -223,8 +228,8 @@ export default function DocPage() {
 			const next = savePromiseRef.current.then(async () => {
 				setSaveStatus('saving');
 
-				// Prepend the raw frontmatter block verbatim — no serialization needed.
-				const fullContent = frontmatterPrefix + currentContent;
+				// Reconstruct frontmatter from whitelisted fields only (emoji, marp).
+				const fullContent = buildFrontmatter(meta) + currentContent;
 
 				try {
 					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
@@ -258,7 +263,7 @@ export default function DocPage() {
 			savePromiseRef.current = next;
 			return next;
 		},
-		[filePath, reloadTree, loadDoc, frontmatterPrefix],
+		[filePath, reloadTree, loadDoc, meta],
 	);
 
 	// Handle content changes

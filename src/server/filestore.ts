@@ -1,5 +1,6 @@
 import { readdir, readFile, writeFile, unlink, mkdir } from 'fs/promises';
 import { join, dirname, extname, relative } from 'path';
+import matter from 'gray-matter';
 import type { Config } from './config';
 import type { FileEntry, TreeNode } from '../lib/types';
 
@@ -229,10 +230,15 @@ export function parseFileEntry(path: string): FileEntry {
 	if (ext === '.md') {
 		type = 'doc';
 		const content = fileCache.get(path) ?? '';
-		emoji = /^emoji:\s*(.+)$/m.exec(content)?.[1]?.trim();
-		if (/^marp:\s*true$/m.test(content)) type = 'slide';
-		const headingTitle = extractHeadingTitle(content);
-		if (headingTitle) title = headingTitle;
+		try {
+			const parsed = matter(content);
+			const headingTitle = extractHeadingTitle(parsed.content);
+			if (headingTitle) title = headingTitle;
+			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
+			if (parsed.data.marp) type = 'slide';
+		} catch (err: unknown) {
+			console.warn('Failed to parse frontmatter:', err);
+		}
 	} else if (
 		[
 			'.ts',

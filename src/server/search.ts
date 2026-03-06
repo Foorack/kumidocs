@@ -1,6 +1,6 @@
 import MiniSearch from 'minisearch';
 import matter from 'gray-matter';
-import { getAllPaths, getFile } from './filestore';
+import { getAllPaths, getFile, parseFileEntry } from './filestore';
 import type { SearchResult } from '../lib/types';
 
 interface DocEntry {
@@ -9,7 +9,6 @@ interface DocEntry {
 	title: string;
 	emoji?: string;
 	type: string;
-	description?: string;
 	content: string;
 }
 
@@ -17,10 +16,10 @@ let index: MiniSearch<DocEntry> | undefined;
 
 export function initSearch(): void {
 	index = new MiniSearch<DocEntry>({
-		fields: ['title', 'content', 'description', 'path'],
-		storeFields: ['title', 'path', 'emoji', 'type', 'description'],
+		fields: ['title', 'content', 'path'],
+		storeFields: ['title', 'path', 'emoji', 'type'],
 		searchOptions: {
-			boost: { title: 3, description: 1.5 },
+			boost: { title: 3 },
 			fuzzy: 0.2,
 			prefix: true,
 		},
@@ -36,35 +35,17 @@ export function rebuildIndex(): void {
 	console.log(`Search: indexed ${String(docs.length)} documents`);
 }
 
-/** Return the text of the first `# Heading` line in a markdown body, or null. */
-function extractHeadingTitle(body: string): string | null {
-	for (const line of body.split('\n')) {
-		if (line.startsWith('# ')) return line.slice(2).trim();
-	}
-	return null;
-}
-
 function buildDocs(paths: string[]): DocEntry[] {
 	return paths
 		.filter((p) => p.endsWith('.md') && !p.startsWith('.'))
 		.map((path) => {
-			const raw = getFile(path) ?? '';
-			let title = path.replace(/\.md$/, '').split('/').pop()?.replace(/[-_]/g, ' ') ?? path;
-			let emoji: string | undefined;
-			let type = 'doc';
-			let description: string | undefined;
-			let body = raw;
+			const { title, emoji, type } = parseFileEntry(path);
 
+			let body = getFile(path) ?? '';
 			try {
-				const parsed = matter(raw);
-				if (parsed.data.emoji) emoji = parsed.data.emoji as string;
-				if (parsed.data.description) description = parsed.data.description as string;
-				if (parsed.data.marp) type = 'slide';
-				body = parsed.content;
-				const headingTitle = extractHeadingTitle(body);
-				if (headingTitle) title = headingTitle;
-			} catch (err: unknown) {
-				console.warn('Failed to parse frontmatter:', err);
+				body = matter(body).content;
+			} catch {
+				// keep raw content if frontmatter parse fails
 			}
 
 			const stripped = body
@@ -76,7 +57,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 				.replace(/\s+/g, ' ')
 				.trim();
 
-			return { id: path, path, title, emoji, type, description, content: stripped };
+			return { id: path, path, title, emoji, type, content: stripped };
 		});
 }
 
