@@ -222,13 +222,22 @@ export default function DocPage() {
 			// Chain behind any in-flight save
 			const next = savePromiseRef.current.then(async () => {
 				setSaveStatus('saving');
+
+				// Reconstruct full content with frontmatter (client-side, before any fetch)
+				let fullContent: string;
 				try {
-					// Reconstruct full content with frontmatter
-					const fullContent =
+					fullContent =
 						Object.keys(originalFrontmatter).length > 0
 							? matter.stringify(currentContent, originalFrontmatter)
 							: currentContent;
+				} catch (err: unknown) {
+					setSaveStatus('error');
+					toast.error('Save failed — could not serialize frontmatter.');
+					console.error('matter.stringify failed:', err);
+					return;
+				}
 
+				try {
 					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json' },

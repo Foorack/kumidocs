@@ -8,7 +8,7 @@ interface DocViewerProps {
 
 export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 	return (
-		<div className="prose prose-sm dark:prose-invert max-w-none px-8 py-6">
+		<div className="prose prose-table:my-0 prose-pre:my-0 dark:prose-invert max-w-none px-8 py-6">
 			<Streamdown>{value}</Streamdown>
 		</div>
 	);
