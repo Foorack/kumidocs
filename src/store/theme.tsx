@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 function getInitialTheme(): Theme {
-	const stored = localStorage.getItem('kumidocs-theme');
+	const stored = localStorage.getItem('kumidocs:theme');
 	if (stored === 'light' || stored === 'dark') return stored;
 	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
@@ -30,7 +30,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 		} else {
 			root.classList.remove('dark');
 		}
-		localStorage.setItem('kumidocs-theme', theme);
+		localStorage.setItem('kumidocs:theme', theme);
 	}, [theme]);
 
 	const toggle = () => {
