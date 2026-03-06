@@ -47,7 +47,7 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 				preferred_username?: string;
 			}
 			const payload = JSON.parse(atob(paddedPart)) as JWTPayload;
-			email = (payload.email ?? payload.sub ?? value).trim().toLowerCase();
+			email = (payload.email ?? payload.preferred_username ?? payload.sub ?? value).trim().toLowerCase();
 		} catch {
 			// fall through to plain string handling
 			email = value.trim().toLowerCase();

@@ -118,43 +118,45 @@ marp: true # marks file as a Marp slide deck
 
 ### 5.1 Header-Based SSO
 
-Header name configured via `KUMIDOCS_AUTH_HEADER`. Value is either:
+Header name configured via `KUMIDOCS_AUTH_HEADER`. The header value **must always resolve to an email address**.
 
-- **Plain string** → used directly as the user's identity (email/username).
-- **JWT** (detected by containing exactly two `.` characters) → Base64url-decode the payload, extract claims. **No signature validation.**
+- **Plain string** → treated directly as the user's email (lowercased).
+- **JWT** (detected by exactly two `.` separator characters) → Base64url-decode the payload, extract claims. **No signature validation.**
 
-JWT claims extracted (graceful fallback chain):
+JWT email resolution (first non-empty value wins):
 
-| Claim                          | Purpose       |
-| ------------------------------ | ------------- |
-| `sub`                          | User ID       |
-| `email`                        | Email address |
-| `name` or `preferred_username` | Display name  |
+| Priority | Claim                | Notes                                |
+| -------- | -------------------- | ------------------------------------ |
+| 1        | `email`              | Preferred — explicit email claim     |
+| 2        | `preferred_username` | Used when `email` is absent          |
+| 3        | `sub`                | Last resort — may not be an email    |
 
 If the header is absent → HTTP 401.
 
-User object: `{ id, email, name, displayName, initials, canEdit }`
+User object: `{ id, email, name, displayName, gravatarHash, canEdit }`
 
-### 5.3 Avatar Initials & Color Convention
+- `id` = lowercased email
+- `displayName` = derived from email local part: split by `.`, capitalise each word
+  (`max.faxalv@sony.com` → `Max Faxalv`, `max@foorack.com` → `Max`)
+- `gravatarHash` = MD5(lowercased email)
 
-All avatars across the UI (top-right user chip, presence viewer stack, commit history in Page Info) must use the same algorithm from **`src/lib/avatar.ts`**:
+### 5.2 Avatar Color Convention
 
-| Function               | Rule                                                                                                                             |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `avatarInitials(name)` | Multi-word → first char of first + last word ("Jane Doe" → "JD"). Single-word → first **2** chars ("Foorack" → "FO"). Never "F". |
-| `avatarColor(name)`    | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color.                                         |
+Avatars use a deterministic color from **`src/lib/avatar.ts`**:
 
-**Server** (`src/server/auth.ts`): imports `avatarInitials` from `src/lib/avatar.ts` and stores result in `User.initials`.  
-**Client** components import `avatarColor` (and `avatarInitials` if needed) from `src/lib/avatar.ts`. They compute/apply color via inline `style={{ backgroundColor: avatarColor(name) }}`, never a static Tailwind background class.
+| Function            | Rule                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| `avatarColor(name)` | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color. |
+| `avatarInitials(name)` | Fallback when Gravatar unavailable. Multi-word → first+last initial. Single-word → first 2 chars. |
 
-> **Do not duplicate these functions.** Always import from the shared utility.
+Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials are the fallback, computed client-side from `displayName` via `avatarInitials`.
 
-### 5.2 Git Commit Identity
+### 5.3 Git Commit Identity
 
 - Author name: `displayName` (fallback: `id`)
 - Author email: `email` (fallback: `kumidocs@localhost`)
 
-### 5.3 Authorization
+### 5.4 Authorization
 
 - View: any authenticated user.
 - Edit: only users in `.kumidocs.json` `editors` list.
