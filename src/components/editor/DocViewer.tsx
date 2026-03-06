@@ -108,8 +108,13 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 			readyRef.current = false;
 			roRef.current?.disconnect();
 			roRef.current = null;
-			rootRef.current?.unmount();
+			// Capture and null the ref immediately so the next mount's guard
+			// creates a fresh root, but defer the actual unmount call — React 18
+			// throws a warning if you unmount synchronously during a render
+			// pass (e.g. HMR hot-swap).
+			const root = rootRef.current;
 			rootRef.current = null;
+			setTimeout(() => root?.unmount(), 0);
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
