@@ -6,6 +6,7 @@ import {
 	ChevronDownRegular,
 	CircleFilled,
 	RenameRegular,
+	InfoRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../ui/KumiIcon';
 import { ScrollArea } from '../ui/scroll-area';
@@ -170,7 +171,7 @@ function PageNodeRow({
 							<KumiIcon
 								emoji={node.fileEntry?.emoji}
 								fileType={node.fileEntry?.type ?? 'doc'}
-								size={16}
+								size={20}
 							/>
 						</span>
 
@@ -203,14 +204,6 @@ function PageNodeRow({
 						<>
 							<ContextMenuItem
 								onClick={() => {
-									onNewSubPage(node.path.replace(/\.md$/i, ''));
-								}}
-							>
-								<AddRegular className="mr-2 w-4 h-4" />
-								Create subpage
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
 									const dir = node.path.includes('/')
 										? node.path.substring(0, node.path.lastIndexOf('/'))
 										: '';
@@ -218,7 +211,15 @@ function PageNodeRow({
 								}}
 							>
 								<AddRegular className="mr-2 w-4 h-4" />
-								Create page alongside
+								Create new page
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									onNewSubPage(node.path.replace(/\.md$/i, ''));
+								}}
+							>
+								<ChevronRightRegular className="mr-2 w-4 h-4" />
+								Create subpage
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() => {
@@ -227,6 +228,12 @@ function PageNodeRow({
 							>
 								<RenameRegular className="mr-2 w-4 h-4" />
 								Move / Rename
+							</ContextMenuItem>
+							<ContextMenuItem asChild>
+								<Link to={`/p/${node.path}?info=1`}>
+									<InfoRegular className="mr-2 w-4 h-4" />
+									Page info
+								</Link>
 							</ContextMenuItem>
 						</>
 					)}

@@ -198,3 +198,54 @@ export async function getHeadSha(config: Config): Promise<string> {
 		return 'unknown';
 	}
 }
+
+export interface CommitEntry {
+	sha: string; // short (7-char)
+	fullSha: string;
+	message: string;
+	author: string;
+	date: string;
+}
+
+/** Return commits that touched `filepath`, most recent first. */
+export async function gitFileLog(
+	config: Config,
+	filepath: string,
+	limit = 50,
+): Promise<CommitEntry[]> {
+	const commits = await git.log({ fs, dir: config.repoPath, filepath, depth: limit });
+	return commits.map((c) => ({
+		sha: c.oid.slice(0, 7),
+		fullSha: c.oid,
+		message: c.commit.message.trim(),
+		author: c.commit.author.name,
+		date: new Date(c.commit.author.timestamp * 1000).toISOString(),
+	}));
+}
+
+/** Read the content of `filepath` at a specific full commit SHA. Returns empty string if not found. */
+export async function gitBlobAt(
+	config: Config,
+	commitSha: string,
+	filepath: string,
+): Promise<string> {
+	try {
+		const { blob } = await git.readBlob({
+			fs,
+			dir: config.repoPath,
+			oid: commitSha,
+			filepath,
+		});
+		return new TextDecoder().decode(blob);
+	} catch {
+		return '';
+	}
+}
+
+/** Return full SHA for a short or full sha. */
+export async function gitExpandSha(config: Config, short: string): Promise<string> {
+	// git.log depth search
+	const commits = await git.log({ fs, dir: config.repoPath, depth: 500 });
+	const found = commits.find((c) => c.oid.startsWith(short));
+	return found?.oid ?? short;
+}

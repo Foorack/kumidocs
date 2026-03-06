@@ -70,7 +70,7 @@ KUMIDOCS_PULL_INTERVAL    (default: 60000)  ms between background git pulls
 
 ### 3.4 `compose.yaml`
 
-Provided in the repo root. Dockerfile written after core functionality is complete.
+Provided in the repo root. No Dockerfile, uses Bun's official image. Mounts the repo as a volume.
 
 ---
 
@@ -598,9 +598,3 @@ SPEC.md
 - [ ] Slide viewer (fullscreen, navigation, Present button)
 - [ ] Code file editor (CodeMirror + language packs)
 - [ ] Marp PDF export (Playwright, Chromium-gated)
-
-### Phase 5 — Packaging
-
-- [ ] Dockerfile
-- [ ] `compose.yaml` (final)
-- [ ] README with setup & deployment instructions

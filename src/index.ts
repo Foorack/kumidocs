@@ -26,6 +26,8 @@ import {
 	apiFileCreate,
 	apiFileDelete,
 	apiFileRename,
+	apiFileHistory,
+	apiFileDiff,
 	apiSearch,
 	apiSidebar,
 	apiUploadImage,
@@ -168,6 +170,22 @@ const server = serve<WsData>({
 				const user = requireUser(req);
 				if (!user) return new Response('Unauthorized', { status: 401 });
 				return apiFileRename(req, user, config);
+			},
+		},
+
+		'/api/file/history': {
+			GET(req: Request) {
+				const user = requireUser(req);
+				if (!user) return new Response('Unauthorized', { status: 401 });
+				return apiFileHistory(new URL(req.url), config);
+			},
+		},
+
+		'/api/file/diff': {
+			GET(req: Request) {
+				const user = requireUser(req);
+				if (!user) return new Response('Unauthorized', { status: 401 });
+				return apiFileDiff(new URL(req.url), config);
 			},
 		},
 

@@ -70,3 +70,19 @@ export interface SidebarItem {
 	children: SidebarItem[];
 	emoji?: string;
 }
+
+export interface CommitEntry {
+	sha: string;
+	message: string;
+	author: string;
+	date: string; // ISO 8601
+}
+
+export interface FileDiff {
+	sha: string;
+	message: string;
+	author: string;
+	date: string;
+	before: string;
+	after: string;
+}

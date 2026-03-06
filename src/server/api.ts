@@ -1,6 +1,7 @@
 import { join, extname } from 'path';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { createHash } from 'crypto';
+import { createTwoFilesPatch } from 'diff';
 import matter from 'gray-matter';
 import type { Config } from './config';
 import type { User } from '../lib/types';
@@ -12,7 +13,14 @@ import {
 	deleteFileFromRepo,
 	addToCache,
 } from './filestore';
-import { getHeadSha, gitStageAndCommit, gitRemoveAndCommit, gitMoveAndCommit } from './git';
+import {
+	getHeadSha,
+	gitStageAndCommit,
+	gitRemoveAndCommit,
+	gitMoveAndCommit,
+	gitFileLog,
+	gitBlobAt,
+} from './git';
 import { searchDocs, updateInIndex, removeFromIndex } from './search';
 import { broadcastPageChanged, broadcastPageDeleted, broadcastPageCreated } from './websocket';
 
@@ -284,6 +292,47 @@ export async function apiUploadImage(req: Request, user: User, config: Config): 
 	);
 
 	return Response.json({ path: repoPath, url: `/repo-asset/${repoPath}` });
+}
+
+// GET /api/file/history?path=<path>
+export async function apiFileHistory(url: URL, config: Config) {
+	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
+	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	const commits = await gitFileLog(config, path);
+	return Response.json(commits);
+}
+
+// GET /api/file/diff?path=<path>&sha=<sha>
+export async function apiFileDiff(url: URL, config: Config) {
+	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
+	const shortSha = url.searchParams.get('sha') ?? '';
+	if (!path || !shortSha)
+		return Response.json({ error: 'path and sha required' }, { status: 400 });
+
+	const commits = await gitFileLog(config, path, 500);
+	const idx = commits.findIndex((c) => c.fullSha.startsWith(shortSha) || c.sha === shortSha);
+	if (idx === -1)
+		return Response.json({ error: 'Commit not found in file history' }, { status: 404 });
+
+	const commit = commits[idx];
+	if (!commit) return Response.json({ error: 'Internal error' }, { status: 500 });
+	const parentCommit = commits[idx + 1];
+
+	const after = await gitBlobAt(config, commit.fullSha, path);
+	const before = parentCommit ? await gitBlobAt(config, parentCommit.fullSha, path) : '';
+
+	// Generate unified diff string for react-diff-view
+	const unifiedDiff = createTwoFilesPatch(`a/${path}`, `b/${path}`, before, after, '', '', {
+		context: 4,
+	});
+
+	return Response.json({
+		sha: commit.sha,
+		message: commit.message,
+		author: commit.author,
+		date: commit.date,
+		unifiedDiff,
+	});
 }
 
 // GET /repo-asset/<path>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import matter from 'gray-matter';
 import {
@@ -9,6 +9,7 @@ import {
 	RenameRegular,
 	MoreHorizontalRegular,
 	SaveRegular,
+	InfoRegular,
 } from '@fluentui/react-icons';
 import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
@@ -34,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/toolti
 import { ScrollArea } from '../components/ui/scroll-area';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import { DocViewer } from '../components/editor/DocViewer';
+import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
@@ -65,6 +67,7 @@ export default function DocPage() {
 	const { '*': rawPath = '' } = useParams();
 	const filePath = rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const { reloadTree } = useOutletContext<OutletCtx>();
 	const { user } = useUser();
 
@@ -87,6 +90,7 @@ export default function DocPage() {
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
+	const [infoOpen, setInfoOpen] = useState(() => searchParams.get('info') === '1');
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
 
 	const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -550,6 +554,14 @@ export default function DocPage() {
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
 								onClick={() => {
+									setInfoOpen((v) => !v);
+								}}
+							>
+								<InfoRegular className="mr-2 w-4 h-4" />
+								Page info
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
 									setNewName(filePath);
 									setRenameOpen(true);
 								}}
@@ -579,14 +591,21 @@ export default function DocPage() {
 			)}
 
 			{/* Content area */}
-			<div className="flex-1 overflow-auto">
-				{editMode ? (
-					<MarkdownEditor value={content} onChange={handleChange} onSave={handleSave} />
-				) : (
-					<ScrollArea className="h-full">
-						<DocViewer value={content} />
-					</ScrollArea>
-				)}
+			<div className="flex flex-1 overflow-hidden">
+				<div className="flex-1 overflow-auto">
+					{editMode ? (
+						<MarkdownEditor
+							value={content}
+							onChange={handleChange}
+							onSave={handleSave}
+						/>
+					) : (
+						<ScrollArea className="h-full">
+							<DocViewer value={content} />
+						</ScrollArea>
+					)}
+				</div>
+				{infoOpen && <PageInfoPanel key={filePath} filePath={filePath} title={title} />}
 			</div>
 
 			{/* Footer */}
