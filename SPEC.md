@@ -24,7 +24,7 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                                                                      |
 | Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                                                                          |
 | Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                                                                            |
-| Markdown editor | **ByteMD** (`@bytemd/react`)                           | Split-pane, React-native, remark/rehype pipeline                                                                                                                                         |
+| Markdown editor | **Custom split-pane editor** | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
 | Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM for read-only view. Mounted inside a sandboxed same-origin `<iframe>` for CSS isolation. Built-in `rehype-harden` sanitisation. |
 | Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                                                                |
 | Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                                                                      |
@@ -32,9 +32,6 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                                                                   |
 | Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                                                                          |
 
-### Why ByteMD for editing?
-
-ByteMD is a production-grade split-pane markdown editor (used at Juejin/ByteDance), actively maintained, with a plugin system covering GFM, KaTeX math, Mermaid, syntax highlighting, and more. It handles both editing and live preview internally. `@docmd/parser` is only used in the **read-only view mode** (not inside the editor).
 
 ---
 
@@ -203,16 +200,13 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 
 ## 7. Editor
 
-### 7.1 Edit Mode — ByteMD
+### 7.1 Edit Mode — Custom Split-Pane Editor
 
-- Split-pane: markdown source left, live preview right (toggle to full-width editor or full-width preview).
-- ByteMD plugin set:
-    - `@bytemd/plugin-gfm` — tables, task lists, strikethrough
-    - `@bytemd/plugin-highlight` — syntax highlighting in code blocks
-    - `@bytemd/plugin-math-ssr` — KaTeX math
-    - `@bytemd/plugin-mermaid` — diagrams
-    - `@bytemd/plugin-frontmatter` — YAML frontmatter awareness
-- Keyboard shortcut: **Ctrl+S** → save.
+- **Layout**: fixed toolbar spanning both panes; left pane = raw markdown `<textarea>`; right pane = live Streamdown preview (direct DOM render, not iframe — content is authored by the current user).
+- **Toolbar** (left side): heading-size dropdown (Normal / H1–H6), Bold, Italic, Blockquote.
+- **Toolbar** (right side): Cheatsheet button (modal with syntax reference).
+- All toolbar actions are cursor-aware: wrapping selections (bold/italic) or toggling line prefixes (headings, blockquote).
+- Keyboard shortcut: **Ctrl+S / Cmd+S** → save.
 - Default page mode is **view**. User clicks "Edit" to enter edit mode (subject to edit-lock and editor permission).
 
 ### 7.2 View Mode — streamdown
@@ -400,7 +394,7 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ### 11.3 Editing Slides
 
-- Same ByteMD editor as markdown.
+- Same custom split-pane editor as markdown.
 - Preview pane shows rendered slide output via Marp.
 
 ### 11.4 Export
@@ -449,7 +443,7 @@ Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, 
 │  navigation  │                                           │
 │   (left)     │   page content                            │
 │              │   (view:  streamdown → sandboxed iframe)          │
-│              │   (edit:  ByteMD split-pane)              │
+│              │   (edit:  custom split-pane editor)        │
 │              │                                           │
 │              ├───────────────────────────────────────────┤
 │              │  Last saved: 2m ago · abc1234             │  ← page footer
@@ -563,8 +557,8 @@ src/
 │   │   │   ├── TopBar.tsx
 │   │   │   └── PageHeader.tsx
 │   │   ├── editor/
-│   │   │   ├── ByteMDEditor.tsx    ← ByteMD markdown editor
-│   │   │   ├── DocViewer.tsx       ← @docmd/parser → iframe view
+│   │   │   ├── MarkdownEditor.tsx  ← custom split-pane markdown editor
+│   │   │   ├── DocViewer.tsx       ← streamdown → sandboxed iframe view
 │   │   │   └── CodeEditor.tsx      ← @uiw/react-codemirror
 │   │   ├── slides/
 │   │   │   └── SlideViewer.tsx
@@ -599,7 +593,7 @@ SPEC.md
 
 ### Phase 2 — Editor Core ✅ Complete
 
-- [x] ByteMD editor with plugin set (GFM, highlight, math, mermaid, frontmatter)
+- [x] Custom split-pane editor (textarea + Streamdown live preview, toolbar: heading selector / Bold / Italic / Blockquote / Cheatsheet, Ctrl+S save)
 - [x] `streamdown` read-only view (sandboxed iframe, dark mode sync, rehype-harden XSS protection)
 - [x] Save flow: Ctrl+S, auto-save debounce, save mutex (no 409 race)
 - [x] Edit-lock via WebSocket

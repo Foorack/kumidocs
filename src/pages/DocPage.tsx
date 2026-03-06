@@ -620,7 +620,7 @@ export default function DocPage() {
 
 			{/* Content area */}
 			<div className="flex flex-1 overflow-hidden">
-				<div className="flex-1 overflow-auto">
+				<div className="flex-1 overflow-hidden flex flex-col">
 					{editMode ? (
 						<MarkdownEditor
 							value={content}
