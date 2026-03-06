@@ -1,4 +1,5 @@
 import type { User } from '../lib/types';
+import { avatarInitials } from '../lib/avatar';
 
 export interface KumiDocsPermissions {
 	instanceName?: string;
@@ -49,13 +50,7 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 
 	const displayName = (name.trim() || email.split('@')[0]) ?? id;
 
-	const initials =
-		displayName
-			.split(/[\s._-]+/)
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((p) => (p[0] ?? '').toUpperCase())
-			.join('') || '?';
+	const initials = avatarInitials(displayName) || '?';
 
 	const editors = perms.editors ?? [];
 

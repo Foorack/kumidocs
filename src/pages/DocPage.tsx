@@ -39,6 +39,7 @@ import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
+import { avatarColor } from '../lib/avatar';
 
 interface OutletCtx {
 	reloadTree: () => void;
@@ -498,7 +499,10 @@ export default function DocPage() {
 						<Tooltip key={v.id}>
 							<TooltipTrigger asChild>
 								<Avatar className="h-6 w-6 border border-background ring-1 ring-border">
-									<AvatarFallback className="text-[9px] bg-muted text-muted-foreground">
+									<AvatarFallback
+										className="text-[9px] text-white"
+										style={{ backgroundColor: avatarColor(v.name) }}
+									>
 										{v.initials}
 									</AvatarFallback>
 								</Avatar>

@@ -6,20 +6,7 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ChevronRightRegular, DismissRegular, DocumentRegular } from '@fluentui/react-icons';
 import type { CommitEntry } from '../../lib/types';
-
-function avatarColor(name: string): string {
-	let hash = 0;
-	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-	const hue = Math.abs(hash) % 360;
-	return `hsl(${hue.toString()}, 60%, 42%)`;
-}
-
-function avatarInitials(name: string): string {
-	const parts = name.trim().split(/\s+/);
-	if (parts.length >= 2)
-		return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase();
-	return name.slice(0, 2).toUpperCase();
-}
+import { avatarColor, avatarInitials } from '../../lib/avatar';
 
 interface DiffData {
 	sha: string;

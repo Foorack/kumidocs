@@ -133,7 +133,21 @@ JWT claims extracted (graceful fallback chain):
 
 If the header is absent → HTTP 401.
 
-User object: `{ id, email, name, displayName, avatarInitials }`
+User object: `{ id, email, name, displayName, initials, canEdit }`
+
+### 5.3 Avatar Initials & Color Convention
+
+All avatars across the UI (top-right user chip, presence viewer stack, commit history in Page Info) must use the same algorithm from **`src/lib/avatar.ts`**:
+
+| Function               | Rule                                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `avatarInitials(name)` | Multi-word → first char of first + last word ("Jane Doe" → "JD"). Single-word → first **2** chars ("Foorack" → "FO"). Never "F". |
+| `avatarColor(name)`    | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color.                                         |
+
+**Server** (`src/server/auth.ts`): imports `avatarInitials` from `src/lib/avatar.ts` and stores result in `User.initials`.  
+**Client** components import `avatarColor` (and `avatarInitials` if needed) from `src/lib/avatar.ts`. They compute/apply color via inline `style={{ backgroundColor: avatarColor(name) }}`, never a static Tailwind background class.
+
+> **Do not duplicate these functions.** Always import from the shared utility.
 
 ### 5.2 Git Commit Identity
 

@@ -2,6 +2,7 @@ import { WeatherSunnyRegular, WeatherMoonRegular, SearchRegular } from '@fluentu
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { avatarColor } from '../../lib/avatar';
 import { Button } from '../ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
@@ -51,7 +52,10 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Avatar className="h-7 w-7 cursor-default">
-								<AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+								<AvatarFallback
+									className="text-[10px] text-white"
+									style={{ backgroundColor: avatarColor(user.displayName) }}
+								>
 									{user.initials}
 								</AvatarFallback>
 							</Avatar>
