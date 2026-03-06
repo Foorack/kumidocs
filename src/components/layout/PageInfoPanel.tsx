@@ -6,7 +6,8 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ChevronRightRegular, DismissRegular, DocumentRegular } from '@fluentui/react-icons';
 import type { CommitEntry } from '../../lib/types';
-import { avatarColor, avatarInitials } from '../../lib/avatar';
+import { emailToDisplayName } from '../../lib/avatar';
+import { UserAvatar } from '../ui/avatar';
 
 interface DiffData {
 	sha: string;
@@ -106,23 +107,20 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 						) : (
 							<div className="space-y-0.5">
 								{commits.map((c) => {
-									const initials = avatarInitials(c.author);
-									const color = avatarColor(c.author);
-									return (
-										<button
-											key={c.sha}
-											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
-											onClick={() => {
-												openDiff(c.sha);
-											}}
-										>
-											<span
-												className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-												style={{ backgroundColor: color }}
-												title={c.author}
-											>
-												{initials}
-											</span>
+								return (
+									<button
+										key={c.sha}
+										className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
+										onClick={() => {
+											openDiff(c.sha);
+										}}
+									>
+										<UserAvatar
+											name={emailToDisplayName(c.author)}
+											gravatarHash={c.gravatarHash}
+											size="xs"
+											className="shrink-0 mt-0.5"
+										/>
 											<span className="flex-1 min-w-0">
 												<span className="text-foreground line-clamp-2 block">
 													{c.message}

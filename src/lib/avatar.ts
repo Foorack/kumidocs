@@ -1,15 +1,24 @@
 /**
  * Shared avatar utilities — used by both client components and server auth.
  *
- * RULES (must stay consistent everywhere):
- *   avatarInitials("Foorack")          → "FO"  (single word → first 2 chars)
- *   avatarInitials("Jane Doe")         → "JD"  (multi word → first+last initial)
- *   avatarColor("name")                → deterministic HSL color from djb2 hash
- *
  * These functions are imported by:
- *   - src/components/layout/PageInfoPanel.tsx (commit history avatars)
- *   - src/components/ui/avatar.tsx            (initials fallback when no Gravatar)
+ *   - src/server/auth.ts                       (emailToDisplayName for User.displayName)
+ *   - src/components/layout/PageInfoPanel.tsx  (commit history avatars)
+ *   - src/components/ui/avatar.tsx             (initials fallback when no Gravatar)
  */
+
+/** Derive a display name from an email address.
+ *  "max.faxalv@sony.com" → "Max Faxalv"
+ *  "max@foorack.com"     → "Max"
+ */
+export function emailToDisplayName(email: string): string {
+	const local = email.split('@')[0] ?? email;
+	return local
+		.split('.')
+		.map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+		.join(' ')
+		.trim();
+}
 
 /** djb2-style hash of name → deterministic HSL background color. */
 export function avatarColor(name: string): string {

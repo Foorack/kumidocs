@@ -82,7 +82,7 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 		config,
 		[path],
 		msg,
-		user.displayName,
+		user.email,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -133,7 +133,7 @@ export async function apiFileCreate(req: Request, user: User, config: Config) {
 		config,
 		[path],
 		msg,
-		user.displayName,
+		user.email,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -157,7 +157,7 @@ export async function apiFileDelete(url: URL, user: User, config: Config) {
 		config,
 		path,
 		msg,
-		user.displayName,
+		user.email,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -214,7 +214,7 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 			from,
 			to,
 			msg,
-			user.displayName,
+			user.email,
 			user.email || 'kumidocs@localhost',
 		);
 
@@ -231,7 +231,7 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 			config,
 			[from],
 			msg,
-			user.displayName,
+			user.email,
 			user.email || 'kumidocs@localhost',
 		);
 
@@ -316,7 +316,7 @@ export async function apiFileHistory(url: URL, config: Config) {
 				if (line.startsWith('+') && !line.startsWith('+++')) added++;
 				else if (line.startsWith('-') && !line.startsWith('---')) removed++;
 			}
-			return { ...c, added, removed };
+			return { ...c, added, removed, gravatarHash: createHash('md5').update(c.author).digest('hex') };
 		}),
 	);
 	return Response.json(enriched);

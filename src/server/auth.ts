@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import type { User } from '../lib/types';
+import { emailToDisplayName } from '../lib/avatar';
 
 export interface KumiDocsPermissions {
 	instanceName?: string;
@@ -14,19 +15,6 @@ export function setPermissions(p: KumiDocsPermissions): void {
 
 export function getPermissions(): KumiDocsPermissions {
 	return perms;
-}
-
-/** Derive a display name from an email address.
- *  "max.faxalv@sony.com" → "Max Faxalv"
- *  "max@foorack.com"     → "Max"
- */
-function emailToDisplayName(email: string): string {
-	const local = email.split('@')[0] ?? email;
-	return local
-		.split('.')
-		.map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
-		.join(' ')
-		.trim();
 }
 
 export function parseUser(headers: Headers, authHeader: string): User | null {

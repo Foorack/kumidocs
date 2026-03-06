@@ -74,7 +74,8 @@ export interface CommitEntry {
 	sha: string;
 	fullSha: string;
 	message: string;
-	author: string;
+	author: string; // email
+	gravatarHash: string;
 	date: string; // ISO 8601
 	added?: number;
 	removed?: number;
