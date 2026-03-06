@@ -29,7 +29,7 @@ export interface UserAvatarProps extends React.ComponentProps<typeof AvatarPrimi
  *
  * Usage:
  *   <UserAvatar name="Jane Doe" size="sm" />
- *   <UserAvatar name={user.displayName} initials={user.initials} gravatarHash={user.gravatarHash} />
+ *   <UserAvatar name={user.displayName} gravatarHash={user.gravatarHash} />
  */
 export function UserAvatar({
 	name,

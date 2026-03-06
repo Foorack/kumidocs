@@ -536,7 +536,7 @@ export default function DocPage() {
 								<TooltipTrigger asChild>
 									<UserAvatar
 										name={v.name}
-										initials={v.initials}
+
 										size="sm"
 										className="border border-background ring-1 ring-border"
 									/>

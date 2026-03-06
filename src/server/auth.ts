@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 import type { User } from '../lib/types';
-import { avatarInitials } from '../lib/avatar';
 
 export interface KumiDocsPermissions {
 	instanceName?: string;
@@ -17,13 +16,24 @@ export function getPermissions(): KumiDocsPermissions {
 	return perms;
 }
 
+/** Derive a display name from an email address.
+ *  "max.faxalv@sony.com" → "Max Faxalv"
+ *  "max@foorack.com"     → "Max"
+ */
+function emailToDisplayName(email: string): string {
+	const local = email.split('@')[0] ?? email;
+	return local
+		.split('.')
+		.map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+		.join(' ')
+		.trim();
+}
+
 export function parseUser(headers: Headers, authHeader: string): User | null {
 	const value = headers.get(authHeader);
 	if (!value) return null;
 
-	let id = value;
 	let email = '';
-	let name = '';
 
 	// Detect JWT (two dots = three Base64url segments)
 	const parts = value.split('.');
@@ -37,29 +47,23 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 				preferred_username?: string;
 			}
 			const payload = JSON.parse(atob(paddedPart)) as JWTPayload;
-			id = payload.sub ?? value;
-			email = payload.email ?? '';
-			name = payload.name ?? payload.preferred_username ?? payload.sub ?? value;
+			email = (payload.email ?? payload.sub ?? value).trim().toLowerCase();
 		} catch {
 			// fall through to plain string handling
+			email = value.trim().toLowerCase();
 		}
 	} else {
-		email = value.includes('@') ? value : '';
-		name = (value.split('@')[0] ?? value).replace(/[._-]/g, ' ');
-		id = value;
+		email = value.trim().toLowerCase();
 	}
 
-	const displayName = (name.trim() || email.split('@')[0]) ?? id;
-
-	const initials = avatarInitials(displayName) || '?';
-	const gravatarHash = email
-		? createHash('md5').update(email.trim().toLowerCase()).digest('hex')
-		: undefined;
+	const id = email;
+	const displayName = emailToDisplayName(email);
+	const gravatarHash = createHash('md5').update(email).digest('hex');
 
 	const editors = perms.editors ?? [];
 
 	// If no editors configured at all, everyone can edit
-	const canEdit = editors.length === 0 || editors.includes(email) || editors.includes(id);
+	const canEdit = editors.length === 0 || editors.includes(email);
 
-	return { id, email, name: displayName, displayName, initials, gravatarHash, canEdit };
+	return { id, email, name: displayName, displayName, gravatarHash, canEdit };
 }

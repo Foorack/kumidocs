@@ -3,7 +3,6 @@ export interface User {
 	email: string;
 	name: string;
 	displayName: string;
-	initials: string;
 	gravatarHash?: string;
 	canEdit: boolean;
 }
@@ -36,7 +35,6 @@ export interface SearchResult {
 export interface PresenceUser {
 	id: string;
 	name: string;
-	initials: string;
 }
 
 // WebSocket message types

@@ -7,10 +7,8 @@
  *   avatarColor("name")                → deterministic HSL color from djb2 hash
  *
  * These functions are imported by:
- *   - src/server/auth.ts               (computes User.initials server-side)
- *   - src/components/layout/TopBar.tsx (top-right avatar)
  *   - src/components/layout/PageInfoPanel.tsx (commit history avatars)
- *   - src/pages/DocPage.tsx            (presence viewer avatars)
+ *   - src/components/ui/avatar.tsx            (initials fallback when no Gravatar)
  */
 
 /** djb2-style hash of name → deterministic HSL background color. */
