@@ -174,20 +174,25 @@ export function PageInfoPanel({ filePath, title }: PageInfoPanelProps) {
 											</p>
 										);
 									}
-									return files.map((file) => (
-										<Diff
-											key={`${file.oldRevision}-${file.newRevision}`}
-											viewType="unified"
-											diffType={file.type}
-											hunks={file.hunks}
-										>
-											{(hunks) =>
-												hunks.map((hunk) => (
-													<Hunk key={hunk.content} hunk={hunk} />
-												))
-											}
-										</Diff>
-									));
+									return files.map((file) => {
+										// parseDiff may return undefined hunks for binary/empty files
+										// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+										const hunks = file.hunks ?? [];
+										return (
+											<Diff
+												key={`${file.oldRevision}-${file.newRevision}`}
+												viewType="unified"
+												diffType={file.type}
+												hunks={hunks}
+											>
+												{(hunkList) =>
+													hunkList.map((hunk) => (
+														<Hunk key={hunk.content} hunk={hunk} />
+													))
+												}
+											</Diff>
+										);
+									});
 								})()}
 							{!diffLoading && !diffData && (
 								<p className="text-sm text-destructive py-4 text-center">

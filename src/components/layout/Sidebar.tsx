@@ -129,6 +129,7 @@ function PageNodeRow({
 	onMove: (path: string, title: string) => void;
 }) {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const hasChildren = node.children.length > 0;
 	const [open, setOpen] = useState(depth === 0);
 
@@ -167,11 +168,13 @@ function PageNodeRow({
 						</span>
 
 						{/* Page icon */}
-						<span className={node.isVirtual ? 'opacity-40 shrink-0' : 'shrink-0'}>
+						<span
+							className={`flex items-center justify-center ${node.isVirtual ? 'opacity-40 shrink-0' : 'shrink-0'}`}
+						>
 							<KumiIcon
 								emoji={node.fileEntry?.emoji}
 								fileType={node.fileEntry?.type ?? 'doc'}
-								size={20}
+								size={24}
 							/>
 						</span>
 
@@ -229,11 +232,21 @@ function PageNodeRow({
 								<RenameRegular className="mr-2 w-4 h-4" />
 								Move / Rename
 							</ContextMenuItem>
-							<ContextMenuItem asChild>
-								<Link to={`/p/${node.path}?info=1`}>
-									<InfoRegular className="mr-2 w-4 h-4" />
-									Page info
-								</Link>
+							<ContextMenuItem
+								onClick={() => {
+									localStorage.setItem('kumidocs:info-open', node.path);
+									window.dispatchEvent(
+										new CustomEvent('kumidocs:open-info', {
+											detail: node.path,
+										}),
+									);
+									if (window.location.pathname !== href) {
+										void navigate(href);
+									}
+								}}
+							>
+								<InfoRegular className="mr-2 w-4 h-4" />
+								Page info
 							</ContextMenuItem>
 						</>
 					)}

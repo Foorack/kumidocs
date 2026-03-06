@@ -21,9 +21,9 @@
 import type { FC, CSSProperties } from 'react';
 import { FluentEmoji } from '@lobehub/fluent-emoji';
 import {
-	TextBulletListSquare20Color,
-	SlideTextSparkle20Color,
-	NumberSymbolSquare20Color,
+	TextBulletListSquare24Color,
+	SlideTextSparkle24Color,
+	NumberSymbolSquare24Color,
 	CodeRegular,
 	ImageRegular,
 	DocumentRegular,
@@ -32,16 +32,16 @@ import {
 // Map specific emoji codepoints → Fluent Color icon components
 // (keeps app-specific logic out of every call site)
 const EMOJI_ICON_OVERRIDES: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
-	'\u{1F4C4}': TextBulletListSquare20Color, // 📄 Page Facing Up
-	'\u{1F4DD}': SlideTextSparkle20Color, // 📝 Memo
-	'\u0023\uFE0F\u20E3': NumberSymbolSquare20Color, // #️⃣ Keycap #
+	'\u{1F4C4}': TextBulletListSquare24Color, // 📄 Page Facing Up
+	'\u{1F4DD}': SlideTextSparkle24Color, // 📝 Memo
+	'\u0023\uFE0F\u20E3': NumberSymbolSquare24Color, // #️⃣ Keycap #
 };
 
 // File type strings for KumiIcon — well-known values listed for autocomplete, open to any string
 export type KumiFileType = 'doc' | 'slide' | 'code' | 'image' | (string & {});
 const FILE_TYPE_ICONS: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
-	doc: TextBulletListSquare20Color,
-	slide: SlideTextSparkle20Color,
+	doc: TextBulletListSquare24Color,
+	slide: SlideTextSparkle24Color,
 	code: CodeRegular,
 	image: ImageRegular,
 };

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import matter from 'gray-matter';
 import {
@@ -67,7 +67,6 @@ export default function DocPage() {
 	const { '*': rawPath = '' } = useParams();
 	const filePath = rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
 	const navigate = useNavigate();
-	const [searchParams] = useSearchParams();
 	const { reloadTree } = useOutletContext<OutletCtx>();
 	const { user } = useUser();
 
@@ -90,8 +89,29 @@ export default function DocPage() {
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPagePath, setNewPagePath] = useState('');
 	const [newPageTitle, setNewPageTitle] = useState('');
-	const [infoOpen, setInfoOpen] = useState(() => searchParams.get('info') === '1');
+	const [infoOpen, setInfoOpen] = useState(
+		() => localStorage.getItem('kumidocs:info-open') === filePath,
+	);
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
+
+	// Toggle info panel from sidebar context menu (same-tab custom event)
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent<string>).detail;
+			if (detail === filePath) {
+				setInfoOpen((v) => {
+					const next = !v;
+					if (next) localStorage.setItem('kumidocs:info-open', filePath);
+					else localStorage.removeItem('kumidocs:info-open');
+					return next;
+				});
+			}
+		};
+		window.addEventListener('kumidocs:open-info', handler);
+		return () => {
+			window.removeEventListener('kumidocs:open-info', handler);
+		};
+	}, [filePath]);
 
 	const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	// Mutex: chain saves so they never run concurrently (prevents double-commit 409)
