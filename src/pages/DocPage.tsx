@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
-import matter from 'gray-matter';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
 import { KumiIcon } from '../components/ui/KumiIcon';
 import { Button } from '../components/ui/button';
@@ -72,7 +71,8 @@ export default function DocPage() {
 
 	const [content, setContent] = useState('');
 	const [savedContent, setSavedContent] = useState('');
-	const [originalFrontmatter, setOriginalFrontmatter] = useState<Record<string, unknown>>({});
+	// Raw frontmatter block (e.g. "---\ntitle: ...\n---\n") stored as-is for byte-perfect round-trips.
+	const [frontmatterPrefix, setFrontmatterPrefix] = useState('');
 	const [meta, setMeta] = useState<DocMeta>({});
 	const [editMode, setEditMode] = useState(false);
 	const [editLocked, setEditLocked] = useState<PresenceUser | null>(null);
@@ -144,8 +144,10 @@ export default function DocPage() {
 				frontmatter: DocMeta & Record<string, unknown>;
 				sha: string;
 			};
-			// Store frontmatter separately, show only body in editor
-			setOriginalFrontmatter(data.frontmatter);
+			// Extract raw frontmatter prefix by slicing content before the body.
+			// This avoids any serialization — we store the original bytes and prepend them verbatim on save.
+			const bodyIndex = data.body ? data.content.lastIndexOf(data.body) : -1;
+			setFrontmatterPrefix(bodyIndex > 0 ? data.content.slice(0, bodyIndex) : '');
 			setContent(data.body);
 			setSavedContent(data.body);
 			isDirtyRef.current = false;
@@ -223,19 +225,8 @@ export default function DocPage() {
 			const next = savePromiseRef.current.then(async () => {
 				setSaveStatus('saving');
 
-				// Reconstruct full content with frontmatter (client-side, before any fetch)
-				let fullContent: string;
-				try {
-					fullContent =
-						Object.keys(originalFrontmatter).length > 0
-							? matter.stringify(currentContent, originalFrontmatter)
-							: currentContent;
-				} catch (err: unknown) {
-					setSaveStatus('error');
-					toast.error('Save failed — could not serialize frontmatter.');
-					console.error('matter.stringify failed:', err);
-					return;
-				}
+				// Prepend the raw frontmatter block verbatim — no serialization needed.
+				const fullContent = frontmatterPrefix + currentContent;
 
 				try {
 					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
@@ -269,7 +260,7 @@ export default function DocPage() {
 			savePromiseRef.current = next;
 			return next;
 		},
-		[filePath, reloadTree, loadDoc, originalFrontmatter],
+		[filePath, reloadTree, loadDoc, frontmatterPrefix],
 	);
 
 	// Handle content changes
