@@ -240,7 +240,10 @@ function PageNodeRow({
 										<DropdownMenuItem
 											onClick={() => {
 												const dir = node.path.includes('/')
-													? node.path.substring(0, node.path.lastIndexOf('/'))
+													? node.path.substring(
+															0,
+															node.path.lastIndexOf('/'),
+														)
 													: '';
 												onNewSubPage(dir);
 											}}
