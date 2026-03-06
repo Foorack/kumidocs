@@ -4,7 +4,6 @@ import 'streamdown/styles.css';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ScrollArea } from '../ui/scroll-area'; // kept for potential future use
 import { useTheme } from '../../store/theme';
 
 // ── Active-block tracking ────────────────────────────────────────────────────
@@ -29,20 +28,13 @@ function insertWrap(ta: HTMLTextAreaElement, before: string, after: string) {
 	const start = ta.selectionStart;
 	const end = ta.selectionEnd;
 	const selected = ta.value.slice(start, end);
-	const newVal = ta.value.slice(0, start) + before + selected + after + ta.value.slice(end);
-	// Use execCommand to keep browser undo stack intact where possible.
-	ta.select();
-	if (!document.execCommand('insertText', false, newVal)) {
-		// Fallback for browsers without execCommand support.
-		ta.value = newVal;
+	ta.setRangeText(before + selected + after, start, end, 'preserve');
+	// Position cursor: inside wrappers if no selection, around selection if there was one.
+	if (selected.length > 0) {
+		ta.setSelectionRange(start + before.length, start + before.length + selected.length);
+	} else {
+		ta.setSelectionRange(start + before.length, start + before.length);
 	}
-	// Restore / place cursor.
-	const cursorPos =
-		selected.length > 0
-			? start + before.length + selected.length + after.length
-			: start + before.length;
-	ta.selectionStart = selected.length > 0 ? start + before.length : cursorPos;
-	ta.selectionEnd = cursorPos;
 	ta.focus();
 }
 
@@ -56,16 +48,8 @@ function setLinePrefix(ta: HTMLTextAreaElement, prefix: string) {
 	// Strip any existing heading/blockquote prefix.
 	const stripped = line.replace(/^(#{1,6} |> )/, '');
 	const newLine = prefix ? `${prefix}${stripped}` : stripped;
-	const before = ta.value.slice(0, lineStart);
-	const after = ta.value.slice(lineEnd);
-	const newVal = before + newLine + after;
-	const newCursor = lineStart + newLine.length;
-	ta.select();
-	if (!document.execCommand('insertText', false, newVal)) {
-		ta.value = newVal;
-	}
-	ta.selectionStart = newCursor;
-	ta.selectionEnd = newCursor;
+	ta.setRangeText(newLine, lineStart, lineEnd, 'preserve');
+	ta.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
 	ta.focus();
 }
 
