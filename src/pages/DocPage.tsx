@@ -3,8 +3,6 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import matter from 'gray-matter';
 import {
-	EditRegular,
-	CheckmarkRegular,
 	DeleteRegular,
 	RenameRegular,
 	MoreHorizontalRegular,
@@ -533,41 +531,63 @@ export default function DocPage() {
 					</Badge>
 				)}
 
-				{editMode ? (
-					<Button
-						size="sm"
-						className="h-7 gap-1 text-xs"
-						onClick={() => {
-							exitEdit().catch((err: unknown) => {
-								console.error('Failed to exit edit mode:', err);
-							});
-						}}
+				{/* Read / Edit segmented switch */}
+				{user?.canEdit && (
+					<div
+						className="flex items-center rounded-md border border-border bg-muted h-7 p-0.5 gap-0.5 shrink-0"
+						title={
+							editLocked && editLocked.id !== user.id
+								? `${editLocked.name} is editing`
+								: undefined
+						}
 					>
-						<CheckmarkRegular className="w-3.5 h-3.5" />
-						Done
-					</Button>
-				) : (
-					user?.canEdit && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 gap-1 text-xs"
-							onClick={enterEdit}
-							disabled={!!(editLocked && editLocked.id !== user.id)}
-							title={
-								editLocked && editLocked.id !== user.id
-									? `${editLocked.name} is editing`
-									: undefined
-							}
+						<button
+							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${!editMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
+							onClick={() => {
+								if (editMode)
+									exitEdit().catch((err: unknown) => {
+										console.error('Failed to exit edit mode:', err);
+									});
+							}}
 						>
-							<EditRegular className="w-3.5 h-3.5" />
-							{editLocked && editLocked.id !== user.id
-								? `${editLocked.name} editing…`
-								: 'Edit'}
-						</Button>
-					)
+							Read
+						</button>
+						<button
+							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${editMode ? 'bg-background text-foreground shadow-sm' : editLocked && editLocked.id !== user.id ? 'text-muted-foreground opacity-40 cursor-not-allowed' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
+							onClick={() => {
+								if (!editMode && !(editLocked && editLocked.id !== user.id))
+									enterEdit();
+							}}
+							disabled={editMode || !!(editLocked && editLocked.id !== user.id)}
+						>
+							Edit
+						</button>
+					</div>
 				)}
 
+				{/* Dedicated info button */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							size="icon"
+							variant={infoOpen ? 'secondary' : 'ghost'}
+							className="h-7 w-7"
+							onClick={() => {
+								setInfoOpen((v) => {
+									const next = !v;
+									if (next) localStorage.setItem('kumidocs:info-open', 'true');
+									else localStorage.removeItem('kumidocs:info-open');
+									return next;
+								});
+							}}
+						>
+							<InfoRegular className="w-4 h-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Page info</TooltipContent>
+				</Tooltip>
+
+				{/* Advanced / dangerous actions only */}
 				{user?.canEdit && (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
@@ -576,20 +596,6 @@ export default function DocPage() {
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={() => {
-									setInfoOpen((v) => {
-										const next = !v;
-										if (next)
-											localStorage.setItem('kumidocs:info-open', 'true');
-										else localStorage.removeItem('kumidocs:info-open');
-										return next;
-									});
-								}}
-							>
-								<InfoRegular className="mr-2 w-4 h-4" />
-								Page info
-							</DropdownMenuItem>
 							<DropdownMenuItem
 								onClick={() => {
 									setNewName(filePath);

@@ -111,7 +111,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 									return (
 										<button
 											key={c.sha}
-											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
+											className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors cursor-pointer"
 											onClick={() => {
 												openDiff(c.sha);
 											}}

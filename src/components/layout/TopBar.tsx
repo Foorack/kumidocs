@@ -1,4 +1,4 @@
-import { WeatherSunnyRegular, WeatherMoonRegular, SearchRegular } from '@fluentui/react-icons';
+import { WeatherSunnyLowColor, WeatherMoonRegular, SearchRegular } from '@fluentui/react-icons';
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -24,7 +24,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 			<Button
 				variant="ghost"
 				size="sm"
-				className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal flex-1 max-w-64 justify-start bg-muted hover:bg-muted/80"
+				className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal flex-1 max-w-64 justify-start bg-muted hover:bg-muted/80 cursor-pointer"
 				onClick={onSearchOpen}
 			>
 				<SearchRegular className="w-3.5 h-3.5 shrink-0" />
@@ -39,7 +39,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 					<TooltipTrigger asChild>
 						<Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggle}>
 							{theme === 'dark' ? (
-								<WeatherSunnyRegular className="w-4 h-4" />
+								<WeatherSunnyLowColor className="w-4 h-4" />
 							) : (
 								<WeatherMoonRegular className="w-4 h-4" />
 							)}
@@ -49,19 +49,19 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 				</Tooltip>
 
 				{user && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Avatar className="h-7 w-7 cursor-default">
-								<AvatarFallback
-									className="text-[10px] text-white"
-									style={{ backgroundColor: avatarColor(user.displayName) }}
-								>
-									{user.initials}
-								</AvatarFallback>
-							</Avatar>
-						</TooltipTrigger>
-						<TooltipContent>{user.displayName}</TooltipContent>
-					</Tooltip>
+					<div className="flex items-center gap-1.5">
+						<Avatar className="h-7 w-7 cursor-default">
+							<AvatarFallback
+								className="text-[10px] text-white"
+								style={{ backgroundColor: avatarColor(user.displayName) }}
+							>
+								{user.initials}
+							</AvatarFallback>
+						</Avatar>
+						<span className="text-xs text-foreground select-none">
+							{user.displayName}
+						</span>
+					</div>
 				)}
 			</div>
 		</header>
