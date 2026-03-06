@@ -45,19 +45,38 @@ interface KumiIconProps {
 }
 
 export function KumiIcon({ emoji, icon, size = 16, className }: KumiIconProps) {
-	const style: CSSProperties = { width: size, height: size, flexShrink: 0 };
+	const wrapStyle: CSSProperties = {
+		display: 'inline-flex',
+		alignItems: 'center',
+		justifyContent: 'center',
+		width: size,
+		height: size,
+		flexShrink: 0,
+	};
+	// Force the inner SVG/img to fill the wrapper exactly,
+	// overriding any hardcoded width/height attributes.
+	const innerStyle: CSSProperties = { width: '100%', height: '100%' };
 
 	// Emoji path — check for overrides first
 	if (emoji) {
 		const Override = EMOJI_ICON_OVERRIDES[emoji];
-		if (Override) return <Override style={style} className={className} />;
+		if (Override)
+			return (
+				<span style={wrapStyle} className={className}>
+					<Override style={innerStyle} />
+				</span>
+			);
 		return <FluentEmoji emoji={emoji} size={size} type="modern" />;
 	}
 
 	// Explicit icon path
 	if (icon) {
 		const Icon = icon;
-		return <Icon style={style} className={className} />;
+		return (
+			<span style={wrapStyle} className={className}>
+				<Icon style={innerStyle} />
+			</span>
+		);
 	}
 
 	return null;

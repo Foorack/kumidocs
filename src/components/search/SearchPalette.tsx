@@ -102,11 +102,11 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 							>
 								<span className="shrink-0">
 									{r.emoji ? (
-										<KumiIcon emoji={r.emoji} size={18} />
+										<KumiIcon emoji={r.emoji} size={20} />
 									) : r.path.endsWith('.md') ? (
-										<KumiIcon icon={TextBulletListSquare20Color} size={18} />
+										<KumiIcon icon={TextBulletListSquare20Color} size={20} />
 									) : (
-										<KumiIcon icon={SlideTextSparkle20Color} size={18} />
+										<KumiIcon icon={SlideTextSparkle20Color} size={20} />
 									)}
 								</span>
 								<div className="flex flex-col min-w-0">

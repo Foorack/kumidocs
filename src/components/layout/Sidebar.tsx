@@ -44,14 +44,14 @@ function sortNodes(nodes: TreeNode[]): TreeNode[] {
 
 function FileIcon({ node }: { node: TreeNode }) {
 	const emoji = node.fileEntry?.emoji;
-	if (emoji) return <KumiIcon emoji={emoji} size={16} />;
+	if (emoji) return <KumiIcon emoji={emoji} size={18} />;
 
 	const type = node.fileEntry?.type;
-	if (type === 'slide') return <KumiIcon icon={SlideTextSparkle20Color} size={16} />;
+	if (type === 'slide') return <KumiIcon icon={SlideTextSparkle20Color} size={18} />;
 	if (type === 'code') return <CodeRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 	if (type === 'image')
 		return <ImageRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
-	if (type === 'doc') return <KumiIcon icon={TextBulletListSquare20Color} size={16} />;
+	if (type === 'doc') return <KumiIcon icon={TextBulletListSquare20Color} size={18} />;
 	return <DocumentRegular className="w-4 h-4 shrink-0 text-muted-foreground" />;
 }
 

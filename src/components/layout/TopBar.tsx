@@ -28,7 +28,9 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 			>
 				<SearchRegular className="w-3.5 h-3.5 shrink-0" />
 				<span>Search...</span>
-				<kbd className="ml-auto text-[10px] bg-muted rounded px-1 py-0.5 font-mono">⌘K</kbd>
+				<kbd className="ml-auto text-xs bg-muted border border-border rounded px-1.5 py-0.5 font-mono leading-none">
+					⌘K
+				</kbd>
 			</Button>
 
 			<div className="ml-auto flex items-center gap-1">
