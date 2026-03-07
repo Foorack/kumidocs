@@ -3,7 +3,6 @@ export interface User {
 	email: string;
 	name: string;
 	displayName: string;
-	gravatarHash?: string;
 	canEdit: boolean;
 }
 
@@ -34,7 +33,7 @@ export interface SearchResult {
 export interface PresenceUser {
 	id: string;
 	name: string;
-	gravatarHash: string;
+	email: string;
 }
 
 // WebSocket message types
@@ -75,7 +74,7 @@ export interface CommitEntry {
 	fullSha: string;
 	message: string;
 	author: string; // email
-	gravatarHash: string;
+	authorEmail: string;
 	date: string; // ISO 8601
 	added?: number;
 	removed?: number;

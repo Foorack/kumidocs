@@ -176,7 +176,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 														>
 															<UserAvatar
 																name={emailToDisplayName(c.author)}
-																gravatarHash={c.gravatarHash}
+																email={c.authorEmail}
 																size="xs"
 																className="shrink-0 mt-0.5"
 															/>

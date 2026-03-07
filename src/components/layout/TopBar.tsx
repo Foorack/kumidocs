@@ -57,7 +57,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 						</span>
 						<UserAvatar
 							name={user.displayName}
-							gravatarHash={user.gravatarHash}
+							email={user.email}
 							size="md"
 							className="cursor-default"
 						/>

@@ -267,7 +267,7 @@ export async function apiFileHistory(url: URL, config: Config) {
 				...c,
 				added,
 				removed,
-				gravatarHash: createHash('md5').update(c.author).digest('hex'),
+				authorEmail: c.author,
 			};
 		}),
 	);

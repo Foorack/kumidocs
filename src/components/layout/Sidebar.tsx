@@ -12,7 +12,6 @@ import {
 } from '@fluentui/react-icons';
 import { EmojiIcon } from '../ui/EmojiIcon';
 import { UserAvatar } from '../ui/avatar';
-import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
 import {
@@ -170,11 +169,11 @@ function PageNodeRow({
 	};
 
 	return (
-		<div>
+		<div className="w-full">
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
 					<div
-						className={`group flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none ${
+						className={`group flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none min-w-0 ${
 							isActive
 								? 'bg-accent text-accent-foreground font-medium'
 								: 'hover:bg-accent/50 text-muted-foreground hover:text-foreground'
@@ -226,7 +225,7 @@ function PageNodeRow({
 										<TooltipTrigger asChild>
 											<UserAvatar
 												name={u.name}
-												gravatarHash={u.gravatarHash}
+												email={u.email}
 												size="xs"
 												className="ring-1 ring-sidebar cursor-default"
 											/>
@@ -450,10 +449,10 @@ export function Sidebar({
 
 	return (
 		<>
-			<aside className="w-56 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
+			<aside className="w-72 shrink-0 border-r border-border bg-sidebar flex flex-col h-full overflow-hidden">
 				<ContextMenu>
 					<ContextMenuTrigger asChild>
-						<ScrollArea className="flex-1 px-1 py-2">
+						<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
 							{pages.length === 0 ? (
 								<div className="px-3 py-4 text-xs text-muted-foreground text-center">
 									No pages yet.
@@ -473,7 +472,7 @@ export function Sidebar({
 									/>
 								))
 							)}
-						</ScrollArea>
+						</div>
 					</ContextMenuTrigger>
 					<ContextMenuContent>
 						<ContextMenuItem onClick={onNewPage}>

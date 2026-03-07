@@ -22,6 +22,10 @@ function send(ws: ServerWebSocket<WsData>, msg: WsServerMessage): void {
 	}
 }
 
+function broadcastToAll(msg: WsServerMessage): void {
+	for (const ws of sessions.values()) send(ws, msg);
+}
+
 function broadcastToPage(pageId: string, msg: WsServerMessage, except?: string): void {
 	const sids = pageViewers.get(pageId);
 	if (!sids) return;
@@ -45,7 +49,7 @@ function presenceUpdate(pageId: string): WsServerMessage {
 		const u: PresenceUser = {
 			id: ws.data.user.id,
 			name: ws.data.user.displayName,
-			gravatarHash: ws.data.user.gravatarHash ?? '',
+			email: ws.data.user.email,
 		};
 		viewers.push(u);
 		if (sid === editorSid) editor = u;
@@ -61,7 +65,9 @@ function leaveCurrentPage(ws: ServerWebSocket<WsData>): void {
 
 	pageViewers.get(pageId)?.delete(sid);
 	if (pageEditors.get(pageId) === sid) pageEditors.delete(pageId);
-	broadcastToPage(pageId, presenceUpdate(pageId));
+	// Broadcast to ALL sessions so every client's sidebar updates immediately,
+	// not just viewers of this page (who may not include the user who navigated away).
+	broadcastToAll(presenceUpdate(pageId));
 	ws.data.pageId = null;
 }
 
@@ -90,10 +96,14 @@ export function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): vo
 			if (!pageViewers.has(msg.pageId)) pageViewers.set(msg.pageId, new Set());
 			const viewers = pageViewers.get(msg.pageId);
 			if (viewers) viewers.add(sid);
-			// Send presence to everyone on this page (including the new joiner)
+			// Broadcast join to ALL sessions so every sidebar reflects the new location.
 			const update = presenceUpdate(msg.pageId);
-			broadcastToPage(msg.pageId, update);
-			send(ws, update);
+			broadcastToAll(update);
+			// Send a full snapshot of all active pages to the newly-connected client
+			// so their sidebar is immediately populated without waiting for navigations.
+			for (const [pageId] of pageViewers) {
+				if (pageId !== msg.pageId) send(ws, presenceUpdate(pageId));
+			}
 			break;
 		}
 

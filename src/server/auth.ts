@@ -45,12 +45,10 @@ export function parseUser(headers: Headers, authHeader: string): User | null {
 	}
 
 	const displayName = emailToDisplayName(email);
-	const gravatarHash = createHash('md5').update(email).digest('hex');
-
 	const editors = perms.editors ?? [];
 
 	// If no editors configured at all, everyone can edit
 	const canEdit = editors.length === 0 || editors.includes(email);
 
-	return { id: email, email, name: displayName, displayName, gravatarHash, canEdit };
+	return { id: email, email, name: displayName, displayName, canEdit };
 }
