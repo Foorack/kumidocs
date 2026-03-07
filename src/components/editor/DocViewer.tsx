@@ -20,6 +20,24 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 				}}
 				shikiTheme={['github-light', 'github-dark']} // [light, dark]
 				linkSafety={{ enabled: false }}
+				components={{
+					a: ({ href, children }) => {
+						let target = href?.startsWith('#') ? '_self' : '_blank';
+						if (href?.startsWith('mailto:')) target = '_blank';
+						return (
+							<a
+								className="wrap-anywhere font-medium text-primary underline"
+								data-incomplete="false"
+								data-streamdown="link"
+								href={href}
+								rel="noopener noreferrer"
+								target={target}
+							>
+								{children}
+							</a>
+						);
+					},
+				}}
 				// When overriding rehypePlugins, always include defaultRehypePlugins.sanitize
 				// to preserve XSS protection. The rehypePlugins prop replaces the entire
 				// default array — it does not merge.
