@@ -144,19 +144,21 @@ function makeFluentFlagSvg(sourceSvg: string): string {
 	 * in the Fluent Emoji set. g3 uses a neutral dark tint that works universally
 	 * across all flag colour schemes.
 	 */
-	const first_color = '#888';
+	const colorTop = 'rgba(255, 255, 255, 0.5)';
+	const colorLeft = 'rgba(255, 255, 255, 0.25)';
+	const colorBottom = 'rgba(0, 0, 0, 0.5)';
 	const FLAG_GRADIENT_DEFS =
 		'<linearGradient id="g0" x1="2.25222" y1="17.8125" x2="3.22097" y2="17.8125" gradientUnits="userSpaceOnUse">' +
-		'<stop stop-color="#3A3A3A"/><stop offset="1" stop-color="#3A3A3A" stop-opacity="0"/>' +
+		`<stop stop-color="${colorLeft}"/><stop offset="1" stop-color="${colorLeft}" stop-opacity="0"/>` +
 		'</linearGradient>' +
 		'<linearGradient id="g1" x1="30.1272" y1="19.332" x2="29.1585" y2="19.332" gradientUnits="userSpaceOnUse">' +
-		'<stop stop-color="#FBF2FF"/><stop offset="1" stop-color="#FBF2FF" stop-opacity="0"/>' +
+		`<stop stop-color="${colorTop}"/><stop offset="1" stop-color="${colorTop}" stop-opacity="0"/>` +
 		'</linearGradient>' +
 		'<linearGradient id="g2" x1="25.0647" y1="6.04297" x2="25.0647" y2="6.75391" gradientUnits="userSpaceOnUse">' +
-		'<stop stop-color="#FBF2FF"/><stop offset="1" stop-color="#FBF2FF" stop-opacity="0"/>' +
+		`<stop stop-color="${colorTop}"/><stop offset="1" stop-color="${colorTop}" stop-opacity="0"/>` +
 		'</linearGradient>' +
 		'<linearGradient id="g3" x1="8.75222" y1="26.0039" x2="8.75222" y2="24.9375" gradientUnits="userSpaceOnUse">' +
-		`<stop offset="0.0149314" stop-color="${first_color}"/><stop offset="1" stop-color="${first_color}" stop-opacity="0"/>` +
+		`<stop offset="0.0149314" stop-color="${colorBottom}"/><stop offset="1" stop-color="${colorBottom}" stop-opacity="0"/>` +
 		'</linearGradient>';
 	const FLAG_GRADIENT_RECT =
 		`<rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6" fill="url(#g0)" fill-opacity="0.25"/>` +
