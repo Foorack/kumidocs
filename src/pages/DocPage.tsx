@@ -543,19 +543,21 @@ export default function DocPage() {
 				<div className="flex items-center gap-2 flex-1 justify-end min-w-0">
 					{/* Viewers — deduplicated by id (same user may have multiple tabs open) */}
 					<div className="flex -space-x-1">
-						{[...new Map(viewers.map((v) => [v.id, v])).values()].slice(0, 5).map((v) => (
-							<Tooltip key={v.id}>
-								<TooltipTrigger asChild>
-									<UserAvatar
-										name={v.name}
-										gravatarHash={v.gravatarHash}
-										size="sm"
-										className="border border-background ring-1 ring-border"
-									/>
-								</TooltipTrigger>
-								<TooltipContent>{v.name}</TooltipContent>
-							</Tooltip>
-						))}
+						{[...new Map(viewers.map((v) => [v.id, v])).values()]
+							.slice(0, 5)
+							.map((v) => (
+								<Tooltip key={v.id}>
+									<TooltipTrigger asChild>
+										<UserAvatar
+											name={v.name}
+											gravatarHash={v.gravatarHash}
+											size="sm"
+											className="border border-background ring-1 ring-border"
+										/>
+									</TooltipTrigger>
+									<TooltipContent>{v.name}</TooltipContent>
+								</Tooltip>
+							))}
 					</div>
 
 					{/* Dedicated info button */}
