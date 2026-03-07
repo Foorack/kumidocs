@@ -17,7 +17,7 @@ function rehypeHeadingIds(): (tree: Root) => undefined {
 
 	return (tree: Root) => {
 		function walk(node: Root | RootContent): void {
-			if (node.type === 'element' && /^h[1-6]$/.test(node.tagName) && node.properties) {
+			if (node.type === 'element' && /^h[1-6]$/.test(node.tagName)) {
 				node.properties.id ??= nodeText(node)
 					.toLowerCase()
 					.replace(/[^\w\s-]/g, '') // Remove non-alphanumeric chars except space, underscore, hyphen
