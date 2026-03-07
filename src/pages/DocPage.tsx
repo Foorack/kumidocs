@@ -541,9 +541,9 @@ export default function DocPage() {
 
 				{/* Right: viewers + info + dropdown */}
 				<div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-					{/* Viewers */}
+					{/* Viewers — deduplicated by id (same user may have multiple tabs open) */}
 					<div className="flex -space-x-1">
-						{viewers.slice(0, 5).map((v) => (
+						{[...new Map(viewers.map((v) => [v.id, v])).values()].slice(0, 5).map((v) => (
 							<Tooltip key={v.id}>
 								<TooltipTrigger asChild>
 									<UserAvatar
