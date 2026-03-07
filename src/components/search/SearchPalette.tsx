@@ -8,7 +8,7 @@ import {
 	CommandItem,
 	CommandList,
 } from '../ui/command';
-import { KumiIcon } from '../ui/KumiIcon';
+import { EmojiIcon } from '../ui/EmojiIcon';
 import type { SearchResult } from '../../lib/types';
 
 interface SearchPaletteProps {
@@ -100,7 +100,7 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 								className="gap-2"
 							>
 								<span className="shrink-0">
-									<KumiIcon
+									<EmojiIcon
 										emoji={r.emoji}
 										fileType={r.type ?? 'doc'}
 										size={20}

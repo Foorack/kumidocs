@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
-import { KumiIcon } from '../components/ui/KumiIcon';
+import { EmojiIcon } from '../components/ui/EmojiIcon';
+import { EmojiPickerPopover } from '../components/ui/EmojiPickerPopover';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
@@ -150,6 +151,9 @@ export default function DocPage() {
 	contentRef.current = content;
 	const savedContentRef = useRef(savedContent);
 	savedContentRef.current = savedContent;
+	// Keep a ref to latest meta so doSave always writes the current emoji/marp flag
+	const metaRef = useRef(meta);
+	metaRef.current = meta;
 
 	// Load document
 	const loadDoc = useCallback(async (path: string) => {
@@ -245,7 +249,7 @@ export default function DocPage() {
 				setSaveStatus('saving');
 
 				// Reconstruct frontmatter from whitelisted fields only (emoji, marp).
-				const fullContent = buildFrontmatter(meta) + currentContent;
+				const fullContent = buildFrontmatter(metaRef.current) + currentContent;
 
 				try {
 					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
@@ -279,7 +283,7 @@ export default function DocPage() {
 			savePromiseRef.current = next;
 			return next;
 		},
-		[filePath, reloadTree, loadDoc, meta],
+		[filePath, reloadTree, loadDoc],
 	);
 
 	// Handle content changes
@@ -304,6 +308,20 @@ export default function DocPage() {
 			console.error('Manual save failed:', err);
 		});
 	}, [doSave, content]);
+
+	// Emoji change (edit mode only) — update meta and persist immediately
+	const handleEmojiChange = useCallback(
+		(newEmoji: string) => {
+			// Update the ref synchronously so the save below picks up the new emoji.
+			metaRef.current = { ...metaRef.current, emoji: newEmoji };
+			setMeta((prev) => ({ ...prev, emoji: newEmoji }));
+			// Persist the emoji change immediately (chains behind any in-flight save).
+			doSave(contentRef.current).catch((err: unknown) => {
+				console.error('Emoji save failed:', err);
+			});
+		},
+		[doSave],
+	);
 
 	// Edit mode toggle
 	const enterEdit = useCallback(() => {
@@ -482,7 +500,13 @@ export default function DocPage() {
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
 				{/* Left: icon + title */}
 				<div className="flex items-center gap-2 flex-1 min-w-0">
-					<KumiIcon emoji={emoji} fileType={fileType} size={24} />
+					<EmojiPickerPopover
+						emoji={emoji}
+						fileType={fileType}
+						size={24}
+						editable={editMode}
+						onSelect={handleEmojiChange}
+					/>
 					<h1 className="font-semibold text-base truncate">{title}</h1>
 				</div>
 

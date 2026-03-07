@@ -10,7 +10,7 @@ import {
 	OpenRegular,
 	LinkRegular,
 } from '@fluentui/react-icons';
-import { KumiIcon } from '../ui/KumiIcon';
+import { EmojiIcon } from '../ui/EmojiIcon';
 import { UserAvatar } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
@@ -202,7 +202,7 @@ function PageNodeRow({
 						<span
 							className={`flex items-center justify-center ${node.isVirtual ? 'opacity-40 shrink-0' : 'shrink-0'}`}
 						>
-							<KumiIcon
+							<EmojiIcon
 								emoji={node.fileEntry?.emoji}
 								fileType={node.fileEntry?.type ?? 'doc'}
 								size={24}
