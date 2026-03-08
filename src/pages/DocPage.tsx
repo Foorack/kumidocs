@@ -12,16 +12,6 @@ import {
 	DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
 import { usePageActions } from '../hooks/usePageActions';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
@@ -31,6 +21,7 @@ import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
+import NotFound from './NotFound';
 
 interface OutletCtx {
 	reloadTree: () => void;
@@ -87,9 +78,18 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 const AUTO_SAVE_DELAY = 5000;
 
+/** Extract lowercase extension from a path (e.g. "test.tsx" → "tsx", "README.md" → "md", "nodot" → ""). */
+function pathExtension(path: string): string {
+	const dot = path.lastIndexOf('.');
+	const slash = path.lastIndexOf('/');
+	return dot > slash && dot !== -1 ? path.slice(dot + 1).toLowerCase() : '';
+}
+
 export default function DocPage() {
 	const { '*': rawPath = '' } = useParams();
-	const filePath = rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
+	const rawExt = pathExtension(rawPath);
+	const isCodeFile = rawExt !== '' && rawExt !== 'md';
+	const filePath = isCodeFile ? rawPath : rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
 	const navigate = useNavigate();
 	const { reloadTree } = useOutletContext<OutletCtx>();
 	const { user } = useUser();
@@ -110,9 +110,6 @@ export default function DocPage() {
 	const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
 	// Modals
-	const [newPageOpen, setNewPageOpen] = useState(false);
-	const [newPagePath, setNewPagePath] = useState('');
-	const [newPageTitle, setNewPageTitle] = useState('');
 	const [infoOpen, setInfoOpen] = useState(
 		() => localStorage.getItem('kumidocs:info-open') === 'true',
 	);
@@ -345,38 +342,11 @@ export default function DocPage() {
 		setEditMode(false);
 	}, [doSave, filePath]);
 
-	// Create new page
-	const handleNewPage = useCallback(async () => {
-		if (!newPagePath.trim()) return;
-		const p = newPagePath.trim().endsWith('.md')
-			? newPagePath.trim()
-			: `${newPagePath.trim()}.md`;
-		const pageHeading = newPageTitle || pathToTitle(p);
-		const stub = `# ${pageHeading}\n`;
-		const res = await fetch('/api/file', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ path: p, content: stub }),
-		});
-		if (res.ok) {
-			toast.success('Page created');
-			reloadTree();
-			navigate(`/p/${p}`)?.catch((err: unknown) => {
-				console.error('Navigation failed after page creation:', err);
-			});
-		} else if (res.status === 409) {
-			toast.error('A page at that path already exists.');
-		} else {
-			toast.error('Create failed');
-		}
-		setNewPageOpen(false);
-		setNewPagePath('');
-		setNewPageTitle('');
-	}, [newPagePath, newPageTitle, navigate, reloadTree]);
-
-	const title = extractHeadingTitle(content) ?? pathToTitle(filePath);
+	const title = isCodeFile
+		? (rawPath.split('/').pop() ?? rawPath)
+		: (extractHeadingTitle(content) ?? pathToTitle(filePath));
 	const emoji = meta.emoji;
-	const fileType = meta.marp ? 'slide' : 'doc';
+	const fileType = isCodeFile ? 'code' : meta.marp ? 'slide' : 'doc';
 
 	// Breadcrumb
 	const breadcrumb = filePath.replace(/\.md$/, '').split('/').slice(0, -1);
@@ -390,77 +360,7 @@ export default function DocPage() {
 	}
 
 	if (notFound) {
-		return (
-			<div className="flex-1 flex flex-col items-center justify-center gap-4">
-				<div className="text-4xl">📄</div>
-				<div className="text-lg font-medium">Page not found</div>
-				<div className="text-sm text-muted-foreground">
-					<code className="font-mono bg-muted px-1 rounded">{filePath}</code> doesn't
-					exist yet.
-				</div>
-				{user?.canEdit && (
-					<Button
-						onClick={() => {
-							setNewPageOpen(true);
-						}}
-					>
-						Create this page
-					</Button>
-				)}
-				{/* New page dialog */}
-				<Dialog open={newPageOpen} onOpenChange={setNewPageOpen}>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Create page</DialogTitle>
-							<DialogDescription>
-								Enter the path and title for the new page.
-							</DialogDescription>
-						</DialogHeader>
-						<div className="grid gap-3">
-							<div>
-								<Label>Path</Label>
-								<Input
-									value={newPagePath || filePath}
-									onChange={(e) => {
-										setNewPagePath(e.target.value);
-									}}
-									placeholder="docs/my-page.md"
-								/>
-							</div>
-							<div>
-								<Label>Title</Label>
-								<Input
-									value={newPageTitle}
-									onChange={(e) => {
-										setNewPageTitle(e.target.value);
-									}}
-									placeholder={pathToTitle(filePath)}
-								/>
-							</div>
-						</div>
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => {
-									setNewPageOpen(false);
-								}}
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={() => {
-									handleNewPage().catch((err: unknown) => {
-										console.error('Failed to create page:', err);
-									});
-								}}
-							>
-								Create
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			</div>
-		);
+		return <NotFound />;
 	}
 
 	return (
@@ -503,7 +403,7 @@ export default function DocPage() {
 						emoji={emoji}
 						fileType={fileType}
 						size={24}
-						editable={editMode}
+						editable={editMode && !isCodeFile}
 						onSelect={handleEmojiChange}
 					/>
 					<h1 className="font-semibold text-base truncate">{title}</h1>
@@ -651,7 +551,9 @@ export default function DocPage() {
 						/>
 					) : (
 						<ScrollArea className="h-full">
-							<DocViewer value={content} />
+							<DocViewer
+								value={isCodeFile ? `\`\`\`${rawExt}\n${content}\n\`\`\`` : content}
+							/>
 						</ScrollArea>
 					)}
 				</div>
