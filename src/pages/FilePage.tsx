@@ -85,7 +85,7 @@ function pathExtension(path: string): string {
 	return dot > slash && dot !== -1 ? path.slice(dot + 1).toLowerCase() : '';
 }
 
-export default function DocPage() {
+export default function FilePage() {
 	const { '*': rawPath = '' } = useParams();
 	const rawExt = pathExtension(rawPath);
 	const isCodeFile = rawExt !== '' && rawExt !== 'md';
