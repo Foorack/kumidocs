@@ -4,35 +4,10 @@ import { harden } from 'rehype-harden';
 import { math } from '@streamdown/math';
 import { memo } from 'react';
 import { Streamdown, defaultRehypePlugins } from 'streamdown';
-import type { Root, Element, ElementContent, RootContent } from 'hast';
-
-// Inline rehype plugin — adds `id` to headings with no extra dependencies.
-// Slug: lowercase → strip non-alphanumeric → spaces/underscores to hyphens → collapse hyphens.
-function rehypeHeadingIds(): (tree: Root) => undefined {
-	function nodeText(node: Element | ElementContent | RootContent): string {
-		if (node.type === 'text') return node.value;
-		if ('children' in node) return node.children.map(nodeText).join('');
-		return '';
-	}
-
-	return (tree: Root) => {
-		function walk(node: Root | RootContent): void {
-			if (node.type === 'element' && /^h[1-6]$/.test(node.tagName)) {
-				node.properties.id ??= nodeText(node)
-					.toLowerCase()
-					.replace(/[^\w\s-]/g, '') // Remove non-alphanumeric chars except space, underscore, hyphen
-					.trim()
-					.replace(/[\s_]+/g, '-') // Replace spaces and underscores with hyphens
-					.replace(/-+/g, '-'); // Collapse multiple hyphens into one
-			}
-			if ('children' in node) {
-				for (const child of node.children) walk(child);
-			}
-		}
-		walk(tree);
-		return undefined;
-	};
-}
+import type { Element } from 'hast';
+import { EmojiIcon } from '../ui/EmojiIcon';
+import { rehypeEmojiPlugin } from './rehypeEmojiPlugin';
+import { rehypeHeadingIdsPlugin } from './rehypeHeadingIdsPlugin';
 
 interface DocViewerProps {
 	value: string;
@@ -50,6 +25,13 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 				shikiTheme={['github-light', 'github-dark']} // [light, dark]
 				linkSafety={{ enabled: false }}
 				components={{
+					'kumi-emoji': ({ node }: { node?: Element }) => {
+						const raw = node?.properties.dataEmoji;
+						const emoji = typeof raw === 'string' ? raw : '';
+						return emoji ? (
+							<EmojiIcon emoji={emoji} size="1.07lh" className="align-middle" />
+						) : null;
+					},
 					a: ({ href, children }) => {
 						let target = href?.startsWith('#') ? '_self' : '_blank';
 						if (href?.startsWith('mailto:')) target = '_blank';
@@ -75,9 +57,11 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 					// // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					// defaultRehypePlugins.raw!,
 
+					// Sanitize dangerous content
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					defaultRehypePlugins.sanitize!,
 
+					// Harden links
 					[
 						harden,
 						{
@@ -86,7 +70,11 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 					],
 
 					// Custom anchor/slug plugin that adds id to headings
-					rehypeHeadingIds,
+					rehypeHeadingIdsPlugin,
+					// Replace native emoji with FluentUI icons.
+					// Runs last so the sanitizer/harden never touches the
+					// generated <kumi-emoji> elements.
+					rehypeEmojiPlugin,
 				]}
 			>
 				{value}

@@ -10,7 +10,7 @@ import {
 	OpenRegular,
 	LinkRegular,
 } from '@fluentui/react-icons';
-import { EmojiIcon } from '../ui/EmojiIcon';
+import { EmojiIcon, TitleWithEmoji } from '../ui/EmojiIcon';
 import { UserAvatar } from '../ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
@@ -224,7 +224,7 @@ function PageNodeRow({
 							className={`truncate flex-1 min-w-0 ${node.isVirtual ? 'italic opacity-50' : ''}`}
 							title={node.displayTitle}
 						>
-							{node.displayTitle}
+							<TitleWithEmoji title={node.displayTitle} />
 						</Link>
 
 						{/* Presence avatars — users currently on this page */}

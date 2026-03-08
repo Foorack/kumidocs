@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
-import { EmojiIcon } from '../components/ui/EmojiIcon';
 import { EmojiPickerPopover } from '../components/ui/EmojiPickerPopover';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';

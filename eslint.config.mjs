@@ -12,7 +12,7 @@ export default tseslint.config(
 			'**/package.json',
 			'**/eslint.config.mjs',
 			'node_modules/**/*',
-			'src/api/sdk/**/*',
+			'src/components/ui/emoji/emojis.ts',
 		],
 	},
 	{

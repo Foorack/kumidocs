@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import type { User } from '../lib/types';
 import { emailToDisplayName } from '../lib/avatar';
 
