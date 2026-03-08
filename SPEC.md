@@ -615,7 +615,7 @@ SPEC.md
 - [x] Create subpage / Create page alongside (right-click context menu)
 - [x] Delete page (confirmation modal in DocPage)
 - [x] Move / Rename page (sidebar context menu + DocPage overflow menu)
-- [ ] Presence avatars in page header (`AvatarGroup`)
+- [x] Presence avatars in page header (`AvatarGroup`)
 - [ ] Drag-and-drop image upload
 - [ ] Resizable sidebar width (persisted in `localStorage`)
 

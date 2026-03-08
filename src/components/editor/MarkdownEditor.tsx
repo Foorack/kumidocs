@@ -3,16 +3,72 @@ import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { MarkdownViewer } from './MarkdownViewer';
+import {
+	Bold,
+	Code,
+	Eye,
+	EyeOff,
+	FileQuestionMark,
+	Italic,
+	Link2,
+	List,
+	ListChecks,
+	ListOrdered,
+	Strikethrough,
+	TextQuote,
+} from 'lucide-react';
 
 // ── Toolbar action helpers ────────────────────────────────────────────────────
 
-/** Wrap the current selection (or insert at cursor) with `before` and `after`. */
+/** Wrap the current selection (or insert at cursor) with `before` and `after`.
+ * Clicking the same action again toggles it off. */
 function insertWrap(ta: HTMLTextAreaElement, before: string, after: string) {
 	const start = ta.selectionStart;
 	const end = ta.selectionEnd;
 	const selected = ta.value.slice(start, end);
+
+	// Toggle case 1: selected text includes the wrappers → unwrap.
+	if (
+		selected.length >= before.length + after.length &&
+		selected.startsWith(before) &&
+		selected.endsWith(after)
+	) {
+		const inner = selected.slice(before.length, selected.length - after.length);
+		ta.setRangeText(inner, start, end, 'preserve');
+		ta.setSelectionRange(start, start + inner.length);
+		ta.focus();
+		return;
+	}
+
+	// Toggle case 2: inner text is selected and is surrounded by markers → unwrap.
+	if (
+		start >= before.length &&
+		end + after.length <= ta.value.length &&
+		ta.value.slice(start - before.length, start) === before &&
+		ta.value.slice(end, end + after.length) === after
+	) {
+		ta.setRangeText(selected, start - before.length, end + after.length, 'preserve');
+		ta.setSelectionRange(start - before.length, start - before.length + selected.length);
+		ta.focus();
+		return;
+	}
+
+	// Toggle case 3: no selection, cursor sits between empty markers → remove them.
+	if (start === end && start >= before.length && start + after.length <= ta.value.length) {
+		if (
+			ta.value.slice(start - before.length, start) === before &&
+			ta.value.slice(start, start + after.length) === after
+		) {
+			const removeStart = start - before.length;
+			ta.setRangeText('', removeStart, start + after.length, 'preserve');
+			ta.setSelectionRange(removeStart, removeStart);
+			ta.focus();
+			return;
+		}
+	}
+
+	// Default: wrap.
 	ta.setRangeText(before + selected + after, start, end, 'preserve');
-	// Position cursor: inside wrappers if no selection, around selection if there was one.
 	if (selected.length > 0) {
 		ta.setSelectionRange(start + before.length, start + before.length + selected.length);
 	} else {
@@ -21,10 +77,14 @@ function insertWrap(ta: HTMLTextAreaElement, before: string, after: string) {
 	ta.focus();
 }
 
-/** Set (or clear) a line prefix like `> ` or `## ` on the line at cursor. */
-function setLinePrefix(ta: HTMLTextAreaElement, prefix: string) {
-	const start = ta.selectionStart;
-	const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1;
+/** Set (or clear) a line prefix like `> ` or `## ` on the line at cursor.
+ * Accepts an explicit `forcedStart` so callers can pass a saved cursor position
+ * (needed when the textarea may have lost focus before this runs). */
+function setLinePrefix(ta: HTMLTextAreaElement, prefix: string, forcedStart?: number) {
+	const start = forcedStart ?? ta.selectionStart;
+	// Guard: lastIndexOf('\n', -1) is treated as lastIndexOf('\n', 0) in browsers,
+	// which can return 0 when the text starts with '\n', making lineStart > lineEnd.
+	const lineStart = start > 0 ? ta.value.lastIndexOf('\n', start - 1) + 1 : 0;
 	const lineEndRaw = ta.value.indexOf('\n', start);
 	const lineEnd = lineEndRaw === -1 ? ta.value.length : lineEndRaw;
 	const line = ta.value.slice(lineStart, lineEnd);
@@ -33,6 +93,35 @@ function setLinePrefix(ta: HTMLTextAreaElement, prefix: string) {
 	const newLine = prefix ? `${prefix}${stripped}` : stripped;
 	ta.setRangeText(newLine, lineStart, lineEnd, 'preserve');
 	ta.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
+	ta.focus();
+}
+
+/** Toggle a list-style line prefix (- , 1. , - [ ] ) at the cursor line.
+ * Unlike setLinePrefix, list prefixes are toggled off if already present. */
+function toggleListPrefix(ta: HTMLTextAreaElement, prefix: string) {
+	const start = ta.selectionStart;
+	const lineStart = start > 0 ? ta.value.lastIndexOf('\n', start - 1) + 1 : 0;
+	const lineEndRaw = ta.value.indexOf('\n', start);
+	const lineEnd = lineEndRaw === -1 ? ta.value.length : lineEndRaw;
+	const line = ta.value.slice(lineStart, lineEnd);
+	const stripped = line.replace(/^(#{1,6} |> |- \[ \] |- |[0-9]+\. )/, '');
+	const newLine = line.startsWith(prefix) ? stripped : `${prefix}${stripped}`;
+	ta.setRangeText(newLine, lineStart, lineEnd, 'preserve');
+	ta.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
+	ta.focus();
+}
+
+/** Insert a markdown link. Wraps selected text as link text; positions cursor
+ * over the "url" placeholder so the user can type the URL immediately. */
+function insertLink(ta: HTMLTextAreaElement) {
+	const start = ta.selectionStart;
+	const end = ta.selectionEnd;
+	const selected = ta.value.slice(start, end);
+	const text = selected || 'text';
+	const insertion = `[${text}](url)`;
+	ta.setRangeText(insertion, start, end, 'preserve');
+	const urlStart = start + 1 + text.length + 2; // position after "[text]("
+	ta.setSelectionRange(urlStart, urlStart + 3); // select "url"
 	ta.focus();
 }
 
@@ -45,14 +134,14 @@ const CHEATSHEET_ROWS: [string, string][] = [
 	['*italic*', 'Italic'],
 	['> blockquote', 'Blockquote'],
 	['`inline code`', 'Inline code'],
-	['```\\ncode block\\n```', 'Code block'],
+	['```\ncode block\n```', 'Code block'],
 	['[text](url)', 'Link'],
 	['![alt](url)', 'Image'],
 	['- item', 'Unordered list'],
 	['1. item', 'Ordered list'],
 	['- [ ] task', 'Task list'],
 	['---', 'Horizontal rule'],
-	['| A | B |\\n|---|---|\\n| 1 | 2 |', 'Table'],
+	['| A | B |\n|---|---|\n| 1 | 2 |', 'Table'],
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -79,6 +168,18 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 	const previewRef = useRef<HTMLDivElement>(null);
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
+	const [showPreview, setShowPreview] = useState(true);
+	// Track the last known cursor/selection so toolbar actions that steal focus
+	// (especially the heading Select dropdown) still operate at the right position.
+	const savedSelectionRef = useRef({ start: 0, end: 0 });
+	const saveSelection = useCallback(() => {
+		if (taRef.current) {
+			savedSelectionRef.current = {
+				start: taRef.current.selectionStart,
+				end: taRef.current.selectionEnd,
+			};
+		}
+	}, []);
 
 	// Dispatch a synthetic change so React picks up imperative textarea edits.
 	const syncChange = useCallback(() => {
@@ -90,7 +191,12 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 			setHeadingValue(val);
 			const opt = HEADING_OPTIONS.find((o) => o.value === val);
 			if (!opt || !taRef.current) return;
-			setLinePrefix(taRef.current, opt.prefix ? `${opt.prefix} ` : '');
+			const ta = taRef.current;
+			// Restore the saved selection: the dropdown stole focus and may have
+			// caused the browser or React to reset the textarea cursor position.
+			ta.focus();
+			ta.setSelectionRange(savedSelectionRef.current.start, savedSelectionRef.current.end);
+			setLinePrefix(ta, opt.prefix ? `${opt.prefix} ` : '');
 			syncChange();
 		},
 		[syncChange],
@@ -108,9 +214,45 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		syncChange();
 	}, [syncChange]);
 
+	const handleStrikethrough = useCallback(() => {
+		if (!taRef.current) return;
+		insertWrap(taRef.current, '~~', '~~');
+		syncChange();
+	}, [syncChange]);
+
+	const handleCode = useCallback(() => {
+		if (!taRef.current) return;
+		insertWrap(taRef.current, '`', '`');
+		syncChange();
+	}, [syncChange]);
+
+	const handleLink = useCallback(() => {
+		if (!taRef.current) return;
+		insertLink(taRef.current);
+		syncChange();
+	}, [syncChange]);
+
 	const handleQuote = useCallback(() => {
 		if (!taRef.current) return;
 		setLinePrefix(taRef.current, '> ');
+		syncChange();
+	}, [syncChange]);
+
+	const handleUnordered = useCallback(() => {
+		if (!taRef.current) return;
+		toggleListPrefix(taRef.current, '- ');
+		syncChange();
+	}, [syncChange]);
+
+	const handleNumbered = useCallback(() => {
+		if (!taRef.current) return;
+		toggleListPrefix(taRef.current, '1. ');
+		syncChange();
+	}, [syncChange]);
+
+	const handleTask = useCallback(() => {
+		if (!taRef.current) return;
+		toggleListPrefix(taRef.current, '- [ ] ');
 		syncChange();
 	}, [syncChange]);
 
@@ -119,9 +261,15 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 			if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 				e.preventDefault();
 				onSave?.();
+			} else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+				e.preventDefault();
+				handleBold();
+			} else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+				e.preventDefault();
+				handleItalic();
 			}
 		},
-		[onSave],
+		[onSave, handleBold, handleItalic],
 	);
 
 	const handleEditorScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
@@ -160,39 +308,150 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 						size="sm"
 						className="h-7 w-7 p-0 font-bold"
 						onClick={handleBold}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
 						disabled={disabled}
 						title="Bold (Ctrl+B)"
 					>
-						B
+						<Bold />
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						className="h-7 w-7 p-0 italic"
 						onClick={handleItalic}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
 						disabled={disabled}
 						title="Italic (Ctrl+I)"
 					>
-						I
+						<Italic />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleStrikethrough}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Strikethrough"
+					>
+						<Strikethrough />
+					</Button>
+
+					<div className="w-px h-4 bg-border mx-0.5" />
+
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleCode}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Inline code"
+					>
+						<Code />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleLink}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Link"
+					>
+						<Link2 />
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						className="h-7 w-7 p-0 font-serif text-base leading-none"
 						onClick={handleQuote}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
 						disabled={disabled}
 						title="Blockquote"
 					>
-						"
+						<TextQuote />
+					</Button>
+
+					<div className="w-px h-4 bg-border mx-0.5" />
+
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleUnordered}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Unordered list"
+					>
+						<List />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleNumbered}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Numbered list"
+					>
+						<ListOrdered />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={handleTask}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Task list"
+					>
+						<ListChecks />
 					</Button>
 				</div>
 
 				{/* Right: meta controls */}
 				<div className="flex items-center gap-1">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={() => {
+							setShowPreview((v) => !v);
+						}}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title={showPreview ? 'Hide preview' : 'Show preview'}
+					>
+						{showPreview ? <Eye /> : <EyeOff />}
+					</Button>
+					<div className="w-px h-4 bg-border mx-0.5" />
 					<Dialog open={helpOpen} onOpenChange={setHelpOpen}>
 						<DialogTrigger asChild>
 							<Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
-								<span className="text-muted-foreground">?</span>
+								<span className="text-muted-foreground">
+									<FileQuestionMark />
+								</span>
 								Cheatsheet
 							</Button>
 						</DialogTrigger>
@@ -223,13 +482,18 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 			{/* ── Two-pane content ── */}
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{/* Left — editor */}
-				<div className="flex-1 min-w-0 flex flex-col border-r border-border overflow-hidden">
+				<div
+					className={`flex-1 min-w-0 flex flex-col overflow-hidden${showPreview ? ' border-r border-border' : ''}`}
+				>
 					<textarea
 						ref={taRef}
 						value={value}
 						onChange={(e) => {
 							onChange(e.target.value);
 						}}
+						onSelect={saveSelection}
+						onClick={saveSelection}
+						onKeyUp={saveSelection}
 						onScroll={handleEditorScroll}
 						onKeyDown={handleKeyDown}
 						disabled={disabled}
@@ -240,9 +504,11 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 				</div>
 
 				{/* Right — live preview */}
-				<div ref={previewRef} className="flex-1 min-w-0 overflow-y-auto">
-					<MarkdownViewer value={value} />
-				</div>
+				{showPreview && (
+					<div ref={previewRef} className="flex-1 min-w-0 overflow-y-auto">
+						<MarkdownViewer value={value} />
+					</div>
+				)}
 			</div>
 		</div>
 	);
