@@ -6,9 +6,12 @@ export interface User {
 	canEdit: boolean;
 }
 
+export type MarkdownType = 'doc' | 'slide';
+export type FileType = MarkdownType | 'code' | 'image' | 'other';
+
 export interface FileEntry {
 	path: string;
-	type: 'doc' | 'slide' | 'code' | 'image' | 'other';
+	type: FileType;
 	title: string;
 	emoji?: string;
 }
@@ -39,6 +42,7 @@ export interface PresenceUser {
 // WebSocket message types
 export type WsClientMessage =
 	| { type: 'hello'; pageId: string; userId: string }
+	| { type: 'bye' }
 	| { type: 'editing_start'; pageId: string }
 	| { type: 'editing_stop'; pageId: string }
 	| { type: 'heartbeat' };

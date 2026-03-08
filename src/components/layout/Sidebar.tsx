@@ -135,7 +135,7 @@ function PageNodeRow({
 	const [dotsHovered, setDotsHovered] = useState(false);
 	const [dotsOpen, setDotsOpen] = useState(false);
 
-	const href = `/p/${node.path}`;
+	const href = `/p/${node.path}`.replace(/\.md$/i, '');
 	const isActive = location.pathname === href;
 	const othersOnPage = presenceByPage.get(node.path) ?? [];
 	const presenceUsers =

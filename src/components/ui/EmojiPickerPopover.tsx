@@ -7,14 +7,15 @@
 import { useState, useCallback } from 'react';
 import { Popover } from 'radix-ui';
 import { EmojiPicker } from './EmojiPicker';
-import { EmojiIcon, type FileIconType } from './EmojiIcon';
+import { EmojiIcon } from './EmojiIcon';
 import { cn } from '../../lib/utils';
+import type { FileType } from '@/lib/types';
 
 interface EmojiPickerPopoverProps {
 	/** Currently selected emoji (undefined = use fileType default). */
 	emoji?: string;
 	/** Fallback icon type when no emoji is set. */
-	fileType?: FileIconType;
+	fileType?: FileType;
 	/** Size passed to EmojiIcon. Default: 24. */
 	size?: number;
 	/** Called with the new emoji character when the user picks one. */

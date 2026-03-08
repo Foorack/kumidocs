@@ -127,6 +127,11 @@ export function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): vo
 			break;
 		}
 
+		case 'bye': {
+			leaveCurrentPage(ws);
+			break;
+		}
+
 		case 'heartbeat': {
 			send(ws, { type: 'heartbeat_ack' });
 			break;

@@ -12,6 +12,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
+import type { MarkdownType } from '@/lib/types';
 
 interface NewPageDialogProps {
 	open: boolean;
@@ -20,8 +21,6 @@ interface NewPageDialogProps {
 	parentDir?: string;
 	onCreated?: () => void;
 }
-
-type PageType = 'markdown' | 'slides';
 
 function slugify(title: string): string {
 	return title
@@ -39,7 +38,7 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 	const [title, setTitle] = useState('');
 	const [slug, setSlug] = useState('');
 	const [slugEdited, setSlugEdited] = useState(false);
-	const [pageType, setPageType] = useState<PageType>('markdown');
+	const [pageType, setPageType] = useState<MarkdownType>('doc');
 	const [creating, setCreating] = useState(false);
 
 	// Auto-derive slug from title unless user has manually edited it (derived state, no effect needed)
@@ -52,7 +51,7 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 		if (!title.trim() || !resolvedSlug) return;
 		setCreating(true);
 
-		const marpHeader = pageType === 'slides' ? '---\nmarp: true\n---\n\n' : '';
+		const marpHeader = pageType === 'slide' ? '---\nmarp: true\n---\n\n' : '';
 		const stub = `${marpHeader}# ${title.trim()}\n`;
 
 		const res = await fetch('/api/file', {
@@ -93,7 +92,7 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 					setTitle('');
 					setSlug('');
 					setSlugEdited(false);
-					setPageType('markdown');
+					setPageType('doc');
 					setCreating(false);
 				} else {
 					onClose();
@@ -118,10 +117,10 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 							<Button
 								type="button"
 								size="sm"
-								variant={pageType === 'markdown' ? 'default' : 'outline'}
+								variant={pageType === 'doc' ? 'default' : 'outline'}
 								className="flex-1 h-8 text-xs"
 								onClick={() => {
-									setPageType('markdown');
+									setPageType('doc');
 								}}
 							>
 								📄 Markdown
@@ -129,10 +128,10 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 							<Button
 								type="button"
 								size="sm"
-								variant={pageType === 'slides' ? 'default' : 'outline'}
+								variant={pageType === 'slide' ? 'default' : 'outline'}
 								className="flex-1 h-8 text-xs"
 								onClick={() => {
-									setPageType('slides');
+									setPageType('slide');
 								}}
 							>
 								🎞 Marp Slides

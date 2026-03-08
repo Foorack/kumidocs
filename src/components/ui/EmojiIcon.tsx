@@ -12,10 +12,6 @@
  *     SVGs are baked into the bundle — zero HTTP requests.
  *     Use the `emoji` prop to render a character from this set.
  *
- * Certain generic fallback emojis (📄 📝 #️⃣) are automatically promoted
- * to the equivalent Fluent Color system icon — they look identical to the
- * user but render crisply at any size via SVG rather than text/bitmap.
- *
  * The `size` prop controls pixel dimensions for both paths, working around
  * the issue where Fluent Color SVGs ignore Tailwind `w-N h-N` classes.
  */
@@ -25,34 +21,25 @@ import EMOJI_SVGS from './emoji/emojis';
 import {
 	TextBulletListSquare24Color,
 	SlideTextSparkle24Color,
-	NumberSymbolSquare24Color,
-	CodeRegular,
-	ImageRegular,
-	DocumentRegular,
+	Image24Color,
+	Code24Color,
+	QuestionCircle24Color,
 } from '@fluentui/react-icons';
-
-// Map specific emoji codepoints → Fluent Color icon components
-// (keeps app-specific logic out of every call site)
-const EMOJI_ICON_OVERRIDES: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
-	'\u{1F4C4}': TextBulletListSquare24Color, // 📄 Page Facing Up
-	'\u{1F4DD}': SlideTextSparkle24Color, // 📝 Memo
-	'\u0023\uFE0F\u20E3': NumberSymbolSquare24Color, // #️⃣ Keycap #
-};
+import type { FileType } from '@/lib/types';
 
 // File type strings for EmojiIcon — well-known values listed for autocomplete, open to any string
-export type FileIconType = 'doc' | 'slide' | 'code' | 'image' | (string & {});
 const FILE_TYPE_ICONS: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
 	doc: TextBulletListSquare24Color,
 	slide: SlideTextSparkle24Color,
-	code: CodeRegular,
-	image: ImageRegular,
+	code: Code24Color,
+	image: Image24Color,
 };
 
 interface EmojiIconProps {
 	/** Emoji character to render (may be overridden to a Color icon). */
 	emoji?: string;
-	/** File type string ('doc' | 'slide' | 'code' | 'image') — rendered when no emoji is set. */
-	fileType?: FileIconType;
+	/** File type string — rendered when no emoji is set. */
+	fileType?: FileType;
 	/** Fluent React Icon component to render directly (lowest priority). */
 	icon?: FC<{ style?: CSSProperties; className?: string }>;
 	/** Pixel size or CSS length (e.g. "1.2em") for both the icon and the emoji. Default: 16. */
@@ -74,13 +61,6 @@ export function EmojiIcon({ emoji, fileType, icon, size = 16, className }: Emoji
 
 	// Emoji path — check for overrides first
 	if (emoji) {
-		const Override = EMOJI_ICON_OVERRIDES[emoji];
-		if (Override)
-			return (
-				<span style={wrapStyle} className={className}>
-					<Override style={innerStyle} />
-				</span>
-			);
 		const svgDataUri = EMOJI_SVGS[emoji];
 		if (svgDataUri)
 			return (
@@ -114,7 +94,7 @@ export function EmojiIcon({ emoji, fileType, icon, size = 16, className }: Emoji
 
 	// File-type path — resolve icon from central map, fall back to DocumentRegular
 	if (fileType) {
-		const TypeIcon = FILE_TYPE_ICONS[fileType] ?? DocumentRegular;
+		const TypeIcon = FILE_TYPE_ICONS[fileType] ?? QuestionCircle24Color;
 		const isMuted = fileType === 'code' || fileType === 'image';
 		return (
 			<span style={wrapStyle} className={isMuted ? 'text-muted-foreground' : className}>

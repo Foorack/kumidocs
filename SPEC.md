@@ -172,9 +172,15 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 /code/<path>       → code file viewer/editor for <path>
 ```
 
+**Path convention for Markdown pages:**
+
+- Sidebar links omit the `.md` extension (e.g. `/p/docs/setup`, not `/p/docs/setup.md`).
+- `FilePage` re-appends `.md` at runtime: if `rawPath` contains no `.`, `.md` is appended to form the actual `filePath`. Paths that already contain a `.` (e.g. `README.md`, `index.ts`) are used as-is, which correctly handles both explicit `.md` links and non-Markdown file paths under `/p/`.
+
 ### 6.2 Sidebar Navigation
 
 - Sidebar is **auto-generated from the full file tree** (`/api/tree`) on startup and after every commit.
+- Sidebar links for Markdown pages **strip the `.md` extension** so URLs stay clean (e.g. `/p/docs/setup`). `FilePage` re-appends `.md` — see §6.1.
 - No manual `_sidebar.md` curation — every file in the repo appears automatically.
 - **Confluence-style hierarchy**: filesystem folders are never rendered as folders in the UI. A directory `foo/` and its sibling `foo.md` are merged into a single expandable page whose children are the files inside `foo/`.
 - If a directory exists but `<dirname>.md` does not, a **virtual ghost page** is shown (italic, muted) — clicking it opens DocPage which shows "This page doesn't exist yet — Create it?".

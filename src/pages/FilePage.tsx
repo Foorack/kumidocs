@@ -22,6 +22,7 @@ import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
 import NotFound from './NotFound';
+import { extensionToType, pathExtension } from '@/lib/filetypes';
 
 interface OutletCtx {
 	reloadTree: () => void;
@@ -40,7 +41,11 @@ interface DocMeta {
 	marp?: boolean;
 }
 
-/** Parse only the whitelisted frontmatter fields from a raw markdown string. */
+/**
+ * Parse only the whitelisted frontmatter fields (emoji, marp) from a raw markdown string.
+ * Any other YAML fields are intentionally discarded — KumiDocs only manages its own
+ * metadata and does not attempt to round-trip arbitrary frontmatter.
+ */
 function parseFrontmatter(raw: string): { data: DocMeta; content: string } {
 	const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
 	if (!match) return { data: {}, content: raw };
@@ -57,7 +62,7 @@ function parseFrontmatter(raw: string): { data: DocMeta; content: string } {
 	return { data, content };
 }
 
-/** Reconstruct a frontmatter block from only the whitelisted fields. */
+/** Reconstruct a frontmatter block from only the whitelisted fields (emoji, marp). Unknown fields are not preserved. */
 function buildFrontmatter(meta: DocMeta): string {
 	const lines: string[] = [];
 	if (meta.emoji) lines.push(`emoji: ${meta.emoji}`);
@@ -78,18 +83,10 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 const AUTO_SAVE_DELAY = 5000;
 
-/** Extract lowercase extension from a path (e.g. "test.tsx" → "tsx", "README.md" → "md", "nodot" → ""). */
-function pathExtension(path: string): string {
-	const dot = path.lastIndexOf('.');
-	const slash = path.lastIndexOf('/');
-	return dot > slash && dot !== -1 ? path.slice(dot + 1).toLowerCase() : '';
-}
-
 export default function FilePage() {
 	const { '*': rawPath = '' } = useParams();
-	const rawExt = pathExtension(rawPath);
-	const isCodeFile = rawExt !== '' && rawExt !== 'md';
-	const filePath = isCodeFile ? rawPath : rawPath.endsWith('.md') ? rawPath : `${rawPath}.md`;
+	const filePath = !rawPath.includes('.') ? `${rawPath}.md` : rawPath; // default to .md if no extension
+
 	const navigate = useNavigate();
 	const { reloadTree } = useOutletContext<OutletCtx>();
 	const { user } = useUser();
@@ -135,9 +132,14 @@ export default function FilePage() {
 	}, [filePath]);
 
 	const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Clear the auto-save timer on unmount to prevent a save firing on a dead component.
+	useEffect(() => {
+		return () => {
+			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+		};
+	}, []);
 	// Mutex: chain saves so they never run concurrently (prevents double-commit 409)
 	const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
-	const isDirty = content !== savedContent;
 	// Explicit dirty flag — set true on any content change, false when a save succeeds.
 	// More reliable than comparing content strings (which can have whitespace/newline
 	// differences introduced by matter.stringify round-tripping).
@@ -190,11 +192,12 @@ export default function FilePage() {
 	const editModeRef = useRef(editMode);
 	editModeRef.current = editMode;
 
-	// Tell server which page we're on
+	// Tell server which page we're on; clean up presence when navigating away or unmounting.
 	useEffect(() => {
 		if (user) wsClient.joinPage(filePath);
 		return () => {
 			if (editModeRef.current) wsClient.stopEditing(filePath);
+			wsClient.leavePage();
 		};
 	}, [filePath, user]);
 
@@ -208,7 +211,7 @@ export default function FilePage() {
 			// Ignore echoes of our own saves — the server broadcasts to all
 			// clients including the sender, but we've already applied the change.
 			if (msg.changedBy === user?.id) return;
-			if (!isDirty) {
+			if (!isDirtyRef.current) {
 				loadDoc(filePath).catch((err: unknown) => {
 					console.error('Failed to reload document after remote change:', err);
 				});
@@ -342,11 +345,13 @@ export default function FilePage() {
 		setEditMode(false);
 	}, [doSave, filePath]);
 
-	const title = isCodeFile
-		? (rawPath.split('/').pop() ?? rawPath)
-		: (extractHeadingTitle(content) ?? pathToTitle(filePath));
-	const emoji = meta.emoji;
-	const fileType = isCodeFile ? 'code' : meta.marp ? 'slide' : 'doc';
+	const rawExt = pathExtension(filePath);
+	let fileType = extensionToType(rawExt);
+	if (fileType === 'doc' && meta.marp) fileType = 'slide';
+	const title =
+		fileType === 'doc' || fileType === 'slide'
+			? (extractHeadingTitle(content) ?? pathToTitle(filePath))
+			: (filePath.split('/').pop() ?? filePath);
 
 	// Breadcrumb
 	const breadcrumb = filePath.replace(/\.md$/, '').split('/').slice(0, -1);
@@ -400,10 +405,10 @@ export default function FilePage() {
 				{/* Left: icon + title */}
 				<div className="flex items-center gap-2 flex-1 min-w-0">
 					<EmojiPickerPopover
-						emoji={emoji}
+						emoji={meta.emoji}
 						fileType={fileType}
 						size={24}
-						editable={editMode && !isCodeFile}
+						editable={editMode}
 						onSelect={handleEmojiChange}
 					/>
 					<h1 className="font-semibold text-base truncate">{title}</h1>
@@ -552,7 +557,11 @@ export default function FilePage() {
 					) : (
 						<ScrollArea className="h-full">
 							<MarkdownViewer
-								value={isCodeFile ? `\`\`\`${rawExt}\n${content}\n\`\`\`` : content}
+								value={
+									fileType === 'code'
+										? `\`\`\`${rawExt}\n${content}\n\`\`\``
+										: content
+								}
 							/>
 						</ScrollArea>
 					)}

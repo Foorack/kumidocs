@@ -68,6 +68,12 @@ class WsClient {
 		}
 	}
 
+	leavePage(): void {
+		if (!this.currentPageId) return;
+		this.currentPageId = null;
+		this.send({ type: 'bye' });
+	}
+
 	startEditing(pageId: string) {
 		this.send({ type: 'editing_start', pageId });
 	}
