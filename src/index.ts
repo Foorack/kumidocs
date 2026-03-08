@@ -31,6 +31,7 @@ import {
 	apiSearch,
 	apiSidebar,
 	apiUploadImage,
+	apiAvatarProxy,
 	serveRepoAsset,
 } from './server/api';
 import type { WsData } from './server/websocket';
@@ -117,6 +118,13 @@ const server = serve<WsData>({
 
 	routes: {
 		'/*': index,
+
+		'/api/avatar/:hash': {
+			async GET(req: Request) {
+				const hash = new URL(req.url).pathname.slice('/api/avatar/'.length);
+				return apiAvatarProxy(hash);
+			},
+		},
 
 		'/api/me': {
 			GET(req: Request) {

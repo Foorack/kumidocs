@@ -194,6 +194,25 @@ export function apiSearch(url: URL) {
 	return Response.json(searchDocs(q));
 }
 
+// GET /api/avatar/:hash — proxies Gravatar so the client never contacts Gravatar directly.
+// The hash must be a 64-char lowercase hex string (SHA-256).
+export async function apiAvatarProxy(hash: string): Promise<Response> {
+	if (!/^[0-9a-f]{64}$/.test(hash)) {
+		return new Response('Invalid hash', { status: 400 });
+	}
+	const upstream = await fetch(`https://gravatar.com/avatar/${hash}?s=80&d=404`);
+	if (!upstream.ok) {
+		return new Response(null, { status: 404 });
+	}
+	const body = await upstream.arrayBuffer();
+	return new Response(body, {
+		headers: {
+			'Content-Type': upstream.headers.get('Content-Type') ?? 'image/jpeg',
+			'Cache-Control': 'public, max-age=3600',
+		},
+	});
+}
+
 // GET /api/sidebar
 export function apiSidebar() {
 	const content = getFile('_sidebar.md') ?? '';

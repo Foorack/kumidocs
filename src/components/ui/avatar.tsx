@@ -69,7 +69,7 @@ export function UserAvatar({ name, email, size = 'md', className, ...props }: Us
 			{gravatarHash && (
 				<AvatarPrimitive.Image
 					className="aspect-square size-full"
-					src={`https://gravatar.com/avatar/${gravatarHash}?s=80&d=404`}
+					src={`/api/avatar/${gravatarHash}`}
 					alt={name}
 				/>
 			)}
