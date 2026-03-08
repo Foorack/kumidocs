@@ -140,7 +140,10 @@ function PageNodeRow({
 	const othersOnPage = presenceByPage.get(node.path) ?? [];
 	const presenceUsers =
 		isActive && currentUser
-			? [{ id: currentUser.id, name: currentUser.displayName, email: currentUser.email }, ...othersOnPage]
+			? [
+					{ id: currentUser.id, name: currentUser.displayName, email: currentUser.email },
+					...othersOnPage,
+				]
 			: othersOnPage;
 	const indent = 8 + depth * 14;
 	const parentDir = node.path.includes('/')
