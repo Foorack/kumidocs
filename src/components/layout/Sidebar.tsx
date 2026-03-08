@@ -30,7 +30,8 @@ import {
 } from '../ui/dropdown-menu';
 import { toast } from 'sonner';
 import { usePageActions } from '../../hooks/usePageActions';
-import type { TreeNode, FileEntry, PresenceUser } from '../../lib/types';
+import { useUser } from '../../store/user';
+import type { TreeNode, FileEntry, PresenceUser, User } from '../../lib/types';
 
 interface SidebarProps {
 	tree: TreeNode[];
@@ -114,6 +115,7 @@ function PageNodeRow({
 	node,
 	depth,
 	presenceByPage,
+	currentUser,
 	onNewSubPage,
 	onMove,
 	onDelete,
@@ -121,6 +123,7 @@ function PageNodeRow({
 	node: PageNode;
 	depth: number;
 	presenceByPage: Map<string, PresenceUser[]>;
+	currentUser: User | null;
 	onNewSubPage: (parentDir: string) => void;
 	onMove: (path: string) => void;
 	onDelete: (path: string, title: string) => void;
@@ -134,7 +137,11 @@ function PageNodeRow({
 
 	const href = node.fileEntry?.type === 'code' ? `/code/${node.path}` : `/p/${node.path}`;
 	const isActive = location.pathname === href || location.pathname === `/p/${node.path}`;
-	const presenceUsers = presenceByPage.get(node.path) ?? [];
+	const othersOnPage = presenceByPage.get(node.path) ?? [];
+	const presenceUsers =
+		isActive && currentUser
+			? [{ id: currentUser.id, name: currentUser.displayName, email: currentUser.email }, ...othersOnPage]
+			: othersOnPage;
 	const indent = 8 + depth * 14;
 	const parentDir = node.path.includes('/')
 		? node.path.substring(0, node.path.lastIndexOf('/'))
@@ -230,7 +237,9 @@ function PageNodeRow({
 												className="ring-1 ring-sidebar cursor-default"
 											/>
 										</TooltipTrigger>
-										<TooltipContent>{u.name}</TooltipContent>
+										<TooltipContent>
+											{u.id === currentUser?.id ? 'You' : u.name}
+										</TooltipContent>
 									</Tooltip>
 								))}
 								{presenceUsers.length > 3 && (
@@ -420,6 +429,7 @@ function PageNodeRow({
 							node={child}
 							depth={depth + 1}
 							presenceByPage={presenceByPage}
+							currentUser={currentUser}
 							onNewSubPage={onNewSubPage}
 							onMove={onMove}
 							onDelete={onDelete}
@@ -439,6 +449,7 @@ export function Sidebar({
 	reloadTree,
 }: SidebarProps) {
 	const pages = buildPageTree(tree);
+	const { user: currentUser } = useUser();
 	const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
 	const handleOpenMove = (path: string) => {
@@ -466,6 +477,7 @@ export function Sidebar({
 										node={node}
 										depth={0}
 										presenceByPage={presenceByPage}
+										currentUser={currentUser}
 										onNewSubPage={onNewSubPage}
 										onMove={handleOpenMove}
 										onDelete={openDelete}

@@ -63,6 +63,7 @@ export function UserAvatar({ name, email, size = 'md', className, ...props }: Us
 				circle,
 				className,
 			)}
+			style={{ outline: `2px solid ${color}`, outlineOffset: '1px' }}
 			{...props}
 		>
 			{gravatarHash && (

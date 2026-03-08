@@ -22,7 +22,7 @@ export function emailToDisplayName(email: string): string {
 
 /** djb2-style hash of name → deterministic HSL background color. */
 export function avatarColor(name: string): string {
-	let hash = 0;
+	let hash = 1;
 	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
 	const hue = Math.abs(hash) % 360;
 	return `hsl(${hue.toString()}, 60%, 42%)`;
