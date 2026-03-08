@@ -6,6 +6,7 @@ import { AppShell } from './components/layout/AppShell';
 import FilePage from './pages/FilePage';
 import NotFound from './pages/NotFound';
 import './index.css';
+import WelcomePage from './pages/WelcomePage';
 
 export function App() {
 	return (
@@ -17,6 +18,7 @@ export function App() {
 							<Route path="/" element={<Navigate to="/p/README.md" replace />} />
 							<Route element={<AppShell />}>
 								<Route path="/p/*" element={<FilePage />} />
+								<Route path="/welcome" element={<WelcomePage />} />
 								<Route path="*" element={<NotFound />} />
 							</Route>
 						</Routes>
