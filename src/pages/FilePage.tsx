@@ -16,7 +16,7 @@ import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
-import { DocViewer } from '../components/editor/DocViewer';
+import { MarkdownViewer } from '../components/editor/MarkdownViewer';
 import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
@@ -551,7 +551,7 @@ export default function FilePage() {
 						/>
 					) : (
 						<ScrollArea className="h-full">
-							<DocViewer
+							<MarkdownViewer
 								value={isCodeFile ? `\`\`\`${rawExt}\n${content}\n\`\`\`` : content}
 							/>
 						</ScrollArea>

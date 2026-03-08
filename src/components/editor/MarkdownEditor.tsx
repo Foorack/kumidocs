@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { DocViewer } from './DocViewer';
+import { MarkdownViewer } from './MarkdownViewer';
 
 // ── Toolbar action helpers ────────────────────────────────────────────────────
 
@@ -241,7 +241,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 
 				{/* Right — live preview */}
 				<div ref={previewRef} className="flex-1 min-w-0 overflow-y-auto">
-					<DocViewer value={value} />
+					<MarkdownViewer value={value} />
 				</div>
 			</div>
 		</div>

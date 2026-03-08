@@ -9,11 +9,11 @@ import { EmojiIcon } from '../ui/EmojiIcon';
 import { rehypeEmojiPlugin } from './rehypeEmojiPlugin';
 import { rehypeHeadingIdsPlugin } from './rehypeHeadingIdsPlugin';
 
-interface DocViewerProps {
+interface MarkdownViewerProps {
 	value: string;
 }
 
-export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
+export const MarkdownViewer = memo(function MarkdownViewer({ value }: MarkdownViewerProps) {
 	return (
 		<div className="prose prose-table:my-0 prose-pre:my-0 prose-pre:bg-transparent dark:prose-invert max-w-none px-8 py-6">
 			<Streamdown
@@ -54,13 +54,18 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 				// default array — it does not merge.
 				rehypePlugins={[
 					// COMMENTED OUT TO DISABLE RAW HTML
+					// // ---
+					// // Allow elements in the source to be rendered as raw HTML.
+					// // Must be first in the list so it runs before sanitize/harden.
 					// // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					// defaultRehypePlugins.raw!,
 
+					// ---
 					// Sanitize dangerous content
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					defaultRehypePlugins.sanitize!,
 
+					// ---
 					// Harden links
 					[
 						harden,
@@ -69,8 +74,11 @@ export const DocViewer = memo(function DocViewer({ value }: DocViewerProps) {
 						},
 					],
 
+					// ---
 					// Custom anchor/slug plugin that adds id to headings
 					rehypeHeadingIdsPlugin,
+
+					// ---
 					// Replace native emoji with FluentUI icons.
 					// Runs last so the sanitizer/harden never touches the
 					// generated <kumi-emoji> elements.
