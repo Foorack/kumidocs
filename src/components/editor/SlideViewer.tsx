@@ -4,6 +4,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	GalleryVertical,
+	ImageDown,
 	Maximize,
 	Minimize,
 	Spotlight,
@@ -68,11 +69,13 @@ function ScaledSlide({
 
 export interface SlideViewerProps {
 	value: string;
+	/** Filename stem used when saving the PDF (e.g. page title). Defaults to "slides". */
+	filename?: string;
 	/** When true, fills the full viewport (used by the standalone SlidesPage). */
 	standalone?: boolean;
 }
 
-export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
+export function SlideViewer({ value, filename = 'slides', standalone = false }: SlideViewerProps) {
 	const slides = splitSlides(value);
 	const total = slides.length;
 
@@ -88,6 +91,7 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [isSpotlight, setIsSpotlight] = useState(false);
 	const [spotlightScale, setSpotlightScale] = useState(1);
+	const [isExporting, setIsExporting] = useState(false);
 	// In standalone (presentation) mode, always use paginate mode.
 	const [scrollMode, setScrollMode] = useState(!standalone);
 
@@ -95,6 +99,7 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 	const fullscreenRef = useRef<HTMLDivElement>(null); // the element we request fullscreen on
 	const spotlightRef = useRef<HTMLDivElement>(null); // bare fullscreen overlay
 	const slideElemsRef = useRef<(HTMLDivElement | null)[]>([]); // per-slide elements for scroll-nav
+	const offscreenRef = useRef<HTMLDivElement>(null); // hidden render container for PDF export
 
 	// ── Keyboard navigation ──────────────────────────────────────────────────
 	const prev = useCallback(() => {
@@ -187,6 +192,40 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 		setIsSpotlight(true);
 	}, []);
 
+	// ── PDF export ───────────────────────────────────────────────────────────
+	const exportPdf = useCallback(async () => {
+		if (isExporting) return;
+		setIsExporting(true);
+		try {
+			const container = offscreenRef.current;
+			if (!container) return;
+			const { default: html2canvas } = await import('html2canvas-pro');
+			const { jsPDF } = await import('jspdf');
+			const pdf = new jsPDF({
+				orientation: 'landscape',
+				unit: 'px',
+				format: [SLIDE_W, SLIDE_H],
+			});
+			const slideEls = Array.from(container.children) as HTMLElement[];
+			for (let i = 0; i < slideEls.length; i++) {
+				const el = slideEls[i];
+				if (!el) continue;
+				const canvas = await html2canvas(el, {
+					width: SLIDE_W,
+					height: SLIDE_H,
+					scale: 2, // 2× for sharper output
+					useCORS: true,
+					logging: false,
+				});
+				if (i > 0) pdf.addPage();
+				pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, SLIDE_W, SLIDE_H);
+			}
+			pdf.save(`${filename}.pdf`);
+		} finally {
+			setIsExporting(false);
+		}
+	}, [isExporting, filename]);
+
 	// Reset to first slide when content changes
 	// (handled via derived-state pattern above — no useEffect needed)
 
@@ -197,6 +236,33 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 			ref={fullscreenRef}
 			className={`flex flex-col bg-muted/30 dark:bg-muted/10${standalone ? ' h-screen w-screen' : ' h-full'}`}
 		>
+			{/* ── Off-screen render container for PDF export (invisible, native resolution) ── */}
+			<div
+				ref={offscreenRef}
+				aria-hidden="true"
+				style={{
+					position: 'fixed',
+					top: '-9999px',
+					left: '-9999px',
+					opacity: 0,
+					pointerEvents: 'none',
+				}}
+			>
+				{slides.map((slide, i) => (
+					<div
+						key={i}
+						style={{
+							width: SLIDE_W,
+							height: SLIDE_H,
+							overflow: 'hidden',
+							flexShrink: 0,
+						}}
+						className="bg-background"
+					>
+						<MarkdownViewer value={slide} />
+					</div>
+				))}
+			</div>
 			{/* ── Spotlight overlay — bare fullscreen, slide only ── */}
 			{isSpotlight && (
 				<div
@@ -220,7 +286,9 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 					{slides.map((slide, i) => (
 						<div
 							key={i}
-							ref={(el) => { slideElemsRef.current[i] = el; }}
+							ref={(el) => {
+								slideElemsRef.current[i] = el;
+							}}
 							style={{
 								position: 'relative',
 								width: SLIDE_W * scale,
@@ -341,6 +409,19 @@ export function SlideViewer({ value, standalone = false }: SlideViewerProps) {
 					title="Spotlight — slide only fullscreen"
 				>
 					<Spotlight className="w-4 h-4" />
+				</Button>
+
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-7 w-7"
+					onClick={() => {
+						void exportPdf();
+					}}
+					disabled={isExporting}
+					title="Export as PDF"
+				>
+					<ImageDown className="w-4 h-4" />
 				</Button>
 			</div>
 		</div>

@@ -556,7 +556,7 @@ export default function FilePage() {
 							onSave={handleSave}
 						/>
 					) : fileType === 'slide' ? (
-						<SlideViewer value={content} />
+						<SlideViewer value={content} filename={title} />
 					) : (
 						<ScrollArea className="h-full">
 							<MarkdownViewer
