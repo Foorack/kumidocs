@@ -6,10 +6,8 @@ import {
 	ChevronDownRegular,
 	MoreHorizontalRegular,
 	MoreHorizontalFilled,
-	CopyRegular,
-	OpenRegular,
-	LinkRegular,
 } from '@fluentui/react-icons';
+import { PageMenuItems } from '../ui/PageMenuItems';
 import { EmojiIcon, TitleWithEmoji } from '../ui/EmojiIcon';
 import { UserAvatar } from '../ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
@@ -18,16 +16,9 @@ import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
-	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from '../ui/context-menu';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { toast } from 'sonner';
 import { usePageActions } from '../../hooks/usePageActions';
 import { useUser } from '../../store/user';
@@ -276,150 +267,42 @@ function PageNodeRow({
 								</button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent side="right" align="start">
-								{node.isVirtual ? (
-									<DropdownMenuItem asChild>
-										<Link to={href}>Create this page</Link>
-									</DropdownMenuItem>
-								) : (
-									<>
-										<DropdownMenuItem
-											onClick={() => {
-												onNewSubPage(node.path.replace(/\.md$/i, ''));
-											}}
-										>
-											<AddRegular className="mr-2 w-4 h-4" />
-											New subpage
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												onNewSubPage(parentDir);
-											}}
-										>
-											<AddRegular className="mr-2 w-4 h-4 opacity-0" />
-											New page
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												void handleDuplicate();
-											}}
-										>
-											<CopyRegular className="mr-2 w-4 h-4" />
-											Duplicate
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => {
-												window.open(href, '_blank');
-											}}
-										>
-											<OpenRegular className="mr-2 w-4 h-4" />
-											Open in new tab
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => {
-												void navigator.clipboard
-													.writeText(window.location.origin + href)
-													.then(() => {
-														toast.success('Link copied');
-													});
-											}}
-										>
-											<LinkRegular className="mr-2 w-4 h-4" />
-											Copy link
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => {
-												onMove(node.path);
-											}}
-										>
-											Move
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											className="text-destructive focus:text-destructive"
-											onClick={() => {
-												onDelete(node.path, node.displayTitle);
-											}}
-										>
-											Delete
-										</DropdownMenuItem>
-									</>
-								)}
+								<PageMenuItems
+									variant="dropdown"
+									href={href}
+									path={node.path}
+									displayTitle={node.displayTitle}
+									isVirtual={node.isVirtual}
+									parentDir={parentDir}
+									onNewSubPage={onNewSubPage}
+									onNewPage={onNewSubPage}
+									onDuplicate={() => {
+										void handleDuplicate();
+									}}
+									onMove={onMove}
+									onDelete={onDelete}
+								/>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
 				</ContextMenuTrigger>
 
 				<ContextMenuContent>
-					{node.isVirtual ? (
-						<ContextMenuItem asChild>
-							<Link to={href}>Create this page</Link>
-						</ContextMenuItem>
-					) : (
-						<>
-							<ContextMenuItem
-								onClick={() => {
-									onNewSubPage(node.path.replace(/\.md$/i, ''));
-								}}
-							>
-								<AddRegular className="mr-2 w-4 h-4" />
-								New subpage
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
-									onNewSubPage(parentDir);
-								}}
-							>
-								<AddRegular className="mr-2 w-4 h-4 opacity-0" />
-								New page
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
-									void handleDuplicate();
-								}}
-							>
-								<CopyRegular className="mr-2 w-4 h-4" />
-								Duplicate
-							</ContextMenuItem>
-							<ContextMenuSeparator />
-							<ContextMenuItem
-								onClick={() => {
-									window.open(href, '_blank');
-								}}
-							>
-								<OpenRegular className="mr-2 w-4 h-4" />
-								Open in new tab
-							</ContextMenuItem>
-							<ContextMenuItem
-								onClick={() => {
-									void navigator.clipboard
-										.writeText(window.location.origin + href)
-										.then(() => {
-											toast.success('Link copied');
-										});
-								}}
-							>
-								<LinkRegular className="mr-2 w-4 h-4" />
-								Copy link
-							</ContextMenuItem>
-							<ContextMenuSeparator />
-							<ContextMenuItem
-								onClick={() => {
-									onMove(node.path);
-								}}
-							>
-								Move
-							</ContextMenuItem>
-							<ContextMenuItem
-								className="text-destructive focus:text-destructive"
-								onClick={() => {
-									onDelete(node.path, node.displayTitle);
-								}}
-							>
-								Delete
-							</ContextMenuItem>
-						</>
-					)}
+					<PageMenuItems
+						variant="context"
+						href={href}
+						path={node.path}
+						displayTitle={node.displayTitle}
+						isVirtual={node.isVirtual}
+						parentDir={parentDir}
+						onNewSubPage={onNewSubPage}
+						onNewPage={onNewSubPage}
+						onDuplicate={() => {
+							void handleDuplicate();
+						}}
+						onMove={onMove}
+						onDelete={onDelete}
+					/>
 				</ContextMenuContent>
 			</ContextMenu>
 

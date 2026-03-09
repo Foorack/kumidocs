@@ -1,6 +1,6 @@
 # KumiDocs — Specification v0.3
 
-> Last updated: 2026-03-05 · Status: **FINALIZED — ready for implementation**
+> Last updated: 2026-03-09 · Status: **FINALIZED — ready for implementation**
 
 ---
 
@@ -410,7 +410,9 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ### 11.4 Export
 
-- PDF export: deferred to v2.
+- **Markdown pages**: client-side PDF export via `html2canvas-pro` + `jspdf` (dynamically imported). Triggered from the "···" page menu ("Export as PDF" item, visible in view mode only). An offscreen `MarkdownViewer` renders the document at 800 px width with `z-index: -9999` (not `opacity: 0` — html2canvas-pro inherits and propagates opacity, causing blank output). Pages are sliced into A4 tiles and stitched into a multi-page PDF, saved as `<title>.pdf`.
+- **Slide decks**: client-side PDF export via `html2canvas-pro` + `jspdf`, triggered from the SlideViewer controls bar (`ImageDown` button). Each 960×540 slide is captured individually and placed on its own A4 landscape page.
+- Marp/server-side PDF export (Playwright, Chromium-gated): deferred to v2.
 
 ---
 
@@ -480,7 +482,16 @@ Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, 
 
 - `emoji` + title (inline-editable in edit mode).
 - Right side: viewer `AvatarGroup`, "Edit"/"Done" button, "···" overflow menu.
-- Overflow menu: Delete page, Rename/Move, Copy link.
+- **Overflow menu** (`PageMenuItems` component, shared with the sidebar's dropdown and context menus):
+    - _New subpage_ / _New page_ + _Duplicate_ — shown only in sidebar menus (directory context available); omitted in the FilePage header
+    - ─────
+    - _Open in new tab_
+    - _Copy link_
+    - _Export as PDF_ — shown only for doc pages in view mode
+    - ─────
+    - _Move_
+    - _Delete_
+- Virtual (ghost) pages show only a _Create this page_ link.
 
 ### 13.5 Breadcrumbs
 
@@ -511,8 +522,6 @@ DELETE /api/file?path=<path>            → delete file (editors only)
 POST   /api/file/rename                 → rename/move { from, to }
 POST   /api/upload/image                → multipart image upload → { url, path }
 GET    /api/search?q=<query>            → search results
-GET    /api/slides/render?path=<path>   → Marp-rendered HTML
-GET    /api/slides/export?path=<path>   → PDF download (if Chromium available)
 WS     /ws                              → WebSocket connection
 ```
 
@@ -537,47 +546,56 @@ WS     /ws                              → WebSocket connection
 
 ```
 src/
+├── index.ts              ← Bun HTTP + WS server entry
+├── frontend.tsx          ← React SPA entry
+├── index.html
+├── index.css
+├── App.tsx               ← SPA routing (react-router-dom)
 ├── server/
-│   ├── index.ts          ← Bun HTTP + WS server entry
-│   ├── router.ts         ← request routing
+│   ├── api.ts            ← REST route handlers
 │   ├── auth.ts           ← header parsing, JWT decode, permission check
-│   ├── git.ts            ← commit, push, pull, rebase
+│   ├── config.ts         ← env var loading + validation
 │   ├── filestore.ts      ← in-memory file state, dirty tracking
+│   ├── git.ts            ← commit, push, pull, rebase
 │   ├── search.ts         ← MiniSearch index management
-│   ├── websocket.ts      ← WS handler, presence, edit-lock
-│   ├── slides.ts         ← Marp rendering + PDF export
-│   └── api/
-│       ├── files.ts
-│       ├── search.ts
-│       ├── upload.ts
-│       └── slides.ts
-├── client/
-│   ├── main.tsx
-│   ├── App.tsx
-│   ├── router.tsx            ← SPA routing
-│   ├── store/
-│   │   ├── ws.ts             ← WebSocket client + reactive state
-│   │   ├── user.ts           ← current user
-│   │   └── theme.ts          ← dark mode
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── AppShell.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── TopBar.tsx
-│   │   │   └── PageHeader.tsx
-│   │   ├── editor/
-│   │   │   ├── MarkdownEditor.tsx  ← custom split-pane markdown editor
-│   │   │   ├── DocViewer.tsx       ← streamdown → sandboxed iframe view
-│   │   │   └── CodeEditor.tsx      ← @uiw/react-codemirror
-│   │   ├── slides/
-│   │   │   └── SlideViewer.tsx
-│   │   ├── search/
-│   │   │   └── SearchPalette.tsx
-│   │   └── ui/                     ← shadcn/ui components
-│   └── pages/
-│       ├── DocPage.tsx
-│       ├── CodePage.tsx
-│       └── NotFound.tsx
+│   └── websocket.ts      ← WS handler, presence, edit-lock
+├── components/
+│   ├── dialogs/
+│   │   └── NewPageDialog.tsx
+│   ├── editor/
+│   │   ├── MarkdownEditor.tsx   ← custom split-pane markdown editor
+│   │   ├── MarkdownViewer.tsx   ← streamdown → direct DOM render
+│   │   ├── SlideViewer.tsx      ← client-side slide viewer + PDF export
+│   │   ├── rehypeEmojiPlugin.ts
+│   │   └── rehypeHeadingIdsPlugin.ts
+│   ├── layout/
+│   │   ├── AppShell.tsx
+│   │   ├── PageInfoPanel.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── TopBar.tsx
+│   ├── search/
+│   │   └── SearchPalette.tsx
+│   └── ui/                      ← shadcn/ui components + custom
+│       ├── EmojiIcon.tsx
+│       ├── EmojiPicker.tsx
+│       ├── EmojiPickerPopover.tsx
+│       ├── PageMenuItems.tsx     ← shared page-action menu items (dropdown + context)
+│       └── ... (shadcn primitives)
+├── hooks/
+│   └── usePageActions.tsx       ← move/delete dialog orchestration
+├── lib/
+│   ├── avatar.ts
+│   ├── filetypes.ts
+│   ├── types.ts
+│   └── utils.ts
+├── pages/
+│   ├── FilePage.tsx             ← doc / slides / code page
+│   ├── WelcomePage.tsx
+│   └── NotFound.tsx
+└── store/
+    ├── theme.tsx
+    ├── user.tsx
+    └── ws.ts                    ← WebSocket client + reactive state
 styles/
 └── globals.css
 compose.yaml
@@ -619,13 +637,14 @@ SPEC.md
 - [x] Create subpage / Create page alongside (right-click context menu)
 - [x] Delete page (confirmation modal in DocPage)
 - [x] Move / Rename page (sidebar context menu + DocPage overflow menu)
+- [x] Duplicate page (sidebar context menu + DocPage overflow menu)
+- [x] Client-side PDF export for markdown pages (html2canvas-pro + jspdf, via page menu in view mode)
 - [x] Presence avatars in page header (`AvatarGroup`)
 - [ ] Drag-and-drop image upload
 - [ ] Resizable sidebar width (persisted in `localStorage`)
 
 ### Phase 4 — Slides & Code
 
-- [ ] Marp server-side render
 - [x] Slide viewer (scroll/paginate/spotlight modes, fullscreen, arrow-key navigation, standalone presentation route)
+- [x] Client-side PDF export for slide decks (html2canvas-pro + jspdf, via SlideViewer controls bar)
 - [ ] Code file editor (CodeMirror + language packs)
-- [ ] Marp PDF export (Playwright, Chromium-gated)

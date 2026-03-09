@@ -2,16 +2,15 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
-import { ImageDown } from 'lucide-react';
 import { EmojiPickerPopover } from '../components/ui/EmojiPickerPopover';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
+import { PageMenuItems } from '../components/ui/PageMenuItems';
 import { usePageActions } from '../hooks/usePageActions';
 import { UserAvatar } from '../components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
@@ -357,6 +356,36 @@ export default function FilePage() {
 			? (extractHeadingTitle(content) ?? pathToTitle(filePath))
 			: (filePath.split('/').pop() ?? filePath);
 
+	const handlePageDuplicate = useCallback(async () => {
+		try {
+			const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`);
+			if (!res.ok) {
+				toast.error('Duplicate failed');
+				return;
+			}
+			const data = (await res.json()) as { content: string };
+			const newPath = `${filePath.replace(/\.md$/i, '')}-copy.md`;
+			const saveRes = await fetch('/api/file', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ path: newPath, content: data.content }),
+			});
+			if (saveRes.ok) {
+				reloadTree();
+				toast.success('Page duplicated');
+				navigate(`/p/${newPath}`)?.catch((err: unknown) => {
+					console.error('Navigation failed:', err);
+				});
+			} else if (saveRes.status === 409) {
+				toast.error('A copy already exists at that path');
+			} else {
+				toast.error('Duplicate failed');
+			}
+		} catch {
+			toast.error('Duplicate failed');
+		}
+	}, [filePath, navigate, reloadTree]);
+
 	const exportPagePdf = useCallback(async () => {
 		if (isPdfExporting) return;
 		setIsPdfExporting(true);
@@ -541,23 +570,6 @@ export default function FilePage() {
 							))}
 					</div>
 
-					{/* PDF export — only for doc pages in view mode */}
-					{fileType === 'doc' && !editMode && (
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-7 gap-1 text-xs px-2"
-							onClick={() => {
-								void exportPagePdf();
-							}}
-							disabled={isPdfExporting}
-							title="Export as PDF"
-						>
-							<ImageDown className="w-4 h-4" />
-							{isPdfExporting ? 'Exporting…' : 'PDF'}
-						</Button>
-					)}
-
 					{/* Dedicated info button */}
 					<Button
 						size="sm"
@@ -585,23 +597,28 @@ export default function FilePage() {
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem
-									onClick={() => {
-										openMove(filePath).catch((err: unknown) => {
+								<PageMenuItems
+									variant="dropdown"
+									href={`/p/${rawPath}`}
+									path={filePath}
+									displayTitle={title}
+									onDuplicate={() => {
+										void handlePageDuplicate();
+									}}
+									onExportPdf={
+										fileType === 'doc' && !editMode
+											? () => {
+													void exportPagePdf();
+												}
+											: undefined
+									}
+									onMove={(p) => {
+										openMove(p).catch((err: unknown) => {
 											console.error('Failed to open move dialog:', err);
 										});
 									}}
-								>
-									Move
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									className="text-destructive focus:text-destructive"
-									onClick={() => {
-										openDelete(filePath, title);
-									}}
-								>
-									Delete
-								</DropdownMenuItem>
+									onDelete={openDelete}
+								/>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					)}
