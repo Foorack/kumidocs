@@ -1,11 +1,12 @@
 import { join, extname } from 'path';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, stat } from 'fs/promises';
 import { createHash } from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import type { Config } from './config';
 import type { User } from '../lib/types';
 import {
 	getFile,
+	getAllPaths,
 	buildFileTree,
 	writeFileToRepo,
 	deleteFileFromRepo,
@@ -242,7 +243,7 @@ export async function apiUploadImage(req: Request, user: User, config: Config): 
 		return Response.json({ error: 'File type not allowed' }, { status: 415 });
 
 	const bytes = await file.arrayBuffer();
-	const sha256 = createHash('sha256').update(Buffer.from(bytes)).digest('hex').slice(0, 16);
+	const sha256 = createHash('sha256').update(Buffer.from(bytes)).digest('hex');
 	const filename = `${sha256}${ext}`;
 	const repoPath = `images/${filename}`;
 	const fullPath = join(config.repoPath, repoPath);
@@ -260,7 +261,80 @@ export async function apiUploadImage(req: Request, user: User, config: Config): 
 		user.email || 'kumidocs@localhost',
 	);
 
-	return Response.json({ path: repoPath, url: `/repo-asset/${repoPath}` });
+	return Response.json({ path: repoPath, url: `/images/${filename}` });
+}
+
+// GET /api/images
+export async function apiImagesList(config: Config): Promise<Response> {
+	const all = getAllPaths();
+	const imagePaths = all.filter((p) => p.startsWith('images/'));
+	const mdPaths = all.filter((p) => p.endsWith('.md'));
+
+	const results = await Promise.all(
+		imagePaths.map(async (repoPath) => {
+			const filename = repoPath.slice('images/'.length);
+			// The sha256 portion is the part before the extension
+			const dotIdx = filename.lastIndexOf('.');
+			const sha256 = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
+
+			let size = 0;
+			try {
+				const s = await stat(join(config.repoPath, repoPath));
+				size = s.size;
+			} catch {
+				// file may be transiently unavailable
+			}
+
+			const usedIn = mdPaths.filter((mdPath) => {
+				const content = getFile(mdPath) ?? '';
+				return content.includes(sha256);
+			});
+
+			return { filename, path: repoPath, url: `/images/${filename}`, size, usedIn };
+		}),
+	);
+
+	return Response.json(results);
+}
+
+// DELETE /api/images/:filename
+export async function apiImageDelete(
+	filename: string,
+	user: User,
+	config: Config,
+): Promise<Response> {
+	if (!user.canEdit) return Response.json({ error: 'Forbidden' }, { status: 403 });
+
+	// Validate: only alphanumeric/hyphen SHA256 hex + extension, no path traversal
+	if (!/^[0-9a-f]+\.[a-z0-9]+$/.test(filename)) {
+		return Response.json({ error: 'Invalid filename' }, { status: 400 });
+	}
+
+	const repoPath = `images/${filename}`;
+	const dotIdx = filename.lastIndexOf('.');
+	const sha256 = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
+
+	const all = getAllPaths();
+	if (!all.includes(repoPath)) {
+		return Response.json({ error: 'Not found' }, { status: 404 });
+	}
+
+	// Block deletion if any .md file references this image by its sha256 hash
+	const mdPaths = all.filter((p) => p.endsWith('.md'));
+	const usedIn = mdPaths.filter((mdPath) => {
+		const content = getFile(mdPath) ?? '';
+		return content.includes(sha256);
+	});
+	if (usedIn.length > 0) {
+		return Response.json({ error: 'Image is referenced by pages', usedIn }, { status: 409 });
+	}
+
+	await deleteFileFromRepo(repoPath, config);
+
+	const msg = `docs: delete image ${filename} by ${user.displayName}`;
+	await gitRemoveAndCommit(config, repoPath, msg, user.email, user.email || 'kumidocs@localhost');
+
+	return Response.json({ ok: true });
 }
 
 // GET /api/file/history?path=<path>
@@ -333,7 +407,7 @@ export async function apiFileDiff(url: URL, config: Config) {
 	});
 }
 
-// GET /repo-asset/<path>
+// GET /images/:filename
 export async function serveRepoAsset(assetPath: string, config: Config): Promise<Response> {
 	const MIME: Record<string, string> = {
 		'.png': 'image/png',
@@ -352,7 +426,7 @@ export async function serveRepoAsset(assetPath: string, config: Config): Promise
 		return new Response(data, {
 			headers: {
 				'Content-Type': mime,
-				'Cache-Control': 'public, max-age=86400',
+				'Cache-Control': 'public, max-age=31536000, immutable',
 			},
 		});
 	} catch {

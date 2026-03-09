@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
@@ -9,6 +10,7 @@ import {
 	Eye,
 	EyeOff,
 	FileQuestionMark,
+	Image,
 	Italic,
 	Link2,
 	List,
@@ -125,6 +127,37 @@ function insertLink(ta: HTMLTextAreaElement) {
 	ta.focus();
 }
 
+/** Insert an image markdown snippet. Uses selected text as alt text if any. */
+function insertImage(ta: HTMLTextAreaElement, url: string) {
+	const start = ta.selectionStart;
+	const end = ta.selectionEnd;
+	const alt = ta.value.slice(start, end) || 'image';
+	const insertion = `![${alt}](${url})`;
+	ta.setRangeText(insertion, start, end, 'preserve');
+	ta.focus();
+}
+
+/** Upload an image File to /api/upload/image and return the URL, or null on failure. */
+async function uploadImageFile(file: File): Promise<string | null> {
+	const form = new FormData();
+	form.append('file', file);
+	try {
+		const res = await fetch('/api/upload/image', { method: 'POST', body: form });
+		if (!res.ok) {
+			const err = (await res.json().catch(() => ({ error: 'Upload failed' }))) as {
+				error: string;
+			};
+			toast.error(err.error ?? 'Upload failed');
+			return null;
+		}
+		const data = (await res.json()) as { url: string };
+		return data.url;
+	} catch {
+		toast.error('Upload failed');
+		return null;
+	}
+}
+
 // ── Cheatsheet content ────────────────────────────────────────────────────────
 
 const CHEATSHEET_ROWS: [string, string][] = [
@@ -166,6 +199,7 @@ const HEADING_OPTIONS = [
 export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEditorProps) {
 	const taRef = useRef<HTMLTextAreaElement>(null);
 	const previewRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [showPreview, setShowPreview] = useState(true);
@@ -256,6 +290,47 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 		syncChange();
 	}, [syncChange]);
 
+	const handleImageFiles = useCallback(
+		(files: FileList | File[]) => {
+			const images = Array.from(files).filter((f) => f.type.startsWith('image/'));
+			if (images.length === 0) return;
+			const ta = taRef.current;
+			for (const file of images) {
+				const toastId = toast.loading(`Uploading ${file.name}…`);
+				void uploadImageFile(file).then((url) => {
+					toast.dismiss(toastId);
+					if (url && ta) {
+						insertImage(ta, url);
+						syncChange();
+						toast.success('Image uploaded');
+					}
+				});
+			}
+		},
+		[syncChange],
+	);
+
+	const handleDragOver = useCallback((e: React.DragEvent) => {
+		if (
+			Array.from(e.dataTransfer.items).some((i) => i.kind === 'file' && i.type.startsWith('image/'))
+		) {
+			e.preventDefault();
+			e.dataTransfer.dropEffect = 'copy';
+		}
+	}, []);
+
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			const files = e.dataTransfer.files;
+			if (files.length === 0) return;
+			const hasImage = Array.from(files).some((f) => f.type.startsWith('image/'));
+			if (!hasImage) return;
+			e.preventDefault();
+			handleImageFiles(files);
+		},
+		[handleImageFiles],
+	);
+
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 			if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -283,7 +358,7 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 	}, []);
 
 	return (
-		<div className="flex flex-col h-full">
+		<div className="flex flex-col h-full" onDragOver={handleDragOver} onDrop={handleDrop}>
 			{/* ── Toolbar ── */}
 			<div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border bg-background shrink-0">
 				{/* Left: formatting controls */}
@@ -426,6 +501,24 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 					>
 						<ListChecks />
 					</Button>
+
+					<div className="w-px h-4 bg-border mx-0.5" />
+
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={() => {
+							fileInputRef.current?.click();
+						}}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Insert image"
+					>
+						<Image />
+					</Button>
 				</div>
 
 				{/* Right: meta controls */}
@@ -510,6 +603,21 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 					</div>
 				)}
 			</div>
+
+			{/* Hidden file input for image picker */}
+			<input
+				ref={fileInputRef}
+				type="file"
+				accept="image/*"
+				multiple
+				className="hidden"
+				onChange={(e) => {
+					if (e.target.files) {
+						handleImageFiles(e.target.files);
+						e.target.value = '';
+					}
+				}}
+			/>
 		</div>
 	);
 }

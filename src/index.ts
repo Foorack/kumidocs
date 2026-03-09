@@ -31,6 +31,8 @@ import {
 	apiSearch,
 	apiSidebar,
 	apiUploadImage,
+	apiImagesList,
+	apiImageDelete,
 	apiAvatarProxy,
 	serveRepoAsset,
 } from './server/api';
@@ -222,6 +224,23 @@ const server = serve<WsData>({
 				return apiUploadImage(req, user, config);
 			},
 		},
+
+		'/api/images': {
+			async GET(req: Request) {
+				const user = requireUser(req);
+				if (!user) return new Response('Unauthorized', { status: 401 });
+				return apiImagesList(config);
+			},
+		},
+
+		'/api/images/:filename': {
+			async DELETE(req: Request) {
+				const user = requireUser(req);
+				if (!user) return new Response('Unauthorized', { status: 401 });
+				const filename = new URL(req.url).pathname.slice('/api/images/'.length);
+				return apiImageDelete(decodeURIComponent(filename), user, config);
+			},
+		},
 	},
 
 	async fetch(req, server) {
@@ -242,12 +261,12 @@ const server = serve<WsData>({
 			return upgraded ? undefined : new Response('WS upgrade failed', { status: 400 });
 		}
 
-		// Serve repo assets (images etc.)
-		if (url.pathname.startsWith('/repo-asset/')) {
+		// Serve repo images
+		if (url.pathname.startsWith('/images/')) {
 			const user = requireUser(req);
 			if (!user) return new Response('Unauthorized', { status: 401 });
-			const assetPath = decodeURIComponent(url.pathname.replace('/repo-asset/', ''));
-			return serveRepoAsset(assetPath, config);
+			const filename = decodeURIComponent(url.pathname.slice('/images/'.length));
+			return serveRepoAsset(`images/${filename}`, config);
 		}
 
 		return undefined; // let routes handle it

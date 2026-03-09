@@ -1,6 +1,6 @@
 # KumiDocs — Specification v0.3
 
-> Last updated: 2026-03-09 · Status: **FINALIZED — ready for implementation**
+> Last updated: 2026-03-10 · Status: **FINALIZED — ready for implementation**
 
 ---
 
@@ -259,16 +259,25 @@ Confirmation modal → deletes file → removes from `_sidebar.md` → single co
 
 Rename modal → `git mv` → updates `_sidebar.md` references → single commit.
 
-### 7.8 Image Upload (drag-and-drop)
+### 7.8 Image Upload (drag-and-drop + toolbar button)
 
-1. Drop image onto editor area.
-2. Server computes SHA256 of file content.
-3. Writes to `images/<sha256>.<ext>` in repo.
+1. Drop image onto editor area **or** click the toolbar Image button.
+2. File picker / dropped files are sent via `POST /api/upload/image` (multipart).
+3. Server computes full SHA-256 of file content → writes `images/<sha256>.<ext>` in repo root.
 4. Commits the image file.
-5. Inserts `![alt](images/<sha256>.<ext>)` at cursor.
+5. Inserts `![alt text](/images/<sha256>.<ext>)` at cursor (absolute path — resolves to repo root on GitHub/GitLab too).
 
 - Max size: **25 MB**. Reject with user-visible toast if exceeded.
 - Accepted types: `jpg`, `png`, `gif`, `webp`, `svg`.
+- Images are served at `/images/<filename>` with `Cache-Control: public, max-age=31536000, immutable`.
+
+### 7.9 Image Library
+
+- Route: `/images` (grid view) and `/images/:filename` (right-panel detail).
+- Accessible from the **Pages** header `⋯` menu in the sidebar → "Image library".
+- Grid of all `images/*` files in the repo: thumbnail, filename (SHA-256 hash), file size, usage badge.
+- Selecting a thumbnail opens the detail panel: preview, size, "Used in" page links, direct URL.
+- **Delete**: editors only; blocked (button disabled + 409 from server) if any `.md` file references the image's SHA-256 hash. Confirmed via modal.
 
 ---
 
@@ -521,6 +530,9 @@ POST   /api/file/create                 → create new file { path, content }
 DELETE /api/file?path=<path>            → delete file (editors only)
 POST   /api/file/rename                 → rename/move { from, to }
 POST   /api/upload/image                → multipart image upload → { url, path }
+GET    /api/images                      → list all images { filename, path, url, size, usedIn[] }
+DELETE /api/images/:filename            → delete image (editors; 409 if referenced)
+GET    /images/:filename                → serve image file (Cache-Control: immutable)
 GET    /api/search?q=<query>            → search results
 WS     /ws                              → WebSocket connection
 ```
@@ -640,7 +652,8 @@ SPEC.md
 - [x] Duplicate page (sidebar context menu + DocPage overflow menu)
 - [x] Client-side PDF export for markdown pages (html2canvas-pro + jspdf, via page menu in view mode)
 - [x] Presence avatars in page header (`AvatarGroup`)
-- [ ] Drag-and-drop image upload
+- [x] Drag-and-drop image upload + toolbar Image button (SHA-256 naming, `/images/` serving)
+- [x] Image library page (`/images`, `/images/:filename`) with thumbnail grid, detail panel, and delete guard
 - [x] Resizable sidebar width (persisted in `localStorage`)
 
 ### Phase 4 — Slides & Code

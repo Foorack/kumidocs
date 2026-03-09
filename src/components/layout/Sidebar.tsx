@@ -4,6 +4,7 @@ import {
 	AddRegular,
 	ChevronRightRegular,
 	ChevronDownRegular,
+	ImageRegular,
 	MoreHorizontalRegular,
 	MoreHorizontalFilled,
 } from '@fluentui/react-icons';
@@ -18,7 +19,12 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from '../ui/context-menu';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { toast } from 'sonner';
 import { usePageActions } from '../../hooks/usePageActions';
 import { useUser } from '../../store/user';
@@ -338,6 +344,7 @@ export function Sidebar({
 }: SidebarProps) {
 	const pages = buildPageTree(tree);
 	const { user: currentUser } = useUser();
+	const navigate = useNavigate();
 	const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
 	const handleOpenMove = (path: string) => {
@@ -352,6 +359,34 @@ export function Sidebar({
 				className="shrink-0 border-r border-border bg-sidebar flex flex-col h-full overflow-hidden"
 				style={{ width }}
 			>
+				{/* ── Pages header ── */}
+				<div className="flex items-center px-3 py-1.5 border-b border-border shrink-0">
+					<span className="flex-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide select-none">
+						Pages
+					</span>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+								title="Wiki options"
+							>
+								<MoreHorizontalRegular className="w-4 h-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() => {
+									navigate('/images');
+								}}
+							>
+								<ImageRegular className="mr-2 w-4 h-4" />
+								Image library
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 				<ContextMenu>
 					<ContextMenuTrigger asChild>
 						<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
