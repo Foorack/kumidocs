@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { TopBar } from './TopBar';
 import { Sidebar } from './Sidebar';
@@ -9,6 +9,11 @@ import { useUser } from '../../store/user';
 import { wsClient, useWsListener } from '../../store/ws';
 import type { TreeNode, PresenceUser } from '../../lib/types';
 
+const SIDEBAR_WIDTH_KEY = 'kumidocs:sidebar-width';
+const SIDEBAR_DEFAULT = 288;
+const SIDEBAR_MIN = 160;
+const SIDEBAR_MAX = 480;
+
 export function AppShell() {
 	const { user } = useUser();
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -17,6 +22,17 @@ export function AppShell() {
 	const [presenceByPage, setPresenceByPage] = useState<Map<string, PresenceUser[]>>(new Map());
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPageParentDir, setNewPageParentDir] = useState<string | undefined>(undefined);
+	const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+		const stored = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+		if (!stored) return SIDEBAR_DEFAULT;
+		const n = Number(stored);
+		return Number.isFinite(n)
+			? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n))
+			: SIDEBAR_DEFAULT;
+	});
+	const [isDragging, setIsDragging] = useState(false);
+	// Keep a ref so the stable mousemove closure always reads the live drag-start values
+	const dragStartRef = useRef<{ x: number; width: number } | null>(null);
 
 	// Connect WS once user loads
 	useEffect(() => {
@@ -97,6 +113,47 @@ export function AppShell() {
 		};
 	}, []);
 
+	const handleResizeMouseDown = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			dragStartRef.current = { x: e.clientX, width: sidebarWidth };
+			setIsDragging(true);
+			document.body.style.cursor = 'col-resize';
+			document.body.style.userSelect = 'none';
+
+			const onMouseMove = (ev: MouseEvent) => {
+				if (!dragStartRef.current) return;
+				const delta = ev.clientX - dragStartRef.current.x;
+				const next = Math.max(
+					SIDEBAR_MIN,
+					Math.min(SIDEBAR_MAX, dragStartRef.current.width + delta),
+				);
+				setSidebarWidth(next);
+			};
+
+			const onMouseUp = (ev: MouseEvent) => {
+				if (dragStartRef.current) {
+					const delta = ev.clientX - dragStartRef.current.x;
+					const next = Math.max(
+						SIDEBAR_MIN,
+						Math.min(SIDEBAR_MAX, dragStartRef.current.width + delta),
+					);
+					localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next));
+				}
+				dragStartRef.current = null;
+				setIsDragging(false);
+				document.body.style.cursor = '';
+				document.body.style.userSelect = '';
+				document.removeEventListener('mousemove', onMouseMove);
+				document.removeEventListener('mouseup', onMouseUp);
+			};
+
+			document.addEventListener('mousemove', onMouseMove);
+			document.addEventListener('mouseup', onMouseUp);
+		},
+		[sidebarWidth],
+	);
+
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-background text-foreground">
 			<TopBar
@@ -110,6 +167,7 @@ export function AppShell() {
 				<Sidebar
 					tree={tree}
 					reloadTree={loadTree}
+					width={sidebarWidth}
 					onNewPage={() => {
 						setNewPageParentDir(undefined);
 						setNewPageOpen(true);
@@ -119,6 +177,12 @@ export function AppShell() {
 						setNewPageOpen(true);
 					}}
 					presenceByPage={presenceByPage}
+				/>
+
+				{/* Resize handle */}
+				<div
+					className={`w-1 shrink-0 cursor-col-resize transition-colors hover:bg-primary/30 ${isDragging ? 'bg-primary/40' : ''}`}
+					onMouseDown={handleResizeMouseDown}
 				/>
 
 				<main className="flex-1 overflow-hidden flex flex-col">

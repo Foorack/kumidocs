@@ -641,7 +641,7 @@ SPEC.md
 - [x] Client-side PDF export for markdown pages (html2canvas-pro + jspdf, via page menu in view mode)
 - [x] Presence avatars in page header (`AvatarGroup`)
 - [ ] Drag-and-drop image upload
-- [ ] Resizable sidebar width (persisted in `localStorage`)
+- [x] Resizable sidebar width (persisted in `localStorage`)
 
 ### Phase 4 — Slides & Code
 

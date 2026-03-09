@@ -26,6 +26,7 @@ import type { TreeNode, FileEntry, PresenceUser, User } from '../../lib/types';
 
 interface SidebarProps {
 	tree: TreeNode[];
+	width: number;
 	onNewPage: () => void;
 	onNewSubPage: (parentDir: string) => void;
 	presenceByPage: Map<string, PresenceUser[]>;
@@ -329,6 +330,7 @@ function PageNodeRow({
 
 export function Sidebar({
 	tree,
+	width,
 	onNewPage,
 	onNewSubPage,
 	presenceByPage,
@@ -346,7 +348,10 @@ export function Sidebar({
 
 	return (
 		<>
-			<aside className="w-72 shrink-0 border-r border-border bg-sidebar flex flex-col h-full overflow-hidden">
+			<aside
+				className="shrink-0 border-r border-border bg-sidebar flex flex-col h-full overflow-hidden"
+				style={{ width }}
+			>
 				<ContextMenu>
 					<ContextMenuTrigger asChild>
 						<div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
