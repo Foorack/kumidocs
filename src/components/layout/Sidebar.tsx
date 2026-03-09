@@ -378,7 +378,7 @@ export function Sidebar({
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
 								onClick={() => {
-									navigate('/images');
+									void navigate('/i');
 								}}
 							>
 								<ImageRegular className="mr-2 w-4 h-4" />

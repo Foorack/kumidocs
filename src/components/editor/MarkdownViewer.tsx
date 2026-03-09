@@ -8,6 +8,7 @@ import type { Element } from 'hast';
 import { EmojiIcon } from '../ui/EmojiIcon';
 import { rehypeEmojiPlugin } from './rehypeEmojiPlugin';
 import { rehypeHeadingIdsPlugin } from './rehypeHeadingIdsPlugin';
+import { rehypeImageAttrsPlugin } from './rehypeImageAttrsPlugin';
 
 interface MarkdownViewerProps {
 	value: string;
@@ -15,7 +16,7 @@ interface MarkdownViewerProps {
 
 export const MarkdownViewer = memo(function MarkdownViewer({ value }: MarkdownViewerProps) {
 	return (
-		<div className="prose prose-table:my-0 prose-pre:my-0 prose-pre:bg-transparent dark:prose-invert max-w-none px-8 py-6">
+		<div className="prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent dark:prose-invert max-w-none px-8 py-6">
 			<Streamdown
 				plugins={{
 					cjk,
@@ -70,13 +71,18 @@ export const MarkdownViewer = memo(function MarkdownViewer({ value }: MarkdownVi
 					[
 						harden,
 						{
-							allowedProtocols: ['https', 'mailto'],
+							allowedLinkPrefixes: ['*'],
+							allowedImagePrefixes: ['*'],
 						},
 					],
 
 					// ---
 					// Custom anchor/slug plugin that adds id to headings
 					rehypeHeadingIdsPlugin,
+
+					// ---
+					// Parse {width=…} attribute blocks after images
+					rehypeImageAttrsPlugin,
 
 					// ---
 					// Replace native emoji with FluentUI icons.

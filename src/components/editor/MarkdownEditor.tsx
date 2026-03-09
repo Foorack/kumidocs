@@ -147,7 +147,7 @@ async function uploadImageFile(file: File): Promise<string | null> {
 			const err = (await res.json().catch(() => ({ error: 'Upload failed' }))) as {
 				error: string;
 			};
-			toast.error(err.error ?? 'Upload failed');
+			toast.error(err.error);
 			return null;
 		}
 		const data = (await res.json()) as { url: string };
@@ -312,7 +312,9 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		if (
-			Array.from(e.dataTransfer.items).some((i) => i.kind === 'file' && i.type.startsWith('image/'))
+			Array.from(e.dataTransfer.items).some(
+				(i) => i.kind === 'file' && i.type.startsWith('image/'),
+			)
 		) {
 			e.preventDefault();
 			e.dataTransfer.dropEffect = 'copy';

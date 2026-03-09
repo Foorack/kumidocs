@@ -30,13 +30,7 @@ function formatBytes(bytes: number): string {
 
 // ── Image Detail Panel ────────────────────────────────────────────────────────
 
-function ImageDetailPanel({
-	image,
-	onDeleted,
-}: {
-	image: ImageEntry;
-	onDeleted: () => void;
-}) {
+function ImageDetailPanel({ image, onDeleted }: { image: ImageEntry; onDeleted: () => void }) {
 	const navigate = useNavigate();
 	const { user } = useUser();
 	const [confirmOpen, setConfirmOpen] = useState(false);
@@ -49,7 +43,7 @@ function ImageDetailPanel({
 		if (res.ok) {
 			toast.success('Image deleted');
 			onDeleted();
-			void navigate('/images', { replace: true });
+			void navigate('/i', { replace: true });
 		} else {
 			const err = (await res.json().catch(() => ({ error: 'Delete failed' }))) as {
 				error: string;
@@ -64,13 +58,13 @@ function ImageDetailPanel({
 	}, [image.filename, onDeleted, navigate]);
 
 	return (
-		<div className="w-72 shrink-0 border-l border-border bg-background flex flex-col h-full">
+		<div className="w-72 border-l border-border bg-background flex flex-col h-full overflow-hidden">
 			{/* Header */}
 			<div className="flex items-center gap-2 px-4 py-3 border-b border-border">
 				<span className="flex-1 text-sm font-medium truncate" title={image.filename}>
 					{image.filename}
 				</span>
-				<Link to="/images" replace>
+				<Link to="/i" replace>
 					<Button variant="ghost" size="sm" className="h-7 w-7 p-0">
 						<DismissRegular className="w-4 h-4" />
 					</Button>
@@ -93,6 +87,12 @@ function ImageDetailPanel({
 					<p>{formatBytes(image.size)}</p>
 				</div>
 				<div>
+					<p className="text-xs text-muted-foreground mb-0.5">Direct URL</p>
+					<code className="text-xs break-all bg-muted px-1 py-0.5 rounded">
+						{image.url}
+					</code>
+				</div>
+				<div>
 					<p className="text-xs text-muted-foreground mb-1">Used in</p>
 					{image.usedIn.length === 0 ? (
 						<p className="text-muted-foreground italic">Not used in any page</p>
@@ -111,17 +111,18 @@ function ImageDetailPanel({
 						</ul>
 					)}
 				</div>
-				<div>
-					<p className="text-xs text-muted-foreground mb-0.5">Direct URL</p>
-					<code className="text-xs break-all bg-muted px-1 py-0.5 rounded">
-						{image.url}
-					</code>
-				</div>
 			</div>
 
 			{/* Actions */}
 			{user?.canEdit && (
 				<div className="px-4 py-3 border-t border-border">
+					{image.usedIn.length > 0 && (
+						<p className="text-xs text-destructive mb-2">
+							Cannot delete — referenced by {image.usedIn.length}{' '}
+							{image.usedIn.length === 1 ? 'page' : 'pages'}. Remove all references
+							first.
+						</p>
+					)}
 					<Button
 						variant="destructive"
 						size="sm"
@@ -145,9 +146,8 @@ function ImageDetailPanel({
 							<DialogHeader>
 								<DialogTitle>Delete image?</DialogTitle>
 								<DialogDescription>
-									This will permanently delete{' '}
-									<strong>{image.filename}</strong> from the repository. This
-									action cannot be undone.
+									This will permanently delete <strong>{image.filename}</strong>{' '}
+									from the repository. This action cannot be undone.
 								</DialogDescription>
 							</DialogHeader>
 							<DialogFooter>
@@ -159,10 +159,7 @@ function ImageDetailPanel({
 								>
 									Cancel
 								</Button>
-								<Button
-									variant="destructive"
-									onClick={() => void handleDelete()}
-								>
+								<Button variant="destructive" onClick={() => void handleDelete()}>
 									Delete
 								</Button>
 							</DialogFooter>
@@ -213,7 +210,7 @@ export default function ImageLibraryPage() {
 
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{/* Grid */}
-				<div className="flex-1 overflow-y-auto p-6">
+				<div className="flex-1 min-w-0 overflow-y-auto p-6">
 					{loading ? (
 						<div className="text-sm text-muted-foreground">Loading…</div>
 					) : images.length === 0 ? (
@@ -222,7 +219,7 @@ export default function ImageLibraryPage() {
 							to upload one.
 						</div>
 					) : (
-						<div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+						<div className="grid grid-cols-[repeat(auto-fill,160px)] gap-4">
 							{images.map((img) => (
 								<button
 									key={img.filename}
@@ -234,8 +231,8 @@ export default function ImageLibraryPage() {
 									onClick={() => {
 										void navigate(
 											filename === img.filename
-												? '/images'
-												: `/images/${encodeURIComponent(img.filename)}`,
+												? '/i'
+												: `/i/${encodeURIComponent(img.filename)}`,
 											{ replace: true },
 										);
 									}}
@@ -279,9 +276,11 @@ export default function ImageLibraryPage() {
 				</div>
 
 				{/* Detail panel */}
-				{selectedImage && (
-					<ImageDetailPanel image={selectedImage} onDeleted={fetchImages} />
-				)}
+				<div className={`shrink-0 overflow-hidden ${selectedImage ? 'w-72' : 'hidden'}`}>
+					{selectedImage && (
+						<ImageDetailPanel image={selectedImage} onDeleted={fetchImages} />
+					)}
+				</div>
 			</div>
 		</div>
 	);

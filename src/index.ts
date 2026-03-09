@@ -241,9 +241,20 @@ const server = serve<WsData>({
 				return apiImageDelete(decodeURIComponent(filename), user, config);
 			},
 		},
+
+		'/images/:filename': {
+			async GET(req: Request) {
+				const user = requireUser(req);
+				if (!user) return new Response('Unauthorized', { status: 401 });
+				const filename = decodeURIComponent(
+					new URL(req.url).pathname.slice('/images/'.length),
+				);
+				return serveRepoAsset(`images/${filename}`, config);
+			},
+		},
 	},
 
-	async fetch(req, server) {
+	fetch(req, server) {
 		const url = new URL(req.url);
 
 		// WebSocket upgrade
@@ -259,14 +270,6 @@ const server = serve<WsData>({
 				},
 			});
 			return upgraded ? undefined : new Response('WS upgrade failed', { status: 400 });
-		}
-
-		// Serve repo images
-		if (url.pathname.startsWith('/images/')) {
-			const user = requireUser(req);
-			if (!user) return new Response('Unauthorized', { status: 401 });
-			const filename = decodeURIComponent(url.pathname.slice('/images/'.length));
-			return serveRepoAsset(`images/${filename}`, config);
 		}
 
 		return undefined; // let routes handle it

@@ -19,8 +19,8 @@ export function App() {
 							<Route path="/" element={<Navigate to="/p/README.md" replace />} />{' '}
 							<Route element={<AppShell />}>
 								<Route path="/p/*" element={<FilePage />} />
-								<Route path="/images" element={<ImageLibraryPage />} />
-								<Route path="/images/:filename" element={<ImageLibraryPage />} />
+								<Route path="/i" element={<ImageLibraryPage />} />
+								<Route path="/i/:filename" element={<ImageLibraryPage />} />
 								<Route path="/welcome" element={<WelcomePage />} />
 								<Route path="*" element={<NotFound />} />
 							</Route>
