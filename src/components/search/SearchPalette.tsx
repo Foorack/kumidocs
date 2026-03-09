@@ -77,6 +77,7 @@ export function SearchPalette({ open, onClose }: SearchPaletteProps) {
 					onClose();
 				}
 			}}
+			shouldFilter={false}
 		>
 			<CommandInput placeholder="Search pages..." value={query} onValueChange={setQuery} />
 			<CommandList>

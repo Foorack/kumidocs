@@ -1,7 +1,7 @@
 import MiniSearch from 'minisearch';
 import matter from 'gray-matter';
 import { getAllPaths, getFile, parseFileEntry } from './filestore';
-import type { SearchResult } from '../lib/types';
+import type { FileType, SearchResult } from '../lib/types';
 
 interface DocEntry {
 	id: string;
@@ -99,7 +99,7 @@ export function searchDocs(query: string, limit = 20): SearchResult[] {
 		path: r.path as string,
 		title: r.title as string,
 		emoji: r.emoji as string | undefined,
-		type: (r.type as string | undefined) ?? 'doc',
+		type: (r.type as FileType | undefined) ?? 'doc',
 		snippet: buildSnippet(r.path as string, query),
 		score: r.score,
 	}));
