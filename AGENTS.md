@@ -49,8 +49,7 @@ This project follows a **Project Owner + Lead Developer** model for AI-assisted 
 **UI rendering practices** (CRITICAL — violations will be rejected):
 
 - **NEVER render emoji as raw JSX text or `<span>` elements** (e.g. `🌙`, `☀️`)
-- **ALWAYS use `<KumiIcon emoji="..." size={N} />` from `src/components/ui/KumiIcon.tsx`**
-- Raw emoji render as blurry OS-font bitmaps; KumiIcon uses `@lobehub/fluent-emoji` for crisp Fluent 3D rendering
+- **ALWAYS use `<EmojiIcon emoji="..." size={N} />` from `src/components/ui/EmojiIcon.tsx`**
 - This applies to ALL emojis everywhere: theme toggles, status icons, page icons, etc.
 
 ---

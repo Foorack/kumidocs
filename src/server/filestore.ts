@@ -3,7 +3,7 @@ import { join, dirname, extname, relative } from 'path';
 import matter from 'gray-matter';
 import type { Config } from './config';
 import type { FileEntry, TreeNode } from '../lib/types';
-import { CODE_TYPES, IMAGE_TYPES } from '@/lib/filetypes';
+import { CODE_TYPES, IMAGE_TYPES, extensionToType, pathExtension } from '@/lib/filetypes';
 
 const fileCache = new Map<string, string>(); // relPath -> content
 
@@ -163,16 +163,16 @@ function extractHeadingTitle(body: string): string | null {
 }
 
 export function parseFileEntry(path: string): FileEntry {
-	const ext = extname(path).toLowerCase();
+	const ext = pathExtension(path);
 	const fileName = path.split('/').pop() ?? path;
 	const baseName = fileName.replace(/\.md$/, '');
 	const titleFromName = baseName.replace(/[-_]/g, ' ');
 
-	let type: FileEntry['type'] = 'other';
+	let type: FileEntry['type'] = extensionToType(ext);
 	let title = titleFromName;
 	let emoji: string | undefined;
 
-	if (ext === '.md') {
+	if (ext === 'md') {
 		type = 'doc';
 		const content = fileCache.get(path) ?? '';
 		try {
@@ -180,14 +180,10 @@ export function parseFileEntry(path: string): FileEntry {
 			const headingTitle = extractHeadingTitle(parsed.content);
 			if (headingTitle) title = headingTitle;
 			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
-			if (parsed.data.marp) type = 'slide';
+			if (parsed.data.slides === true) type = 'slide';
 		} catch (err: unknown) {
 			console.warn('Failed to parse frontmatter:', err);
 		}
-	} else if (CODE_TYPES.has(ext)) {
-		type = 'code';
-	} else if (IMAGE_TYPES.has(ext)) {
-		type = 'image';
 	}
 
 	return { path, type, title, emoji };

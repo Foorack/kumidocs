@@ -15,7 +15,7 @@ export function App() {
 				<UserProvider>
 					<TooltipProvider delayDuration={300}>
 						<Routes>
-							<Route path="/" element={<Navigate to="/p/README.md" replace />} />
+							<Route path="/" element={<Navigate to="/p/README.md" replace />} />{' '}
 							<Route element={<AppShell />}>
 								<Route path="/p/*" element={<FilePage />} />
 								<Route path="/welcome" element={<WelcomePage />} />

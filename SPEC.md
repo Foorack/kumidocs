@@ -11,7 +11,7 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 - **One instance = one Git repo**
 - Target users: developers, 3–20 concurrent users
 - Primary content: Markdown pages (YAML frontmatter)
-- Secondary content: Marp slide decks (`marp: true` frontmatter)
+- Secondary content: Slide decks (`slides: true` frontmatter)
 - Also supported: Code files (viewed/edited with syntax highlighting)
 
 ---
@@ -23,10 +23,10 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Runtime         | **Bun**                                                | Server + build + git                                                                                                                       |
 | Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                        |
 | Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                            |
-| Icons           | **@fluentui/react-icons**                              | No other Fluent/MS components                                                                                                              |
+| Icons           | **@fluentui/react-icons** + **lucide-react**           | Fluent icons for app chrome; lucide-react for SlideViewer controls. No other Fluent/MS components.                                         |
 | Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
 | Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation.                      |
-| Slides          | **@marp-team/marp-core**                               | Server-side render → HTML                                                                                                                  |
+| Slides          | **Custom client-side SlideViewer**                     | React + MarkdownViewer, 16:9 canvas, CSS scale, no server involvement                                                                      |
 | Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                        |
 | Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                          |
 | Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                     |
@@ -81,7 +81,7 @@ images/                → drag-and-drop image uploads (SHA256.ext naming)
 **/*.{ts,js,py,...}    → code files
 ```
 
-Any `.md` with `marp: true` frontmatter is a slide deck.
+Any `.md` with `slides: true` frontmatter is a slide deck.
 
 ### 4.1 Page Frontmatter
 
@@ -89,7 +89,7 @@ Any `.md` with `marp: true` frontmatter is a slide deck.
 ---
 emoji: 📄 # sidebar/tab icon (optional, defaults by type — see §6.2)
 description: ... # subtitle shown in search results
-marp: true # marks file as a Marp slide deck
+slides: true # marks file as a slide deck (client-side rendered)
 ---
 ```
 
@@ -168,7 +168,6 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 ```
 /                  → README.md (home, instant)
 /p/<path>          → doc page at <path>.md
-/slides/<path>     → Marp presentation for <path>.md
 /code/<path>       → code file viewer/editor for <path>
 ```
 
@@ -381,31 +380,37 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ---
 
-## 11. Marp Slides
+## 11. Slide Decks
 
 ### 11.1 Detection
 
-- File has `marp: true` in YAML frontmatter.
+- File has `slides: true` in YAML frontmatter.
 - Sidebar shows `FluentColorSlideTextSparkle` icon.
-- Route: `/slides/<path>` for viewer, `/p/<path>` still works (shows editor).
+- `/p/<path>` shows the inline viewer + editor.
 
 ### 11.2 Slide Viewer
 
-- Server-side: `@marp-team/marp-core` renders `.md` → HTML.
-- Rendered HTML served inside iframe (full-screen friendly).
-- Navigation: prev/next (arrow keys + on-screen buttons), fullscreen via browser Fullscreen API.
-- **"Present"** button in page header → enter fullscreen immediately.
+- **Fully client-side** — server is unaware of slide format; it stores and serves `.md` files like any other.
+- Slides are split on `---` separator lines (each line containing only `---`).
+- Each slide is rendered via a shared `ScaledSlide` component wrapping `MarkdownViewer` (Streamdown pipeline — same components, dark mode, emoji, etc.).
+- Slides are rendered at a fixed virtual canvas (960×540, 16:9) and CSS `transform: scale()` to fit the container, calculated via `ResizeObserver`. Scale formula: `Math.min((width - 192) / 960, (height - 96) / 540)` — identical across all modes.
+- **Three viewing modes** (toggled via controls bar):
+    - **Scroll mode** (default): all slides stacked vertically, center-aligned, smooth-scrolled to active slide on arrow-key navigation.
+    - **Paginate mode**: single centered slide with prev/next buttons and slide counter (arrow keys + buttons).
+    - **Spotlight mode**: bare fullscreen overlay (`fixed inset-0 z-[9999] bg-background`), requests browser fullscreen on entry, click advances to next slide. Exits when browser fullscreen is dismissed.
+- **Standalone mode** (`standalone` prop on `SlideViewer`): paginate-only, scroll/paginate toggle hidden.
+- Controls bar: scroll mode shows total slide count; paginate mode shows prev/counter/next; both show fullscreen (`Maximize`/`Minimize`) and spotlight (`Spotlight`) icon buttons. Mode toggle (`GalleryVertical` / `BookOpen`) hidden in standalone mode.
+- Navigation: arrow keys (←↑ = prev, →↓Space = next) work in all modes; in scroll mode the active slide is also scrolled into view.
+- No **Present** button in the FilePage header — presentation is launched entirely from within the embedded `SlideViewer`.
 
 ### 11.3 Editing Slides
 
 - Same custom split-pane editor as markdown.
-- Preview pane shows rendered slide output via Marp.
+- Preview pane shows live Streamdown preview of the raw markdown (not slide-split).
 
 ### 11.4 Export
 
-- PDF export via `@marp-team/marp-core` + Playwright (headless Chromium).
-- "Export PDF" button shown only if Chromium is available in container; hidden otherwise.
-- PPTX export: deferred to v2.
+- PDF export: deferred to v2.
 
 ---
 
@@ -426,15 +431,15 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ### 13.0 Icon & Emoji Rendering Rule
 
-> **NEVER render emoji as raw text or `<span>` elements. ALWAYS use `<KumiIcon emoji="..." size={N} />`.**
+> **NEVER render emoji as raw text or `<span>` elements. ALWAYS use `<EmojiIcon emoji="..." size={N} />`.**
 
-`KumiIcon` (`src/components/ui/KumiIcon.tsx`) is the single source of truth for all emoji and icon rendering:
+`EmojiIcon` (`src/components/ui/EmojiIcon.tsx`) is the single source of truth for all emoji and icon rendering:
 
 - **`emoji` prop** → renders via `@lobehub/fluent-emoji` (crisp 3D Fluent style at any size)
 - **`fileType` prop** → maps to the correct Fluent Color system icon
 - **`icon` prop** → renders a raw Fluent React Icon component
 
-Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, inconsistent across platforms. All emojis, including UI chrome (theme toggle, status indicators, etc.), must go through `KumiIcon`.
+Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, inconsistent across platforms. All emojis, including UI chrome (theme toggle, status indicators, etc.), must go through `EmojiIcon`.
 
 ### 13.1 Overall Layout (Docmost-inspired)
 
@@ -474,7 +479,7 @@ Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, 
 ### 13.4 Page Header
 
 - `emoji` + title (inline-editable in edit mode).
-- Right side: viewer `AvatarGroup`, "Edit"/"Done" button, "Present" (slides only), "···" overflow menu.
+- Right side: viewer `AvatarGroup`, "Edit"/"Done" button, "···" overflow menu.
 - Overflow menu: Delete page, Rename/Move, Copy link.
 
 ### 13.5 Breadcrumbs
@@ -572,7 +577,6 @@ src/
 │   └── pages/
 │       ├── DocPage.tsx
 │       ├── CodePage.tsx
-│       ├── SlidesPage.tsx
 │       └── NotFound.tsx
 styles/
 └── globals.css
@@ -607,7 +611,7 @@ SPEC.md
 
 - [x] Sidebar auto-generated from `/api/tree` (Confluence-style hierarchy, no folder UI)
 - [x] Virtual ghost pages for dirs without a matching `.md`
-- [x] Page icons: FluentColor system icons + FluentEmoji page icons (`KumiIcon`)
+- [x] Page icons: FluentColor system icons + FluentEmoji page icons (`EmojiIcon`)
 - [x] Presence editing dot in sidebar (amber animated dot)
 - [x] Search: MiniSearch index + Ctrl+K palette
 - [x] Toast notifications (sonner)
@@ -622,6 +626,6 @@ SPEC.md
 ### Phase 4 — Slides & Code
 
 - [ ] Marp server-side render
-- [ ] Slide viewer (fullscreen, navigation, Present button)
+- [x] Slide viewer (scroll/paginate/spotlight modes, fullscreen, arrow-key navigation, standalone presentation route)
 - [ ] Code file editor (CodeMirror + language packs)
 - [ ] Marp PDF export (Playwright, Chromium-gated)

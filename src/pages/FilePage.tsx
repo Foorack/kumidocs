@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/toolti
 import { ScrollArea } from '../components/ui/scroll-area';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import { MarkdownViewer } from '../components/editor/MarkdownViewer';
+import { SlideViewer } from '../components/editor/SlideViewer';
 import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
@@ -38,7 +39,7 @@ function pathToTitle(path: string): string {
 
 interface DocMeta {
 	emoji?: string;
-	marp?: boolean;
+	slides?: boolean;
 }
 
 /**
@@ -57,16 +58,16 @@ function parseFrontmatter(raw: string): { data: DocMeta; content: string } {
 		if (!kv) continue;
 		const [, key, val = ''] = kv;
 		if (key === 'emoji') data.emoji = val.trim();
-		if (key === 'marp' && val.trim() === 'true') data.marp = true;
+		if (key === 'slides' && val.trim() === 'true') data.slides = true;
 	}
 	return { data, content };
 }
 
-/** Reconstruct a frontmatter block from only the whitelisted fields (emoji, marp). Unknown fields are not preserved. */
+/** Reconstruct a frontmatter block from only the whitelisted fields (emoji, slides). Unknown fields are not preserved. */
 function buildFrontmatter(meta: DocMeta): string {
 	const lines: string[] = [];
 	if (meta.emoji) lines.push(`emoji: ${meta.emoji}`);
-	if (meta.marp) lines.push('marp: true');
+	if (meta.slides) lines.push('slides: true');
 	if (lines.length === 0) return '';
 	return `---\n${lines.join('\n')}\n---\n`;
 }
@@ -347,7 +348,7 @@ export default function FilePage() {
 
 	const rawExt = pathExtension(filePath);
 	let fileType = extensionToType(rawExt);
-	if (fileType === 'doc' && meta.marp) fileType = 'slide';
+	if (fileType === 'doc' && meta.slides) fileType = 'slide';
 	const title =
 		fileType === 'doc' || fileType === 'slide'
 			? (extractHeadingTitle(content) ?? pathToTitle(filePath))
@@ -554,6 +555,8 @@ export default function FilePage() {
 							onChange={handleChange}
 							onSave={handleSave}
 						/>
+					) : fileType === 'slide' ? (
+						<SlideViewer value={content} />
 					) : (
 						<ScrollArea className="h-full">
 							<MarkdownViewer

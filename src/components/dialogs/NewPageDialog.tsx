@@ -12,6 +12,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
+import { EmojiIcon } from '../ui/EmojiIcon';
 import type { MarkdownType } from '@/lib/types';
 
 interface NewPageDialogProps {
@@ -51,8 +52,8 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 		if (!title.trim() || !resolvedSlug) return;
 		setCreating(true);
 
-		const marpHeader = pageType === 'slide' ? '---\nmarp: true\n---\n\n' : '';
-		const stub = `${marpHeader}# ${title.trim()}\n`;
+		const slidesHeader = pageType === 'slide' ? '---\nslides: true\n---\n\n' : '';
+		const stub = `${slidesHeader}# ${title.trim()}\n`;
 
 		const res = await fetch('/api/file', {
 			method: 'POST',
@@ -118,23 +119,25 @@ export function NewPageDialog({ open, onClose, parentDir, onCreated }: NewPageDi
 								type="button"
 								size="sm"
 								variant={pageType === 'doc' ? 'default' : 'outline'}
-								className="flex-1 h-8 text-xs"
+								className="flex-1 h-8 text-xs gap-1.5"
 								onClick={() => {
 									setPageType('doc');
 								}}
 							>
-								📄 Markdown
+								<EmojiIcon fileType="doc" size={14} />
+								Markdown
 							</Button>
 							<Button
 								type="button"
 								size="sm"
 								variant={pageType === 'slide' ? 'default' : 'outline'}
-								className="flex-1 h-8 text-xs"
+								className="flex-1 h-8 text-xs gap-1.5"
 								onClick={() => {
 									setPageType('slide');
 								}}
 							>
-								🎞 Marp Slides
+								<EmojiIcon fileType="slide" size={14} />
+								Slides
 							</Button>
 						</div>
 					</div>
