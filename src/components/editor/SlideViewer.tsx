@@ -242,9 +242,9 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 				aria-hidden="true"
 				style={{
 					position: 'fixed',
-					top: '-9999px',
-					left: '-9999px',
-					opacity: 0,
+					top: 0,
+					left: 0,
+					zIndex: -9999,
 					pointerEvents: 'none',
 				}}
 			>

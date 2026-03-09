@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MoreHorizontalRegular, SaveRegular, InfoRegular } from '@fluentui/react-icons';
+import { ImageDown } from 'lucide-react';
 import { EmojiPickerPopover } from '../components/ui/EmojiPickerPopover';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -112,6 +113,8 @@ export default function FilePage() {
 		() => localStorage.getItem('kumidocs:info-open') === 'true',
 	);
 	const [remoteBanner, setRemoteBanner] = useState<string | null>(null);
+	const [isPdfExporting, setIsPdfExporting] = useState(false);
+	const pdfContentRef = useRef<HTMLDivElement>(null);
 
 	// Toggle info panel from sidebar context menu (same-tab custom event)
 	useEffect(() => {
@@ -354,6 +357,55 @@ export default function FilePage() {
 			? (extractHeadingTitle(content) ?? pathToTitle(filePath))
 			: (filePath.split('/').pop() ?? filePath);
 
+	const exportPagePdf = useCallback(async () => {
+		if (isPdfExporting) return;
+		setIsPdfExporting(true);
+		try {
+			const el = pdfContentRef.current;
+			if (!el) return;
+			const { default: html2canvas } = await import('html2canvas-pro');
+			const { jsPDF } = await import('jspdf');
+			const RENDER_W = 800;
+			const SCALE = 1.5;
+			const PAGE_H_PX = Math.floor((RENDER_W * 297) / 210); // A4 portrait ratio ≈ 1131px
+			const canvas = await html2canvas(el, {
+				width: RENDER_W,
+				scale: SCALE,
+				useCORS: true,
+				logging: false,
+			});
+			const pdf = new jsPDF({
+				orientation: 'portrait',
+				unit: 'px',
+				format: [RENDER_W, PAGE_H_PX],
+			});
+			const totalH = canvas.height;
+			const scaledPageH = PAGE_H_PX * SCALE;
+			let yOffset = 0;
+			while (yOffset < totalH) {
+				const sliceH = Math.min(scaledPageH, totalH - yOffset);
+				const sliceCanvas = document.createElement('canvas');
+				sliceCanvas.width = canvas.width;
+				sliceCanvas.height = Math.ceil(sliceH);
+				const ctx = sliceCanvas.getContext('2d');
+				if (ctx) ctx.drawImage(canvas, 0, -yOffset);
+				if (yOffset > 0) pdf.addPage();
+				pdf.addImage(
+					sliceCanvas.toDataURL('image/png'),
+					'PNG',
+					0,
+					0,
+					RENDER_W,
+					sliceH / SCALE,
+				);
+				yOffset += scaledPageH;
+			}
+			pdf.save(`${title}.pdf`);
+		} finally {
+			setIsPdfExporting(false);
+		}
+	}, [isPdfExporting, title]);
+
 	// Breadcrumb
 	const breadcrumb = filePath.replace(/\.md$/, '').split('/').slice(0, -1);
 
@@ -489,6 +541,23 @@ export default function FilePage() {
 							))}
 					</div>
 
+					{/* PDF export — only for doc pages in view mode */}
+					{fileType === 'doc' && !editMode && (
+						<Button
+							size="sm"
+							variant="ghost"
+							className="h-7 gap-1 text-xs px-2"
+							onClick={() => {
+								void exportPagePdf();
+							}}
+							disabled={isPdfExporting}
+							title="Export as PDF"
+						>
+							<ImageDown className="w-4 h-4" />
+							{isPdfExporting ? 'Exporting…' : 'PDF'}
+						</Button>
+					)}
+
 					{/* Dedicated info button */}
 					<Button
 						size="sm"
@@ -589,6 +658,24 @@ export default function FilePage() {
 					<span>
 						Last saved · <code className="font-mono">{lastSha}</code>
 					</span>
+				</div>
+			)}
+
+			{/* Off-screen render container for PDF export */}
+			{fileType === 'doc' && (
+				<div
+					ref={pdfContentRef}
+					aria-hidden="true"
+					style={{
+						position: 'fixed',
+						top: 0,
+						left: 0,
+						width: 800,
+						zIndex: -9999,
+						pointerEvents: 'none',
+					}}
+				>
+					<MarkdownViewer value={content} />
 				</div>
 			)}
 
