@@ -232,10 +232,7 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 	const current = slides[index] ?? '';
 
 	return (
-		<div
-			ref={fullscreenRef}
-			className={`flex flex-col bg-muted/30 dark:bg-muted/10${standalone ? ' h-screen w-screen' : ' h-full'}`}
-		>
+		<>
 			{/* ── Off-screen render container for PDF export (invisible, native resolution) ── */}
 			<div
 				ref={offscreenRef}
@@ -246,6 +243,7 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 					left: 0,
 					zIndex: -9999,
 					pointerEvents: 'none',
+					opacity: 0,
 				}}
 			>
 				{slides.map((slide, i) => (
@@ -263,167 +261,172 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 					</div>
 				))}
 			</div>
-			{/* ── Spotlight overlay — bare fullscreen, slide only ── */}
-			{isSpotlight && (
-				<div
-					ref={spotlightRef}
-					className="fixed inset-0 z-[9999] bg-background flex items-center justify-center cursor-none"
-					onClick={next}
-				>
-					<ScaledSlide
-						value={current}
-						scale={spotlightScale}
-						className="overflow-hidden"
-					/>
-				</div>
-			)}
-			{/* ── Slide stage ── */}
-			{scrollMode ? (
-				<div
-					ref={stageRef}
-					className="flex-1 overflow-y-auto flex flex-col items-center py-6 gap-4"
-				>
-					{slides.map((slide, i) => (
-						<div
-							key={i}
-							ref={(el) => {
-								slideElemsRef.current[i] = el;
-							}}
-							style={{
-								position: 'relative',
-								width: SLIDE_W * scale,
-								height: SLIDE_H * scale,
-								flexShrink: 0,
-							}}
-							className="shadow-xl rounded-sm overflow-hidden"
-						>
-							<ScaledSlide
-								value={slide}
-								scale={scale}
-								origin="top left"
-								className="bg-background overflow-hidden absolute top-0 left-0"
-							/>
-						</div>
-					))}
-				</div>
-			) : (
-				<div
-					ref={stageRef}
-					className="flex-1 flex items-center justify-center overflow-hidden"
-				>
-					{/* Fixed-size canvas, scaled to fit */}
-					<ScaledSlide
-						value={current}
-						scale={scale}
-						className="bg-background shadow-xl rounded-sm overflow-hidden"
-					/>
-				</div>
-			)}
-
-			{/* ── Controls bar ── */}
-			<div className="shrink-0 flex items-center justify-center gap-3 px-4 py-2 border-t border-border bg-background">
+			<div
+				ref={fullscreenRef}
+				className={`flex flex-col bg-muted/30 dark:bg-muted/10${standalone ? ' h-screen w-screen' : ' h-full'}`}
+			>
+				{/* ── Spotlight overlay — bare fullscreen, slide only ── */}
+				{isSpotlight && (
+					<div
+						ref={spotlightRef}
+						className="fixed inset-0 z-[9999] bg-background flex items-center justify-center cursor-none"
+						onClick={next}
+					>
+						<ScaledSlide
+							value={current}
+							scale={spotlightScale}
+							className="overflow-hidden"
+						/>
+					</div>
+				)}
+				{/* ── Slide stage ── */}
 				{scrollMode ? (
-					<span className="text-xs text-muted-foreground tabular-nums select-none">
-						{total} {total === 1 ? 'slide' : 'slides'}
-					</span>
+					<div
+						ref={stageRef}
+						className="flex-1 overflow-y-auto flex flex-col items-center py-6 gap-4"
+					>
+						{slides.map((slide, i) => (
+							<div
+								key={i}
+								ref={(el) => {
+									slideElemsRef.current[i] = el;
+								}}
+								style={{
+									position: 'relative',
+									width: SLIDE_W * scale,
+									height: SLIDE_H * scale,
+									flexShrink: 0,
+								}}
+								className="shadow-xl rounded-sm overflow-hidden"
+							>
+								<ScaledSlide
+									value={slide}
+									scale={scale}
+									origin="top left"
+									className="bg-background overflow-hidden absolute top-0 left-0"
+								/>
+							</div>
+						))}
+					</div>
 				) : (
-					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7"
-							onClick={prev}
-							disabled={index === 0}
-							title="Previous slide (←)"
-						>
-							<ChevronLeft className="w-4 h-4" />
-						</Button>
+					<div
+						ref={stageRef}
+						className="flex-1 flex items-center justify-center overflow-hidden"
+					>
+						{/* Fixed-size canvas, scaled to fit */}
+						<ScaledSlide
+							value={current}
+							scale={scale}
+							className="bg-background shadow-xl rounded-sm overflow-hidden"
+						/>
+					</div>
+				)}
 
-						<span className="text-xs text-muted-foreground tabular-nums select-none min-w-[4rem] text-center">
-							{index + 1} / {total}
+				{/* ── Controls bar ── */}
+				<div className="shrink-0 flex items-center justify-center gap-3 px-4 py-2 border-t border-border bg-background">
+					{scrollMode ? (
+						<span className="text-xs text-muted-foreground tabular-nums select-none">
+							{total} {total === 1 ? 'slide' : 'slides'}
 						</span>
-
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7"
-							onClick={next}
-							disabled={index === total - 1}
-							title="Next slide (→)"
-						>
-							<ChevronRight className="w-4 h-4" />
-						</Button>
-					</>
-				)}
-
-				{!standalone && (
-					<>
-						<div className="w-px h-4 bg-border mx-1" />
-
-						<Button
-							variant={scrollMode ? 'secondary' : 'ghost'}
-							size="icon"
-							className="h-7 w-7"
-							onClick={() => {
-								setScrollMode(true);
-							}}
-							title="Scroll mode"
-						>
-							<GalleryVertical className="w-4 h-4" />
-						</Button>
-						<Button
-							variant={scrollMode ? 'ghost' : 'secondary'}
-							size="icon"
-							className="h-7 w-7"
-							onClick={() => {
-								setScrollMode(false);
-							}}
-							title="Paginate mode"
-						>
-							<BookOpen className="w-4 h-4" />
-						</Button>
-					</>
-				)}
-
-				<div className="w-px h-4 bg-border mx-1" />
-
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-7 w-7"
-					onClick={toggleFullscreen}
-					title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
-				>
-					{isFullscreen ? (
-						<Minimize className="w-4 h-4" />
 					) : (
-						<Maximize className="w-4 h-4" />
+						<>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7"
+								onClick={prev}
+								disabled={index === 0}
+								title="Previous slide (←)"
+							>
+								<ChevronLeft className="w-4 h-4" />
+							</Button>
+
+							<span className="text-xs text-muted-foreground tabular-nums select-none min-w-[4rem] text-center">
+								{index + 1} / {total}
+							</span>
+
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7"
+								onClick={next}
+								disabled={index === total - 1}
+								title="Next slide (→)"
+							>
+								<ChevronRight className="w-4 h-4" />
+							</Button>
+						</>
 					)}
-				</Button>
 
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-7 w-7"
-					onClick={enterSpotlight}
-					title="Spotlight — slide only fullscreen"
-				>
-					<Spotlight className="w-4 h-4" />
-				</Button>
+					{!standalone && (
+						<>
+							<div className="w-px h-4 bg-border mx-1" />
 
-				<Button
-					variant="ghost"
-					size="icon"
-					className="h-7 w-7"
-					onClick={() => {
-						void exportPdf();
-					}}
-					disabled={isExporting}
-					title="Export as PDF"
-				>
-					<ImageDown className="w-4 h-4" />
-				</Button>
+							<Button
+								variant={scrollMode ? 'secondary' : 'ghost'}
+								size="icon"
+								className="h-7 w-7"
+								onClick={() => {
+									setScrollMode(true);
+								}}
+								title="Scroll mode"
+							>
+								<GalleryVertical className="w-4 h-4" />
+							</Button>
+							<Button
+								variant={scrollMode ? 'ghost' : 'secondary'}
+								size="icon"
+								className="h-7 w-7"
+								onClick={() => {
+									setScrollMode(false);
+								}}
+								title="Paginate mode"
+							>
+								<BookOpen className="w-4 h-4" />
+							</Button>
+						</>
+					)}
+
+					<div className="w-px h-4 bg-border mx-1" />
+
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7"
+						onClick={toggleFullscreen}
+						title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+					>
+						{isFullscreen ? (
+							<Minimize className="w-4 h-4" />
+						) : (
+							<Maximize className="w-4 h-4" />
+						)}
+					</Button>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7"
+						onClick={enterSpotlight}
+						title="Spotlight — slide only fullscreen"
+					>
+						<Spotlight className="w-4 h-4" />
+					</Button>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7"
+						onClick={() => {
+							void exportPdf();
+						}}
+						disabled={isExporting}
+						title="Export as PDF"
+					>
+						<ImageDown className="w-4 h-4" />
+					</Button>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
