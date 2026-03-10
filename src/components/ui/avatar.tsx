@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Avatar as AvatarPrimitive } from 'radix-ui';
+import { sha256 } from '@noble/hashes/sha2.js';
 import { cn } from '@/lib/utils';
 import { avatarColor, avatarInitials } from '@/lib/avatar';
 
@@ -21,11 +22,10 @@ export interface UserAvatarProps extends React.ComponentProps<typeof AvatarPrimi
 	size?: AvatarSize;
 }
 
-/** Compute a SHA-256 hex digest of a string using the native Web Crypto API. */
-async function sha256hex(input: string): Promise<string> {
-	const encoded = new TextEncoder().encode(input.trim().toLowerCase());
-	const buf = await crypto.subtle.digest('SHA-256', encoded);
-	return Array.from(new Uint8Array(buf))
+/** Compute a SHA-256 hex digest of a string — works in any context (no secure origin required). */
+function sha256hex(input: string): string {
+	const bytes = sha256(new TextEncoder().encode(input.trim().toLowerCase()));
+	return Array.from(bytes)
 		.map((b) => b.toString(16).padStart(2, '0'))
 		.join('');
 }
@@ -44,17 +44,7 @@ export function UserAvatar({ name, email, size = 'md', className, ...props }: Us
 	const { circle, text } = sizeMap[size];
 	const displayInitials = avatarInitials(name);
 	const color = avatarColor(name);
-	const [gravatarHash, setGravatarHash] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!email) return;
-		if (!email.includes('@')) return;
-		sha256hex(email)
-			.then(setGravatarHash)
-			.catch(() => {
-				/* silently fall back to initials */
-			});
-	}, [email]);
+	const gravatarHash = useMemo(() => (email?.includes('@') ? sha256hex(email) : null), [email]);
 
 	return (
 		<AvatarPrimitive.Root
