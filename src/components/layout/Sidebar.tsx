@@ -54,6 +54,8 @@ interface PageNode {
 
 // Names always hidden from sidebar
 const HIDDEN_NAMES = new Set(['_sidebar.md']);
+// Directory names always hidden from sidebar
+const HIDDEN_DIR_NAMES = new Set(['images']);
 
 /**
  * Merge TreeNode[] (mixed files + dirs) into PageNode[]:
@@ -62,7 +64,9 @@ const HIDDEN_NAMES = new Set(['_sidebar.md']);
  * - .md file with no matching dir → leaf PageNode
  */
 function buildPageTree(nodes: TreeNode[]): PageNode[] {
-	const filtered = nodes.filter((n) => !HIDDEN_NAMES.has(n.name));
+	const filtered = nodes.filter(
+		(n) => !HIDDEN_NAMES.has(n.name) && !(n.type === 'dir' && HIDDEN_DIR_NAMES.has(n.name)),
+	);
 
 	const fileMap = new Map<string, TreeNode>(); // baseName → file node
 	const dirMap = new Map<string, TreeNode>(); // dirName → dir node
@@ -129,7 +133,7 @@ function PageNodeRow({
 	const location = useLocation();
 	const navigate = useNavigate();
 	const hasChildren = node.children.length > 0;
-	const [open, setOpen] = useState(depth === 0);
+	const [open, setOpen] = useState(depth <= 1);
 	const [dotsHovered, setDotsHovered] = useState(false);
 	const [dotsOpen, setDotsOpen] = useState(false);
 

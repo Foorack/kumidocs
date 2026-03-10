@@ -166,27 +166,41 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	if (!from || !to) return Response.json({ error: 'from and to required' }, { status: 400 });
 	if (from === to) return Response.json({ sha: null, from, to });
 
-	const content = getFile(from) ?? '';
+	// Collect all files that must move: the page itself plus any sub-pages living
+	// under the matching directory (e.g. "docs.md" → also move all "docs/*").
+	const fromDir = from.replace(/\.md$/i, '') + '/';
+	const toDir = to.replace(/\.md$/i, '') + '/';
+	const allPaths = getAllPaths();
+	const subFiles = allPaths.filter((p) => p.startsWith(fromDir));
 
-	// Write new path + delete old from disk, then git move
+	// Move the primary file
+	const content = getFile(from) ?? '';
 	await writeFileToRepo(to, content, config);
 	await deleteFileFromRepo(from, config);
 	removeFromIndex(from);
 	updateInIndex(to);
 
-	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
-	const result = await gitMoveAndCommit(
-		config,
-		from,
-		to,
-		msg,
-		user.email,
-		user.email || 'kumidocs@localhost',
-	);
+	// Move each sub-page/sub-file
+	for (const sub of subFiles) {
+		const subTo = toDir + sub.slice(fromDir.length);
+		const subContent = getFile(sub) ?? '';
+		await writeFileToRepo(subTo, subContent, config);
+		await deleteFileFromRepo(sub, config);
+		removeFromIndex(sub);
+		updateInIndex(subTo);
+	}
 
-	broadcastPageDeleted(from);
-	broadcastPageCreated(to, to);
-	return Response.json({ sha: result.sha, from, to });
+	const movedPaths = [from, ...subFiles];
+	const newPaths = [to, ...subFiles.map((s) => toDir + s.slice(fromDir.length))];
+
+	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
+	// Stage all new paths and remove all old paths in a single commit
+	const extraMoves = subFiles.map((s) => ({ from: s, to: toDir + s.slice(fromDir.length) }));
+	await gitMoveAndCommit(config, from, to, msg, user.email, user.email || 'kumidocs@localhost', extraMoves);
+
+	for (const old of movedPaths) broadcastPageDeleted(old);
+	for (const n of newPaths) broadcastPageCreated(n, n);
+	return Response.json({ sha: null, from, to });
 }
 
 // GET /api/search?q=<query>

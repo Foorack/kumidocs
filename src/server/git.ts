@@ -132,11 +132,17 @@ export async function gitMoveAndCommit(
 	message: string,
 	authorName: string,
 	authorEmail: string,
+	extraMoves?: Array<{ from: string; to: string }>,
 ): Promise<{ sha: string; error?: string }> {
 	// isomorphic-git doesn't have a native move, so we:
 	// 1. Add the new file 2. Remove the old file
 	await git.add({ fs, dir: config.repoPath, filepath: to });
 	await git.remove({ fs, dir: config.repoPath, filepath: from });
+	// Stage any additional moved files (e.g. sub-pages)
+	for (const extra of extraMoves ?? []) {
+		await git.add({ fs, dir: config.repoPath, filepath: extra.to });
+		await git.remove({ fs, dir: config.repoPath, filepath: extra.from });
+	}
 	return gitStageAndCommit(config, [], message, authorName, authorEmail);
 }
 

@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import {
 	Dialog,
@@ -13,14 +14,21 @@ import {
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '../components/ui/select';
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from '../components/ui/command';
 
-// Sentinel used in the Select so we never pass value="" to SelectItem (Radix throws)
+interface PageOption {
+	path: string; // full path e.g. "docs/api.md"
+	dir: string; // path without .md — used as the parent dir value
+	title: string;
+}
+
+// Sentinel for "place at repo root (no parent folder)"
 const ROOT = '__root__';
 
 /**
@@ -39,7 +47,22 @@ export function usePageActions(reloadTree: () => void) {
 	const [moveFrom, setMoveFrom] = useState('');
 	const [moveParent, setMoveParent] = useState(ROOT); // sentinel = root
 	const [moveSlug, setMoveSlug] = useState('');
-	const [moveDirs, setMoveDirs] = useState<string[]>([]);
+	const [movePages, setMovePages] = useState<PageOption[]>([]);
+	const [parentOpen, setParentOpen] = useState(false);
+	const [parentSearch, setParentSearch] = useState('');
+	const comboboxRef = useRef<HTMLDivElement>(null);
+
+	// Close the parent combobox dropdown when clicking outside
+	useEffect(() => {
+		if (!parentOpen) return;
+		const handler = (e: MouseEvent) => {
+			if (comboboxRef.current && !comboboxRef.current.contains(e.target as Node)) {
+				setParentOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handler);
+		return () => document.removeEventListener('mousedown', handler);
+	}, [parentOpen]);
 
 	const openMove = useCallback(async (filePath: string) => {
 		const parts = filePath.replace(/\.md$/, '').split('/');
@@ -47,24 +70,33 @@ export function usePageActions(reloadTree: () => void) {
 		const parent = parts.join('/');
 		setMoveFrom(filePath);
 		setMoveSlug(slug);
-		setMoveParent(parent || ROOT);
+		setParentSearch('');
 		try {
 			const res = await fetch('/api/tree');
-			const entries = (await res.json()) as { path: string; type: string }[];
-			const dirs = new Set<string>();
-			entries.forEach(({ path, type }) => {
-				if (type === 'dir') {
-					dirs.add(path);
-				} else {
-					const segs = path.split('/');
-					for (let i = 1; i < segs.length; i++) {
-						dirs.add(segs.slice(0, i).join('/'));
-					}
-				}
-			});
-			setMoveDirs(Array.from(dirs).sort());
+			type RawNode = {
+				path: string;
+				type: string;
+				fileEntry?: { title?: string };
+				children?: RawNode[];
+			};
+			const tree = (await res.json()) as RawNode[];
+			// Flatten the nested tree into a flat list of file nodes
+			const flatten = (nodes: RawNode[]): RawNode[] =>
+				nodes.flatMap((n) => (n.type === 'dir' ? flatten(n.children ?? []) : [n]));
+			const pages: PageOption[] = flatten(tree)
+				.filter(({ path: p }) => p.endsWith('.md') && p !== filePath)
+				.map(({ path: p, fileEntry }) => ({
+					path: p,
+					dir: p.replace(/\.md$/i, ''),
+					title: fileEntry?.title ?? p.replace(/\.md$/i, ''),
+				}))
+				.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+			setMovePages(pages);
+			const parentPageExists = pages.some((pg) => pg.dir === parent);
+			setMoveParent(parent && parentPageExists ? parent : ROOT);
 		} catch {
-			setMoveDirs([]);
+			setMovePages([]);
+			setMoveParent(ROOT);
 		}
 		setMoveOpen(true);
 	}, []);
@@ -135,19 +167,88 @@ export function usePageActions(reloadTree: () => void) {
 					<div className="space-y-4">
 						<div className="space-y-1.5">
 							<Label>Parent</Label>
-							<Select value={moveParent} onValueChange={setMoveParent}>
-								<SelectTrigger>
-									<SelectValue placeholder="(root)" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={ROOT}>(root)</SelectItem>
-									{moveDirs.map((dir) => (
-										<SelectItem key={dir} value={dir}>
-											{dir}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							{/* Searchable combobox */}
+							<div ref={comboboxRef} className="relative">
+								<button
+									type="button"
+									className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring"
+									onClick={() => {
+										setParentOpen((o) => !o);
+									}}
+								>
+									<span className="truncate text-left">
+										{moveParent === ROOT
+											? '(root)'
+											: (movePages.find((pg) => pg.dir === moveParent)
+													?.title ?? moveParent)}
+									</span>
+									<ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+								</button>
+								{parentOpen && (
+									<div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md">
+										<Command shouldFilter={false}>
+											<CommandInput
+												autoFocus
+												placeholder="Search pages…"
+												value={parentSearch}
+												onValueChange={setParentSearch}
+											/>
+											<CommandList className="max-h-48">
+												<CommandEmpty>No pages found.</CommandEmpty>
+												<CommandGroup>
+													{/* Root option */}
+													{'(root)'.includes(
+														parentSearch.toLowerCase(),
+													) && (
+														<CommandItem
+															value={ROOT}
+															onSelect={() => {
+																setMoveParent(ROOT);
+																setParentOpen(false);
+																setParentSearch('');
+															}}
+														>
+															<CheckIcon
+																className={`mr-2 h-4 w-4 ${moveParent === ROOT ? 'opacity-100' : 'opacity-0'}`}
+															/>
+															(root)
+														</CommandItem>
+													)}
+													{movePages
+														.filter((pg) =>
+															pg.title
+																.toLowerCase()
+																.includes(
+																	parentSearch.toLowerCase(),
+																),
+														)
+														.map((pg) => (
+															<CommandItem
+																key={pg.path}
+																value={pg.dir}
+																onSelect={() => {
+																	setMoveParent(pg.dir);
+																	setParentOpen(false);
+																	setParentSearch('');
+																}}
+															>
+																<CheckIcon
+																	className={`mr-2 h-4 w-4 ${moveParent === pg.dir ? 'opacity-100' : 'opacity-0'}`}
+																/>
+																<span className="truncate">
+																	{pg.title}
+																</span>
+																<span className="ml-auto truncate text-xs text-muted-foreground">
+																	{pg.dir}
+																</span>
+															</CommandItem>
+														))}
+												</CommandGroup>
+											</CommandList>
+										</Command>
+									</div>
+								)}
+							</div>
 						</div>
 						<div className="space-y-1.5">
 							<Label>Filename</Label>

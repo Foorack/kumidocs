@@ -51,7 +51,7 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 				</Tooltip>
 
 				{user && (
-					<div className="flex items-center gap-1.5">
+					<div className="flex items-center gap-3">
 						<span className="text-xs text-foreground select-none">
 							{user.displayName}
 						</span>
