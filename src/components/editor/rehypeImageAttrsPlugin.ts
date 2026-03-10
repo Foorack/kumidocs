@@ -45,10 +45,42 @@ function parseBlock(raw: string): Record<string, string> | null {
 	return matched ? attrs : null;
 }
 
-function applyAttrs(img: Element, attrs: Record<string, string>): void {
+// Djb2-inspired hash to fingerprint the applied style.
+function styleFingerprint(attrs: Record<string, string>): number {
+	const s = Object.entries(attrs)
+		.map(([k, v]) => `${k}:${v}`)
+		.join(';');
+	let h = 5381;
+	for (let i = 0; i < s.length; i++) {
+		h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+	}
+	return ((h >>> 0) % 1_000_000) + 1;
+}
+
+// Apply a stylehash-N class to an element so Streamdown's memo comparators
+// (which check className) see a change and force a re-render.
+function applyHashToNode(el: Element, hash: string): void {
+	const cls = el.properties.className;
+	if (Array.isArray(cls)) {
+		const filtered = cls.filter((c) => typeof c !== 'string' || !c.startsWith('stylehash-'));
+		filtered.push(hash);
+		el.properties.className = filtered;
+	} else {
+		const base = typeof cls === 'string' ? cls.replace(/\bstylehash-\S+/g, '').trim() : '';
+		el.properties.className = base ? `${base} ${hash}` : hash;
+	}
+}
+
+// Returns the hash that was applied, so callers can propagate it up the tree.
+function applyAttrs(img: Element, attrs: Record<string, string>): string {
 	const parts = Object.entries(attrs).map(([k, v]) => `${k}: ${v}`);
 	const existing = typeof img.properties.style === 'string' ? img.properties.style : '';
 	img.properties.style = existing ? `${existing}; ${parts.join('; ')}` : parts.join('; ');
+
+	const fp = styleFingerprint(attrs);
+	const hash = `stylehash-${String(fp)}`;
+	applyHashToNode(img, hash);
+	return hash;
 }
 
 function walk(node: Root | Element): void {
@@ -73,7 +105,14 @@ function walk(node: Root | Element): void {
 					}
 					const attrs = parseBlock(rawAttrs);
 					if (attrs !== null) {
-						applyAttrs(child, attrs);
+						const hash = applyAttrs(child, attrs);
+						// Also bust the parent element's memo (MemoParagraph wraps MemoImg
+						// and has its own sameClassAndNode comparator — if the paragraph's
+						// className doesn't change, MemoParagraph skips re-rendering entirely
+						// and MemoImg never gets the updated props).
+						if (node.type === 'element') {
+							applyHashToNode(node, hash);
+						}
 						const remaining = sibling.value.slice(m[0].length);
 						if (remaining.trim()) {
 							children.splice(i + 1, 1, { type: 'text', value: remaining });
