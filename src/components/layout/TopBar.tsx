@@ -1,4 +1,5 @@
 import { SearchRegular } from '@fluentui/react-icons';
+import { Popover as PopoverPrimitive } from 'radix-ui';
 import { EmojiIcon } from '../ui/EmojiIcon';
 import { useTheme } from '../../store/theme';
 import { useUser } from '../../store/user';
@@ -55,12 +56,40 @@ export function TopBar({ instanceName, onSearchOpen }: TopBarProps) {
 						<span className="text-xs text-foreground select-none">
 							{user.displayName}
 						</span>
-						<UserAvatar
-							name={user.displayName}
-							email={user.email}
-							size="md"
-							className="cursor-default"
-						/>
+						<PopoverPrimitive.Root>
+							<PopoverPrimitive.Trigger asChild>
+								<button className="rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+									<UserAvatar
+										name={user.displayName}
+										email={user.email}
+										size="md"
+									/>
+								</button>
+							</PopoverPrimitive.Trigger>
+							<PopoverPrimitive.Portal>
+								<PopoverPrimitive.Content
+									align="end"
+									sideOffset={8}
+									className="z-50 w-64 rounded-lg border border-border bg-popover p-4 shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+								>
+									<div className="flex flex-col items-center gap-3">
+										<UserAvatar
+											name={user.displayName}
+											email={user.email}
+											size="lg"
+										/>
+										<div className="text-center">
+											<p className="text-sm font-semibold text-foreground">
+												{user.displayName}
+											</p>
+											<p className="text-xs text-muted-foreground mt-0.5">
+												{user.email}
+											</p>
+										</div>
+									</div>
+								</PopoverPrimitive.Content>
+							</PopoverPrimitive.Portal>
+						</PopoverPrimitive.Root>
 					</div>
 				)}
 			</div>
