@@ -1,4 +1,4 @@
-# KumiDocs — Specification v0.3
+# KumiDocs — Specification v0.4
 
 > Last updated: 2026-03-10 · Status: **FINALIZED — ready for implementation**
 
@@ -27,7 +27,7 @@ KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visu
 | Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
 | Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation.                      |
 | Slides          | **Custom client-side SlideViewer**                     | React + MarkdownViewer, 16:9 canvas, CSS scale, no server involvement                                                                      |
-| Code editor     | **@uiw/react-codemirror**                              | With language packs                                                                                                                        |
+| Code editor     | **@uiw/react-codemirror**                              | `@uiw/codemirror-extensions-langs` for language packs; `@uiw/codemirror-theme-github` for light/dark themes matching Shiki.                |
 | Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                          |
 | Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                     |
 | Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                            |
@@ -184,7 +184,7 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 - **Confluence-style hierarchy**: filesystem folders are never rendered as folders in the UI. A directory `foo/` and its sibling `foo.md` are merged into a single expandable page whose children are the files inside `foo/`.
 - If a directory exists but `<dirname>.md` does not, a **virtual ghost page** is shown (italic, muted) — clicking it opens DocPage which shows "This page doesn't exist yet — Create it?".
 - Sort order per level: `README.md` first, then alphabetically by page title.
-- `_sidebar.md` (legacy file) is hidden. `.kumidocs.json` is always hidden.
+- `_sidebar.md` (legacy file) is hidden. `.kumidocs.json` is always hidden. `images/` directory is always hidden (managed via the Image Library).
 - Right-click a page for: **Create subpage**, **Create page alongside**, **Move / Rename**.
 
 ### 6.3 Sidebar Icons (default, overridable via `emoji` frontmatter)
@@ -220,6 +220,7 @@ Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials 
 - `streamdown` renders markdown → React DOM via a remark/rehype pipeline, mounted directly in the page.
 - XSS protection via Streamdown's built-in `rehype-harden` (strips all event handlers, dangerous attributes, and unsafe HTML before it reaches the DOM).
 - `@tailwindcss/typography` (`prose prose-sm dark:prose-invert`) provides full typographic styles (headings, lists, code, tables, blockquotes).
+- **Image attribute syntax**: `![alt](url){width=300px height=200px}` — a `{key=value ...}` block written directly after an image applies inline CSS. Supported keys: `width`, `height`, `max-width`, `min-width`, `max-height`, `min-height`. Values: any valid CSS length (`px`, `%`, `em`, `rem`, `vw`, `vh`, `auto`). Implemented via `rehypeImageAttrsPlugin`.
 
 ### 7.3 Save Behavior
 
@@ -257,7 +258,11 @@ Confirmation modal → deletes file → removes from `_sidebar.md` → single co
 
 ### 7.7 Renaming / Moving Pages
 
-Rename modal → `git mv` → updates `_sidebar.md` references → single commit.
+- Move modal has two fields: **Parent** (searchable combobox listing all pages by title, selecting one makes the moved page a sub-page of it; choose `(root)` for top-level) and **Filename** (slug without `.md`).
+- The parent combobox filters by page title as user types; auto-focuses on open.
+- Selecting a parent page `foo/bar.md` sets the destination directory to `foo/bar/`; the folder is created automatically if it doesn't exist.
+- When a page has sub-pages (i.e. a matching directory `foo/` exists alongside `foo.md`), moving `foo.md` also moves the entire `foo/` subtree to the new location in the same commit.
+- All moved files are staged in a single git commit + push.
 
 ### 7.8 Image Upload (drag-and-drop + toolbar button)
 
@@ -381,10 +386,11 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 ## 10. Code File Viewer / Editor
 
-- `@uiw/react-codemirror` with appropriate language extension.
+- **`@uiw/react-codemirror`** with `@uiw/codemirror-extensions-langs` (language detection by file extension) and `@uiw/codemirror-theme-github` (light/dark, matching the Shiki themes used in MarkdownViewer).
 - Same edit-lock, save, and commit flow as markdown files.
 - No WYSIWYG toolbar — raw code only.
-- Features: line numbers, word-wrap toggle, copy-to-clipboard.
+- Features: syntax highlighting, line numbers, code folding, line wrapping, Ctrl+S saves.
+- View mode: read-only CodeMirror (same component, `readOnly` prop). No separate viewer.
 - No LSP / autocomplete in v1.
 
 ---
@@ -660,4 +666,4 @@ SPEC.md
 
 - [x] Slide viewer (scroll/paginate/spotlight modes, fullscreen, arrow-key navigation, standalone presentation route)
 - [x] Client-side PDF export for slide decks (html2canvas-pro + jspdf, via SlideViewer controls bar)
-- [ ] Code file editor (CodeMirror + language packs)
+- [x] Code file editor (CodeMirror + language packs, `@uiw/codemirror-extensions-langs`, `@uiw/codemirror-theme-github`)

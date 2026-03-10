@@ -18,6 +18,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import { MarkdownViewer } from '../components/editor/MarkdownViewer';
 import { SlideViewer } from '../components/editor/SlideViewer';
+import { CodeEditor } from '../components/editor/CodeEditor';
 import { PageInfoPanel } from '../components/layout/PageInfoPanel';
 import { wsClient, useWsListener } from '../store/ws';
 import { useUser } from '../store/user';
@@ -635,7 +636,15 @@ export default function FilePage() {
 			{/* Content area */}
 			<div className="flex flex-1 overflow-hidden">
 				<div className="flex-1 overflow-hidden flex flex-col">
-					{editMode ? (
+					{fileType === 'code' ? (
+						<CodeEditor
+							value={content}
+							language={rawExt}
+							readOnly={!editMode}
+							onChange={editMode ? handleChange : undefined}
+							onSave={editMode ? handleSave : undefined}
+						/>
+					) : editMode ? (
 						<MarkdownEditor
 							value={content}
 							onChange={handleChange}
@@ -645,13 +654,7 @@ export default function FilePage() {
 						<SlideViewer value={content} filename={title} />
 					) : (
 						<ScrollArea className="h-full">
-							<MarkdownViewer
-								value={
-									fileType === 'code'
-										? `\`\`\`${rawExt}\n${content}\n\`\`\``
-										: content
-								}
-							/>
+							<MarkdownViewer value={content} />
 						</ScrollArea>
 					)}
 				</div>

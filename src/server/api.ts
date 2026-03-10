@@ -196,7 +196,15 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
 	// Stage all new paths and remove all old paths in a single commit
 	const extraMoves = subFiles.map((s) => ({ from: s, to: toDir + s.slice(fromDir.length) }));
-	await gitMoveAndCommit(config, from, to, msg, user.email, user.email || 'kumidocs@localhost', extraMoves);
+	await gitMoveAndCommit(
+		config,
+		from,
+		to,
+		msg,
+		user.email,
+		user.email || 'kumidocs@localhost',
+		extraMoves,
+	);
 
 	for (const old of movedPaths) broadcastPageDeleted(old);
 	for (const n of newPaths) broadcastPageCreated(n, n);
