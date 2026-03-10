@@ -16,8 +16,21 @@ export function getPermissions(): KumiDocsPermissions {
 	return perms;
 }
 
+/** Parse the `kumidocs_email` cookie value from a Cookie header string. */
+function cookieEmail(cookieHeader: string | null): string | null {
+	if (!cookieHeader) return null;
+	for (const part of cookieHeader.split(';')) {
+		const [k, ...v] = part.trim().split('=');
+		if (k?.trim() === 'kumidocs_email') {
+			const raw = decodeURIComponent(v.join('=').trim());
+			return raw || null;
+		}
+	}
+	return null;
+}
+
 export function parseUser(headers: Headers, authHeader: string): User | null {
-	const value = headers.get(authHeader);
+	const value = headers.get(authHeader) ?? cookieEmail(headers.get('cookie'));
 	if (!value) return null;
 
 	let email: string;
