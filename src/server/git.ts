@@ -132,7 +132,7 @@ export async function gitMoveAndCommit(
 	message: string,
 	authorName: string,
 	authorEmail: string,
-	extraMoves?: Array<{ from: string; to: string }>,
+	extraMoves?: { from: string; to: string }[],
 ): Promise<{ sha: string; error?: string }> {
 	// isomorphic-git doesn't have a native move, so we:
 	// 1. Add the new file 2. Remove the old file

@@ -61,7 +61,9 @@ export function usePageActions(reloadTree: () => void) {
 			}
 		};
 		document.addEventListener('mousedown', handler);
-		return () => document.removeEventListener('mousedown', handler);
+		return () => {
+			document.removeEventListener('mousedown', handler);
+		};
 	}, [parentOpen]);
 
 	const openMove = useCallback(async (filePath: string) => {
@@ -73,12 +75,12 @@ export function usePageActions(reloadTree: () => void) {
 		setParentSearch('');
 		try {
 			const res = await fetch('/api/tree');
-			type RawNode = {
+			interface RawNode {
 				path: string;
 				type: string;
 				fileEntry?: { title?: string };
 				children?: RawNode[];
-			};
+			}
 			const tree = (await res.json()) as RawNode[];
 			// Flatten the nested tree into a flat list of file nodes
 			const flatten = (nodes: RawNode[]): RawNode[] =>
