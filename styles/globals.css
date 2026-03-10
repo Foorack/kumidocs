@@ -120,3 +120,19 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+/* react-diff-view dark mode — :root.dark beats the library's :root declarations */
+:root.dark {
+	--diff-background-color: transparent;
+	--diff-text-color: #d1d5db;
+	--diff-gutter-insert-background-color: #1a3a2a;
+	--diff-gutter-insert-text-color: #86efac;
+	--diff-gutter-delete-background-color: #3a1a1f;
+	--diff-gutter-delete-text-color: #fca5a5;
+	--diff-code-insert-background-color: #162a20;
+	--diff-code-insert-text-color: #d1fae5;
+	--diff-code-delete-background-color: #2a1418;
+	--diff-code-delete-text-color: #fee2e2;
+	--diff-code-insert-edit-background-color: #1e4a30;
+	--diff-code-delete-edit-background-color: #4a1e24;
+}

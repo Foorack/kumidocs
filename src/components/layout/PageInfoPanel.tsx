@@ -115,7 +115,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 				</div>
 			</div>
 
-			<ScrollArea className="flex-1">
+			<ScrollArea className="flex-1 min-h-0">
 				<div className="p-3 space-y-3">
 					{/* Title + path */}
 					<div className="space-y-1">
@@ -216,7 +216,7 @@ export function PageInfoPanel({ filePath, title, onClose }: PageInfoPanelProps) 
 
 			{/* Diff dialog */}
 			<Dialog open={diffOpen} onOpenChange={setDiffOpen}>
-				<DialogContent className="max-w-4xl max-h-[80vh] flex flex-col p-0 gap-0">
+				<DialogContent className="w-[80vw] max-w-[80vw] sm:w-[80vw] sm:max-w-[80vw] h-[85vh] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
 					<DialogHeader className="px-4 py-3 border-b border-border shrink-0">
 						<DialogTitle className="text-sm font-semibold">
 							{diffData ? (
