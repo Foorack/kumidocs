@@ -572,22 +572,24 @@ export default function FilePage() {
 					</div>
 
 					{/* Dedicated info button */}
-					<Button
-						size="sm"
-						variant={infoOpen && !editMode ? 'secondary' : 'ghost'}
-						className="h-7 gap-1 text-xs px-2"
-						onClick={() => {
-							setInfoOpen((v) => {
-								const next = !v;
-								if (next) localStorage.setItem('kumidocs:info-open', 'true');
-								else localStorage.removeItem('kumidocs:info-open');
-								return next;
-							});
-						}}
-					>
-						<InfoRegular className="w-4 h-4" />
-						Info
-					</Button>
+					{!editMode && (
+						<Button
+							size="sm"
+							variant={infoOpen ? 'secondary' : 'ghost'}
+							className="h-7 gap-1 text-xs px-2"
+							onClick={() => {
+								setInfoOpen((v) => {
+									const next = !v;
+									if (next) localStorage.setItem('kumidocs:info-open', 'true');
+									else localStorage.removeItem('kumidocs:info-open');
+									return next;
+								});
+							}}
+						>
+							<InfoRegular className="w-4 h-4" />
+							Info
+						</Button>
+					)}
 
 					{/* Advanced / dangerous actions only */}
 					{user?.canEdit && (
