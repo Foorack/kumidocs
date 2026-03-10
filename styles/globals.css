@@ -136,3 +136,25 @@
 	--diff-code-insert-edit-background-color: #1e4a30;
 	--diff-code-delete-edit-background-color: #4a1e24;
 }
+
+/* Global pretty scrollbars (Webkit) */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background-color: oklch(0.708 0 0 / 40%);
+	border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background-color: oklch(0.708 0 0 / 70%);
+}
+.dark ::-webkit-scrollbar-thumb {
+	background-color: oklch(0.4 0 0 / 60%);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+	background-color: oklch(0.556 0 0 / 80%);
+}

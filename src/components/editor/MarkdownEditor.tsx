@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { MarkdownViewer } from './MarkdownViewer';
+import { SlideViewer } from './SlideViewer';
 import {
 	Bold,
 	Code,
@@ -184,6 +185,7 @@ interface MarkdownEditorProps {
 	onChange: (val: string) => void;
 	onSave?: () => void;
 	disabled?: boolean;
+	fileType?: string;
 }
 
 const HEADING_OPTIONS = [
@@ -196,7 +198,13 @@ const HEADING_OPTIONS = [
 	{ value: 'h6', label: 'Heading 6', prefix: '######' },
 ];
 
-export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEditorProps) {
+export function MarkdownEditor({
+	value,
+	onChange,
+	onSave,
+	disabled,
+	fileType,
+}: MarkdownEditorProps) {
 	const taRef = useRef<HTMLTextAreaElement>(null);
 	const previewRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -600,8 +608,14 @@ export function MarkdownEditor({ value, onChange, onSave, disabled }: MarkdownEd
 
 				{/* Right — live preview */}
 				{showPreview && (
-					<div ref={previewRef} className="flex-1 min-w-0 overflow-y-auto">
-						<MarkdownViewer value={value} />
+					<div className="flex-1 min-w-0 overflow-hidden">
+						{fileType === 'slide' ? (
+							<SlideViewer value={value} />
+						) : (
+							<div ref={previewRef} className="h-full overflow-y-auto">
+								<MarkdownViewer value={value} />
+							</div>
+						)}
 					</div>
 				)}
 			</div>

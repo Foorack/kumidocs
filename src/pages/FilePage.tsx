@@ -651,6 +651,7 @@ export default function FilePage() {
 							value={content}
 							onChange={handleChange}
 							onSave={handleSave}
+							fileType={fileType}
 						/>
 					) : fileType === 'slide' ? (
 						<SlideViewer value={content} filename={title} />
