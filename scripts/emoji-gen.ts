@@ -9,8 +9,7 @@
  * Pass 2 — Country flags (via country-flag-icons):
  *   For any emoji that is a regional-indicator pair (flag emoji) and was not
  *   found in the Fluent Emoji set, the corresponding ISO 3166-1 alpha-2 SVG is
- *   taken from country-flag-icons/3x2/, wrapped in the FluentUI card frame
- *   (rounded rect + depth/sheen gradients), and baked in as a base64 data URI.
+ *   taken from country-flag-icons/3x2/ and baked in as a base64 data URI.
  *
  * The output file is imported directly by EmojiIcon.tsx — zero HTTP requests,
  * all emoji SVGs baked into the JS bundle.
@@ -120,66 +119,6 @@ function flagEmojiToISO(native: string): string | null {
 	return String.fromCharCode(a - 0x1f1e6 + 65, b - 0x1f1e6 + 65);
 }
 
-/**
- * Wraps a country-flag-icons SVG in the FluentUI card frame.
- *
- * The source SVG is embedded as a nested <svg> element that auto-scales to
- * the flag rect area. The standard four depth/sheen gradient overlays are then
- * painted on top, giving country flags the same 3D card appearance as the
- * native Fluent Emoji flags (pirate flag, rainbow flag, etc.).
- */
-function makeFluentFlagSvg(sourceSvg: string): string {
-	const viewBoxExec = /viewBox="([^"]+)"/.exec(sourceSvg);
-	if (!viewBoxExec) throw new Error('Source SVG has no viewBox attribute');
-	const viewBox = String(viewBoxExec[1]);
-
-	// Strip the outer <svg ...> wrapper, keep only inner child elements
-	const inner = sourceSvg
-		.replace(/^[\s\S]*?<svg[^>]*>/, '')
-		.replace(/<\/svg>\s*$/, '')
-		.trim();
-
-	/**
-	 * The four FluentUI card depth/sheen gradient definitions used by every flag
-	 * in the Fluent Emoji set. g3 uses a neutral dark tint that works universally
-	 * across all flag colour schemes.
-	 */
-	const colorTop = 'rgba(255, 255, 255, 0.5)';
-	const colorLeft = 'rgba(255, 255, 255, 0.25)';
-	const colorBottom = 'rgba(0, 0, 0, 0.5)';
-	const FLAG_GRADIENT_DEFS =
-		'<linearGradient id="g0" x1="2.25222" y1="17.8125" x2="3.22097" y2="17.8125" gradientUnits="userSpaceOnUse">' +
-		`<stop stop-color="${colorLeft}"/><stop offset="1" stop-color="${colorLeft}" stop-opacity="0"/>` +
-		'</linearGradient>' +
-		'<linearGradient id="g1" x1="30.1272" y1="19.332" x2="29.1585" y2="19.332" gradientUnits="userSpaceOnUse">' +
-		`<stop stop-color="${colorTop}"/><stop offset="1" stop-color="${colorTop}" stop-opacity="0"/>` +
-		'</linearGradient>' +
-		'<linearGradient id="g2" x1="25.0647" y1="6.04297" x2="25.0647" y2="6.75391" gradientUnits="userSpaceOnUse">' +
-		`<stop stop-color="${colorTop}"/><stop offset="1" stop-color="${colorTop}" stop-opacity="0"/>` +
-		'</linearGradient>' +
-		'<linearGradient id="g3" x1="8.75222" y1="26.0039" x2="8.75222" y2="24.9375" gradientUnits="userSpaceOnUse">' +
-		`<stop offset="0.0149314" stop-color="${colorBottom}"/><stop offset="1" stop-color="${colorBottom}" stop-opacity="0"/>` +
-		'</linearGradient>';
-	const FLAG_GRADIENT_RECT =
-		`<rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6" fill="url(#g0)" fill-opacity="0.25"/>` +
-		`<rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6" fill="url(#g1)" fill-opacity="0.5"/>` +
-		`<rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6" fill="url(#g2)" fill-opacity="0.5"/>` +
-		`<rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6" fill="url(#g3)"/>`;
-
-	return (
-		`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">` +
-		`<defs>` +
-		`<clipPath id="c"><rect x="2.25222" y="6.04297" width="27.875" height="19.9141" rx="0.6"/></clipPath>` +
-		FLAG_GRADIENT_DEFS +
-		`</defs>` +
-		`<g clip-path="url(#c)">` +
-		`<svg x="2.25222" y="6.04297" width="27.875" height="19.9141" viewBox="${viewBox}">${inner}</svg>` +
-		`</g>` +
-		FLAG_GRADIENT_RECT +
-		`</svg>`
-	);
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const forceClone = process.argv.includes('--clone');
@@ -248,8 +187,7 @@ for (const id of allIds) {
 		const flagPath = join(FLAG_SVGS_DIR, `${iso}.svg`);
 		try {
 			const sourceSvg = await readFile(flagPath, 'utf8');
-			const wrappedSvg = makeFluentFlagSvg(sourceSvg);
-			const b64 = Buffer.from(wrappedSvg, 'utf8').toString('base64');
+			const b64 = Buffer.from(sourceSvg, 'utf8').toString('base64');
 			entries.push({ native, dataUri: `data:image/svg+xml;base64,${b64}` });
 			matchedFlag++;
 			continue;
