@@ -16,66 +16,75 @@ export interface Config {
 interface ArgDef {
 	flags: string[];
 	key: keyof Config;
-	parse: (v: string) => string | number;
+	type: 'string' | 'number';
 	env: string;
-	defaultFn: () => string | number;
-	helpDefault: string;
+	default: string | number | (() => string | number);
 	description: string;
+}
+
+function resolveDefault(def: ArgDef): string | number {
+	return typeof def.default === 'function' ? def.default() : def.default;
+}
+
+function parse(def: ArgDef, raw: string): string | number {
+	if (def.type === 'number') {
+		const n = Number(raw);
+		if (!Number.isFinite(n)) {
+			console.error(`Error: ${String(def.flags[0])} expects a number, got: ${JSON.stringify(raw)}`);
+			process.exit(1);
+		}
+		return n;
+	}
+	return raw;
 }
 
 const DEFS: ArgDef[] = [
 	{
 		flags: ['--repo'],
 		key: 'repoPath',
-		parse: (v) => resolve(v),
+		type: 'string',
 		env: 'KUMIDOCS_REPO_PATH',
-		defaultFn: () => process.cwd(),
-		helpDefault: 'cwd',
+		default: () => process.cwd(),
 		description: 'Path to git repository',
 	},
 	{
 		flags: ['--port', '-p'],
 		key: 'port',
-		parse: Number,
+		type: 'number',
 		env: 'KUMIDOCS_PORT',
-		defaultFn: () => 3000,
-		helpDefault: '3000',
+		default: 3000,
 		description: 'Port to listen on',
 	},
 	{
 		flags: ['--name'],
 		key: 'instanceName',
-		parse: String,
+		type: 'string',
 		env: 'KUMIDOCS_INSTANCE_NAME',
-		defaultFn: () => 'KumiDocs',
-		helpDefault: 'KumiDocs',
+		default: 'KumiDocs',
 		description: 'Instance display name',
 	},
 	{
 		flags: ['--auth-header'],
 		key: 'authHeader',
-		parse: String,
+		type: 'string',
 		env: 'KUMIDOCS_AUTH_HEADER',
-		defaultFn: () => 'X-Auth-Request-User',
-		helpDefault: 'X-Auth-Request-User',
+		default: 'X-Auth-Request-User',
 		description: 'Request header carrying the user identity',
 	},
 	{
 		flags: ['--auto-save-delay'],
 		key: 'autoSaveDelay',
-		parse: Number,
+		type: 'number',
 		env: 'KUMIDOCS_AUTO_SAVE_DELAY',
-		defaultFn: () => 5000,
-		helpDefault: '5000',
+		default: 5000,
 		description: 'Auto-save debounce delay in ms',
 	},
 	{
 		flags: ['--pull-interval'],
 		key: 'pullInterval',
-		parse: Number,
+		type: 'number',
 		env: 'KUMIDOCS_PULL_INTERVAL',
-		defaultFn: () => 60000,
-		helpDefault: '60000',
+		default: 60000,
 		description: 'Background git pull interval in ms',
 	},
 ];
@@ -96,9 +105,8 @@ function printHelp(): void {
 	];
 	for (const def of DEFS) {
 		const flagStr = def.flags.join(', ').padEnd(22);
-		lines.push(
-			`  ${flagStr} ${def.description} (default: ${def.helpDefault}, env: ${def.env})`,
-		);
+		const dflt = resolveDefault(def);
+		lines.push(`  ${flagStr} ${def.description} (default: ${String(dflt)}, env: ${def.env})`);
 	}
 	lines.push('  -h, --help               Show this help');
 	lines.push('  -v, --version            Show version');
@@ -127,10 +135,13 @@ export function getConfig(): Config {
 		const def = DEFS.find((d) => d.flags.includes(arg ?? ''));
 		if (def) {
 			const val = args[i + 1];
-			if (val !== undefined) {
-				(result as Record<string, string | number>)[def.key] = def.parse(val);
-				i++;
+			if (val === undefined || val.startsWith('-')) {
+				console.error(`Error: ${String(def.flags[0])} requires a value.`);
+				process.exit(1);
 			}
+			const parsed = def.key === 'repoPath' ? resolve(val) : parse(def, val);
+			(result as Record<string, string | number>)[def.key] = parsed;
+			i++;
 			continue;
 		}
 		// Bare positional → repo path
@@ -147,8 +158,8 @@ export function getConfig(): Config {
 		const cli = result[def.key];
 		const env = process.env[def.env];
 		if (cli !== undefined) set(cli);
-		else if (env !== undefined) set(def.parse(env));
-		else set(def.defaultFn());
+		else if (env !== undefined) set(parse(def, env));
+		else set(resolveDefault(def));
 	}
 
 	return config as Config;
