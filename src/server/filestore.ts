@@ -4,6 +4,7 @@ import matter from 'gray-matter';
 import type { Config } from './config';
 import type { FileEntry, TreeNode } from '../lib/types';
 import { CODE_TYPES, IMAGE_TYPES, extensionToType, pathExtension } from '@/lib/filetypes';
+import { extractHeadingTitle } from '@/lib/frontmatter';
 
 const fileCache = new Map<string, string>(); // relPath -> content
 
@@ -78,7 +79,7 @@ export async function writeFileToRepo(
 	const isBinary = IMAGE_TYPES.has(extname(path).toLowerCase());
 	const normalised = isBinary || content.endsWith('\n') ? content : `${content}\n`;
 	await writeFile(fullPath, normalised, 'utf-8');
-	fileCache.set(path, content);
+	fileCache.set(path, normalised);
 }
 
 export async function deleteFileFromRepo(path: string, config: Config): Promise<void> {
@@ -114,9 +115,12 @@ export function moveInCache(from: string, to: string): void {
 // Build file tree for /api/tree
 export function buildFileTree(): TreeNode[] {
 	const allPaths = getAllPaths();
-	// Filter out hidden / internal files
+	// Filter out hidden / internal files and the images/ directory (shown via Image Library)
 	const visible = allPaths.filter(
-		(p) => !p.startsWith('.') && !IGNORED_NAMES.has(p.split('/')[0] ?? ''),
+		(p) =>
+			!p.startsWith('.') &&
+			!IGNORED_NAMES.has(p.split('/')[0] ?? '') &&
+			!p.startsWith('images/'),
 	);
 
 	const root: TreeNode[] = [];
@@ -154,13 +158,10 @@ export function buildFileTree(): TreeNode[] {
 	return root;
 }
 
-/** Return the text of the first `# Heading` line in a markdown body, or null. */
-function extractHeadingTitle(body: string): string | null {
-	for (const line of body.split('\n')) {
-		if (line.startsWith('# ')) return line.slice(2).trim();
-	}
-	return null;
-}
+/** Return the text of the first `# Heading` line in a markdown body, or null.
+ * Imported from @/lib/frontmatter — re-exported here for convenience.
+ */
+export { extractHeadingTitle };
 
 export function parseFileEntry(path: string): FileEntry {
 	const ext = pathExtension(path);
@@ -171,6 +172,7 @@ export function parseFileEntry(path: string): FileEntry {
 	let type: FileEntry['type'] = extensionToType(ext);
 	let title = titleFromName;
 	let emoji: string | undefined;
+	let description: string | undefined;
 
 	if (ext === 'md') {
 		type = 'doc';
@@ -181,10 +183,12 @@ export function parseFileEntry(path: string): FileEntry {
 			if (headingTitle) title = headingTitle;
 			if (parsed.data.emoji) emoji = parsed.data.emoji as string;
 			if (parsed.data.slides === true) type = 'slide';
+			if (typeof parsed.data.description === 'string' && parsed.data.description.trim())
+				description = parsed.data.description.trim();
 		} catch (err: unknown) {
 			console.warn('Failed to parse frontmatter:', err);
 		}
 	}
 
-	return { path, type, title, emoji };
+	return { path, type, title, emoji, description };
 }

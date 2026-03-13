@@ -8,6 +8,7 @@ interface DocEntry {
 	path: string;
 	title: string;
 	emoji?: string;
+	description?: string;
 	type: string;
 	content: string;
 }
@@ -16,8 +17,8 @@ let index: MiniSearch<DocEntry> | undefined;
 
 export function initSearch(): void {
 	index = new MiniSearch<DocEntry>({
-		fields: ['title', 'content', 'path'],
-		storeFields: ['title', 'path', 'emoji', 'type'],
+		fields: ['title', 'content', 'path', 'description'],
+		storeFields: ['title', 'path', 'emoji', 'description', 'type'],
 		searchOptions: {
 			boost: { title: 3 },
 			fuzzy: 0.2,
@@ -42,8 +43,12 @@ function buildDocs(paths: string[]): DocEntry[] {
 			const { title, emoji, type } = parseFileEntry(path);
 
 			let body = getFile(path) ?? '';
+			let description: string | undefined;
 			try {
-				body = matter(body).content;
+				const parsed = matter(body);
+				body = parsed.content;
+				if (typeof parsed.data.description === 'string' && parsed.data.description.trim())
+					description = parsed.data.description.trim();
 			} catch {
 				// keep raw content if frontmatter parse fails
 			}
@@ -57,7 +62,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 				.replace(/\s+/g, ' ')
 				.trim();
 
-			return { id: path, path, title, emoji, type, content: stripped };
+			return { id: path, path, title, emoji, description, type, content: stripped };
 		});
 }
 
@@ -65,18 +70,16 @@ export function updateInIndex(path: string): void {
 	if (!index || !path.endsWith('.md')) return;
 	try {
 		index.remove({ id: path } as DocEntry);
-	} catch (err: unknown) {
-		console.warn('Failed to remove from index:', err);
+	} catch {
+		// Document was not in the index yet (e.g. brand-new file) — nothing to remove
 	}
 	const docs = buildDocs([path]);
-	if (docs.length > 0) {
-		const doc = docs[0];
-		if (doc) {
-			try {
-				index.add(doc);
-			} catch (err: unknown) {
-				console.warn('Failed to add to index:', err);
-			}
+	const doc = docs[0];
+	if (doc) {
+		try {
+			index.add(doc);
+		} catch (err: unknown) {
+			console.warn('Failed to add to index:', err);
 		}
 	}
 }
@@ -100,6 +103,7 @@ export function searchDocs(query: string, limit = 20): SearchResult[] {
 		title: r.title as string,
 		emoji: r.emoji as string | undefined,
 		type: (r.type as FileType | undefined) ?? 'doc',
+		description: r.description as string | undefined,
 		snippet: buildSnippet(r.path as string, query),
 		score: r.score,
 	}));

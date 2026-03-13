@@ -25,10 +25,14 @@ import { useUser } from '../store/user';
 import type { PresenceUser } from '../lib/types';
 import NotFound from './NotFound';
 import { extensionToType, pathExtension } from '@/lib/filetypes';
+import type { PageMeta as DocMeta } from '@/lib/frontmatter';
+import { parseFrontmatter, buildFrontmatter, extractHeadingTitle } from '@/lib/frontmatter';
 
 interface OutletCtx {
 	reloadTree: () => void;
+	autoSaveDelay: number;
 }
+type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 
 // Derive a nice title from the file path
 function pathToTitle(path: string): string {
@@ -38,59 +42,12 @@ function pathToTitle(path: string): string {
 		.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-interface DocMeta {
-	emoji?: string;
-	slides?: boolean;
-}
-
-/**
- * Parse only the whitelisted frontmatter fields (emoji, marp) from a raw markdown string.
- * Any other YAML fields are intentionally discarded — KumiDocs only manages its own
- * metadata and does not attempt to round-trip arbitrary frontmatter.
- */
-function parseFrontmatter(raw: string): { data: DocMeta; content: string } {
-	const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(raw);
-	if (!match) return { data: {}, content: raw };
-	const block = match[1] ?? '';
-	const content = raw.slice(match[0].length);
-	const data: DocMeta = {};
-	for (const line of block.split('\n')) {
-		const kv = /^(\w+):\s*(.*)$/.exec(line.trim());
-		if (!kv) continue;
-		const [, key, val = ''] = kv;
-		if (key === 'emoji') data.emoji = val.trim();
-		if (key === 'slides' && val.trim() === 'true') data.slides = true;
-	}
-	return { data, content };
-}
-
-/** Reconstruct a frontmatter block from only the whitelisted fields (emoji, slides). Unknown fields are not preserved. */
-function buildFrontmatter(meta: DocMeta): string {
-	const lines: string[] = [];
-	if (meta.emoji) lines.push(`emoji: ${meta.emoji}`);
-	if (meta.slides) lines.push('slides: true');
-	if (lines.length === 0) return '';
-	return `---\n${lines.join('\n')}\n---\n`;
-}
-
-/** Return the text of the first `# Heading` line in a markdown body, or null. */
-function extractHeadingTitle(body: string): string | null {
-	for (const line of body.split('\n')) {
-		if (line.startsWith('# ')) return line.slice(2).trim();
-	}
-	return null;
-}
-
-type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
-
-const AUTO_SAVE_DELAY = 5000;
-
 export default function FilePage() {
 	const { '*': rawPath = '' } = useParams();
 	const filePath = !rawPath.includes('.') ? `${rawPath}.md` : rawPath; // default to .md if no extension
 
 	const navigate = useNavigate();
-	const { reloadTree } = useOutletContext<OutletCtx>();
+	const { reloadTree, autoSaveDelay } = useOutletContext<OutletCtx>();
 	const { user } = useUser();
 
 	const [content, setContent] = useState('');
@@ -300,9 +257,9 @@ export default function FilePage() {
 				doSave(val).catch((err: unknown) => {
 					console.error('Auto-save failed:', err);
 				});
-			}, AUTO_SAVE_DELAY);
+			}, autoSaveDelay);
 		},
-		[doSave],
+		[doSave, autoSaveDelay],
 	);
 
 	// Ctrl+S

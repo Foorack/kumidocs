@@ -64,9 +64,9 @@ KUMIDOCS_PULL_INTERVAL    (default: 60000)  ms between background git pulls
 6. Start HTTP + WebSocket server.
 7. Schedule background pull loop (every `KUMIDOCS_PULL_INTERVAL` ms).
 
-### 3.4 `compose.yaml`
+### 3.4 `compose.yaml` + `Dockerfile`
 
-Provided in the repo root. No Dockerfile, uses Bun's official image. Mounts the repo as a volume.
+Provided in the repo root. A minimal `Dockerfile` extends the official Bun image to install `git` (required for native push/pull/rebase and SSH auth). `compose.yaml` uses `build: .` and mounts the repo as a volume.
 
 ---
 
@@ -129,12 +129,11 @@ JWT email resolution (first non-empty value wins, `sub` is **never** used):
 
 If neither claim is present in the JWT → HTTP 401.
 
-User object: `{ id, email, name, displayName, gravatarHash, canEdit }`
+User object: `{ id, email, name, displayName, canEdit }`
 
 - `id` = lowercased email
 - `displayName` = derived from email local part: split by `.`, capitalise each word
   (`max.faxalv@example.com` → `Max Faxalv`, `max@foorack.com` → `Max`)
-- `gravatarHash` = MD5(lowercased email)
 
 ### 5.2 Avatar Color Convention
 
@@ -145,7 +144,7 @@ Avatars use a deterministic color from **`src/lib/avatar.ts`**:
 | `avatarColor(name)`    | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color.          |
 | `avatarInitials(name)` | Fallback when Gravatar unavailable. Multi-word → first+last initial. Single-word → first 2 chars. |
 
-Gravatar is the primary avatar source (`gravatarHash` from `/api/me`). Initials are the fallback, computed client-side from `displayName` via `avatarInitials`.
+Gravatar is the primary avatar source. The SHA-256 hash of the user's email is computed **client-side** (never sent to the server) and proxied through `/api/avatar/:sha256hash` to avoid leaking the hash to Gravatar directly. Initials are the fallback, computed client-side from `displayName` via `avatarInitials`.
 
 ### 5.3 Git Commit Identity
 

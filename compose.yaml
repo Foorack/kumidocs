@@ -1,6 +1,6 @@
 services:
     kumidocs:
-        image: oven/bun:latest
+        build: .
         working_dir: /app
         command: sh -c "bun install && bun --hot src/index.ts"
         network_mode: host

@@ -159,11 +159,9 @@ export function broadcastPageChanged(
 		changedBy,
 		changedByName,
 	};
-	// Skip the session that triggered the save — they already updated their state
-	// from the HTTP response and don't need a WS echo causing a spurious "saved remotely" banner.
-	for (const [, ws] of sessions) {
-		if (ws.data.user.id !== changedBy) send(ws, msg);
-	}
+	// Broadcast to all sessions — the client suppresses echoes of its own saves
+	// via the `if (msg.changedBy === user?.id) return;` check in the WS listener.
+	for (const ws of sessions.values()) send(ws, msg);
 }
 
 export function broadcastPageDeleted(pageId: string): void {
@@ -196,7 +194,9 @@ export function getEditorForPage(pageId: string): User | null {
 	return ws?.data.user ?? null;
 }
 
-// Prune sessions that haven't sent a heartbeat in 90 seconds
+// Prune sessions that haven't sent a heartbeat in 90 seconds.
+// ws.close() triggers the wsClose handler which calls leaveCurrentPage, so
+// presence and edit-lock cleanup happens automatically.
 export function pruneDeadSessions(): void {
 	const cutoff = Date.now() - 90_000;
 	for (const ws of sessions.values()) {

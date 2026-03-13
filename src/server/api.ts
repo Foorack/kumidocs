@@ -1,5 +1,5 @@
-import { join, extname } from 'path';
-import { readFile, writeFile, mkdir, stat } from 'fs/promises';
+import { join, extname, dirname } from 'path';
+import { readFile, writeFile, mkdir, rename, stat } from 'fs/promises';
 import { createHash } from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import type { Config } from './config';
@@ -11,6 +11,7 @@ import {
 	writeFileToRepo,
 	deleteFileFromRepo,
 	addToCache,
+	moveInCache,
 } from './filestore';
 import {
 	getHeadSha,
@@ -26,7 +27,11 @@ import { IMAGE_TYPES } from '@/lib/filetypes';
 
 // GET /api/me
 export function apiMe(user: User, config: Config) {
-	return Response.json({ ...user, instanceName: config.instanceName });
+	return Response.json({
+		...user,
+		instanceName: config.instanceName,
+		autoSaveDelay: config.autoSaveDelay,
+	});
 }
 
 // GET /api/tree
@@ -69,7 +74,7 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 		config,
 		[path],
 		msg,
-		user.email,
+		user.displayName,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -111,7 +116,6 @@ export async function apiFileCreate(req: Request, user: User, config: Config) {
 		return Response.json({ error: 'File already exists' }, { status: 409 });
 
 	await writeFileToRepo(path, content, config);
-	addToCache(path, content);
 	updateInIndex(path);
 
 	const msg = `docs(${path}): create by ${user.displayName}`;
@@ -119,7 +123,7 @@ export async function apiFileCreate(req: Request, user: User, config: Config) {
 		config,
 		[path],
 		msg,
-		user.email,
+		user.displayName,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -143,7 +147,7 @@ export async function apiFileDelete(url: URL, user: User, config: Config) {
 		config,
 		path,
 		msg,
-		user.email,
+		user.displayName,
 		user.email || 'kumidocs@localhost',
 	);
 
@@ -173,19 +177,20 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	const allPaths = getAllPaths();
 	const subFiles = allPaths.filter((p) => p.startsWith(fromDir));
 
-	// Move the primary file
-	const content = getFile(from) ?? '';
-	await writeFileToRepo(to, content, config);
-	await deleteFileFromRepo(from, config);
+	// Move the primary file using fs.rename so binary files (images, etc.) are
+	// preserved correctly — the in-memory cache stores empty string for binaries.
+	await mkdir(dirname(join(config.repoPath, to)), { recursive: true });
+	await rename(join(config.repoPath, from), join(config.repoPath, to));
+	moveInCache(from, to);
 	removeFromIndex(from);
 	updateInIndex(to);
 
 	// Move each sub-page/sub-file
 	for (const sub of subFiles) {
 		const subTo = toDir + sub.slice(fromDir.length);
-		const subContent = getFile(sub) ?? '';
-		await writeFileToRepo(subTo, subContent, config);
-		await deleteFileFromRepo(sub, config);
+		await mkdir(dirname(join(config.repoPath, subTo)), { recursive: true });
+		await rename(join(config.repoPath, sub), join(config.repoPath, subTo));
+		moveInCache(sub, subTo);
 		removeFromIndex(sub);
 		updateInIndex(subTo);
 	}
@@ -194,14 +199,13 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	const newPaths = [to, ...subFiles.map((s) => toDir + s.slice(fromDir.length))];
 
 	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
-	// Stage all new paths and remove all old paths in a single commit
 	const extraMoves = subFiles.map((s) => ({ from: s, to: toDir + s.slice(fromDir.length) }));
 	await gitMoveAndCommit(
 		config,
 		from,
 		to,
 		msg,
-		user.email,
+		user.displayName,
 		user.email || 'kumidocs@localhost',
 		extraMoves,
 	);
@@ -354,7 +358,13 @@ export async function apiImageDelete(
 	await deleteFileFromRepo(repoPath, config);
 
 	const msg = `docs: delete image ${filename} by ${user.displayName}`;
-	await gitRemoveAndCommit(config, repoPath, msg, user.email, user.email || 'kumidocs@localhost');
+	await gitRemoveAndCommit(
+		config,
+		repoPath,
+		msg,
+		user.displayName,
+		user.email || 'kumidocs@localhost',
+	);
 
 	return Response.json({ ok: true });
 }
@@ -431,6 +441,14 @@ export async function apiFileDiff(url: URL, config: Config) {
 
 // GET /images/:filename
 export async function serveRepoAsset(assetPath: string, config: Config): Promise<Response> {
+	// Guard against path traversal: resolve and verify the final path stays within repoPath.
+	const { resolve } = await import('path');
+	const safeBase = resolve(config.repoPath);
+	const fullPath = resolve(config.repoPath, assetPath);
+	if (!fullPath.startsWith(safeBase + '/') && fullPath !== safeBase) {
+		return new Response('Forbidden', { status: 403 });
+	}
+
 	const MIME: Record<string, string> = {
 		'.png': 'image/png',
 		'.jpg': 'image/jpeg',
@@ -444,7 +462,7 @@ export async function serveRepoAsset(assetPath: string, config: Config): Promise
 	const mime = MIME[ext] ?? 'application/octet-stream';
 
 	try {
-		const data = await readFile(join(config.repoPath, assetPath));
+		const data = await readFile(fullPath);
 		return new Response(data, {
 			headers: {
 				'Content-Type': mime,

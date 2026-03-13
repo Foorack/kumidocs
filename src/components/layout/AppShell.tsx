@@ -19,6 +19,7 @@ export function AppShell() {
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [tree, setTree] = useState<TreeNode[]>([]);
 	const [instanceName, setInstanceName] = useState('KumiDocs');
+	const [autoSaveDelay, setAutoSaveDelay] = useState(5000);
 	const [presenceByPage, setPresenceByPage] = useState<Map<string, PresenceUser[]>>(new Map());
 	const [newPageOpen, setNewPageOpen] = useState(false);
 	const [newPageParentDir, setNewPageParentDir] = useState<string | undefined>(undefined);
@@ -55,9 +56,10 @@ export function AppShell() {
 	// Load user/instance info
 	useEffect(() => {
 		fetch('/api/me')
-			.then((r) => r.json() as Promise<{ instanceName?: string }>)
+			.then((r) => r.json() as Promise<{ instanceName?: string; autoSaveDelay?: number }>)
 			.then((data) => {
 				if (data.instanceName) setInstanceName(data.instanceName);
+				if (data.autoSaveDelay) setAutoSaveDelay(data.autoSaveDelay);
 			})
 			.catch((err: unknown) => {
 				console.error('Failed to load instance info:', err);
@@ -186,7 +188,7 @@ export function AppShell() {
 				/>
 
 				<main className="flex-1 overflow-hidden flex flex-col">
-					<Outlet context={{ reloadTree: loadTree }} />
+					<Outlet context={{ reloadTree: loadTree, autoSaveDelay }} />
 				</main>
 			</div>
 

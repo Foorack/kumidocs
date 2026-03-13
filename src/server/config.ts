@@ -178,9 +178,8 @@ export function loadConfig(): Config {
 		setConfigKey(
 			config,
 			opt.key,
-			cli !== undefined ? cli : env !== undefined ? opt.coerce(env) : defaultValue(opt),
+			cli ?? (env !== undefined ? opt.coerce(env) : defaultValue(opt)),
 		);
 	}
 	return config;
 }
-

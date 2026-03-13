@@ -14,6 +14,7 @@ export interface FileEntry {
 	type: FileType;
 	title: string;
 	emoji?: string;
+	description?: string;
 }
 
 export interface TreeNode {
@@ -29,6 +30,7 @@ export interface SearchResult {
 	title: string;
 	emoji?: string;
 	type?: FileType;
+	description?: string;
 	snippet: string;
 	score: number;
 }
