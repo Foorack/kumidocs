@@ -20,12 +20,13 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            # Set up Node/npm — no registry-url here so setup-node does NOT write
-            # a .npmrc with an empty _authToken placeholder, which would interfere
-            # with npm's native OIDC token exchange (Trusted Publishing).
+            # registry-url tells npm which registry to target and enables OIDC
+            # token exchange. NODE_AUTH_TOKEN is intentionally NOT set — when
+            # absent, npm falls through to Trusted Publishing (OIDC) automatically.
             - uses: actions/setup-node@v4
               with:
                   node-version: '22'
+                  registry-url: 'https://registry.npmjs.org'
 
             - uses: oven-sh/setup-bun@v2
               with:
