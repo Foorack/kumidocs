@@ -3,7 +3,7 @@ import { existsSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import index from './index.html';
-import { getConfig } from './server/config';
+import { loadConfig } from './server/config';
 import { parseUser, setPermissions } from './server/auth';
 import type { KumiDocsPermissions } from './server/auth';
 import { loadFilestore } from './server/filestore';
@@ -38,7 +38,7 @@ import {
 } from './server/api';
 import type { WsData } from './server/websocket';
 
-const config = getConfig();
+const config = loadConfig();
 
 // Validate repo
 if (!existsSync(join(config.repoPath, '.git'))) {
