@@ -96,7 +96,9 @@ function printHelp(): void {
 	];
 	for (const def of DEFS) {
 		const flagStr = def.flags.join(', ').padEnd(22);
-		lines.push(`  ${flagStr} ${def.description} (default: ${def.helpDefault}, env: ${def.env})`);
+		lines.push(
+			`  ${flagStr} ${def.description} (default: ${def.helpDefault}, env: ${def.env})`,
+		);
 	}
 	lines.push('  -h, --help               Show this help');
 	lines.push('  -v, --version            Show version');
