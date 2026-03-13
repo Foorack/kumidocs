@@ -20,11 +20,12 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            # Set up Node/npm first so `npm version` and `npm publish` are available.
+            # Set up Node/npm — no registry-url here so setup-node does NOT write
+            # a .npmrc with an empty _authToken placeholder, which would interfere
+            # with npm's native OIDC token exchange (Trusted Publishing).
             - uses: actions/setup-node@v4
               with:
                   node-version: '22'
-                  registry-url: 'https://registry.npmjs.org'
 
             - uses: oven-sh/setup-bun@v2
               with:
