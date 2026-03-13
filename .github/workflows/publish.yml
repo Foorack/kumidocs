@@ -13,9 +13,9 @@ permissions:
 jobs:
     publish:
         runs-on: ubuntu-latest
-        # "npm" environment can be configured in repo settings with protection
-        # rules (e.g. require manual approval) for an extra safety gate.
         environment: npm
+        env:
+            FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
         steps:
             - uses: actions/checkout@v4
