@@ -1,6 +1,6 @@
 services:
     kumidocs:
-        build: .
+        image: oven/bun:latest
         working_dir: /app
         command: sh -c "bun install && bun --hot src/index.ts"
         network_mode: host
@@ -22,21 +22,21 @@ services:
         image: quay.io/oauth2-proxy/oauth2-proxy:v7.14.2-alpine
         restart: always
         network_mode: host
-        entrypoint: ['/bin/sh', '-c']
+        entrypoint: [ '/bin/sh', '-c' ]
         command:
             - |
-                exec oauth2-proxy \
-                  --http-address=0.0.0.0:8080 \
-                  --upstream=http://localhost:3000 \
-                  --reverse-proxy=true \
-                  --provider=${SSO_PROXY_PROVIDER:-github} \
-                  --client-id=${SSO_PROXY_CLIENT_ID} \
-                  --client-secret=${SSO_PROXY_CLIENT_SECRET} \
-                  --redirect-url=${SSO_PROXY_REDIRECT_URL:-http://localhost:8080/oauth2/callback} \
-                  --email-domain=* \
-                  --set-xauthrequest=true \
-                  --pass-user-headers=true \
-                  --skip-provider-button=true \
-                  --cookie-secure=${SSO_PROXY_COOKIE_SECURE:-false} \
-                  --cookie-domain=${SSO_PROXY_COOKIE_DOMAIN:-localhost} \
-                  --cookie-secret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_')"
+              exec oauth2-proxy \
+                --http-address=0.0.0.0:8080 \
+                --upstream=http://localhost:3000 \
+                --reverse-proxy=true \
+                --provider=${SSO_PROXY_PROVIDER:-github} \
+                --client-id=${SSO_PROXY_CLIENT_ID} \
+                --client-secret=${SSO_PROXY_CLIENT_SECRET} \
+                --redirect-url=${SSO_PROXY_REDIRECT_URL:-http://localhost:8080/oauth2/callback} \
+                --email-domain=* \
+                --set-xauthrequest=true \
+                --pass-user-headers=true \
+                --skip-provider-button=true \
+                --cookie-secure=${SSO_PROXY_COOKIE_SECURE:-false} \
+                --cookie-domain=${SSO_PROXY_COOKIE_DOMAIN:-localhost} \
+                --cookie-secret="$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 | tr -d -- '\n' | tr -- '+/' '-_')"

@@ -64,9 +64,9 @@ KUMIDOCS_PULL_INTERVAL    (default: 60000)  ms between background git pulls
 6. Start HTTP + WebSocket server.
 7. Schedule background pull loop (every `KUMIDOCS_PULL_INTERVAL` ms).
 
-### 3.4 `compose.yaml` + `Dockerfile`
+### 3.4 `compose.yaml`
 
-Provided in the repo root. A minimal `Dockerfile` extends the official Bun image to install `git` (required for native push/pull/rebase and SSH auth). `compose.yaml` uses `build: .` and mounts the repo as a volume.
+Provided in the repo root. No custom Dockerfile — uses the official `oven/bun:latest` image directly. `compose.yaml` mounts the repo as a volume.
 
 ---
 

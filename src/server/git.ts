@@ -1,38 +1,21 @@
-import git from 'isomorphic-git';
+import git, { TREE } from 'isomorphic-git';
 import { promises as fs } from 'fs';
+import http from 'isomorphic-git/http/node';
 import type { Config } from './config';
-
-// ── Native git helpers ────────────────────────────────────────────────────────
-// Network operations (push, fetch, pull, rebase) use the native `git` binary so
-// that all standard authentication methods work out of the box: SSH keys, SSH
-// agent, ~/.git-credentials, and credential helpers configured in the repo.
-
-/** Run a native git command in `cwd`. Throws on non-zero exit. */
-async function runGit(cwd: string, args: string[]): Promise<void> {
-	const proc = Bun.spawn(['git', ...args], { cwd, stdout: 'ignore', stderr: 'pipe' });
-	const exitCode = await proc.exited;
-	if (exitCode !== 0) {
-		const errText = await new Response(proc.stderr).text();
-		throw new Error(`git ${args.join(' ')}: exit ${String(exitCode)}\n${errText.trim()}`);
-	}
-}
-
-/** Run a native git command and return its stdout. Throws on non-zero exit. */
-async function runGitOutput(cwd: string, args: string[]): Promise<string> {
-	const proc = Bun.spawn(['git', ...args], { cwd, stdout: 'pipe', stderr: 'ignore' });
-	const [exitCode, stdout] = await Promise.all([proc.exited, new Response(proc.stdout).text()]);
-	if (exitCode !== 0) throw new Error(`git ${args.join(' ')}: exit ${String(exitCode)}`);
-	return stdout;
-}
-
-// ── Public API ────────────────────────────────────────────────────────────────
 
 export async function gitPull(config: Config): Promise<void> {
 	try {
-		await runGit(config.repoPath, ['pull', '--rebase']);
+		await git.pull({
+			fs,
+			http,
+			dir: config.repoPath,
+			author: { name: 'KumiDocs', email: 'kumidocs@localhost' },
+			singleBranch: true,
+			fastForward: true,
+		});
 		console.log('Git: pulled from remote');
 	} catch {
-		// Offline, no remote, or rebase conflict on startup — not fatal
+		// Offline or no remote configured — not fatal
 	}
 }
 
@@ -93,15 +76,37 @@ async function pushWithRetry(
 	commitSha: string,
 ): Promise<{ sha: string; error?: string }> {
 	try {
-		await runGit(config.repoPath, ['push']);
+		await git.push({
+			fs,
+			http,
+			dir: config.repoPath,
+			remote: 'origin',
+		});
 	} catch {
-		// Push failed (non-fast-forward) — rebase on remote and retry with force-with-lease
+		// Push failed (non-fast-forward) — fetch + merge remote changes, then retry.
+		// isomorphic-git does not support rebase, so we merge instead.
 		try {
-			await runGit(config.repoPath, ['pull', '--rebase']);
-			await runGit(config.repoPath, ['push', '--force-with-lease']);
+			await git.fetch({
+				fs,
+				http,
+				dir: config.repoPath,
+				remote: 'origin',
+				singleBranch: true,
+			});
+			await git.merge({
+				fs,
+				dir: config.repoPath,
+				ours: 'HEAD',
+				theirs: 'FETCH_HEAD',
+				author: { name: 'KumiDocs', email: 'kumidocs@localhost' },
+			});
+			await git.push({
+				fs,
+				http,
+				dir: config.repoPath,
+				remote: 'origin',
+			});
 		} catch {
-			// Abort any in-progress rebase, then signal a conflict
-			await runGit(config.repoPath, ['rebase', '--abort']).catch(() => undefined);
 			return { sha: commitSha.slice(0, 7), error: 'conflict' };
 		}
 	}
@@ -146,10 +151,22 @@ export async function gitFetchAndRebase(
 	const before = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' }).catch(() => '');
 
 	try {
-		await runGit(config.repoPath, ['pull', '--rebase']);
+		await git.fetch({
+			fs,
+			http,
+			dir: config.repoPath,
+			remote: 'origin',
+			singleBranch: true,
+		});
+		await git.merge({
+			fs,
+			dir: config.repoPath,
+			ours: 'HEAD',
+			theirs: 'FETCH_HEAD',
+			author: { name: 'KumiDocs', email: 'kumidocs@localhost' },
+		});
 	} catch {
-		// No remote, offline, or un-resolvable rebase conflict — skip this cycle
-		await runGit(config.repoPath, ['rebase', '--abort']).catch(() => undefined);
+		// No remote, offline, or merge conflict — skip this cycle
 	}
 
 	const after = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' }).catch(() => '');
@@ -159,13 +176,19 @@ export async function gitFetchAndRebase(
 	const changed: string[] = [];
 	if (advanced) {
 		try {
-			const stdout = await runGitOutput(config.repoPath, [
-				'diff',
-				'--name-only',
-				before,
-				after,
-			]);
-			changed.push(...stdout.split('\n').filter(Boolean));
+			// Walk both commit trees and collect paths whose blob OID changed.
+			await git.walk({
+				fs,
+				dir: config.repoPath,
+				trees: [TREE({ ref: before }), TREE({ ref: after })],
+				map: async (filepath, [A, B]) => {
+					// Skip root and recurse into subdirectories automatically
+					if ((await A?.type()) === 'tree' || (await B?.type()) === 'tree') return;
+					const aOid = await A?.oid();
+					const bOid = await B?.oid();
+					if (aOid !== bOid) changed.push(filepath);
+				},
+			});
 		} catch (err: unknown) {
 			console.warn('Failed to enumerate changed files after pull:', err);
 		}
