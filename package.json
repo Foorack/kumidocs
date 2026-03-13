@@ -12,6 +12,9 @@
 		"access": "public"
 	},
 	"files": ["src", "styles", "bunfig.toml", "tsconfig.json"],
+	"bin": {
+		"kumidocs": "src/index.ts"
+	},
 	"type": "module",
 	"scripts": {
 		"dev": "bun --hot src/index.ts",
