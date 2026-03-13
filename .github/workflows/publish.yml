@@ -43,6 +43,7 @@ jobs:
               run: bun install --frozen-lockfile
 
             # OIDC Trusted Publishing — no secrets required.
-            # --provenance adds a SLSA attestation (requires id-token: write).
+            # Provenance attestation is generated automatically by npm when
+            # publishing via trusted publishing from a public repository.
             - name: Publish
-              run: npm publish --provenance --access public
+              run: npm publish --access public
