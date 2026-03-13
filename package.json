@@ -11,12 +11,11 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"files": ["src", "dist", "styles", "bunfig.toml", "tsconfig.json"],
+	"files": ["src", "styles", "bunfig.toml", "tsconfig.json"],
 	"type": "module",
 	"scripts": {
 		"dev": "bun --hot src/index.ts",
 		"start": "NODE_ENV=production bun src/index.ts",
-		"build": "bun run build.ts",
 		"lint": "bunx prettier --check . && bunx eslint .",
 		"format": "bunx prettier --write .",
 		"ts": "bunx tsc --noEmit"
