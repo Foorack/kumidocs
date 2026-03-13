@@ -1,0 +1,61 @@
+name: Publish to npm
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+# Minimal permissions — id-token is the only addition required for OIDC.
+permissions:
+    contents: read
+    id-token: write
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        # "npm" environment can be configured in repo settings with protection
+        # rules (e.g. require manual approval) for an extra safety gate.
+        environment: npm
+
+        steps:
+            - uses: actions/checkout@v4
+
+            # Set up Node/npm first so `npm version` and `npm publish` are available.
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  registry-url: 'https://registry.npmjs.org'
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            # Stamp the datebased version into package.json.
+            # Format: 0.YYYYMMDD.<run-number>  (e.g. 0.20260313.42)
+            - name: Set version
+              run: |
+                  VERSION="0.$(date -u +%Y%m%d).${{ github.run_number }}"
+                  npm version "$VERSION" --no-git-tag-version
+                  echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Build
+              run: bun run build
+
+            # --provenance  → SLSA provenance attestation (requires id-token: write)
+            # --access public → required for unscoped public packages
+            #
+            # Authentication is handled automatically via npm OIDC Trusted Publishing.
+            # No NPM_TOKEN secret is stored anywhere.  You must configure this package
+            # as a Trusted Publisher on npmjs.com before this step will succeed:
+            #
+            #   npmjs.com → package → Settings → Publishing → Trusted Publishers
+            #     Provider : GitHub Actions
+            #     Owner    : Foorack
+            #     Repository: kumidocs
+            #     Workflow  : publish.yml
+            #     Environment: npm          (optional, matches the environment: above)
+            - name: Publish
+              run: npm publish --provenance --access public

@@ -1,7 +1,17 @@
 {
 	"name": "kumidocs",
-	"version": "0.1.0",
-	"private": true,
+	"version": "0.0.0",
+	"description": "A developer-focused wiki/docs platform with zero database — all content stored in Git.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Foorack/kumidocs.git"
+	},
+	"keywords": ["wiki", "docs", "markdown", "git", "bun", "self-hosted"],
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": ["src", "dist", "styles", "bunfig.toml", "tsconfig.json"],
 	"type": "module",
 	"scripts": {
 		"dev": "bun --hot src/index.ts",
