@@ -41,23 +41,7 @@ jobs:
             - name: Install dependencies
               run: bun install --frozen-lockfile
 
-            # Authentication strategy:
-            #
-            # BOOTSTRAP (first publish only):
-            #   Set NPM_TOKEN secret in repo → Actions → Secrets.
-            #   Once the package exists on npmjs.com, configure Trusted Publishing:
-            #     npmjs.com → package → Settings → Publishing → Trusted Publishers
-            #       Provider   : GitHub Actions
-            #       Owner      : Foorack
-            #       Repository : kumidocs
-            #       Workflow   : publish.yml
-            #       Environment: npm
-            #   Then delete the NPM_TOKEN secret — OIDC takes over from that point.
-            #
-            # STEADY STATE (after Trusted Publishing is configured):
-            #   OIDC handles auth automatically — no secrets stored anywhere.
-            #   --provenance adds a SLSA attestation (requires id-token: write).
+            # OIDC Trusted Publishing — no secrets required.
+            # --provenance adds a SLSA attestation (requires id-token: write).
             - name: Publish
               run: npm publish --provenance --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
