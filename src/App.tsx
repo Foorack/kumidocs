@@ -9,6 +9,7 @@ import NotFound from './pages/NotFound';
 import './index.css';
 import WelcomePage from './pages/WelcomePage';
 import ImageLibraryPage from './pages/ImageLibraryPage';
+import ThemeLibraryPage from './pages/ThemeLibraryPage';
 import {
 	Dialog,
 	DialogContent,
@@ -82,8 +83,7 @@ export function App() {
 							<Route element={<AppShell />}>
 								<Route path="/p/*" element={<FilePage />} />
 								<Route path="/i" element={<ImageLibraryPage />} />
-								<Route path="/i/:filename" element={<ImageLibraryPage />} />
-								<Route path="/welcome" element={<WelcomePage />} />
+								<Route path="/i/:filename" element={<ImageLibraryPage />} />							<Route path="/t" element={<ThemeLibraryPage />} />								<Route path="/welcome" element={<WelcomePage />} />
 								<Route path="*" element={<NotFound />} />
 							</Route>
 						</Routes>

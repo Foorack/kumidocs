@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button';
 import { SlideMarkdownViewer } from './SlideMarkdownViewer';
 import { SlideOverlay } from './SlideOverlay';
-import { parseSlideDirectives, resolveCustomTheme } from '@/lib/slide';
+import { parseSlideDirectives, resolveCustomTheme, isBgDark } from '@/lib/slide';
 import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/store/theme';
@@ -21,30 +21,6 @@ import { useTheme } from '@/store/theme';
 
 // Built-in themes that are inherently dark
 const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate', 'gradient']);
-
-/**
- * Returns true if a CSS color string represents a dark background.
- * Handles hex (#rrggbb / #rgb) and oklch(L ...) formats.
- */
-function isBgDark(color: string): boolean {
-	const hex = /^#([0-9a-f]{3,6})$/i.exec(color.trim())?.[1];
-	if (hex) {
-		const full =
-			hex.length === 3
-				? hex
-						.split('')
-						.map((c) => c + c)
-						.join('')
-				: hex;
-		const r = parseInt(full.slice(0, 2), 16);
-		const g = parseInt(full.slice(2, 4), 16);
-		const b = parseInt(full.slice(4, 6), 16);
-		return 0.299 * r + 0.587 * g + 0.114 * b < 128;
-	}
-	const l = /oklch\(\s*([\d.]+)/.exec(color);
-	if (l) return parseFloat(l[1] ?? '1') < 0.4;
-	return false;
-}
 
 /**
  * Split markdown content into individual slides on `---` separator lines.

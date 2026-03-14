@@ -98,6 +98,30 @@ export interface SlideThemeDef {
 
 export type SlideThemeMap = Record<string, SlideThemeDef>;
 
+/**
+ * Returns true if a CSS color string represents a dark background.
+ * Handles hex (#rrggbb / #rgb) and oklch(L ...) formats.
+ */
+export function isBgDark(color: string): boolean {
+	const hex = /^#([0-9a-f]{3,6})$/i.exec(color.trim())?.[1];
+	if (hex) {
+		const full =
+			hex.length === 3
+				? hex
+						.split('')
+						.map((c) => c + c)
+						.join('')
+				: hex;
+		const r = parseInt(full.slice(0, 2), 16);
+		const g = parseInt(full.slice(2, 4), 16);
+		const b = parseInt(full.slice(4, 6), 16);
+		return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+	}
+	const l = /oklch\(\s*([\d.]+)/.exec(color);
+	if (l) return parseFloat(l[1] ?? '1') < 0.4;
+	return false;
+}
+
 /** Resolve effective theme def for a slide, checking layout override first. */
 export function resolveCustomTheme(
 	map: SlideThemeMap,

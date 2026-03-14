@@ -5,6 +5,7 @@ import {
 	ChevronRightRegular,
 	ChevronDownRegular,
 	ImageRegular,
+	BookTemplateRegular,
 	MoreHorizontalRegular,
 	MoreHorizontalFilled,
 } from '@fluentui/react-icons';
@@ -387,6 +388,14 @@ export function Sidebar({
 							>
 								<ImageRegular className="mr-2 w-4 h-4" />
 								Image library
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									void navigate('/t');
+								}}
+							>
+								<BookTemplateRegular className="mr-2 w-4 h-4" />
+								Theme library
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
