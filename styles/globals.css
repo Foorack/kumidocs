@@ -158,3 +158,158 @@
 .dark ::-webkit-scrollbar-thumb:hover {
 	background-color: oklch(0.556 0 0 / 80%);
 }
+
+/* ── Slide presentation ──────────────────────────────────────────────────────
+   Slide canvases are fixed 960×540 px boxes scaled to fit the viewer container.
+   Themes control bg/fg via --slide-bg / --slide-fg CSS custom properties.
+   Per-slide <!-- bg: ... --> directives apply an inline background style that
+   overrides the theme background while keeping the theme's --slide-fg color.
+ ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Canvas base ─────────────────────────────────────────────────────────── */
+.slide-canvas {
+	--slide-bg: var(--background);
+	--slide-fg: var(--foreground);
+	background: var(--slide-bg);
+	color: var(--slide-fg);
+	position: relative;
+	overflow: hidden;
+}
+
+/* ── Themes ──────────────────────────────────────────────────────────────── */
+/* default: inherits the app's bg/fg — adapts to light/dark mode automatically */
+.slide-theme-default {}
+
+.slide-theme-dark {
+	--slide-bg: oklch(0.13 0 0);
+	--slide-fg: oklch(0.93 0 0);
+}
+
+.slide-theme-corporate {
+	--slide-bg: #1a2744;
+	--slide-fg: #e8edf8;
+}
+
+.slide-theme-minimal {
+	--slide-bg: oklch(0.96 0.005 240);
+	--slide-fg: oklch(0.18 0.01 240);
+}
+
+/* gradient: background overridden via CSS; fg always white */
+.slide-theme-gradient {
+	--slide-fg: #ffffff;
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
+}
+
+/* ── Invert layout ───────────────────────────────────────────────────────── */
+/* Swaps bg/fg relative to the current theme. */
+.slide-layout-invert {
+	--slide-bg: var(--slide-fg);
+	--slide-fg: oklch(from var(--slide-bg) calc(1 - l) 0 0);
+	/* Fallback for browsers that don't support relative color syntax */
+	filter: invert(1) hue-rotate(180deg);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+/* slide-prose class enlarges all prose elements relative to document mode   */
+
+.slide-canvas .slide-prose {
+	font-size: 1.2rem;
+	line-height: 1.5;
+}
+
+.slide-canvas .slide-prose h1 {
+	font-size: 2.75rem;
+	font-weight: 700;
+	line-height: 1.1;
+	margin-top: 0;
+	color: inherit;
+}
+
+.slide-canvas .slide-prose h2 {
+	font-size: 2rem;
+	font-weight: 600;
+	line-height: 1.2;
+	margin-top: 0;
+	color: inherit;
+}
+
+.slide-canvas .slide-prose h3 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin-top: 0.75rem;
+	color: inherit;
+}
+
+.slide-canvas .slide-prose h4,
+.slide-canvas .slide-prose h5,
+.slide-canvas .slide-prose h6 {
+	color: inherit;
+}
+
+.slide-canvas .slide-prose p,
+.slide-canvas .slide-prose li,
+.slide-canvas .slide-prose td,
+.slide-canvas .slide-prose th {
+	color: inherit;
+}
+
+.slide-canvas .slide-prose strong,
+.slide-canvas .slide-prose em {
+	color: inherit;
+}
+
+.slide-canvas .slide-prose blockquote {
+	color: inherit;
+	opacity: 0.85;
+}
+
+/* Links use currentColor so they stay readable on any slide background */
+.slide-canvas .slide-prose a {
+	color: inherit !important;
+	opacity: 0.85;
+	text-decoration-color: currentColor;
+}
+
+/* ── Title layout typography ─────────────────────────────────────────────── */
+/* Larger h1, centered sub-headings and paragraphs */
+.slide-canvas .slide-prose-title h1 {
+	font-size: 3.5rem;
+	letter-spacing: -0.02em;
+	margin-bottom: 0.5rem;
+}
+
+.slide-canvas .slide-prose-title h2 {
+	font-size: 2rem;
+	font-weight: 400;
+	color: inherit;
+	opacity: 0.8;
+}
+
+.slide-canvas .slide-prose-title p,
+.slide-canvas .slide-prose-title li {
+	font-size: 1.35rem;
+	opacity: 0.8;
+}
+
+/* ── Section layout typography ───────────────────────────────────────────── */
+/* Single large heading, vertically centred */
+.slide-canvas .slide-prose-section h2 {
+	font-size: 3.5rem;
+	font-weight: 800;
+	letter-spacing: -0.025em;
+}
+
+/* ── Slide number badge ──────────────────────────────────────────────────── */
+.slide-number {
+	position: absolute;
+	bottom: 8px;
+	right: 14px;
+	font-size: 0.7rem;
+	opacity: 0.45;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+	line-height: 1;
+	color: currentColor;
+}
+

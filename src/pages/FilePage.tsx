@@ -611,7 +611,7 @@ export default function FilePage() {
 							fileType={fileType}
 						/>
 					) : fileType === 'slide' ? (
-						<SlideViewer value={content} filename={title} />
+						<SlideViewer value={content} filename={title} theme={meta.theme} paginate={meta.paginate} />
 					) : (
 						<ScrollArea className="h-full">
 							<MarkdownViewer value={content} />

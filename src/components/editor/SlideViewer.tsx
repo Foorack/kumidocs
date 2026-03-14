@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	BookOpen,
 	ChevronLeft,
@@ -10,7 +10,10 @@ import {
 	Spotlight,
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { MarkdownViewer } from './MarkdownViewer';
+import { SlideMarkdownViewer } from './SlideMarkdownViewer';
+import { parseSlideDirectives } from '@/lib/slide';
+import type { ParsedSlide } from '@/lib/slide';
+import { cn } from '@/lib/utils';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
 
@@ -31,24 +34,49 @@ function splitSlides(content: string): string[] {
 }
 
 // ── Slide canvas size ─────────────────────────────────────────────────────────
-// Content is rendered at a fixed virtual resolution and scaled to fit the
-// available container (same technique used by Reveal.js, Marp, etc.).
 const SLIDE_W = 960;
 const SLIDE_H = 540;
 
-// ── Shared slide canvas ───────────────────────────────────────────────────────
-/** Fixed-resolution 960×540 canvas scaled to fit, shared by paginate and spotlight modes. */
+// ── ScaledSlide ───────────────────────────────────────────────────────────────
+/**
+ * Renders a single 960×540 slide canvas, scaled to `scale` and optionally
+ * showing a slide number badge.  Theme and per-slide directives are both applied.
+ */
 function ScaledSlide({
-	value,
+	slide,
 	scale,
-	className = '',
+	theme,
+	paginate,
+	slideNum,
+	total,
 	origin = 'center center',
+	shadow = false,
+	rounded = false,
+	absolute = false,
 }: {
-	value: string;
+	slide: ParsedSlide;
 	scale: number;
-	className?: string;
+	theme: string;
+	paginate: boolean;
+	slideNum: number;
+	total: number;
 	origin?: string;
+	shadow?: boolean;
+	rounded?: boolean;
+	/** Position absolute top-0 left-0 — used inside the scroll-mode tile wrapper */
+	absolute?: boolean;
 }) {
+	const { directives } = slide;
+
+	// Per-slide background from <!-- bg: ... --> directive (overrides theme CSS)
+	const bgStyle: React.CSSProperties = {};
+	if (directives.bg) {
+		bgStyle.background = directives.bg;
+		bgStyle.backgroundSize = 'cover';
+		bgStyle.backgroundPosition = 'center';
+		bgStyle.backgroundRepeat = 'no-repeat';
+	}
+
 	return (
 		<div
 			style={{
@@ -57,10 +85,23 @@ function ScaledSlide({
 				transform: `scale(${String(scale)})`,
 				transformOrigin: origin,
 				flexShrink: 0,
+				...bgStyle,
 			}}
-			className={className}
+			className={cn(
+				'slide-canvas overflow-hidden',
+				`slide-theme-${theme}`,
+				directives.classes.includes('invert') && 'slide-layout-invert',
+				shadow && 'shadow-xl',
+				rounded && 'rounded-sm',
+				absolute && 'absolute top-0 left-0',
+			)}
 		>
-			<MarkdownViewer value={value} />
+			<SlideMarkdownViewer slide={slide} />
+			{paginate && (
+				<div className="slide-number">
+					{slideNum} / {total}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -73,15 +114,30 @@ export interface SlideViewerProps {
 	filename?: string;
 	/** When true, fills the full viewport (used by the standalone SlidesPage). */
 	standalone?: boolean;
+	/**
+	 * Deck-level theme applied to all slides.
+	 * Values: 'default' | 'dark' | 'corporate' | 'minimal' | 'gradient'
+	 */
+	theme?: string;
+	/** When true, each slide canvas shows a "N / total" badge in the bottom-right. */
+	paginate?: boolean;
 }
 
-export function SlideViewer({ value, filename = 'slides', standalone = false }: SlideViewerProps) {
-	const slides = splitSlides(value);
-	const total = slides.length;
+export function SlideViewer({
+	value,
+	filename = 'slides',
+	standalone = false,
+	theme = 'default',
+	paginate = false,
+}: SlideViewerProps) {
+	// Parse slides once per value change
+	const parsedSlides = useMemo<ParsedSlide[]>(
+		() => splitSlides(value).map(parseSlideDirectives),
+		[value],
+	);
+	const total = parsedSlides.length;
 
 	const [index, setIndex] = useState(0);
-	// When the slide content changes (e.g. edit mode → different deck) reset to slide 1.
-	// Calling setState during render is the recommended React pattern for derived-state resets.
 	const [prevValue, setPrevValue] = useState(value);
 	if (prevValue !== value) {
 		setPrevValue(value);
@@ -92,14 +148,13 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 	const [isSpotlight, setIsSpotlight] = useState(false);
 	const [spotlightScale, setSpotlightScale] = useState(1);
 	const [isExporting, setIsExporting] = useState(false);
-	// In standalone (presentation) mode, always use paginate mode.
 	const [scrollMode, setScrollMode] = useState(!standalone);
 
-	const stageRef = useRef<HTMLDivElement>(null); // the outer flex container
-	const fullscreenRef = useRef<HTMLDivElement>(null); // the element we request fullscreen on
-	const spotlightRef = useRef<HTMLDivElement>(null); // bare fullscreen overlay
-	const slideElemsRef = useRef<(HTMLDivElement | null)[]>([]); // per-slide elements for scroll-nav
-	const offscreenRef = useRef<HTMLDivElement>(null); // hidden render container for PDF export
+	const stageRef = useRef<HTMLDivElement>(null);
+	const fullscreenRef = useRef<HTMLDivElement>(null);
+	const spotlightRef = useRef<HTMLDivElement>(null);
+	const slideElemsRef = useRef<(HTMLDivElement | null)[]>([]);
+	const offscreenRef = useRef<HTMLDivElement>(null);
 
 	// ── Keyboard navigation ──────────────────────────────────────────────────
 	const prev = useCallback(() => {
@@ -111,7 +166,6 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
-			// Don't hijack shortcuts when an input/textarea is focused
 			const tag = (e.target as HTMLElement).tagName;
 			if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 			if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
@@ -139,7 +193,6 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 		const obs = new ResizeObserver(([entry]) => {
 			if (!entry) return;
 			const { width, height } = entry.contentRect;
-			// Same horizontal padding in both modes so slides appear the same size
 			const s = Math.min((width - 192) / SLIDE_W, (height - 96) / SLIDE_H);
 			setScale(Math.max(0.1, s));
 		});
@@ -154,7 +207,6 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 		const handler = () => {
 			const active = !!document.fullscreenElement;
 			setIsFullscreen(active);
-			// Any fullscreen exit also exits spotlight
 			if (!active) setIsSpotlight(false);
 		};
 		document.addEventListener('fullscreenchange', handler);
@@ -213,7 +265,7 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 				const canvas = await html2canvas(el, {
 					width: SLIDE_W,
 					height: SLIDE_H,
-					scale: 2, // 2× for sharper output
+					scale: 2,
 					useCORS: true,
 					logging: false,
 				});
@@ -226,14 +278,11 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 		}
 	}, [isExporting, filename]);
 
-	// Reset to first slide when content changes
-	// (handled via derived-state pattern above — no useEffect needed)
-
-	const current = slides[index] ?? '';
+	const currentSlide = parsedSlides[index] ?? { content: '', directives: { classes: [] } };
 
 	return (
 		<>
-			{/* ── Off-screen render container for PDF export (invisible, native resolution) ── */}
+			{/* ── Off-screen render container for PDF export ── */}
 			<div
 				ref={offscreenRef}
 				aria-hidden="true"
@@ -246,46 +295,57 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 					opacity: 0,
 				}}
 			>
-				{slides.map((slide, i) => (
+				{parsedSlides.map((slide, i) => (
+					// Outer wrapper provides the pixel dimensions html2canvas measures
 					<div
 						key={i}
-						style={{
-							width: SLIDE_W,
-							height: SLIDE_H,
-							overflow: 'hidden',
-							flexShrink: 0,
-						}}
-						className="bg-background"
+						style={{ width: SLIDE_W, height: SLIDE_H, overflow: 'hidden', flexShrink: 0 }}
 					>
-						<MarkdownViewer value={slide} />
+						<ScaledSlide
+							slide={slide}
+							scale={1}
+							theme={theme}
+							paginate={paginate}
+							slideNum={i + 1}
+							total={total}
+							origin="top left"
+						/>
 					</div>
 				))}
 			</div>
+
 			<div
 				ref={fullscreenRef}
-				className={`flex flex-col bg-muted/30 dark:bg-muted/10${standalone ? ' h-screen w-screen' : ' h-full'}`}
+				className={cn(
+					'flex flex-col bg-muted/30 dark:bg-muted/10',
+					standalone ? 'h-screen w-screen' : 'h-full',
+				)}
 			>
 				{/* ── Spotlight overlay — bare fullscreen, slide only ── */}
 				{isSpotlight && (
 					<div
 						ref={spotlightRef}
-						className="fixed inset-0 z-[9999] bg-background flex items-center justify-center cursor-none"
+						className="fixed inset-0 z-[9999] bg-black flex items-center justify-center cursor-none"
 						onClick={next}
 					>
 						<ScaledSlide
-							value={current}
+							slide={currentSlide}
 							scale={spotlightScale}
-							className="overflow-hidden"
+							theme={theme}
+							paginate={paginate}
+							slideNum={index + 1}
+							total={total}
 						/>
 					</div>
 				)}
+
 				{/* ── Slide stage ── */}
 				{scrollMode ? (
 					<div
 						ref={stageRef}
 						className="flex-1 overflow-y-auto flex flex-col items-center py-6 gap-4"
 					>
-						{slides.map((slide, i) => (
+						{parsedSlides.map((slide, i) => (
 							<div
 								key={i}
 								ref={(el) => {
@@ -300,10 +360,14 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 								className="shadow-xl rounded-sm overflow-hidden"
 							>
 								<ScaledSlide
-									value={slide}
+									slide={slide}
 									scale={scale}
+									theme={theme}
+									paginate={paginate}
+									slideNum={i + 1}
+									total={total}
 									origin="top left"
-									className="bg-background overflow-hidden absolute top-0 left-0"
+									absolute
 								/>
 							</div>
 						))}
@@ -313,11 +377,25 @@ export function SlideViewer({ value, filename = 'slides', standalone = false }: 
 						ref={stageRef}
 						className="flex-1 flex items-center justify-center overflow-hidden"
 					>
-						{/* Fixed-size canvas, scaled to fit */}
 						<ScaledSlide
-							value={current}
+							slide={currentSlide}
 							scale={scale}
-							className="bg-background shadow-xl rounded-sm overflow-hidden"
+							theme={theme}
+							paginate={paginate}
+							slideNum={index + 1}
+							total={total}
+							shadow
+							rounded
+						/>
+					</div>
+				)}
+
+				{/* ── Progress bar (paginate mode only) ── */}
+				{!scrollMode && (
+					<div className="shrink-0 h-0.5 bg-muted">
+						<div
+							className="h-full bg-primary transition-[width] duration-300 ease-out"
+							style={{ width: total > 0 ? `${String(((index + 1) / total) * 100)}%` : '0%' }}
 						/>
 					</div>
 				)}

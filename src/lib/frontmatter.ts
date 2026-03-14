@@ -11,6 +11,10 @@
 export interface PageMeta {
 	emoji?: string;
 	slides?: boolean;
+	/** Deck-level theme for slide presentations: 'default' | 'dark' | 'corporate' | 'minimal' | 'gradient' */
+	theme?: string;
+	/** When true, slide numbers are shown on each slide canvas */
+	paginate?: boolean;
 }
 
 /** Parse only the whitelisted KumiDocs frontmatter fields from a raw markdown string. */
@@ -26,6 +30,8 @@ export function parseFrontmatter(raw: string): { data: PageMeta; content: string
 		const [, key, val = ''] = kv;
 		if (key === 'emoji') data.emoji = val.trim();
 		if (key === 'slides' && val.trim() === 'true') data.slides = true;
+		if (key === 'theme') data.theme = val.trim();
+		if (key === 'paginate' && val.trim() === 'true') data.paginate = true;
 	}
 	return { data, content };
 }
