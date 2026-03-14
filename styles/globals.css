@@ -173,6 +173,19 @@
 	background: var(--slide-bg);
 	position: relative;
 	overflow: hidden;
+
+	/* Remap Tailwind color utilities to slide-local values so bg-sidebar,
+	   bg-muted, bg-background etc. all respect the active slide theme
+	   regardless of site light/dark mode. No circular refs: --color-* ≠ --slide-bg. */
+	--color-background: var(--slide-bg);
+	--color-foreground: var(--slide-fg);
+	--color-sidebar: var(--slide-bg);
+	--color-muted: var(--slide-bg);
+	--color-card: var(--slide-bg);
+	--color-muted-foreground: var(--slide-fg);
+	--color-sidebar-foreground: var(--slide-fg);
+	--color-card-foreground: var(--slide-fg);
+	--color-border: oklch(from var(--slide-fg) l c h / 0.15);
 }
 
 /* Override typography plugin prose color vars with slide-fg so dark themes get light text */
