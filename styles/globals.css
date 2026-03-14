@@ -173,8 +173,10 @@
 	background: var(--slide-bg);
 	position: relative;
 	overflow: hidden;
+}
 
-	/* Wire all prose text colors to --slide-fg so dark themes get light text */
+/* Override typography plugin prose color vars with slide-fg so dark themes get light text */
+.slide-canvas .prose {
 	--tw-prose-body: var(--slide-fg);
 	--tw-prose-headings: var(--slide-fg);
 	--tw-prose-lead: var(--slide-fg);
