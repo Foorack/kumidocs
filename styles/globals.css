@@ -231,7 +231,7 @@
 	font-weight: 700;
 	line-height: 1.1;
 	margin-top: 0;
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose h2 {
@@ -239,42 +239,42 @@
 	font-weight: 600;
 	line-height: 1.2;
 	margin-top: 0;
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose h3 {
 	font-size: 1.5rem;
 	font-weight: 600;
 	margin-top: 0.75rem;
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose h4,
 .slide-canvas .slide-prose h5,
 .slide-canvas .slide-prose h6 {
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose p,
 .slide-canvas .slide-prose li,
 .slide-canvas .slide-prose td,
 .slide-canvas .slide-prose th {
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose strong,
 .slide-canvas .slide-prose em {
-	color: inherit;
+	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose blockquote {
-	color: inherit;
+	color: var(--slide-fg);
 	opacity: 0.85;
 }
 
 /* Links use currentColor so they stay readable on any slide background */
 .slide-canvas .slide-prose a {
-	color: inherit !important;
+	color: var(--slide-fg) !important;
 	opacity: 0.85;
 	text-decoration-color: currentColor;
 }
