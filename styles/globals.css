@@ -3,7 +3,17 @@
 @plugin "@tailwindcss/typography";
 @source "../node_modules/streamdown/dist/*.js";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark {
+	/* Regular UI: activate when inside .dark, but NOT inside a .slide-canvas.
+	   This breaks the inheritance chain so slides are isolated from site dark mode. */
+	&:where(.dark *):not(:where(.slide-canvas *)) {
+		@slot;
+	}
+	/* Slide canvases use their own .dark class — applied by ScaledSlide for dark themes. */
+	.slide-canvas.dark & {
+		@slot;
+	}
+}
 
 @theme inline {
 	--color-background: var(--background);
