@@ -465,7 +465,7 @@ export default function FilePage() {
 						}
 					>
 						<button
-							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${!editMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
+							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${!editMode ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
 							onClick={() => {
 								if (editMode)
 									exitEdit().catch((err: unknown) => {
@@ -476,7 +476,7 @@ export default function FilePage() {
 							Read
 						</button>
 						<button
-							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${editMode ? 'bg-background text-foreground shadow-sm' : editLocked && editLocked.id !== user.id ? 'text-muted-foreground opacity-40 cursor-not-allowed' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
+							className={`h-6 px-2.5 rounded text-xs transition-colors select-none ${editMode ? 'bg-background text-foreground shadow-sm' : editLocked && editLocked.id !== user.id ? 'text-muted-foreground opacity-40 cursor-not-allowed' : 'text-muted-foreground hover:text-foreground'}`}
 							onClick={() => {
 								if (!editMode && !(editLocked && editLocked.id !== user.id))
 									enterEdit();

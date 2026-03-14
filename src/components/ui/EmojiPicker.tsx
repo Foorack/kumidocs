@@ -97,7 +97,7 @@ const EmojiCell = memo(function EmojiCell({
 			onClick={() => {
 				onSelect(native);
 			}}
-			className="w-12 h-12 rounded flex items-center justify-center hover:bg-accent transition-colors cursor-pointer"
+			className="w-12 h-12 rounded flex items-center justify-center hover:bg-accent transition-colors"
 		>
 			<EmojiIcon emoji={native} size={36} />
 		</button>

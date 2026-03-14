@@ -150,6 +150,9 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+	button {
+		cursor: pointer;
+	}
 }
 
 /* react-diff-view dark mode — :root.dark beats the library's :root declarations */

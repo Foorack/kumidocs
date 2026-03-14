@@ -54,7 +54,7 @@ export function EmojiPickerPopover({
 					type="button"
 					aria-label="Change page emoji"
 					className={cn(
-						'flex rounded p-0.5 transition-colors cursor-pointer',
+						'flex rounded p-0.5 transition-colors',
 						'hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
 						className,
 					)}

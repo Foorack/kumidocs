@@ -223,7 +223,7 @@ export default function ImageLibraryPage() {
 							{images.map((img) => (
 								<button
 									key={img.filename}
-									className={`group relative rounded-lg border overflow-hidden text-left transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+									className={`group relative rounded-lg border overflow-hidden text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
 										filename === img.filename
 											? 'border-primary ring-1 ring-primary'
 											: 'border-border hover:border-primary/60'
