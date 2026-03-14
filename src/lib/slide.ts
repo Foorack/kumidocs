@@ -178,10 +178,15 @@ export function resolveCustomTheme(
 	if (!base) return null;
 	const layoutKey = layoutClass || 'default';
 	const override = base.layouts?.[layoutKey];
-	if (override) return override;
-	// Strip `layouts` from the base definition before returning
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { layouts: _layoutsOmit, ...baseDef } = base;
+	if (override) {
+		// Inherit canvas-level properties from base that the layout override doesn't set
+		return {
+			fontFamily: baseDef.fontFamily,
+			...override,
+		};
+	}
 	return baseDef;
 }
 
