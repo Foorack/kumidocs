@@ -188,6 +188,7 @@
 	--color-sidebar-foreground: var(--slide-fg);
 	--color-card-foreground: var(--slide-fg);
 	--color-border: oklch(from var(--slide-fg) l c h / 0.15);
+	--sidebar: var(--slide-bg);
 	--tw-prose-body: var(--slide-fg);
 	--tw-prose-headings: var(--slide-fg);
 	--tw-prose-lead: var(--slide-fg);
