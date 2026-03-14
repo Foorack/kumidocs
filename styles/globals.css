@@ -171,16 +171,8 @@
 	--slide-bg: var(--background);
 	--slide-fg: var(--foreground);
 	background: var(--slide-bg);
-	color: var(--slide-fg);
 	position: relative;
 	overflow: hidden;
-}
-
-/* Force Tailwind's .prose to use the theme/directive foreground color.
-   Without this, .prose sets color via --tw-prose-body (always dark)
-   which overrides the canvas color even on dark-background themes. */
-.slide-canvas .prose {
-	color: var(--slide-fg) !important;
 }
 
 /* ── Themes ──────────────────────────────────────────────────────────────── */
@@ -231,7 +223,6 @@
 	font-weight: 700;
 	line-height: 1.1;
 	margin-top: 0;
-	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose h2 {
@@ -239,42 +230,20 @@
 	font-weight: 600;
 	line-height: 1.2;
 	margin-top: 0;
-	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose h3 {
 	font-size: 1.5rem;
 	font-weight: 600;
 	margin-top: 0.75rem;
-	color: var(--slide-fg);
-}
-
-.slide-canvas .slide-prose h4,
-.slide-canvas .slide-prose h5,
-.slide-canvas .slide-prose h6 {
-	color: var(--slide-fg);
-}
-
-.slide-canvas .slide-prose p,
-.slide-canvas .slide-prose li,
-.slide-canvas .slide-prose td,
-.slide-canvas .slide-prose th {
-	color: var(--slide-fg);
-}
-
-.slide-canvas .slide-prose strong,
-.slide-canvas .slide-prose em {
-	color: var(--slide-fg);
 }
 
 .slide-canvas .slide-prose blockquote {
-	color: var(--slide-fg);
 	opacity: 0.85;
 }
 
 /* Links use currentColor so they stay readable on any slide background */
 .slide-canvas .slide-prose a {
-	color: var(--slide-fg) !important;
 	opacity: 0.85;
 	text-decoration-color: currentColor;
 }
@@ -290,7 +259,6 @@
 .slide-canvas .slide-prose-title h2 {
 	font-size: 2rem;
 	font-weight: 400;
-	color: inherit;
 	opacity: 0.8;
 }
 
