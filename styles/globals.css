@@ -178,7 +178,8 @@
 
 /* ── Themes ──────────────────────────────────────────────────────────────── */
 /* default: inherits the app's bg/fg — adapts to light/dark mode automatically */
-.slide-theme-default {}
+.slide-theme-default {
+}
 
 .slide-theme-dark {
 	--slide-bg: oklch(0.13 0 0);
@@ -312,4 +313,3 @@
 	line-height: 1;
 	color: currentColor;
 }
-

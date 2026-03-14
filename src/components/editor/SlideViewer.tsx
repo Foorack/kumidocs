@@ -299,7 +299,12 @@ export function SlideViewer({
 					// Outer wrapper provides the pixel dimensions html2canvas measures
 					<div
 						key={i}
-						style={{ width: SLIDE_W, height: SLIDE_H, overflow: 'hidden', flexShrink: 0 }}
+						style={{
+							width: SLIDE_W,
+							height: SLIDE_H,
+							overflow: 'hidden',
+							flexShrink: 0,
+						}}
 					>
 						<ScaledSlide
 							slide={slide}
@@ -395,7 +400,9 @@ export function SlideViewer({
 					<div className="shrink-0 h-0.5 bg-muted">
 						<div
 							className="h-full bg-primary transition-[width] duration-300 ease-out"
-							style={{ width: total > 0 ? `${String(((index + 1) / total) * 100)}%` : '0%' }}
+							style={{
+								width: total > 0 ? `${String(((index + 1) / total) * 100)}%` : '0%',
+							}}
 						/>
 					</div>
 				)}

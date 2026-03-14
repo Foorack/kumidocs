@@ -59,10 +59,7 @@ export function splitAtSecondH2(content: string): [string, string] {
 		if ((lines[i] ?? '').startsWith('## ')) {
 			h2Count++;
 			if (h2Count === 2) {
-				return [
-					lines.slice(0, i).join('\n').trim(),
-					lines.slice(i).join('\n').trim(),
-				];
+				return [lines.slice(0, i).join('\n').trim(), lines.slice(i).join('\n').trim()];
 			}
 		}
 	}

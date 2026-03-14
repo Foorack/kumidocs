@@ -85,8 +85,9 @@ export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 	const isCenter = isTitle || isSection || directives.classes.includes('center');
 	const isBlank = directives.classes.includes('blank');
 
-	const colorStyle =
-		directives.color ? ({ color: directives.color } as React.CSSProperties) : undefined;
+	const colorStyle = directives.color
+		? ({ color: directives.color } as React.CSSProperties)
+		: undefined;
 
 	// ── Split layout: two columns divided at the second ## heading ────────────
 	if (isSplit) {
