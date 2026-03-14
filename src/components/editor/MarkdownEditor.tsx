@@ -1,10 +1,12 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { MarkdownViewer } from './MarkdownViewer';
 import { SlideViewer } from './SlideViewer';
+import type { SlideThemeMap } from '@/lib/slide';
+import { parseFrontmatter } from '@/lib/frontmatter';
 import {
 	Bold,
 	Code,
@@ -186,6 +188,9 @@ interface MarkdownEditorProps {
 	onSave?: () => void;
 	disabled?: boolean;
 	fileType?: string;
+	slideTheme?: string;
+	slidePaginate?: boolean;
+	slideThemes?: SlideThemeMap;
 }
 
 const HEADING_OPTIONS = [
@@ -204,6 +209,9 @@ export function MarkdownEditor({
 	onSave,
 	disabled,
 	fileType,
+	slideTheme,
+	slidePaginate,
+	slideThemes,
 }: MarkdownEditorProps) {
 	const taRef = useRef<HTMLTextAreaElement>(null);
 	const previewRef = useRef<HTMLDivElement>(null);
@@ -211,6 +219,8 @@ export function MarkdownEditor({
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [showPreview, setShowPreview] = useState(true);
+	// Strip frontmatter from value for the preview pane (textarea shows full raw content).
+	const previewValue = useMemo(() => parseFrontmatter(value).content, [value]);
 	// Track the last known cursor/selection so toolbar actions that steal focus
 	// (especially the heading Select dropdown) still operate at the right position.
 	const savedSelectionRef = useRef({ start: 0, end: 0 });
@@ -610,10 +620,15 @@ export function MarkdownEditor({
 				{showPreview && (
 					<div className="flex-1 min-w-0 overflow-hidden">
 						{fileType === 'slide' ? (
-							<SlideViewer value={value} />
+							<SlideViewer
+								value={previewValue}
+								theme={slideTheme}
+								paginate={slidePaginate}
+								slideThemes={slideThemes}
+							/>
 						) : (
 							<div ref={previewRef} className="h-full overflow-y-auto">
-								<MarkdownViewer value={value} />
+								<MarkdownViewer value={previewValue} />
 							</div>
 						)}
 					</div>

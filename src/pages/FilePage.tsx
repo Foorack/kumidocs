@@ -51,6 +51,7 @@ export default function FilePage() {
 	const { user, slideThemes } = useUser();
 
 	const [content, setContent] = useState('');
+	const [rawContent, setRawContent] = useState('');
 	const [savedContent, setSavedContent] = useState('');
 
 	const [meta, setMeta] = useState<DocMeta>({});
@@ -108,6 +109,8 @@ export default function FilePage() {
 	// Keep a ref to latest content so exitEdit/auto-save always read the latest value
 	const contentRef = useRef(content);
 	contentRef.current = content;
+	const rawContentRef = useRef(rawContent);
+	rawContentRef.current = rawContent;
 	const savedContentRef = useRef(savedContent);
 	savedContentRef.current = savedContent;
 	// Keep a ref to latest meta so doSave always writes the current emoji/marp flag
@@ -131,6 +134,7 @@ export default function FilePage() {
 			};
 			const parsed = parseFrontmatter(data.content);
 			setContent(parsed.content);
+			setRawContent(data.content);
 			setSavedContent(parsed.content);
 			isDirtyRef.current = false;
 			setMeta(parsed.data);
@@ -199,7 +203,7 @@ export default function FilePage() {
 	// Concurrent saves (e.g. auto-save fires + user presses Done simultaneously) would
 	// produce two git commits on the same file, causing the second one to 409-conflict.
 	const doSave = useCallback(
-		(currentContent: string): Promise<void> => {
+		(currentContent: string, isRaw = false): Promise<void> => {
 			if (autoSaveTimer.current) {
 				clearTimeout(autoSaveTimer.current);
 				autoSaveTimer.current = null;
@@ -208,8 +212,11 @@ export default function FilePage() {
 			const next = savePromiseRef.current.then(async () => {
 				setSaveStatus('saving');
 
-				// Reconstruct frontmatter from whitelisted fields only (emoji, marp).
-				const fullContent = buildFrontmatter(metaRef.current) + currentContent;
+				// In raw mode the content already contains the full frontmatter block.
+				// Otherwise reconstruct frontmatter from whitelisted fields only.
+				const fullContent = isRaw
+					? currentContent
+					: buildFrontmatter(metaRef.current) + currentContent;
 
 				try {
 					const res = await fetch(`/api/file?path=${encodeURIComponent(filePath)}`, {
@@ -219,8 +226,18 @@ export default function FilePage() {
 					});
 					if (res.ok) {
 						const data = (await res.json()) as { sha: string };
-						setSavedContent(currentContent);
-						savedContentRef.current = currentContent;
+						if (isRaw) {
+							// Re-parse to keep content + meta in sync for view mode.
+							const parsed = parseFrontmatter(currentContent);
+							setContent(parsed.content);
+							setSavedContent(parsed.content);
+							savedContentRef.current = parsed.content;
+							setMeta(parsed.data);
+							metaRef.current = parsed.data;
+						} else {
+							setSavedContent(currentContent);
+							savedContentRef.current = currentContent;
+						}
 						isDirtyRef.current = false; // mark clean immediately
 						setSaveStatus('saved');
 						setLastSha(data.sha);
@@ -249,12 +266,13 @@ export default function FilePage() {
 	// Handle content changes
 	const handleChange = useCallback(
 		(val: string) => {
-			setContent(val);
+			setRawContent(val);
+			rawContentRef.current = val;
 			setSaveStatus('unsaved');
 			isDirtyRef.current = true; // mark dirty immediately
 			if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
 			autoSaveTimer.current = setTimeout(() => {
-				doSave(val).catch((err: unknown) => {
+				doSave(val, true).catch((err: unknown) => {
 					console.error('Auto-save failed:', err);
 				});
 			}, autoSaveDelay);
@@ -264,21 +282,33 @@ export default function FilePage() {
 
 	// Ctrl+S
 	const handleSave = useCallback(() => {
-		doSave(content).catch((err: unknown) => {
+		doSave(rawContentRef.current, true).catch((err: unknown) => {
 			console.error('Manual save failed:', err);
 		});
-	}, [doSave, content]);
+	}, [doSave]);
 
 	// Emoji change (edit mode only) — update meta and persist immediately
 	const handleEmojiChange = useCallback(
 		(newEmoji: string) => {
 			// Update the ref synchronously so the save below picks up the new emoji.
-			metaRef.current = { ...metaRef.current, emoji: newEmoji };
+			const newMeta = { ...metaRef.current, emoji: newEmoji };
+			metaRef.current = newMeta;
 			setMeta((prev) => ({ ...prev, emoji: newEmoji }));
-			// Persist the emoji change immediately (chains behind any in-flight save).
-			doSave(contentRef.current).catch((err: unknown) => {
-				console.error('Emoji save failed:', err);
-			});
+			if (editModeRef.current) {
+				// In raw edit mode: rebuild the frontmatter block inside rawContent.
+				const parsed = parseFrontmatter(rawContentRef.current);
+				const newRaw = buildFrontmatter(newMeta) + parsed.content;
+				setRawContent(newRaw);
+				rawContentRef.current = newRaw;
+				doSave(newRaw, true).catch((err: unknown) => {
+					console.error('Emoji save failed:', err);
+				});
+			} else {
+				// Persist the emoji change immediately (chains behind any in-flight save).
+				doSave(contentRef.current).catch((err: unknown) => {
+					console.error('Emoji save failed:', err);
+				});
+			}
 		},
 		[doSave],
 	);
@@ -300,7 +330,7 @@ export default function FilePage() {
 		// succeeds — so it's always accurate regardless of React render scheduling.
 		await savePromiseRef.current;
 		if (isDirtyRef.current) {
-			await doSave(contentRef.current);
+			await doSave(rawContentRef.current, true);
 		}
 		wsClient.stopEditing(filePath);
 		setEditMode(false);
@@ -605,10 +635,13 @@ export default function FilePage() {
 						/>
 					) : editMode ? (
 						<MarkdownEditor
-							value={content}
+							value={rawContent}
 							onChange={handleChange}
 							onSave={handleSave}
 							fileType={fileType}
+							slideTheme={meta.theme}
+							slidePaginate={meta.paginate}
+							slideThemes={slideThemes}
 						/>
 					) : fileType === 'slide' ? (
 						<SlideViewer
