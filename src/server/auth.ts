@@ -1,9 +1,11 @@
 import type { User } from '../lib/types';
+import type { SlideThemeMap } from '../lib/slide';
 import { emailToDisplayName } from '../lib/avatar';
 
 export interface KumiDocsPermissions {
 	instanceName?: string;
 	editors?: string[];
+	slideThemes?: SlideThemeMap;
 }
 
 let perms: KumiDocsPermissions = {};

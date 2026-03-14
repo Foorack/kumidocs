@@ -29,6 +29,7 @@ import {
 	getEditorForPage,
 } from './websocket';
 import { IMAGE_TYPES } from '@/lib/filetypes';
+import { getPermissions } from './auth';
 
 /**
  * Returns true if `userPath` resolves to a location inside `repoPath`.
@@ -46,6 +47,7 @@ export function apiMe(user: User, config: Config) {
 		...user,
 		instanceName: config.instanceName,
 		autoSaveDelay: config.autoSaveDelay,
+		slideThemes: getPermissions().slideThemes ?? {},
 	});
 }
 

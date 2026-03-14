@@ -2,7 +2,7 @@ import { cjk } from '@streamdown/cjk';
 import { code } from '@streamdown/code';
 import { harden } from 'rehype-harden';
 import { math } from '@streamdown/math';
-import { memo } from 'react';
+import { memo, type CSSProperties } from 'react';
 import { Streamdown, defaultRehypePlugins } from 'streamdown';
 import type { Element } from 'hast';
 import { EmojiIcon } from '../ui/EmojiIcon';
@@ -72,10 +72,12 @@ const PROSE_BASE =
 
 interface SlideMarkdownViewerProps {
 	slide: ParsedSlide;
+	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
 }
 
 export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 	slide,
+	contentPadding,
 }: SlideMarkdownViewerProps) {
 	const { content, directives } = slide;
 
@@ -87,15 +89,21 @@ export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 
 	// Override --slide-fg so that .prose inherits the directive color via
 	// `color: var(--slide-fg)` in the CSS — avoids fighting Tailwind prose specificity.
-	const colorStyle = directives.color
-		? ({ '--slide-fg': directives.color } as React.CSSProperties)
-		: undefined;
+	const outerStyle: CSSProperties = {};
+	if (directives.color) (outerStyle as Record<string, unknown>)['--slide-fg'] = directives.color;
+	if (contentPadding) {
+		if (contentPadding.top !== undefined) outerStyle.paddingTop = contentPadding.top;
+		if (contentPadding.right !== undefined) outerStyle.paddingRight = contentPadding.right;
+		if (contentPadding.bottom !== undefined) outerStyle.paddingBottom = contentPadding.bottom;
+		if (contentPadding.left !== undefined) outerStyle.paddingLeft = contentPadding.left;
+	}
+	const hasOuterStyle = Object.keys(outerStyle).length > 0 ? outerStyle : undefined;
 
 	// ── Split layout: two columns divided at the second ## heading ────────────
 	if (isSplit) {
 		const [left, right] = splitAtSecondH2(content);
 		return (
-			<div className="flex h-full overflow-hidden" style={colorStyle}>
+			<div className="flex h-full overflow-hidden" style={hasOuterStyle}>
 				<div className="flex-1 overflow-hidden">
 					<div className={cn(PROSE_BASE, 'px-6 py-5')}>
 						<SlideStreamdown value={left} />
@@ -117,7 +125,7 @@ export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 		return (
 			<div
 				className="h-full flex flex-col items-center justify-center text-center overflow-hidden"
-				style={colorStyle}
+				style={hasOuterStyle}
 			>
 				<div
 					className={cn(
@@ -135,7 +143,7 @@ export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 
 	// ── Default layout ────────────────────────────────────────────────────────
 	return (
-		<div style={colorStyle}>
+		<div style={hasOuterStyle}>
 			<div className={cn(PROSE_BASE, isBlank ? 'p-0' : 'px-8 py-6')}>
 				<SlideStreamdown value={content} />
 			</div>

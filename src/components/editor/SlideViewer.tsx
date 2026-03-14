@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { SlideMarkdownViewer } from './SlideMarkdownViewer';
-import { parseSlideDirectives } from '@/lib/slide';
-import type { ParsedSlide } from '@/lib/slide';
+import { SlideOverlay } from './SlideOverlay';
+import { parseSlideDirectives, resolveCustomTheme } from '@/lib/slide';
+import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ function splitSlides(content: string): string[] {
 const SLIDE_W = 960;
 const SLIDE_H = 540;
 
-// ── ScaledSlide ───────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 /**
  * Renders a single 960×540 slide canvas, scaled to `scale` and optionally
  * showing a slide number badge.  Theme and per-slide directives are both applied.
@@ -68,6 +69,7 @@ function ScaledSlide({
 	paginate,
 	slideNum,
 	total,
+	slideThemes,
 	origin = 'center center',
 	shadow = false,
 	rounded = false,
@@ -79,6 +81,7 @@ function ScaledSlide({
 	paginate: boolean;
 	slideNum: number;
 	total: number;
+	slideThemes?: SlideThemeMap;
 	origin?: string;
 	shadow?: boolean;
 	rounded?: boolean;
@@ -87,13 +90,33 @@ function ScaledSlide({
 }) {
 	const { directives } = slide;
 
-	// Per-slide background from <!-- bg: ... --> directive (overrides theme CSS)
-	const bgStyle: React.CSSProperties = {};
+	// Resolve custom theme from the map (null = use built-in CSS class instead)
+	const layoutClass = directives.classes[0] ?? '';
+	const customTheme = slideThemes ? resolveCustomTheme(slideThemes, theme, layoutClass) : null;
+
+	// Extract first heading for template variable substitution
+	const slideTitle = useMemo(() => {
+		const m = /^#+\s+(.+)$/m.exec(slide.content);
+		return m?.[1]?.trim() ?? '';
+	}, [slide.content]);
+
+	// Build canvas inline style: custom theme bg/fg first, then per-slide directive overrides
+	const canvasStyle: React.CSSProperties = {};
+	if (customTheme?.bg) {
+		canvasStyle.background = customTheme.bg;
+		canvasStyle.backgroundSize = 'cover';
+		canvasStyle.backgroundPosition = 'center';
+		canvasStyle.backgroundRepeat = 'no-repeat';
+	}
+	if (customTheme?.fg) {
+		(canvasStyle as Record<string, unknown>)['--slide-fg'] = customTheme.fg;
+	}
+	// Per-slide bg overrides custom theme bg
 	if (directives.bg) {
-		bgStyle.background = directives.bg;
-		bgStyle.backgroundSize = 'cover';
-		bgStyle.backgroundPosition = 'center';
-		bgStyle.backgroundRepeat = 'no-repeat';
+		canvasStyle.background = directives.bg;
+		canvasStyle.backgroundSize = 'cover';
+		canvasStyle.backgroundPosition = 'center';
+		canvasStyle.backgroundRepeat = 'no-repeat';
 	}
 
 	return (
@@ -104,18 +127,27 @@ function ScaledSlide({
 				transform: `scale(${String(scale)})`,
 				transformOrigin: origin,
 				flexShrink: 0,
-				...bgStyle,
+				...canvasStyle,
 			}}
 			className={cn(
 				'slide-canvas overflow-hidden',
-				`slide-theme-${theme}`,
+				// Only apply CSS theme class when not using a custom theme definition
+				customTheme ? undefined : `slide-theme-${theme}`,
 				directives.classes.includes('invert') && 'slide-layout-invert',
 				shadow && 'shadow-xl',
 				rounded && 'rounded-sm',
 				absolute && 'absolute top-0 left-0',
 			)}
 		>
-			<SlideMarkdownViewer slide={slide} />
+			<SlideMarkdownViewer slide={slide} contentPadding={customTheme?.contentPadding} />
+			{customTheme?.elements && customTheme.elements.length > 0 && (
+				<SlideOverlay
+					elements={customTheme.elements}
+					slideNum={slideNum}
+					total={total}
+					title={slideTitle}
+				/>
+			)}
 			{paginate && (
 				<div className="slide-number">
 					{slideNum} / {total}
@@ -124,8 +156,6 @@ function ScaledSlide({
 		</div>
 	);
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export interface SlideViewerProps {
 	value: string;
@@ -136,10 +166,13 @@ export interface SlideViewerProps {
 	/**
 	 * Deck-level theme applied to all slides.
 	 * Values: 'default' | 'dark' | 'corporate' | 'minimal' | 'gradient'
+	 * Or any key defined in .kumidocs.json slideThemes.
 	 */
 	theme?: string;
 	/** When true, each slide canvas shows a "N / total" badge in the bottom-right. */
 	paginate?: boolean;
+	/** Custom theme definitions loaded from .kumidocs.json via /api/me. */
+	slideThemes?: SlideThemeMap;
 }
 
 export function SlideViewer({
@@ -148,6 +181,7 @@ export function SlideViewer({
 	standalone = false,
 	theme = 'default',
 	paginate = false,
+	slideThemes,
 }: SlideViewerProps) {
 	// Parse slides once per value change
 	const parsedSlides = useMemo<ParsedSlide[]>(
@@ -332,6 +366,7 @@ export function SlideViewer({
 							paginate={paginate}
 							slideNum={i + 1}
 							total={total}
+							slideThemes={slideThemes}
 							origin="top left"
 						/>
 					</div>
@@ -359,6 +394,7 @@ export function SlideViewer({
 							paginate={paginate}
 							slideNum={index + 1}
 							total={total}
+							slideThemes={slideThemes}
 						/>
 					</div>
 				)}
@@ -390,6 +426,7 @@ export function SlideViewer({
 									paginate={paginate}
 									slideNum={i + 1}
 									total={total}
+									slideThemes={slideThemes}
 									origin="top left"
 									absolute
 								/>
@@ -408,6 +445,7 @@ export function SlideViewer({
 							paginate={paginate}
 							slideNum={index + 1}
 							total={total}
+							slideThemes={slideThemes}
 							shadow
 							rounded
 						/>

@@ -47,6 +47,74 @@ export function parseSlideDirectives(raw: string): ParsedSlide {
 	return { content: content.trim(), directives };
 }
 
+// ── Custom theme system ───────────────────────────────────────────────────────
+
+export type SlideThemeElement =
+	| {
+			type: 'rect';
+			fill: string;
+			left?: number;
+			right?: number;
+			width?: number;
+			top?: number;
+			bottom?: number;
+			height?: number;
+	  }
+	| {
+			type: 'text';
+			content: string;
+			color?: string;
+			fontSize?: number;
+			bold?: boolean;
+			align?: 'left' | 'center' | 'right';
+			left?: number;
+			right?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			centerY?: boolean;
+	  }
+	| {
+			type: 'image';
+			src: string;
+			opacity?: number;
+			left?: number;
+			right?: number;
+			width?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			height?: number;
+			centerY?: boolean;
+	  };
+
+export interface SlideThemeDef {
+	bg?: string;
+	fg?: string;
+	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
+	elements?: SlideThemeElement[];
+	layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
+}
+
+export type SlideThemeMap = Record<string, SlideThemeDef>;
+
+/** Resolve effective theme def for a slide, checking layout override first. */
+export function resolveCustomTheme(
+	map: SlideThemeMap,
+	themeName: string,
+	layoutClass: string,
+): Omit<SlideThemeDef, 'layouts'> | null {
+	const base = map[themeName];
+	if (!base) return null;
+	const layoutKey = layoutClass || 'default';
+	const override = base.layouts?.[layoutKey];
+	if (override) return override;
+	// Strip `layouts` from the base definition before returning
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { layouts: _layoutsOmit, ...baseDef } = base;
+	return baseDef;
+}
+
 /**
  * Split slide content into two columns for the 'split' layout.
  * Splits at the second top-level '## ' heading.

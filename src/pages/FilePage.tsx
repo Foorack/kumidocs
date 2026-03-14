@@ -48,7 +48,7 @@ export default function FilePage() {
 
 	const navigate = useNavigate();
 	const { reloadTree, autoSaveDelay } = useOutletContext<OutletCtx>();
-	const { user } = useUser();
+	const { user, slideThemes } = useUser();
 
 	const [content, setContent] = useState('');
 	const [savedContent, setSavedContent] = useState('');
@@ -616,6 +616,7 @@ export default function FilePage() {
 							filename={title}
 							theme={meta.theme}
 							paginate={meta.paginate}
+							slideThemes={slideThemes}
 						/>
 					) : (
 						<ScrollArea className="h-full">

@@ -87,11 +87,11 @@ Any `.md` with `slides: true` frontmatter is a slide deck.
 
 ```yaml
 ---
-emoji: 📄          # sidebar/tab icon (optional, defaults by type — see §6.2)
-description: ...   # subtitle shown in search results
-slides: true       # marks file as a slide deck (client-side rendered)
-theme: corporate   # deck-level slide theme name (built-in or custom); default: 'default'
-paginate: true     # show slide-number badge (N / total) on each canvas
+emoji: 📄 # sidebar/tab icon (optional, defaults by type — see §6.2)
+description: ... # subtitle shown in search results
+slides: true # marks file as a slide deck (client-side rendered)
+theme: corporate # deck-level slide theme name (built-in or custom); default: 'default'
+paginate: true # show slide-number badge (N / total) on each canvas
 ---
 ```
 
@@ -110,13 +110,13 @@ paginate: true     # show slide-number badge (N / total) on each canvas
 			"bg": "#ffffff",
 			"fg": "#1a1a1a",
 			"contentPadding": { "bottom": 36 },
-			"elements": [ ],
+			"elements": [],
 			"layouts": {
 				"title": {
 					"bg": "#003087",
 					"fg": "#ffffff",
 					"contentPadding": { "top": 80, "left": 60, "right": 60, "bottom": 60 },
-					"elements": [ ]
+					"elements": []
 				}
 			}
 		}
@@ -442,11 +442,11 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 
 HTML comments of the form `<!-- key: value -->` placed anywhere in a slide are parsed and stripped before rendering. They never appear in the output.
 
-| Directive | Effect |
-|---|---|
-| `<!-- class: title -->` | Apply a layout class to this slide (see §11.4) |
-| `<!-- bg: #003087 -->` | Override background for this slide (any valid CSS `background` value, including gradients and image URLs) |
-| `<!-- color: white -->` | Override text colour for this slide |
+| Directive               | Effect                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `<!-- class: title -->` | Apply a layout class to this slide (see §11.4)                                                            |
+| `<!-- bg: #003087 -->`  | Override background for this slide (any valid CSS `background` value, including gradients and image URLs) |
+| `<!-- color: white -->` | Override text colour for this slide                                                                       |
 
 Multiple directives can appear on the same slide. `bg` and `color` are per-slide overrides; they supplement the deck theme without replacing it.
 
@@ -454,15 +454,15 @@ Multiple directives can appear on the same slide. `bg` and `color` are per-slide
 
 Layout is set via `<!-- class: NAME -->`. One layout per slide.
 
-| Class | Description |
-|---|---|
-| *(none)* | Default: `px-8 py-6` padding, content flows top-to-bottom |
-| `title` | Full-height flex centre, `text-center`; h1 enlarged to 3.5 rem |
-| `section` | Full-height flex centre, `text-center`; h2 enlarged to 3.5 rem / 800 weight |
-| `center` | Full-height flex centre, `text-center`; normal heading sizes |
-| `split` | Two equal columns divided at the second `##` heading, with a vertical divider |
-| `blank` | `p-0` — content fills edge-to-edge (images, full-bleed graphics) |
-| `invert` | Swaps `--slide-bg` and `--slide-fg` relative to the active theme |
+| Class     | Description                                                                   |
+| --------- | ----------------------------------------------------------------------------- |
+| _(none)_  | Default: `px-8 py-6` padding, content flows top-to-bottom                     |
+| `title`   | Full-height flex centre, `text-center`; h1 enlarged to 3.5 rem                |
+| `section` | Full-height flex centre, `text-center`; h2 enlarged to 3.5 rem / 800 weight   |
+| `center`  | Full-height flex centre, `text-center`; normal heading sizes                  |
+| `split`   | Two equal columns divided at the second `##` heading, with a vertical divider |
+| `blank`   | `p-0` — content fills edge-to-edge (images, full-bleed graphics)              |
+| `invert`  | Swaps `--slide-bg` and `--slide-fg` relative to the active theme              |
 
 ### 11.5 Slide Themes
 
@@ -470,13 +470,13 @@ Layout is set via `<!-- class: NAME -->`. One layout per slide.
 
 Set via `theme:` in the deck's frontmatter. Applied as a CSS class `.slide-theme-{name}` on the canvas element.
 
-| Name | Background | Foreground |
-|---|---|---|
-| `default` | App background (follows light/dark mode) | App foreground |
-| `dark` | Near-black `oklch(0.13 0 0)` | Light grey `oklch(0.93 0 0)` |
-| `corporate` | Navy `#1a2744` | Soft blue-white `#e8edf8` |
-| `minimal` | Off-white `oklch(0.96 0.005 240)` | Near-black `oklch(0.18 0.01 240)` |
-| `gradient` | Indigo → violet → pink diagonal gradient | White |
+| Name        | Background                               | Foreground                        |
+| ----------- | ---------------------------------------- | --------------------------------- |
+| `default`   | App background (follows light/dark mode) | App foreground                    |
+| `dark`      | Near-black `oklch(0.13 0 0)`             | Light grey `oklch(0.93 0 0)`      |
+| `corporate` | Navy `#1a2744`                           | Soft blue-white `#e8edf8`         |
+| `minimal`   | Off-white `oklch(0.96 0.005 240)`        | Near-black `oklch(0.18 0.01 240)` |
+| `gradient`  | Indigo → violet → pink diagonal gradient | White                             |
 
 All themes set `--slide-bg` and `--slide-fg` CSS custom properties on `.slide-canvas`. Tailwind's `.prose` is forced to `color: var(--slide-fg)` on the canvas so theme foreground colours are never overridden by prose defaults.
 
@@ -490,24 +490,24 @@ When a deck specifies `theme: my-corp`, `ScaledSlide` first checks `slideThemes`
 
 ```typescript
 interface SlideThemeDef {
-  /** Canvas background CSS value (color, gradient, …). */
-  bg?: string;
-  /** Canvas foreground / text color. Sets --slide-fg. */
-  fg?: string;
-  /**
-   * Inset the markdown content area to avoid overlap with overlay elements.
-   * Values in px relative to the 960×540 canvas.
-   */
-  contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
-  /** Overlay elements rendered on top of slide content. In z-order (first = bottom). */
-  elements?: SlideThemeElement[];
-  /**
-   * Per-layout overrides. Key = layout class name ('title', 'section', 'split', …
-   * or 'default' for slides with no class directive).
-   * A matching layout entry COMPLETELY REPLACES the base theme for that slide
-   * (bg, fg, contentPadding, elements are all replaced).
-   */
-  layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
+	/** Canvas background CSS value (color, gradient, …). */
+	bg?: string;
+	/** Canvas foreground / text color. Sets --slide-fg. */
+	fg?: string;
+	/**
+	 * Inset the markdown content area to avoid overlap with overlay elements.
+	 * Values in px relative to the 960×540 canvas.
+	 */
+	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
+	/** Overlay elements rendered on top of slide content. In z-order (first = bottom). */
+	elements?: SlideThemeElement[];
+	/**
+	 * Per-layout overrides. Key = layout class name ('title', 'section', 'split', …
+	 * or 'default' for slides with no class directive).
+	 * A matching layout entry COMPLETELY REPLACES the base theme for that slide
+	 * (bg, fg, contentPadding, elements are all replaced).
+	 */
+	layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
 }
 ```
 
@@ -515,42 +515,56 @@ interface SlideThemeDef {
 
 ```typescript
 type SlideThemeElement =
-  | {
-      type: 'rect';
-      fill: string;             // CSS color
-      // Position: at least one horizontal + one vertical anchor required
-      left?: number; right?: number; width?: number;   // px on 960-wide canvas
-      top?: number;  bottom?: number; height?: number; // px on 540-high canvas
-      // Omit width/height and set both left+right (or top+bottom) to span full axis
-    }
-  | {
-      type: 'text';
-      content: string;          // supports template variables (see below)
-      color?: string;
-      fontSize?: number;        // px, default 12
-      bold?: boolean;
-      align?: 'left' | 'center' | 'right'; // default 'left'
-      left?: number; right?: number; centerX?: boolean;
-      top?: number;  bottom?: number; centerY?: boolean;
-    }
-  | {
-      type: 'image';
-      src: string;              // data: URI (base64) or absolute URL
-      opacity?: number;         // 0–1, default 1
-      left?: number; right?: number; width?: number;  centerX?: boolean;
-      top?: number;  bottom?: number; height?: number; centerY?: boolean;
-    };
+	| {
+			type: 'rect';
+			fill: string; // CSS color
+			// Position: at least one horizontal + one vertical anchor required
+			left?: number;
+			right?: number;
+			width?: number; // px on 960-wide canvas
+			top?: number;
+			bottom?: number;
+			height?: number; // px on 540-high canvas
+			// Omit width/height and set both left+right (or top+bottom) to span full axis
+	  }
+	| {
+			type: 'text';
+			content: string; // supports template variables (see below)
+			color?: string;
+			fontSize?: number; // px, default 12
+			bold?: boolean;
+			align?: 'left' | 'center' | 'right'; // default 'left'
+			left?: number;
+			right?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			centerY?: boolean;
+	  }
+	| {
+			type: 'image';
+			src: string; // data: URI (base64) or absolute URL
+			opacity?: number; // 0–1, default 1
+			left?: number;
+			right?: number;
+			width?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			height?: number;
+			centerY?: boolean;
+	  };
 ```
 
 **Template variables** in `text` content:
 
-| Variable | Expands to |
-|---|---|
-| `{{slideNum}}` | Current slide number (1-based) |
-| `{{slideTotal}}` | Total slide count |
-| `{{date}}` | Today's date, `YYYY-MM-DD` |
-| `{{date:FORMAT}}` | Today's date with custom format (e.g. `YYYY.MM.DD`) |
-| `{{title}}` | First `#` heading on the current slide, or empty string |
+| Variable          | Expands to                                              |
+| ----------------- | ------------------------------------------------------- |
+| `{{slideNum}}`    | Current slide number (1-based)                          |
+| `{{slideTotal}}`  | Total slide count                                       |
+| `{{date}}`        | Today's date, `YYYY-MM-DD`                              |
+| `{{date:FORMAT}}` | Today's date with custom format (e.g. `YYYY.MM.DD`)     |
+| `{{title}}`       | First `#` heading on the current slide, or empty string |
 
 **Positioning model** (all values in px on the 960×540 canvas):
 
@@ -591,13 +605,13 @@ If a slide's layout class has no matching entry in `layouts`, the base theme (`b
 
 `SlideMarkdownViewer` applies slide-optimised prose:
 
-| Element | Size |
-|---|---|
-| Body / lists | 1.2 rem |
-| h3 | 1.5 rem |
-| h2 | 2 rem |
-| h1 | 2.75 rem |
-| title-layout h1 | 3.5 rem |
+| Element           | Size                 |
+| ----------------- | -------------------- |
+| Body / lists      | 1.2 rem              |
+| h3                | 1.5 rem              |
+| h2                | 2 rem                |
+| h1                | 2.75 rem             |
+| title-layout h1   | 3.5 rem              |
 | section-layout h2 | 3.5 rem / 800 weight |
 
 All heading and body colours use `color: inherit` so theme and directive colours cascade correctly.
