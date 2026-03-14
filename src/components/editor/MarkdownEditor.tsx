@@ -652,7 +652,6 @@ export function MarkdownEditor({
 						<DialogTitle>Page properties</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4 mt-2">
-
 						{/* Presentation mode */}
 						<div className="flex items-center gap-2">
 							<Checkbox
