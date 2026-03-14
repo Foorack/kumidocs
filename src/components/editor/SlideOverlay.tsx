@@ -79,8 +79,9 @@ function computePositionStyle(el: SlideThemeElement): React.CSSProperties {
 function interpolate(
 	template: string,
 	vars: { slideNum: number; slideTotal: number; title: string },
+	customVars?: Record<string, string>,
 ): string {
-	return template
+	let result = template
 		.replace(/\{\{slideNum\}\}/g, String(vars.slideNum))
 		.replace(/\{\{slideTotal\}\}/g, String(vars.slideTotal))
 		.replace(/\{\{title\}\}/g, vars.title)
@@ -92,6 +93,12 @@ function interpolate(
 				.replace(/DD/g, String(now.getDate()).padStart(2, '0'));
 		})
 		.replace(/\{\{date\}\}/g, new Date().toISOString().slice(0, 10));
+	if (customVars) {
+		for (const [k, v] of Object.entries(customVars)) {
+			result = result.replaceAll(`{{${k}}}`, v);
+		}
+	}
+	return result;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -101,9 +108,11 @@ interface SlideOverlayProps {
 	slideNum: number;
 	total: number;
 	title: string;
+	/** User-defined theme variables from frontmatter (theme-var-* fields) */
+	themeVars?: Record<string, string>;
 }
 
-export function SlideOverlay({ elements, slideNum, total, title }: SlideOverlayProps) {
+export function SlideOverlay({ elements, slideNum, total, title, themeVars }: SlideOverlayProps) {
 	return (
 		<>
 			{elements.map((el, i) => {
@@ -114,7 +123,11 @@ export function SlideOverlay({ elements, slideNum, total, title }: SlideOverlayP
 				}
 
 				if (el.type === 'text') {
-					const text = interpolate(el.content, { slideNum, slideTotal: total, title });
+					const text = interpolate(
+						el.content,
+						{ slideNum, slideTotal: total, title },
+						themeVars,
+					);
 					return (
 						<div
 							key={i}

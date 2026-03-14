@@ -74,6 +74,7 @@ export function ScaledSlide({
 	slideNum,
 	total,
 	slideThemes,
+	themeVars,
 	origin = 'center center',
 	shadow = false,
 	rounded = false,
@@ -86,6 +87,7 @@ export function ScaledSlide({
 	slideNum: number;
 	total: number;
 	slideThemes?: SlideThemeMap;
+	themeVars?: Record<string, string>;
 	origin?: string;
 	shadow?: boolean;
 	rounded?: boolean;
@@ -158,6 +160,7 @@ export function ScaledSlide({
 					slideNum={slideNum}
 					total={total}
 					title={slideTitle}
+					themeVars={themeVars}
 				/>
 			)}
 			{paginate && (
@@ -185,6 +188,8 @@ export interface SlideViewerProps {
 	paginate?: boolean;
 	/** Custom theme definitions loaded from .kumidocs.json via /api/me. */
 	slideThemes?: SlideThemeMap;
+	/** User-defined variables from frontmatter (theme-var-* fields) substituted into theme element content */
+	themeVars?: Record<string, string>;
 }
 
 export function SlideViewer({
@@ -194,6 +199,7 @@ export function SlideViewer({
 	theme = 'default',
 	paginate = false,
 	slideThemes,
+	themeVars,
 }: SlideViewerProps) {
 	// Parse slides once per value change
 	const parsedSlides = useMemo<ParsedSlide[]>(
@@ -382,6 +388,7 @@ export function SlideViewer({
 							slideNum={i + 1}
 							total={total}
 							slideThemes={slideThemes}
+							themeVars={themeVars}
 							origin="top left"
 						/>
 					</div>
@@ -426,6 +433,7 @@ export function SlideViewer({
 							slideNum={index + 1}
 							total={total}
 							slideThemes={slideThemes}
+							themeVars={themeVars}
 						/>
 						{/* Laser pointer dot */}
 						{pointerVisible && (
@@ -550,6 +558,7 @@ export function SlideViewer({
 									slideNum={i + 1}
 									total={total}
 									slideThemes={slideThemes}
+									themeVars={themeVars}
 									origin="top left"
 									absolute
 								/>
@@ -569,6 +578,7 @@ export function SlideViewer({
 							slideNum={index + 1}
 							total={total}
 							slideThemes={slideThemes}
+							themeVars={themeVars}
 							shadow
 							rounded
 						/>

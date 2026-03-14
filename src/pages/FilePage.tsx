@@ -642,6 +642,7 @@ export default function FilePage() {
 							slideTheme={meta.theme}
 							slidePaginate={meta.paginate}
 							slideThemes={slideThemes}
+							slideThemeVars={meta.themeVars}
 							onMetaChange={(m) => {
 								metaRef.current = m;
 								setMeta(m);
@@ -654,6 +655,7 @@ export default function FilePage() {
 							theme={meta.theme}
 							paginate={meta.paginate}
 							slideThemes={slideThemes}
+							themeVars={meta.themeVars}
 						/>
 					) : (
 						<ScrollArea className="h-full">

@@ -15,6 +15,8 @@ export interface PageMeta {
 	theme?: string;
 	/** When true, slide numbers are shown on each slide canvas */
 	paginate?: boolean;
+	/** Custom variables substituted into theme element content strings via {{key}} */
+	themeVars?: Record<string, string>;
 }
 
 /** Parse only the whitelisted KumiDocs frontmatter fields from a raw markdown string. */
@@ -25,13 +27,19 @@ export function parseFrontmatter(raw: string): { data: PageMeta; content: string
 	const content = raw.slice(match[0].length);
 	const data: PageMeta = {};
 	for (const line of block.split('\n')) {
-		const kv = /^(\w+):\s*(.*)$/.exec(line.trim());
+		const kv = /^([\w-]+):\s*(.*)$/.exec(line.trim());
 		if (!kv) continue;
-		const [, key, val = ''] = kv;
+		const key = kv[1];
+		const val = kv[2] ?? '';
+		if (!key) continue;
 		if (key === 'emoji') data.emoji = val.trim();
 		if (key === 'slides' && val.trim() === 'true') data.slides = true;
 		if (key === 'theme') data.theme = val.trim();
 		if (key === 'paginate' && val.trim() === 'true') data.paginate = true;
+		if (key.startsWith('theme-var-')) {
+			const varName = key.slice('theme-var-'.length);
+			if (varName) (data.themeVars ??= {})[varName] = val.trim();
+		}
 	}
 	return { data, content };
 }
@@ -43,6 +51,11 @@ export function buildFrontmatter(meta: PageMeta): string {
 	if (meta.slides) lines.push('slides: true');
 	if (meta.theme && meta.theme !== 'default') lines.push(`theme: ${meta.theme}`);
 	if (meta.paginate) lines.push('paginate: true');
+	if (meta.themeVars) {
+		for (const [k, v] of Object.entries(meta.themeVars)) {
+			lines.push(`theme-var-${k}: ${v}`);
+		}
+	}
 	if (lines.length === 0) return '';
 	return `---\n${lines.join('\n')}\n---\n`;
 }

@@ -196,6 +196,7 @@ interface MarkdownEditorProps {
 	slideTheme?: string;
 	slidePaginate?: boolean;
 	slideThemes?: SlideThemeMap;
+	slideThemeVars?: Record<string, string>;
 	onMetaChange?: (meta: PageMeta) => void;
 }
 
@@ -218,6 +219,7 @@ export function MarkdownEditor({
 	slideTheme,
 	slidePaginate,
 	slideThemes,
+	slideThemeVars,
 	onMetaChange,
 }: MarkdownEditorProps) {
 	const taRef = useRef<HTMLTextAreaElement>(null);
@@ -739,6 +741,7 @@ export function MarkdownEditor({
 								theme={slideTheme}
 								paginate={slidePaginate}
 								slideThemes={slideThemes}
+								themeVars={slideThemeVars}
 							/>
 						) : (
 							<div ref={previewRef} className="h-full overflow-y-auto">
