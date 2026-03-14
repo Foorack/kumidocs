@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+	ArrowLeft,
 	BookOpen,
 	ChevronLeft,
 	ChevronRight,
@@ -7,7 +8,9 @@ import {
 	ImageDown,
 	Maximize,
 	Minimize,
+	Mouse,
 	Spotlight,
+	Square,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { SlideMarkdownViewer } from './SlideMarkdownViewer';
@@ -401,7 +404,10 @@ export function SlideViewer({
 							pointerVisible ? 'cursor-none' : 'cursor-default',
 						)}
 						onClick={() => {
-							if (spotlightMenu) { setSpotlightMenu(null); return; }
+							if (spotlightMenu) {
+								setSpotlightMenu(null);
+								return;
+							}
 							next();
 						}}
 						onMouseMove={(e) => {
@@ -435,7 +441,7 @@ export function SlideViewer({
 									borderRadius: '50%',
 									backgroundColor: 'rgba(255, 30, 30, 0.92)',
 									boxShadow:
-										'0 0 6px 3px rgba(255, 60, 60, 0.8), 0 0 18px 6px rgba(255, 0, 0, 0.45)',
+										'0 0 10px 8px rgba(255, 60, 60, 0.85), 0 0 36px 16px rgba(255, 0, 0, 0.5)',
 									pointerEvents: 'none',
 									zIndex: 10000,
 								}}
@@ -444,38 +450,71 @@ export function SlideViewer({
 						{/* Right-click menu — rendered inside fullscreen element so it's visible */}
 						{spotlightMenu && (
 							<div
-								style={{ position: 'fixed', left: spotlightMenu.x, top: spotlightMenu.y, zIndex: 10001 }}
+								style={{
+									position: 'fixed',
+									left: spotlightMenu.x,
+									top: spotlightMenu.y,
+									zIndex: 10001,
+								}}
 								className="min-w-[200px] rounded-md border border-border bg-popover text-popover-foreground shadow-lg py-1 text-sm"
-								onClick={(e) => { e.stopPropagation(); }}
+								onClick={(e) => {
+									e.stopPropagation();
+								}}
 							>
 								<button
 									type="button"
-									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm"
-									onClick={() => { document.exitFullscreen().catch(() => undefined); setSpotlightMenu(null); }}
+									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+									onClick={() => {
+										document.exitFullscreen().catch(() => undefined);
+										setSpotlightMenu(null);
+									}}
 								>
+									<Minimize size={14} />
 									Exit fullscreen
+								</button>
+								<button
+									type="button"
+									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+									onClick={() => {
+										window.location.reload();
+									}}
+								>
+									<Square size={14} className="invisible" />
+									Refresh
 								</button>
 								<div className="my-1 border-t border-border" />
 								<button
 									type="button"
-									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm"
-									onClick={() => { window.location.reload(); }}
+									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+									onClick={() => {
+										prev();
+										setSpotlightMenu(null);
+									}}
 								>
-									Refresh
+									<ArrowLeft size={14} />
+									Previous
 								</button>
 								<button
 									type="button"
-									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm"
-									onClick={() => { setIndex(0); setSpotlightMenu(null); }}
+									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+									onClick={() => {
+										setIndex(0);
+										setSpotlightMenu(null);
+									}}
 								>
+									<Square size={14} className="invisible" />
 									Go to start
 								</button>
 								<div className="my-1 border-t border-border" />
 								<button
 									type="button"
-									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm"
-									onClick={() => { setPointerVisible((v) => !v); setSpotlightMenu(null); }}
+									className="w-full text-left px-3 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm flex items-center gap-2"
+									onClick={() => {
+										setPointerVisible((v) => !v);
+										setSpotlightMenu(null);
+									}}
 								>
+									<Mouse size={14} />
 									{pointerVisible ? 'Hide laser pointer' : 'Show laser pointer'}
 								</button>
 							</div>
@@ -638,6 +677,8 @@ export function SlideViewer({
 					>
 						<Spotlight className="w-4 h-4" />
 					</Button>
+
+					<div className="w-px h-4 bg-border mx-1" />
 
 					<Button
 						variant="ghost"
