@@ -15,19 +15,19 @@ Developer-focused wiki/docs platform. Zero database — all content in a single 
 
 ## 2. Tech Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Runtime | **Bun** | Server + build + git |
-| Frontend | **React + TypeScript** | SPA |
-| Styling | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** | |
-| Icons | **@fluentui/react-icons** + **lucide-react** | Fluent for app chrome; lucide for SlideViewer controls |
-| Markdown editor | **Custom split-pane** | Textarea + live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
-| Markdown viewer | **streamdown** | remark/rehype → React DOM. Built-in `rehype-harden` sanitisation. |
-| Slides | **Custom SlideViewer** | React, 960×540 canvas, CSS scale |
-| Code editor | **@uiw/react-codemirror** | `@uiw/codemirror-extensions-langs` + `@uiw/codemirror-theme-github` |
-| Search | **MiniSearch** | In-memory, full-text, fuzzy |
-| Real-time | **WebSocket** (Bun native) | Presence + live reload |
-| Deployment | **Bun process + Docker volume** | |
+| Layer           | Choice                                                 | Notes                                                                                                              |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Runtime         | **Bun**                                                | Server + build + git                                                                                               |
+| Frontend        | **React + TypeScript**                                 | SPA                                                                                                                |
+| Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                    |
+| Icons           | **@fluentui/react-icons** + **lucide-react**           | Fluent for app chrome; lucide for SlideViewer controls                                                             |
+| Markdown editor | **Custom split-pane**                                  | Textarea + live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
+| Markdown viewer | **streamdown**                                         | remark/rehype → React DOM. Built-in `rehype-harden` sanitisation.                                                  |
+| Slides          | **Custom SlideViewer**                                 | React, 960×540 canvas, CSS scale                                                                                   |
+| Code editor     | **@uiw/react-codemirror**                              | `@uiw/codemirror-extensions-langs` + `@uiw/codemirror-theme-github`                                                |
+| Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy                                                                                        |
+| Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                             |
+| Deployment      | **Bun process + Docker volume**                        |                                                                                                                    |
 
 ---
 
@@ -36,6 +36,7 @@ Developer-focused wiki/docs platform. Zero database — all content in a single 
 Repo is **mounted as a Docker volume**. KumiDocs does not clone it. Remote/auth/branch come from `.git/config`.
 
 **Env vars:**
+
 ```
 KUMIDOCS_REPO_PATH        (required) Absolute path to mounted git repo
 KUMIDOCS_PORT             (default: 3000)
@@ -65,11 +66,11 @@ images/                → uploaded images (SHA256.ext naming)
 
 ```yaml
 ---
-emoji: 📄           # sidebar/tab icon (optional)
-description: ...    # shown in search results
-slides: true        # marks file as slide deck
-theme: corporate    # deck-level theme (built-in or .kumidocs.json key); default: 'default'
-paginate: true      # show N/total badge on each slide
+emoji: 📄 # sidebar/tab icon (optional)
+description: ... # shown in search results
+slides: true # marks file as slide deck
+theme: corporate # deck-level theme (built-in or .kumidocs.json key); default: 'default'
+paginate: true # show N/total badge on each slide
 ---
 ```
 
@@ -81,9 +82,13 @@ paginate: true      # show N/total badge on each slide
 
 ```json
 {
-  "instanceName": "KumiDocs",
-  "editors": ["alice@example.com"],
-  "slideThemes": { "my-corp": { /* SlideThemeDef */ } }
+	"instanceName": "KumiDocs",
+	"editors": ["alice@example.com"],
+	"slideThemes": {
+		"my-corp": {
+			/* SlideThemeDef */
+		}
+	}
 }
 ```
 
@@ -98,6 +103,7 @@ paginate: true      # show N/total badge on each slide
 Header value = email address or JWT (detected by exactly two `.` separators — no signature validation).
 
 **JWT email resolution** (first non-empty wins):
+
 1. `email` claim
 2. `preferred_username` claim
 
@@ -135,6 +141,7 @@ Right-click context menu: Create subpage, Create alongside, Move/Rename.
 Top `⋯` dropdown: **Image library** (`/images`), **Theme library** (`/t`).
 
 **Page icons (default, overridable via `emoji` frontmatter):**
+
 - Markdown: `FluentColorTextBulletListSquare`
 - Slides: `FluentColorSlideTextSparkle`
 - Code: language icon or generic fallback
@@ -158,11 +165,11 @@ Read-only Streamdown render → React DOM. XSS via `rehype-harden`. `prose prose
 
 Every save = git commit + immediate push.
 
-| Trigger | Commit message |
-|---|---|
-| Ctrl+S | `docs(<path>): save by <displayName>` |
-| Auto-save (5s debounce) | `docs(<path>): auto-save by <displayName>` |
-| WS disconnect | `docs(<path>): auto-save on disconnect by <displayName>` |
+| Trigger                 | Commit message                                           |
+| ----------------------- | -------------------------------------------------------- |
+| Ctrl+S                  | `docs(<path>): save by <displayName>`                    |
+| Auto-save (5s debounce) | `docs(<path>): auto-save by <displayName>`               |
+| WS disconnect           | `docs(<path>): auto-save on disconnect by <displayName>` |
 
 Save status in page header: **Saved** (green check) / **Saving…** (spinner) / **Unsaved changes** (amber dot). Footer: `Last saved: <N>s ago · <SHA>`.
 
@@ -239,6 +246,7 @@ CodeMirror with language packs (by extension) + github light/dark themes. Same e
 Fully client-side. Slides split on `---` (fence-aware). Canvas 960×540 (`SLIDE_W`/`SLIDE_H`), CSS `scale()` to fit container, calculated via `ResizeObserver`. Scale: `Math.min((w-192)/960, (h-96)/540)`.
 
 **Viewing modes:**
+
 - **Scroll** (default in editor): all slides vertical, smooth-scroll to active.
 - **Paginate**: single slide + prev/next + progress bar.
 - **Spotlight**: `fixed inset-0 z-[9999] bg-black`, requests browser fullscreen, click = next.
@@ -252,35 +260,35 @@ Controls bar: slide count / prev·counter·next; `Maximize`/`Minimize`, `Spotlig
 
 `<!-- key: value -->` — parsed and stripped before rendering.
 
-| Directive | Effect |
-|---|---|
-| `<!-- class: title -->` | Apply layout class |
-| `<!-- bg: #003087 -->` | Override background (any CSS `background` value) |
-| `<!-- color: white -->` | Override text colour |
+| Directive               | Effect                                           |
+| ----------------------- | ------------------------------------------------ |
+| `<!-- class: title -->` | Apply layout class                               |
+| `<!-- bg: #003087 -->`  | Override background (any CSS `background` value) |
+| `<!-- color: white -->` | Override text colour                             |
 
 ### 11.3 Layout Classes
 
-| Class | Description |
-|---|---|
-| _(none)_ | Default: `px-8 py-6`, top-to-bottom flow |
-| `title` | Full-height flex centre, `text-center`, h1 = 3.5rem |
+| Class     | Description                                                      |
+| --------- | ---------------------------------------------------------------- |
+| _(none)_  | Default: `px-8 py-6`, top-to-bottom flow                         |
+| `title`   | Full-height flex centre, `text-center`, h1 = 3.5rem              |
 | `section` | Full-height flex centre, `text-center`, h2 = 3.5rem / 800 weight |
-| `center` | Full-height flex centre, `text-center`, normal heading sizes |
-| `split` | Two equal columns at second `##`, vertical divider |
-| `blank` | `p-0` — full-bleed |
-| `invert` | Swaps `--slide-bg` / `--slide-fg` |
+| `center`  | Full-height flex centre, `text-center`, normal heading sizes     |
+| `split`   | Two equal columns at second `##`, vertical divider               |
+| `blank`   | `p-0` — full-bleed                                               |
+| `invert`  | Swaps `--slide-bg` / `--slide-fg`                                |
 
 ### 11.4 Slide Themes
 
 **Built-in** (CSS class `.slide-theme-{name}` on canvas):
 
-| Name | Background | Foreground |
-|---|---|---|
-| `default` | App bg (follows site light/dark) | App fg |
-| `dark` | `oklch(0.13 0 0)` | `oklch(0.93 0 0)` |
-| `corporate` | Navy `#1a2744` | `#e8edf8` |
-| `minimal` | `oklch(0.96 0.005 240)` | `oklch(0.18 0.01 240)` |
-| `gradient` | Indigo→violet→pink diagonal | White |
+| Name        | Background                       | Foreground             |
+| ----------- | -------------------------------- | ---------------------- |
+| `default`   | App bg (follows site light/dark) | App fg                 |
+| `dark`      | `oklch(0.13 0 0)`                | `oklch(0.93 0 0)`      |
+| `corporate` | Navy `#1a2744`                   | `#e8edf8`              |
+| `minimal`   | `oklch(0.96 0.005 240)`          | `oklch(0.18 0.01 240)` |
+| `gradient`  | Indigo→violet→pink diagonal      | White                  |
 
 **Dark/light isolation:** `ScaledSlide` always stamps `.dark` or `.light` on `.slide-canvas`. Logic: custom theme → `isBgDark(bg)` (from `src/lib/slide.ts`); built-in → `DARK_BUILT_IN_THEMES.has(theme)` or `(theme==='default' && siteTheme==='dark')`. `.light {}` CSS block mirrors `:root` light-mode vars. This fully isolates slide tokens from site dark mode.
 
@@ -288,21 +296,51 @@ Controls bar: slide count / prev·counter·next; `Maximize`/`Minimize`, `Spotlig
 
 ```typescript
 interface SlideThemeDef {
-  bg?: string;           // CSS background value
-  fg?: string;           // sets --slide-fg
-  contentPadding?: { top?: number; right?: number; bottom?: number; left?: number }; // px on 960×540
-  elements?: SlideThemeElement[];  // overlay elements, in z-order
-  layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;  // per-layout FULL overrides
+	bg?: string; // CSS background value
+	fg?: string; // sets --slide-fg
+	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number }; // px on 960×540
+	elements?: SlideThemeElement[]; // overlay elements, in z-order
+	layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>; // per-layout FULL overrides
 }
 
 type SlideThemeElement =
-  | { type: 'rect'; fill: string; left?: number; right?: number; width?: number;
-      top?: number; bottom?: number; height?: number }
-  | { type: 'text'; content: string; color?: string; fontSize?: number; bold?: boolean;
-      align?: 'left'|'center'|'right'; left?: number; right?: number; centerX?: boolean;
-      top?: number; bottom?: number; centerY?: boolean }
-  | { type: 'image'; src: string; opacity?: number; left?: number; right?: number;
-      width?: number; centerX?: boolean; top?: number; bottom?: number; height?: number; centerY?: boolean };
+	| {
+			type: 'rect';
+			fill: string;
+			left?: number;
+			right?: number;
+			width?: number;
+			top?: number;
+			bottom?: number;
+			height?: number;
+	  }
+	| {
+			type: 'text';
+			content: string;
+			color?: string;
+			fontSize?: number;
+			bold?: boolean;
+			align?: 'left' | 'center' | 'right';
+			left?: number;
+			right?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			centerY?: boolean;
+	  }
+	| {
+			type: 'image';
+			src: string;
+			opacity?: number;
+			left?: number;
+			right?: number;
+			width?: number;
+			centerX?: boolean;
+			top?: number;
+			bottom?: number;
+			height?: number;
+			centerY?: boolean;
+	  };
 ```
 
 **Positioning:** all px on 960×540. Left/right/top/bottom = distance from edge. `centerX/centerY = true` centres. Setting both edges (e.g. `left:0, right:0`) spans full axis.
@@ -337,6 +375,7 @@ MiniSearch, server-side index. Fields: `title`, `path`, `content` (md stripped),
 Slim top bar (Logo, Search Ctrl+K, User avatar) + left sidebar + main content. Page header: emoji + title, Edit/Done button, `···` overflow menu, viewer `AvatarGroup`. Page footer: `Last saved: <N>s ago · <SHA>`.
 
 **`···` overflow menu (`PageMenuItems` component):**
+
 - Open in new tab / Copy link / Export as PDF (doc view mode only) / Move / Delete
 - New subpage, New alongside, Duplicate — shown only in sidebar menus (not FilePage header)
 
@@ -412,21 +451,24 @@ styles/globals.css
 ## 16. Implementation Phases
 
 ### ✅ Phase 1 — Foundation
+
 Bun server, git ops, in-memory filestore, WebSocket presence, REST API, React SPA shell.
 
 ### ✅ Phase 2 — Editor Core
+
 Custom split-pane editor, Streamdown view, save flow, edit-lock, dark mode.
 
 ### ✅ Phase 3 — UI Polish
+
 Sidebar (auto-gen, Confluence hierarchy, ghost pages, icons, presence dots), search palette, toasts, create/delete/move/duplicate pages, PDF export (markdown), presence avatars, drag-drop images, image library, resizable sidebar.
 
 ### ✅ Phase 4 — Slides & Code
+
 Slide viewer (scroll/paginate/spotlight/fullscreen), PDF export (slides), CodeMirror code editor, slide directive/layout/theme system (5 built-in themes + custom via `.kumidocs.json`), overlay element renderer, layout overrides, template variables, `contentPadding`, `.dark`/`.light` canvas isolation, Theme Library page.
 
 ### 🔲 Phase 5 — TBD
+
 - Marp/server-side PDF export (Playwright) — deferred to v2
 - LSP / autocomplete in code editor — deferred to v2
 
-
 ---
-

@@ -163,7 +163,9 @@ export default function ThemeLibraryPage() {
 							name={t.name}
 							description={t.description}
 							slideThemes={slideThemes}
-						onClick={() => { setActive({ id: t.id, name: t.name }); }}
+							onClick={() => {
+								setActive({ id: t.id, name: t.name });
+							}}
 						/>
 					))}
 				</div>
@@ -188,7 +190,9 @@ export default function ThemeLibraryPage() {
 									description={def.bg ?? 'Custom theme'}
 									custom={def}
 									slideThemes={slideThemes}
-							onClick={() => { setActive({ id, name: id, custom: def }); }}
+									onClick={() => {
+										setActive({ id, name: id, custom: def });
+									}}
 								/>
 							))}
 						</div>
@@ -219,7 +223,9 @@ export default function ThemeLibraryPage() {
 						</div>
 						<button
 							type="button"
-							onClick={() => { setActive(null); }}
+							onClick={() => {
+								setActive(null);
+							}}
 							className="rounded-sm opacity-70 hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						>
 							<X className="size-4" />
