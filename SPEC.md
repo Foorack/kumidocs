@@ -1,873 +1,432 @@
-# KumiDocs — Specification v0.5
+# KumiDocs — Specification v0.6
 
-> Last updated: 2026-03-14 · Status: **FINALIZED — ready for implementation**
+> Last updated: 2026-03-14 · Status: **Phase 4 complete — Phase 5 pending**
 
 ---
 
 ## 1. Overview
 
-KumiDocs is a developer-focused wiki/docs platform inspired by **Docmost** (visual layout reference — sidebar-left, slim header, content-right), with zero database. All content is stored exclusively in a single Git repository.
+Developer-focused wiki/docs platform. Zero database — all content in a single Git repo. Inspired by Docmost (layout reference). Target: developers, 3–20 concurrent users.
 
-- **One instance = one Git repo**
-- Target users: developers, 3–20 concurrent users
 - Primary content: Markdown pages (YAML frontmatter)
-- Secondary content: Slide decks (`slides: true` frontmatter)
-- Also supported: Code files (viewed/edited with syntax highlighting)
+- Secondary content: Slide decks (`slides: true`), Code files
 
 ---
 
 ## 2. Tech Stack
 
-| Layer           | Choice                                                 | Notes                                                                                                                                      |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Runtime         | **Bun**                                                | Server + build + git                                                                                                                       |
-| Frontend        | **React + TypeScript**                                 | SPA                                                                                                                                        |
-| Styling         | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** |                                                                                                                                            |
-| Icons           | **@fluentui/react-icons** + **lucide-react**           | Fluent icons for app chrome; lucide-react for SlideViewer controls. No other Fluent/MS components.                                         |
-| Markdown editor | **Custom split-pane editor**                           | Bespoke React textarea editor with live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
-| Markdown viewer | **streamdown**                                         | React component on remark/rehype. Renders md → React DOM directly in the page. Built-in `rehype-harden` sanitisation.                      |
-| Slides          | **Custom client-side SlideViewer**                     | React + MarkdownViewer, 16:9 canvas, CSS scale, no server involvement                                                                      |
-| Code editor     | **@uiw/react-codemirror**                              | `@uiw/codemirror-extensions-langs` for language packs; `@uiw/codemirror-theme-github` for light/dark themes matching Shiki.                |
-| Search          | **MiniSearch**                                         | In-memory, full-text, fuzzy, fast                                                                                                          |
-| Real-time       | **WebSocket** (Bun native)                             | Presence + live reload                                                                                                                     |
-| Deployment      | **Bun process + Docker volume**                        | Git repo mounted into container                                                                                                            |
+| Layer | Choice | Notes |
+|---|---|---|
+| Runtime | **Bun** | Server + build + git |
+| Frontend | **React + TypeScript** | SPA |
+| Styling | **Tailwind CSS + shadcn/ui + @tailwindcss/typography** | |
+| Icons | **@fluentui/react-icons** + **lucide-react** | Fluent for app chrome; lucide for SlideViewer controls |
+| Markdown editor | **Custom split-pane** | Textarea + live Streamdown preview. Toolbar: heading selector, Bold, Italic, Blockquote, Cheatsheet. Ctrl+S saves. |
+| Markdown viewer | **streamdown** | remark/rehype → React DOM. Built-in `rehype-harden` sanitisation. |
+| Slides | **Custom SlideViewer** | React, 960×540 canvas, CSS scale |
+| Code editor | **@uiw/react-codemirror** | `@uiw/codemirror-extensions-langs` + `@uiw/codemirror-theme-github` |
+| Search | **MiniSearch** | In-memory, full-text, fuzzy |
+| Real-time | **WebSocket** (Bun native) | Presence + live reload |
+| Deployment | **Bun process + Docker volume** | |
 
 ---
 
 ## 3. Repository & Deployment
 
-### 3.1 Mounting
+Repo is **mounted as a Docker volume**. KumiDocs does not clone it. Remote/auth/branch come from `.git/config`.
 
-- The git repo is **mounted as a Docker volume** into the container. KumiDocs does **not** clone it.
-- Remote URL, auth, and branch come from the mounted repo's own `.git/config`.
-- SSH key: mount into container + configure in SSH config.
-- HTTP token: embed in remote URL or use `.netrc`.
-
-### 3.2 Environment Variables
-
+**Env vars:**
 ```
-KUMIDOCS_REPO_PATH        (required)  Absolute path to the mounted git repo
+KUMIDOCS_REPO_PATH        (required) Absolute path to mounted git repo
 KUMIDOCS_PORT             (default: 3000)
-KUMIDOCS_AUTH_HEADER      (default: X-Auth-Request-User)  Header name for identity
-KUMIDOCS_AUTO_SAVE_DELAY  (default: 5000)  ms debounce before auto-save commit
-KUMIDOCS_INSTANCE_NAME    (default: KumiDocs)  Display name in UI
-KUMIDOCS_PULL_INTERVAL    (default: 60000)  ms between background git pulls
+KUMIDOCS_AUTH_HEADER      (default: X-Auth-Request-User)
+KUMIDOCS_AUTO_SAVE_DELAY  (default: 5000) ms debounce
+KUMIDOCS_INSTANCE_NAME    (default: KumiDocs)
+KUMIDOCS_PULL_INTERVAL    (default: 60000) ms between background pulls
 ```
 
-### 3.3 Startup Sequence
+**Startup:** validate repo path → `git pull --rebase` → read `.kumidocs.json` → load file tree into memory → build MiniSearch index → start HTTP+WS server → schedule pull loop.
 
-1. Validate `KUMIDOCS_REPO_PATH` is a valid git repo — fail loudly if not.
-2. `git pull --rebase` to sync with upstream.
-3. Read `.kumidocs.json` (permissions config).
-4. Read entire working tree into in-memory `Map<path, content>`.
-5. Build MiniSearch index from all `.md` files.
-6. Start HTTP + WebSocket server.
-7. Schedule background pull loop (every `KUMIDOCS_PULL_INTERVAL` ms).
-
-### 3.4 `compose.yaml`
-
-Provided in the repo root. No custom Dockerfile — uses the official `oven/bun:latest` image directly. `compose.yaml` mounts the repo as a volume.
+`compose.yaml` in repo root uses `oven/bun:latest` directly.
 
 ---
 
 ## 4. File Layout (inside the git repo)
 
 ```
-README.md              → default home page (shown on /)
-_sidebar.md            → navigation (GitLab wiki format — nested markdown lists)
-.kumidocs.json         → instance config + permissions (NOT in UI, NOT in file tree)
-images/                → drag-and-drop image uploads (SHA256.ext naming)
-**/*.md                → doc pages
-**/*.{ts,js,py,...}    → code files
+README.md              → home page
+.kumidocs.json         → config + permissions (never served, never shown in UI)
+images/                → uploaded images (SHA256.ext naming)
+**/*.md                → doc pages / slide decks
+**/*.{ts,js,...}       → code files
 ```
-
-Any `.md` with `slides: true` frontmatter is a slide deck.
 
 ### 4.1 Page Frontmatter
 
 ```yaml
 ---
-emoji: 📄 # sidebar/tab icon (optional, defaults by type — see §6.2)
-description: ... # subtitle shown in search results
-slides: true # marks file as a slide deck (client-side rendered)
-theme: corporate # deck-level slide theme name (built-in or custom); default: 'default'
-paginate: true # show slide-number badge (N / total) on each canvas
+emoji: 📄           # sidebar/tab icon (optional)
+description: ...    # shown in search results
+slides: true        # marks file as slide deck
+theme: corporate    # deck-level theme (built-in or .kumidocs.json key); default: 'default'
+paginate: true      # show N/total badge on each slide
 ---
 ```
 
-**Title** is not stored in frontmatter. It is derived at runtime from the first `# ` heading in the document body. If no `# ` heading is found, the filename (with hyphens/underscores replaced by spaces) is used as a fallback.
+**Title** = first `# ` heading in body. Fallback: filename with hyphens/underscores → spaces.
 
-`theme` and `paginate` only affect slide decks (`slides: true`). They are ignored on regular markdown pages.
+`theme` and `paginate` only affect slide decks.
 
 ### 4.2 `.kumidocs.json`
 
 ```json
 {
-	"instanceName": "KumiDocs",
-	"editors": ["alice@example.com", "bob@example.com"],
-	"slideThemes": {
-		"my-corp": {
-			"bg": "#ffffff",
-			"fg": "#1a1a1a",
-			"contentPadding": { "bottom": 36 },
-			"elements": [],
-			"layouts": {
-				"title": {
-					"bg": "#003087",
-					"fg": "#ffffff",
-					"contentPadding": { "top": 80, "left": 60, "right": 60, "bottom": 60 },
-					"elements": []
-				}
-			}
-		}
-	}
+  "instanceName": "KumiDocs",
+  "editors": ["alice@example.com"],
+  "slideThemes": { "my-corp": { /* SlideThemeDef */ } }
 }
 ```
 
-- **Any authenticated user can VIEW.**
-- **Only users in `editors` can EDIT.**
-- Re-read from disk after every background pull (changes take effect within `KUMIDOCS_PULL_INTERVAL`).
-- **Never served via API directly. Never shown in the file tree or UI.**
-- `slideThemes` is included in the `/api/me` response so the client can apply custom themes without any additional round-trips. See §11.5 for the full custom theme schema.
+- Any authenticated user can VIEW. Only `editors` can EDIT.
+- Re-read after every background pull.
+- `slideThemes` included in `/api/me` response — no extra round-trips needed.
 
 ---
 
 ## 5. Authentication & Authorization
 
-### 5.1 Header-Based SSO
+Header value = email address or JWT (detected by exactly two `.` separators — no signature validation).
 
-Header name configured via `KUMIDOCS_AUTH_HEADER`. The header value **must always resolve to an email address**.
+**JWT email resolution** (first non-empty wins):
+1. `email` claim
+2. `preferred_username` claim
 
-- **Plain string** → treated directly as the user's email (lowercased).
-- **JWT** (detected by exactly two `.` separator characters) → Base64url-decode the payload, extract claims. **No signature validation.**
+If neither present → HTTP 401.
 
-JWT email resolution (first non-empty value wins, `sub` is **never** used):
+**User:** `{ id (= lowercased email), email, name, displayName, canEdit }`
+`displayName` = email local part split by `.`, each word capitalised. (`max.foo@x.com` → `Max Foo`)
 
-| Priority | Claim                | Notes                            |
-| -------- | -------------------- | -------------------------------- |
-| 1        | `email`              | Preferred — explicit email claim |
-| 2        | `preferred_username` | Used when `email` is absent      |
+**Avatars:** `avatarColor(name)` — djb2 hash → HSL hue → `hsl(hue, 60%, 42%)`. Gravatar primary (SHA-256 proxied via `/api/avatar/:sha256hash`). `avatarInitials` fallback.
 
-If neither claim is present in the JWT → HTTP 401.
+**Git commit identity:** `displayName` + `email`.
 
-User object: `{ id, email, name, displayName, canEdit }`
-
-- `id` = lowercased email
-- `displayName` = derived from email local part: split by `.`, capitalise each word
-  (`max.faxalv@example.com` → `Max Faxalv`, `max@foorack.com` → `Max`)
-
-### 5.2 Avatar Color Convention
-
-Avatars use a deterministic color from **`src/lib/avatar.ts`**:
-
-| Function               | Rule                                                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `avatarColor(name)`    | djb2 hash of name → HSL hue (0–359) → `hsl(hue, 60%, 42%)`. Same name always same color.          |
-| `avatarInitials(name)` | Fallback when Gravatar unavailable. Multi-word → first+last initial. Single-word → first 2 chars. |
-
-Gravatar is the primary avatar source. The SHA-256 hash of the user's email is computed **client-side** (never sent to the server) and proxied through `/api/avatar/:sha256hash` to avoid leaking the hash to Gravatar directly. Initials are the fallback, computed client-side from `displayName` via `avatarInitials`.
-
-### 5.3 Git Commit Identity
-
-- Author name: `displayName` (fallback: `id`)
-- Author email: `email` (fallback: `kumidocs@localhost`)
-
-### 5.4 Authorization
-
-- View: any authenticated user.
-- Edit: only users in `.kumidocs.json` `editors` list.
-- `.kumidocs.json`: no access via KumiDocs UI at all, ever.
-- No per-page permissions in v1.
+**Authorization:** View = any authenticated user. Edit = `editors` list only. No per-page permissions in v1.
 
 ---
 
 ## 6. Navigation & Routing
 
-### 6.1 URL Structure (client-side SPA)
+### 6.1 Routes
 
 ```
-/                  → README.md (home, instant)
-/p/<path>          → doc page at <path>.md
-/code/<path>       → code file viewer/editor for <path>
+/                  → README.md
+/p/<path>          → doc/slide page (.md appended if no extension in path)
+/code/<path>       → code file viewer/editor
+/images            → image library
+/t                 → theme library
 ```
 
-**Path convention for Markdown pages:**
+### 6.2 Sidebar
 
-- Sidebar links omit the `.md` extension (e.g. `/p/docs/setup`, not `/p/docs/setup.md`).
-- `FilePage` re-appends `.md` at runtime: if `rawPath` contains no `.`, `.md` is appended to form the actual `filePath`. Paths that already contain a `.` (e.g. `README.md`, `index.ts`) are used as-is, which correctly handles both explicit `.md` links and non-Markdown file paths under `/p/`.
+Auto-generated from `/api/tree`. Confluence-style: `foo/` + `foo.md` merge into one expandable node. Ghost pages for dirs without matching `.md`. Sort: `README.md` first, then alphabetical by title. Hidden: `.kumidocs.json`, `_sidebar.md`, `images/`.
 
-### 6.2 Sidebar Navigation
+Right-click context menu: Create subpage, Create alongside, Move/Rename.
 
-- Sidebar is **auto-generated from the full file tree** (`/api/tree`) on startup and after every commit.
-- Sidebar links for Markdown pages **strip the `.md` extension** so URLs stay clean (e.g. `/p/docs/setup`). `FilePage` re-appends `.md` — see §6.1.
-- No manual `_sidebar.md` curation — every file in the repo appears automatically.
-- **Confluence-style hierarchy**: filesystem folders are never rendered as folders in the UI. A directory `foo/` and its sibling `foo.md` are merged into a single expandable page whose children are the files inside `foo/`.
-- If a directory exists but `<dirname>.md` does not, a **virtual ghost page** is shown (italic, muted) — clicking it opens DocPage which shows "This page doesn't exist yet — Create it?".
-- Sort order per level: `README.md` first, then alphabetically by page title.
-- `_sidebar.md` (legacy file) is hidden. `.kumidocs.json` is always hidden. `images/` directory is always hidden (managed via the Image Library).
-- Right-click a page for: **Create subpage**, **Create page alongside**, **Move / Rename**.
+Top `⋯` dropdown: **Image library** (`/images`), **Theme library** (`/t`).
 
-### 6.3 Sidebar Icons (default, overridable via `emoji` frontmatter)
-
-| File type         | Icon                                   |
-| ----------------- | -------------------------------------- |
-| Markdown doc      | `FluentColorTextBulletListSquare`      |
-| Marp slides       | `FluentColorSlideTextSparkle`          |
-| Code file         | Language icon or generic file fallback |
-| Page being edited | Small animated amber dot               |
-
-### 6.4 Home Page
-
-- Opens `README.md` immediately on load — no splash screen, no redirect.
-- If `README.md` doesn't exist → "Create this page?" prompt.
+**Page icons (default, overridable via `emoji` frontmatter):**
+- Markdown: `FluentColorTextBulletListSquare`
+- Slides: `FluentColorSlideTextSparkle`
+- Code: language icon or generic fallback
+- Being edited: small animated amber dot
 
 ---
 
 ## 7. Editor
 
-### 7.1 Edit Mode — Custom Split-Pane Editor
+### 7.1 Split-Pane Editor
 
-- **Layout**: fixed toolbar spanning both panes; left pane = raw markdown `<textarea>`; right pane = live Streamdown preview (direct DOM render, not iframe — content is authored by the current user).
-- **Toolbar** (left side): heading-size dropdown (Normal / H1–H6), Bold, Italic, Blockquote.
-- **Toolbar** (right side): Cheatsheet button (modal with syntax reference).
-- All toolbar actions are cursor-aware: wrapping selections (bold/italic) or toggling line prefixes (headings, blockquote).
-- Keyboard shortcut: **Ctrl+S / Cmd+S** → save.
-- Default page mode is **view**. User clicks "Edit" to enter edit mode (subject to edit-lock and editor permission).
+Toolbar spanning both panes: heading selector, Bold, Italic, Blockquote (left) + Cheatsheet (right). Left = textarea. Right = live Streamdown preview. Ctrl+S saves. Default mode is **view** — click Edit to enter edit mode.
 
-### 7.2 View Mode — streamdown
+### 7.2 View Mode
 
-- Read-only. Default for everyone on page load.
-- `streamdown` renders markdown → React DOM via a remark/rehype pipeline, mounted directly in the page.
-- XSS protection via Streamdown's built-in `rehype-harden` (strips all event handlers, dangerous attributes, and unsafe HTML before it reaches the DOM).
-- `@tailwindcss/typography` (`prose prose-sm dark:prose-invert`) provides full typographic styles (headings, lists, code, tables, blockquotes).
-- **Image attribute syntax**: `![alt](url){width=300px height=200px}` — a `{key=value ...}` block written directly after an image applies inline CSS. Supported keys: `width`, `height`, `max-width`, `min-width`, `max-height`, `min-height`. Values: any valid CSS length (`px`, `%`, `em`, `rem`, `vw`, `vh`, `auto`). Implemented via `rehypeImageAttrsPlugin`.
+Read-only Streamdown render → React DOM. XSS via `rehype-harden`. `prose prose-sm dark:prose-invert` typography.
+
+**Image syntax:** `![alt](url){width=300px}` — `{key=value}` after image applies inline CSS. Keys: `width`, `height`, `max-width`, `min-width`, `max-height`, `min-height`. Via `rehypeImageAttrsPlugin`.
 
 ### 7.3 Save Behavior
 
-Every save = **git commit + git push** (always push immediately — no batching).
+Every save = git commit + immediate push.
 
-| Trigger                 | Commit message                                           |
-| ----------------------- | -------------------------------------------------------- |
-| Ctrl+S                  | `docs(<path>): save by <displayName>`                    |
-| Auto-save (5s debounce) | `docs(<path>): auto-save by <displayName>`               |
-| WebSocket disconnect    | `docs(<path>): auto-save on disconnect by <displayName>` |
+| Trigger | Commit message |
+|---|---|
+| Ctrl+S | `docs(<path>): save by <displayName>` |
+| Auto-save (5s debounce) | `docs(<path>): auto-save by <displayName>` |
+| WS disconnect | `docs(<path>): auto-save on disconnect by <displayName>` |
 
-### 7.4 Save Status Indicator (page header)
+Save status in page header: **Saved** (green check) / **Saving…** (spinner) / **Unsaved changes** (amber dot). Footer: `Last saved: <N>s ago · <SHA>`.
 
-- **Saved** (green check) — in sync with git HEAD.
-- **Saving…** (spinner) — commit/push in progress.
-- **Unsaved changes** (amber dot) — dirty, within debounce window.
-- Footer: `Last saved: <N>s ago · <short SHA>`
+### 7.4 Page Management
 
-### 7.5 Creating Pages
+**Create:** modal (type: Markdown / Slides, title, editable slug, path preview). Root via sidebar "+" button. Subpage/alongside via right-click. 409 if path exists.
 
-- "New page" button (bottom of sidebar) → modal:
-    - **Type**: Markdown (default) or Marp Slides.
-    - **Title**: free text; filename slug is auto-derived and editable.
-    - **Path preview**: shown as read-only `<parent>/<slug>.md`.
-    - Press Enter or "Create" to confirm.
-- **Root pages**: created in repository root (clicking the "New page" button).
-- **Sub-pages (in a folder)**: right-click a folder → "New page in this folder"; right-click a file → "Create page alongside" → same modal, pre-scoped to that directory.
-- Validates path is unique; returns 409 if file already exists.
-- After creation, navigates directly to the new page.
-- Sidebar auto-refreshes via WebSocket `page_created` broadcast.
+**Delete:** confirmation modal → single commit.
 
-### 7.6 Deleting Pages
+**Move/Rename:** Parent combobox (searchable, filters by title; `(root)` for top-level) + Filename field. Moving `foo.md` also moves `foo/` subtree. Single commit.
 
-Confirmation modal → deletes file → removes from `_sidebar.md` → single commit.
+**Duplicate:** available from sidebar context menu + DocPage overflow menu.
 
-### 7.7 Renaming / Moving Pages
+### 7.5 Image Upload
 
-- Move modal has two fields: **Parent** (searchable combobox listing all pages by title, selecting one makes the moved page a sub-page of it; choose `(root)` for top-level) and **Filename** (slug without `.md`).
-- The parent combobox filters by page title as user types; auto-focuses on open.
-- Selecting a parent page `foo/bar.md` sets the destination directory to `foo/bar/`; the folder is created automatically if it doesn't exist.
-- When a page has sub-pages (i.e. a matching directory `foo/` exists alongside `foo.md`), moving `foo.md` also moves the entire `foo/` subtree to the new location in the same commit.
-- All moved files are staged in a single git commit + push.
+Drop onto editor or toolbar button → `POST /api/upload/image` (multipart) → SHA-256 of file → write `images/<sha256>.<ext>` → commit → insert `![alt text](/images/<sha256>.<ext>)`. Max 25 MB. Types: jpg, png, gif, webp, svg.
 
-### 7.8 Image Upload (drag-and-drop + toolbar button)
+### 7.6 Image Library (`/images`)
 
-1. Drop image onto editor area **or** click the toolbar Image button.
-2. File picker / dropped files are sent via `POST /api/upload/image` (multipart).
-3. Server computes full SHA-256 of file content → writes `images/<sha256>.<ext>` in repo root.
-4. Commits the image file.
-5. Inserts `![alt text](/images/<sha256>.<ext>)` at cursor (absolute path — resolves to repo root on GitHub/GitLab too).
+Grid of all `images/*` files. Detail panel: preview, size, "Used in" links, direct URL. Delete (editors only): blocked if any `.md` references the SHA-256 hash (409). Accessible from sidebar `⋯` → "Image library".
 
-- Max size: **25 MB**. Reject with user-visible toast if exceeded.
-- Accepted types: `jpg`, `png`, `gif`, `webp`, `svg`.
-- Images are served at `/images/<filename>` with `Cache-Control: public, max-age=31536000, immutable`.
+### 7.7 Theme Library (`/t`)
 
-### 7.9 Image Library
+Grid of all built-in + custom themes. Each card shows a real `ScaledSlide` thumbnail (title layout). Click opens a demo dialog (`SlideViewer`, 85vh) showing Title, Content, Section, Split layouts — plus any non-standard custom layout keys. Card size: 320px wide. Accessible from sidebar `⋯` → "Theme library".
 
-- Route: `/images` (grid view) and `/images/:filename` (right-panel detail).
-- Accessible from the **Pages** header `⋯` menu in the sidebar → "Image library".
-- Grid of all `images/*` files in the repo: thumbnail, filename (SHA-256 hash), file size, usage badge.
-- Selecting a thumbnail opens the detail panel: preview, size, "Used in" page links, direct URL.
-- **Delete**: editors only; blocked (button disabled + 409 from server) if any `.md` file references the image's SHA-256 hash. Confirmed via modal.
+### 7.8 PDF Export
+
+**Markdown pages:** `html2canvas-pro` + `jspdf` (dynamic import). Offscreen `MarkdownViewer` at 800px width with `z-index: -9999` (not `opacity: 0`). A4 tiles stitched into multi-page PDF. Via `···` menu in view mode.
+
+**Slide decks:** each 960×540 canvas captured individually (including overlays), one landscape page each. Via SlideViewer controls bar (`ImageDown` button).
 
 ---
 
-## 8. Real-Time Collaboration & Presence
+## 8. Real-Time Collaboration
 
-### 8.1 Edit Lock
+**Edit Lock:** one user per page. Acquired on "Edit". Released on "Done", navigate away, or WS disconnect (server auto-releases). Locked page shows "Being edited by `<Name>`" banner.
 
-- Only **one user** may hold the edit-lock for a given page at a time.
-- Acquired on "Edit" click. Released on:
-    - "Done" click / navigation away.
-    - WebSocket disconnect (server auto-releases).
-- If another user tries to edit a locked page → "This page is being edited by `<Name>`" banner, Edit button disabled.
-- Lock is in-memory only; does not survive server restart.
+**WS Protocol:**
 
-### 8.2 WebSocket Protocol
+Client → server: `hello {pageId, userId}`, `editing_start {pageId}`, `editing_stop {pageId}`, `heartbeat`
 
-**Client → Server:**
+Server → client: `presence_update {pageId, viewers[], editor|null}`, `page_changed {pageId, commitSha, changedBy, changedByName}`, `page_deleted {pageId}`, `page_created {pageId, path}`, `save_conflict_lost {pageId, message}`, `heartbeat_ack`
 
-```json
-{ "type": "hello",         "pageId": "...", "userId": "..." }
-{ "type": "editing_start", "pageId": "..." }
-{ "type": "editing_stop",  "pageId": "..." }
-{ "type": "heartbeat" }
-```
+**Presence:** sidebar avatar stacks on viewed/edited pages. Page header `AvatarGroup`.
 
-**Server → Client:**
+**Live reload:** `page_changed` received → no unsaved changes: silent reload; unsaved changes: conflict banner. `page_deleted` → redirect home + toast.
 
-```json
-{ "type": "presence_update", "pageId": "...",
-  "viewers": [{"id":"...","name":"...","initials":"..."}],
-  "editor": {"id":"...","name":"...","initials":"..."} | null }
-{ "type": "page_changed",  "pageId": "...", "commitSha": "...", "changedBy": "...", "changedByName": "..." }
-{ "type": "page_deleted",  "pageId": "..." }
-{ "type": "page_created",  "pageId": "...", "path": "..." }
-{ "type": "save_conflict_lost", "pageId": "...", "message": "Your changes were lost due to a remote conflict." }
-{ "type": "heartbeat_ack" }
-```
-
-### 8.3 Presence Display
-
-- Sidebar: avatar stacks on items currently being viewed or edited.
-- Edit-locked items show amber dot + editor name in tooltip.
-- Page header: `AvatarGroup` of current viewers.
-
-### 8.4 Live Reload on Remote Change
-
-After a background pull that advances HEAD:
-
-- Broadcast `page_changed` for every changed file.
-- Receiver with **no unsaved changes** → auto-reload silently.
-- Receiver with **unsaved changes** → banner: "Page updated remotely — your changes may conflict. Save or discard."
-- Receiver of `page_deleted` → redirect to home + toast.
-
-### 8.5 Heartbeat
-
-- Client sends heartbeat every **30s**.
-- Server clears presence + lock if no heartbeat for **90s**.
+**Heartbeat:** client every 30s. Server clears presence+lock after 90s silence.
 
 ---
 
 ## 9. Git Operations
 
-### 9.1 Push Strategy
+**Push strategy:** every commit immediately followed by `git push`.
 
-Every commit is **immediately followed by `git push`**. This keeps the remote in sync at all times and prevents divergence when devs push directly to the repo.
+**Conflict on push:** `git push` fails → `git fetch` → `git rebase origin/<branch>`. Success: `git push --force-with-lease`. Failure: `git rebase --abort` → local changes lost → reset in-memory state → `save_conflict_lost` → error toast.
 
-### 9.2 Conflict on Push (remote diverged)
+**Background pull (every 60s):** `git fetch` → `git rebase` (only if working tree clean) → reload changed files → update search index → broadcast events.
 
-```
-1. git push → fails (non-fast-forward)
-2. git fetch
-3. git rebase origin/<branch>
-   ├── Success → git push --force-with-lease → done
-   └── Failure → git rebase --abort
-                 → LOCAL CHANGES ARE LOST
-                 → Reset in-memory state to HEAD
-                 → Send save_conflict_lost to affected client
-                 → Show prominent error toast
-```
-
-### 9.3 Background Pull (every 60s)
-
-1. `git fetch`
-2. `git rebase origin/<branch>` (only if working tree is clean)
-3. If working tree is dirty → skip, retry next cycle.
-4. After successful pull: reload changed files into memory, update search index, broadcast `page_changed`/`page_deleted`/`page_created`.
-
-### 9.4 In-Memory State
-
-- On startup: entire working tree read into `Map<path, content>`.
-- Dirty files tracked: `Map<path, { content, ownerId, timer }>`.
-- **Server restart: in-memory dirty state is LOST** (no persistence to disk).
-- **Shutdown** (SIGTERM/SIGINT): flush all dirty state → commit + push → exit.
-
-### 9.5 Branch
-
-- Single branch — whatever is currently checked out in the mounted repo.
-- No branch switching in v1.
+**In-memory state:** full file tree in `Map<path, content>`. Dirty: `Map<path, {content, ownerId, timer}>`. SIGTERM/SIGINT: flush dirty state → commit + push → exit. Server restart = dirty state lost.
 
 ---
 
-## 10. Code File Viewer / Editor
+## 10. Code File Viewer/Editor
 
-- **`@uiw/react-codemirror`** with `@uiw/codemirror-extensions-langs` (language detection by file extension) and `@uiw/codemirror-theme-github` (light/dark, matching the Shiki themes used in MarkdownViewer).
-- Same edit-lock, save, and commit flow as markdown files.
-- No WYSIWYG toolbar — raw code only.
-- Features: syntax highlighting, line numbers, code folding, line wrapping, Ctrl+S saves.
-- View mode: read-only CodeMirror (same component, `readOnly` prop). No separate viewer.
-- No LSP / autocomplete in v1.
+CodeMirror with language packs (by extension) + github light/dark themes. Same edit-lock, save, commit flow as Markdown. Features: syntax highlighting, line numbers, code folding, line wrap, Ctrl+S. No LSP/autocomplete in v1.
 
 ---
 
 ## 11. Slide Decks
 
-### 11.1 Detection
+### 11.1 SlideViewer
 
-- File has `slides: true` in YAML frontmatter.
-- Sidebar shows `FluentColorSlideTextSparkle` icon.
-- `/p/<path>` shows the inline viewer + editor.
+Fully client-side. Slides split on `---` (fence-aware). Canvas 960×540 (`SLIDE_W`/`SLIDE_H`), CSS `scale()` to fit container, calculated via `ResizeObserver`. Scale: `Math.min((w-192)/960, (h-96)/540)`.
 
-### 11.2 Slide Viewer
+**Viewing modes:**
+- **Scroll** (default in editor): all slides vertical, smooth-scroll to active.
+- **Paginate**: single slide + prev/next + progress bar.
+- **Spotlight**: `fixed inset-0 z-[9999] bg-black`, requests browser fullscreen, click = next.
+- **Standalone** (`standalone` prop): paginate-only, mode toggle hidden.
 
-- **Fully client-side** — server is unaware of slide format; it stores and serves `.md` files like any other.
-- Slides are split on `---` separator lines. Lines inside fenced code blocks (` ``` ` / `~~~`) are never treated as separators.
-- Each slide is rendered via `ScaledSlide` → `SlideMarkdownViewer` (Streamdown pipeline with slide-optimised typography; no `dark:prose-invert` — themes control bg/fg via CSS custom properties).
-- Slides are rendered at a fixed virtual canvas (960×540, 16:9) and CSS `transform: scale()` to fit the container, calculated via `ResizeObserver`. Scale formula: `Math.min((width - 192) / 960, (height - 96) / 540)` — identical across all modes.
-- **Three viewing modes** (toggled via controls bar):
-    - **Scroll mode** (default): all slides stacked vertically, center-aligned, smooth-scrolled to active slide on arrow-key navigation.
-    - **Paginate mode**: single centered slide with prev/next buttons and slide counter (arrow keys + buttons). Thin progress bar shown between stage and controls bar.
-    - **Spotlight mode**: bare fullscreen overlay (`fixed inset-0 z-[9999] bg-black`), requests browser fullscreen on entry, click advances to next slide. Exits when browser fullscreen is dismissed.
-- **Standalone mode** (`standalone` prop on `SlideViewer`): paginate-only, scroll/paginate toggle hidden.
-- Controls bar: scroll mode shows total slide count; paginate mode shows prev/counter/next; both show fullscreen (`Maximize`/`Minimize`) and spotlight (`Spotlight`) icon buttons. Mode toggle (`GalleryVertical` / `BookOpen`) hidden in standalone mode.
-- Navigation: arrow keys (←↑ = prev, →↓Space = next) work in all modes; in scroll mode the active slide is also scrolled into view.
-- No **Present** button in the FilePage header — presentation is launched entirely from within the embedded `SlideViewer`.
+Navigation: ←↑ prev, →↓Space next (keyboard, all modes).
 
-### 11.3 Per-slide Directives
+Controls bar: slide count / prev·counter·next; `Maximize`/`Minimize`, `Spotlight`, `ImageDown` (PDF export), `GalleryVertical`/`BookOpen` mode toggle (hidden in standalone).
 
-HTML comments of the form `<!-- key: value -->` placed anywhere in a slide are parsed and stripped before rendering. They never appear in the output.
+### 11.2 Per-slide Directives
 
-| Directive               | Effect                                                                                                    |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `<!-- class: title -->` | Apply a layout class to this slide (see §11.4)                                                            |
-| `<!-- bg: #003087 -->`  | Override background for this slide (any valid CSS `background` value, including gradients and image URLs) |
-| `<!-- color: white -->` | Override text colour for this slide                                                                       |
+`<!-- key: value -->` — parsed and stripped before rendering.
 
-Multiple directives can appear on the same slide. `bg` and `color` are per-slide overrides; they supplement the deck theme without replacing it.
+| Directive | Effect |
+|---|---|
+| `<!-- class: title -->` | Apply layout class |
+| `<!-- bg: #003087 -->` | Override background (any CSS `background` value) |
+| `<!-- color: white -->` | Override text colour |
 
-### 11.4 Layout Classes
+### 11.3 Layout Classes
 
-Layout is set via `<!-- class: NAME -->`. One layout per slide.
+| Class | Description |
+|---|---|
+| _(none)_ | Default: `px-8 py-6`, top-to-bottom flow |
+| `title` | Full-height flex centre, `text-center`, h1 = 3.5rem |
+| `section` | Full-height flex centre, `text-center`, h2 = 3.5rem / 800 weight |
+| `center` | Full-height flex centre, `text-center`, normal heading sizes |
+| `split` | Two equal columns at second `##`, vertical divider |
+| `blank` | `p-0` — full-bleed |
+| `invert` | Swaps `--slide-bg` / `--slide-fg` |
 
-| Class     | Description                                                                   |
-| --------- | ----------------------------------------------------------------------------- |
-| _(none)_  | Default: `px-8 py-6` padding, content flows top-to-bottom                     |
-| `title`   | Full-height flex centre, `text-center`; h1 enlarged to 3.5 rem                |
-| `section` | Full-height flex centre, `text-center`; h2 enlarged to 3.5 rem / 800 weight   |
-| `center`  | Full-height flex centre, `text-center`; normal heading sizes                  |
-| `split`   | Two equal columns divided at the second `##` heading, with a vertical divider |
-| `blank`   | `p-0` — content fills edge-to-edge (images, full-bleed graphics)              |
-| `invert`  | Swaps `--slide-bg` and `--slide-fg` relative to the active theme              |
+### 11.4 Slide Themes
 
-### 11.5 Slide Themes
+**Built-in** (CSS class `.slide-theme-{name}` on canvas):
 
-#### Built-in themes
+| Name | Background | Foreground |
+|---|---|---|
+| `default` | App bg (follows site light/dark) | App fg |
+| `dark` | `oklch(0.13 0 0)` | `oklch(0.93 0 0)` |
+| `corporate` | Navy `#1a2744` | `#e8edf8` |
+| `minimal` | `oklch(0.96 0.005 240)` | `oklch(0.18 0.01 240)` |
+| `gradient` | Indigo→violet→pink diagonal | White |
 
-Set via `theme:` in the deck's frontmatter. Applied as a CSS class `.slide-theme-{name}` on the canvas element.
+**Dark/light isolation:** `ScaledSlide` always stamps `.dark` or `.light` on `.slide-canvas`. Logic: custom theme → `isBgDark(bg)` (from `src/lib/slide.ts`); built-in → `DARK_BUILT_IN_THEMES.has(theme)` or `(theme==='default' && siteTheme==='dark')`. `.light {}` CSS block mirrors `:root` light-mode vars. This fully isolates slide tokens from site dark mode.
 
-| Name        | Background                               | Foreground                        |
-| ----------- | ---------------------------------------- | --------------------------------- |
-| `default`   | App background (follows light/dark mode) | App foreground                    |
-| `dark`      | Near-black `oklch(0.13 0 0)`             | Light grey `oklch(0.93 0 0)`      |
-| `corporate` | Navy `#1a2744`                           | Soft blue-white `#e8edf8`         |
-| `minimal`   | Off-white `oklch(0.96 0.005 240)`        | Near-black `oklch(0.18 0.01 240)` |
-| `gradient`  | Indigo → violet → pink diagonal gradient | White                             |
-
-All themes set `--slide-bg` and `--slide-fg` CSS custom properties on `.slide-canvas`. Tailwind's `.prose` is forced to `color: var(--slide-fg)` on the canvas so theme foreground colours are never overridden by prose defaults.
-
-#### Custom themes (via `.kumidocs.json`)
-
-Instances can define custom themes in `.kumidocs.json` under `slideThemes`. The `slideThemes` object is included in the `/api/me` response so the client can apply them without additional round-trips.
-
-When a deck specifies `theme: my-corp`, `ScaledSlide` first checks `slideThemes` from the user store. If found, it applies the custom theme definition instead of a CSS class.
-
-**Theme definition schema:**
+**Custom themes** (`.kumidocs.json` → `slideThemes` → `SlideThemeDef`):
 
 ```typescript
 interface SlideThemeDef {
-	/** Canvas background CSS value (color, gradient, …). */
-	bg?: string;
-	/** Canvas foreground / text color. Sets --slide-fg. */
-	fg?: string;
-	/**
-	 * Inset the markdown content area to avoid overlap with overlay elements.
-	 * Values in px relative to the 960×540 canvas.
-	 */
-	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
-	/** Overlay elements rendered on top of slide content. In z-order (first = bottom). */
-	elements?: SlideThemeElement[];
-	/**
-	 * Per-layout overrides. Key = layout class name ('title', 'section', 'split', …
-	 * or 'default' for slides with no class directive).
-	 * A matching layout entry COMPLETELY REPLACES the base theme for that slide
-	 * (bg, fg, contentPadding, elements are all replaced).
-	 */
-	layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
+  bg?: string;           // CSS background value
+  fg?: string;           // sets --slide-fg
+  contentPadding?: { top?: number; right?: number; bottom?: number; left?: number }; // px on 960×540
+  elements?: SlideThemeElement[];  // overlay elements, in z-order
+  layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;  // per-layout FULL overrides
 }
-```
 
-**Element types:**
-
-```typescript
 type SlideThemeElement =
-	| {
-			type: 'rect';
-			fill: string; // CSS color
-			// Position: at least one horizontal + one vertical anchor required
-			left?: number;
-			right?: number;
-			width?: number; // px on 960-wide canvas
-			top?: number;
-			bottom?: number;
-			height?: number; // px on 540-high canvas
-			// Omit width/height and set both left+right (or top+bottom) to span full axis
-	  }
-	| {
-			type: 'text';
-			content: string; // supports template variables (see below)
-			color?: string;
-			fontSize?: number; // px, default 12
-			bold?: boolean;
-			align?: 'left' | 'center' | 'right'; // default 'left'
-			left?: number;
-			right?: number;
-			centerX?: boolean;
-			top?: number;
-			bottom?: number;
-			centerY?: boolean;
-	  }
-	| {
-			type: 'image';
-			src: string; // data: URI (base64) or absolute URL
-			opacity?: number; // 0–1, default 1
-			left?: number;
-			right?: number;
-			width?: number;
-			centerX?: boolean;
-			top?: number;
-			bottom?: number;
-			height?: number;
-			centerY?: boolean;
-	  };
+  | { type: 'rect'; fill: string; left?: number; right?: number; width?: number;
+      top?: number; bottom?: number; height?: number }
+  | { type: 'text'; content: string; color?: string; fontSize?: number; bold?: boolean;
+      align?: 'left'|'center'|'right'; left?: number; right?: number; centerX?: boolean;
+      top?: number; bottom?: number; centerY?: boolean }
+  | { type: 'image'; src: string; opacity?: number; left?: number; right?: number;
+      width?: number; centerX?: boolean; top?: number; bottom?: number; height?: number; centerY?: boolean };
 ```
 
-**Template variables** in `text` content:
+**Positioning:** all px on 960×540. Left/right/top/bottom = distance from edge. `centerX/centerY = true` centres. Setting both edges (e.g. `left:0, right:0`) spans full axis.
 
-| Variable          | Expands to                                              |
-| ----------------- | ------------------------------------------------------- |
-| `{{slideNum}}`    | Current slide number (1-based)                          |
-| `{{slideTotal}}`  | Total slide count                                       |
-| `{{date}}`        | Today's date, `YYYY-MM-DD`                              |
-| `{{date:FORMAT}}` | Today's date with custom format (e.g. `YYYY.MM.DD`)     |
-| `{{title}}`       | First `#` heading on the current slide, or empty string |
+**Template variables** in `text.content`: `{{slideNum}}`, `{{slideTotal}}`, `{{date}}`, `{{date:FORMAT}}`, `{{title}}` (first `#` heading on slide).
 
-**Positioning model** (all values in px on the 960×540 canvas):
+**`layouts` key:** each entry COMPLETELY REPLACES base theme for that layout class. `"default"` key matches slides with no `<!-- class -->`.
 
-- Horizontal: `left: N` (from left edge), `right: N` (from right edge), `centerX: true` (centred), or `left: 0` + `right: 0` (span full width).
-- Vertical: `top: N` (from top edge), `bottom: N` (from bottom edge), `centerY: true` (centred), or `top: 0` + `bottom: 0` (span full height).
-- Elements are rendered in array order — earlier = lower z-layer. Full-bleed background images go first.
-- Elements are rendered inside an absolutely-positioned overlay div that sits on top of `SlideMarkdownViewer`. They do **not** participate in the markdown content flow.
+### 11.5 Slide Typography (`SlideMarkdownViewer`)
 
-**`contentPadding`** insets the markdown content area so body text does not overlap fixed overlay elements (e.g. a 36 px bottom bar → `"contentPadding": { "bottom": 36 }`).
-
-**Layout overrides** — the `layouts` key lets a theme define completely different element sets for specific slide types:
-
-```json
-"layouts": {
-  "title": {
-    "bg": "#003087",
-    "fg": "#ffffff",
-    "contentPadding": { "top": 80, "left": 60, "right": 60, "bottom": 60 },
-    "elements": [
-      { "type": "image", "src": "data:image/png;base64,...",
-        "left": 0, "top": 0, "width": 960, "height": 540 }
-    ]
-  },
-  "default": {
-    "elements": [
-      { "type": "rect", "fill": "#003087",
-        "left": 0, "right": 0, "bottom": 0, "height": 36 },
-      { "type": "text", "content": "© Acme Corp",
-        "centerX": true, "bottom": 11, "color": "#fff", "fontSize": 12 }
-    ]
-  }
-}
-```
-
-If a slide's layout class has no matching entry in `layouts`, the base theme (`bg`, `fg`, `contentPadding`, `elements`) is used. A `"default"` layout key matches slides with no `<!-- class: ... -->` directive.
-
-### 11.6 Slide Typography
-
-`SlideMarkdownViewer` applies slide-optimised prose:
-
-| Element           | Size                 |
-| ----------------- | -------------------- |
-| Body / lists      | 1.2 rem              |
-| h3                | 1.5 rem              |
-| h2                | 2 rem                |
-| h1                | 2.75 rem             |
-| title-layout h1   | 3.5 rem              |
-| section-layout h2 | 3.5 rem / 800 weight |
-
-All heading and body colours use `color: inherit` so theme and directive colours cascade correctly.
-
-### 11.7 Editing Slides
-
-- Same custom split-pane editor as markdown.
-- Preview pane shows live Streamdown preview of the raw markdown (not slide-split).
-
-### 11.8 Export
-
-- **Markdown pages**: client-side PDF export via `html2canvas-pro` + `jspdf` (dynamically imported). Triggered from the "···" page menu ("Export as PDF" item, visible in view mode only). An offscreen `MarkdownViewer` renders the document at 800 px width with `z-index: -9999` (not `opacity: 0` — html2canvas-pro inherits and propagates opacity, causing blank output). Pages are sliced into A4 tiles and stitched into a multi-page PDF, saved as `<title>.pdf`.
-- **Slide decks**: client-side PDF export via `html2canvas-pro` + `jspdf`, triggered from the SlideViewer controls bar (`ImageDown` button). Each 960×540 slide is captured individually (including overlay elements) and placed on its own landscape page.
-- Marp/server-side PDF export (Playwright, Chromium-gated): deferred to v2.
+Body/lists: 1.2rem · h3: 1.5rem · h2: 2rem · h1: 2.75rem · title-h1: 3.5rem · section-h2: 3.5rem/800.
+All headings/body: `color: inherit`. Prose forced to `var(--slide-fg)` on canvas. No `dark:prose-invert`.
 
 ---
 
 ## 12. Search
 
-- **MiniSearch** — in-memory, fast, fuzzy, ~8 kB.
-- Index built server-side at startup from all `.md` files.
-- Updated incrementally after every commit.
-- Indexed fields: `title`, `path`, `content` (markdown stripped), `description`.
-- API: `GET /api/search?q=<query>` → `[{ path, title, emoji, snippet, score }]`
-- Global shortcut: **Ctrl+K / Cmd+K** → floating search palette.
-- Search also covers code filenames (by path).
-- 500 files is well within MiniSearch's comfortable range.
+MiniSearch, server-side index. Fields: `title`, `path`, `content` (md stripped), `description`. Updated after every commit. `GET /api/search?q=` → `[{path, title, emoji, snippet, score}]`. Ctrl+K palette.
 
 ---
 
-## 13. UI Layout & Design
+## 13. UI
 
-### 13.0 Icon & Emoji Rendering Rule
+### 13.1 Emoji Rendering Rule
 
-> **NEVER render emoji as raw text or `<span>` elements. ALWAYS use `<EmojiIcon emoji="..." size={N} />`.**
+> **NEVER render emoji as raw text/`<span>`. ALWAYS use `<EmojiIcon emoji="..." size={N} />`.**
 
-`EmojiIcon` (`src/components/ui/EmojiIcon.tsx`) is the single source of truth for all emoji and icon rendering:
+`EmojiIcon` (`src/components/ui/EmojiIcon.tsx`): `emoji` prop → `@lobehub/fluent-emoji`; `fileType` prop → Fluent Color system icon; `icon` prop → raw Fluent icon.
 
-- **`emoji` prop** → renders via `@lobehub/fluent-emoji` (crisp 3D Fluent style at any size)
-- **`fileType` prop** → maps to the correct Fluent Color system icon
-- **`icon` prop** → renders a raw Fluent React Icon component
+### 13.2 Layout
 
-Raw emoji in JSX (`🌙`, `☀️`, etc.) render as OS-font bitmaps — blurry, inconsistent across platforms. All emojis, including UI chrome (theme toggle, status indicators, etc.), must go through `EmojiIcon`.
+Slim top bar (Logo, Search Ctrl+K, User avatar) + left sidebar + main content. Page header: emoji + title, Edit/Done button, `···` overflow menu, viewer `AvatarGroup`. Page footer: `Last saved: <N>s ago · <SHA>`.
 
-### 13.1 Overall Layout (Docmost-inspired)
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  [Logo/Name]   [Search Ctrl+K]            [User avatar]  │  ← slim top bar
-├──────────────┬───────────────────────────────────────────┤
-│              │  [emoji] Page Title    [Edit] [···] [⬤⬤]  │  ← page header
-│   _sidebar   ├───────────────────────────────────────────┤
-│  navigation  │                                           │
-│   (left)     │   page content                            │
-│              │   (view:  streamdown → direct render)              │
-│              │   (edit:  custom split-pane editor)        │
-│              │                                           │
-│              ├───────────────────────────────────────────┤
-│              │  Last saved: 2m ago · abc1234             │  ← page footer
-└──────────────┴───────────────────────────────────────────┘
-```
-
-### 13.2 Sidebar
-
-- Rendered from `_sidebar.md` (nested list → tree).
-- Items: emoji/icon + page title.
-- Active page highlighted.
-- Presence dots on active/edited pages.
-- "+" button → new page flow.
-- Collapsible groups (nested lists).
-- Resizable width (persisted in `localStorage`).
+**`···` overflow menu (`PageMenuItems` component):**
+- Open in new tab / Copy link / Export as PDF (doc view mode only) / Move / Delete
+- New subpage, New alongside, Duplicate — shown only in sidebar menus (not FilePage header)
 
 ### 13.3 Dark Mode
 
-- Default: read from browser (`prefers-color-scheme`).
-- Toggle button in top bar; preference saved in `localStorage`.
-- Tailwind `dark:` classes for app shell.
-- Dark class injected into `<iframe srcdoc>` body for view/slide iframes.
+Browser `prefers-color-scheme` default. Toggle in top bar; preference in `localStorage`. Tailwind `dark:` for app shell. Slide canvases use `.dark`/`.light` stamping (independent of site mode). Global CSS: `button { cursor: pointer }` in `@layer base`.
 
-### 13.4 Page Header
+### 13.4 Other UI
 
-- `emoji` + title (inline-editable in edit mode).
-- Right side: viewer `AvatarGroup`, "Edit"/"Done" button, "···" overflow menu.
-- **Overflow menu** (`PageMenuItems` component, shared with the sidebar's dropdown and context menus):
-    - _New subpage_ / _New page_ + _Duplicate_ — shown only in sidebar menus (directory context available); omitted in the FilePage header
-    - ─────
-    - _Open in new tab_
-    - _Copy link_
-    - _Export as PDF_ — shown only for doc pages in view mode
-    - ─────
-    - _Move_
-    - _Delete_
-- Virtual (ghost) pages show only a _Create this page_ link.
-
-### 13.5 Breadcrumbs
-
-Derived from file path, shown above title in small muted text.  
-e.g. `docs / api / authentication`
-
-### 13.6 "Page Not Found" Flow
-
-Navigate to non-existent path → "Create this page?" prompt, pre-filled with path and title from URL.
-
-### 13.7 Toast Notifications
-
-Top-right toast stack: `success` (green), `warning` (amber), `error` (red), `info` (blue).
+- Breadcrumbs: derived from file path, above title.
+- Not found → "Create this page?" prompt pre-filled from URL.
+- Toasts: top-right stack (success/warning/error/info).
+- Sidebar resizable width (persisted `localStorage`).
 
 ---
 
-## 14. API Surface (HTTP)
+## 14. API Surface
 
-All routes require valid auth header. JSON responses.
+All routes require valid auth header.
 
 ```
-GET    /api/me                          → current user info + slideThemes from .kumidocs.json
-GET    /api/tree                        → full file tree { path, type, emoji, title }
-GET    /api/file?path=<path>            → file content + metadata
-PUT    /api/file?path=<path>            → write file (editors only)
-POST   /api/file/create                 → create new file { path, content }
-DELETE /api/file?path=<path>            → delete file (editors only)
-POST   /api/file/rename                 → rename/move { from, to }
-POST   /api/upload/image                → multipart image upload → { url, path }
-GET    /api/images                      → list all images { filename, path, url, size, usedIn[] }
-DELETE /api/images/:filename            → delete image (editors; 409 if referenced)
-GET    /images/:filename                → serve image file (Cache-Control: immutable)
-GET    /api/search?q=<query>            → search results
-WS     /ws                              → WebSocket connection
+GET    /api/me                   → user info + slideThemes
+GET    /api/tree                 → file tree {path, type, emoji, title}
+GET    /api/file?path=           → content + metadata
+PUT    /api/file?path=           → write (editors only)
+POST   /api/file/create          → create {path, content}
+DELETE /api/file?path=           → delete (editors only)
+POST   /api/file/rename          → {from, to}
+POST   /api/upload/image         → multipart → {url, path}
+GET    /api/images               → [{filename, path, url, size, usedIn[]}]
+DELETE /api/images/:filename     → delete (editors; 409 if referenced)
+GET    /images/:filename         → serve image (Cache-Control: immutable)
+GET    /api/avatar/:sha256hash   → proxy Gravatar
+GET    /api/search?q=            → search results
+WS     /ws                       → WebSocket
 ```
 
 ---
 
-## 15. WebSocket Connection Lifecycle
-
-1. Client connects to `/ws`.
-2. Server reads auth header from the WS upgrade request → validates.
-3. Client sends `hello { pageId, userId }`.
-4. Server adds client to presence map for that `pageId`.
-5. Server broadcasts `presence_update` to all clients watching that `pageId`.
-6. On disconnect:
-    - Remove from presence map.
-    - Release any edit-lock held by this client.
-    - Flush dirty in-memory content for this client → commit + push.
-    - Broadcast `presence_update` + `page_changed` as needed.
-
----
-
-## 16. Source Code Structure
+## 15. Source Structure
 
 ```
 src/
-├── index.ts              ← Bun HTTP + WS server entry
+├── index.ts              ← Bun HTTP+WS server entry
 ├── frontend.tsx          ← React SPA entry
-├── index.html
-├── index.css
-├── App.tsx               ← SPA routing (react-router-dom)
+├── App.tsx               ← routing
 ├── server/
-│   ├── api.ts            ← REST route handlers
-│   ├── auth.ts           ← header parsing, JWT decode, permission check
-│   ├── config.ts         ← env var loading + validation
-│   ├── filestore.ts      ← in-memory file state, dirty tracking
-│   ├── git.ts            ← commit, push, pull, rebase
-│   ├── search.ts         ← MiniSearch index management
-│   └── websocket.ts      ← WS handler, presence, edit-lock
+│   ├── api.ts / auth.ts / config.ts / filestore.ts / git.ts / search.ts / websocket.ts
 ├── components/
-│   ├── dialogs/
-│   │   └── NewPageDialog.tsx
+│   ├── dialogs/NewPageDialog.tsx
 │   ├── editor/
-│   │   ├── MarkdownEditor.tsx        ← custom split-pane markdown editor
-│   │   ├── MarkdownViewer.tsx        ← streamdown → direct DOM render
-│   │   ├── SlideViewer.tsx           ← client-side slide viewer + PDF export
-│   │   ├── SlideMarkdownViewer.tsx   ← slide-optimised prose renderer (no dark:prose-invert)
-│   │   ├── rehypeEmojiPlugin.ts
-│   │   ├── rehypeHeadingIdsPlugin.ts
-│   │   └── rehypeImageAttrsPlugin.ts
-│   ├── layout/
-│   │   ├── AppShell.tsx
-│   │   ├── PageInfoPanel.tsx
-│   │   ├── Sidebar.tsx
-│   │   └── TopBar.tsx
-│   ├── search/
-│   │   └── SearchPalette.tsx
-│   └── ui/                      ← shadcn/ui components + custom
-│       ├── EmojiIcon.tsx
-│       ├── EmojiPicker.tsx
-│       ├── EmojiPickerPopover.tsx
-│       ├── PageMenuItems.tsx     ← shared page-action menu items (dropdown + context)
-│       └── ... (shadcn primitives)
-├── hooks/
-│   └── usePageActions.tsx       ← move/delete dialog orchestration
+│   │   ├── MarkdownEditor.tsx / MarkdownViewer.tsx
+│   │   ├── SlideViewer.tsx          ← exports ScaledSlide, SLIDE_W, SLIDE_H, SlideViewer
+│   │   ├── SlideMarkdownViewer.tsx / SlideOverlay.tsx
+│   │   └── rehypeEmojiPlugin.ts / rehypeHeadingIdsPlugin.ts / rehypeImageAttrsPlugin.ts
+│   ├── layout/AppShell.tsx / PageInfoPanel.tsx / Sidebar.tsx / TopBar.tsx
+│   ├── search/SearchPalette.tsx
+│   └── ui/ (EmojiIcon, EmojiPicker, EmojiPickerPopover, PageMenuItems, shadcn primitives)
+├── hooks/usePageActions.tsx
 ├── lib/
-│   ├── avatar.ts
-│   ├── filetypes.ts
-│   ├── frontmatter.ts   ← client-side YAML frontmatter parser + serialiser
-│   ├── slide.ts         ← parseSlideDirectives(), splitAtSecondH2()
-│   ├── types.ts
-│   └── utils.ts
+│   ├── avatar.ts / filetypes.ts / frontmatter.ts / types.ts / utils.ts
+│   └── slide.ts   ← parseSlideDirectives(), resolveCustomTheme(), isBgDark(), SlideThemeDef/Map
 ├── pages/
-│   ├── FilePage.tsx             ← doc / slides / code page
-│   ├── WelcomePage.tsx
-│   └── NotFound.tsx
-└── store/
-    ├── theme.tsx
-    ├── user.tsx
-    └── ws.ts                    ← WebSocket client + reactive state
-styles/
-└── globals.css
-compose.yaml
-package.json
-tsconfig.json
-SPEC.md
+│   ├── FilePage.tsx / WelcomePage.tsx / NotFound.tsx
+│   ├── ImageLibraryPage.tsx
+│   └── ThemeLibraryPage.tsx   ← /t route, ScaledSlide thumbnails + demo dialog
+└── store/theme.tsx / user.tsx / ws.ts
+styles/globals.css
 ```
 
 ---
 
-## 17. Implementation Phases
+## 16. Implementation Phases
 
-### Phase 1 — Foundation ✅ Complete
+### ✅ Phase 1 — Foundation
+Bun server, git ops, in-memory filestore, WebSocket presence, REST API, React SPA shell.
 
-- [x] Bun server: HTTP routing, static serving, auth middleware
-- [x] Git operations: read tree, read file, commit, push, pull, rebase
-- [x] In-memory filestore + dirty tracking
-- [x] WebSocket: connect, hello, presence, disconnect/flush
-- [x] REST API: `/api/me`, `/api/tree`, `/api/file`
-- [x] React SPA: basic routing + AppShell
+### ✅ Phase 2 — Editor Core
+Custom split-pane editor, Streamdown view, save flow, edit-lock, dark mode.
 
-### Phase 2 — Editor Core ✅ Complete
+### ✅ Phase 3 — UI Polish
+Sidebar (auto-gen, Confluence hierarchy, ghost pages, icons, presence dots), search palette, toasts, create/delete/move/duplicate pages, PDF export (markdown), presence avatars, drag-drop images, image library, resizable sidebar.
 
-- [x] Custom split-pane editor (textarea + Streamdown live preview, toolbar: heading selector / Bold / Italic / Blockquote / Cheatsheet, Ctrl+S save)
-- [x] `streamdown` read-only view (direct render, rehype-harden XSS protection)
-- [x] Save flow: Ctrl+S, auto-save debounce, save mutex (no 409 race)
-- [x] Edit-lock via WebSocket
-- [x] Dark mode (Tailwind + iframe sync)
+### ✅ Phase 4 — Slides & Code
+Slide viewer (scroll/paginate/spotlight/fullscreen), PDF export (slides), CodeMirror code editor, slide directive/layout/theme system (5 built-in themes + custom via `.kumidocs.json`), overlay element renderer, layout overrides, template variables, `contentPadding`, `.dark`/`.light` canvas isolation, Theme Library page.
 
-### Phase 3 — UI Polish 🔄 In Progress
+### 🔲 Phase 5 — TBD
+- Marp/server-side PDF export (Playwright) — deferred to v2
+- LSP / autocomplete in code editor — deferred to v2
 
-- [x] Sidebar auto-generated from `/api/tree` (Confluence-style hierarchy, no folder UI)
-- [x] Virtual ghost pages for dirs without a matching `.md`
-- [x] Page icons: FluentColor system icons + FluentEmoji page icons (`EmojiIcon`)
-- [x] Presence editing dot in sidebar (amber animated dot)
-- [x] Search: MiniSearch index + Ctrl+K palette
-- [x] Toast notifications (sonner)
-- [x] Create page (modal, slug auto-derive, type: markdown / slides)
-- [x] Create subpage / Create page alongside (right-click context menu)
-- [x] Delete page (confirmation modal in DocPage)
-- [x] Move / Rename page (sidebar context menu + DocPage overflow menu)
-- [x] Duplicate page (sidebar context menu + DocPage overflow menu)
-- [x] Client-side PDF export for markdown pages (html2canvas-pro + jspdf, via page menu in view mode)
-- [x] Presence avatars in page header (`AvatarGroup`)
-- [x] Drag-and-drop image upload + toolbar Image button (SHA-256 naming, `/images/` serving)
-- [x] Image library page (`/images`, `/images/:filename`) with thumbnail grid, detail panel, and delete guard
-- [x] Resizable sidebar width (persisted in `localStorage`)
 
-### Phase 4 — Slides & Code
+---
 
-- [x] Slide viewer (scroll/paginate/spotlight modes, fullscreen, arrow-key navigation, standalone presentation route)
-- [x] Client-side PDF export for slide decks (html2canvas-pro + jspdf, via SlideViewer controls bar)
-- [x] Code file editor (CodeMirror + language packs, `@uiw/codemirror-extensions-langs`, `@uiw/codemirror-theme-github`)
-- [x] Slide styling system: per-slide `<!-- class/bg/color -->` directives, 6 layout classes, 5 built-in themes, `theme` + `paginate` frontmatter, progress bar, slide number badge, fence-aware `---` splitting
-- [ ] Custom slide themes via `.kumidocs.json` `slideThemes` (element overlay renderer, layout overrides, template variables, `contentPadding`)
