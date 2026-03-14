@@ -22,7 +22,12 @@ import {
 	gitBlobAt,
 } from './git';
 import { searchDocs, updateInIndex, removeFromIndex } from './search';
-import { broadcastPageChanged, broadcastPageDeleted, broadcastPageCreated, getEditorForPage } from './websocket';
+import {
+	broadcastPageChanged,
+	broadcastPageDeleted,
+	broadcastPageCreated,
+	getEditorForPage,
+} from './websocket';
 import { IMAGE_TYPES } from '@/lib/filetypes';
 
 /**
@@ -53,8 +58,7 @@ export function apiTree() {
 export async function apiFileGet(url: URL, config: Config) {
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 
 	const content = getFile(path);
 	if (content === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
@@ -69,8 +73,7 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 
 	// Enforce the WebSocket edit lock: reject writes from users who don't hold it
 	// if another active session is currently editing this page.
@@ -136,8 +139,7 @@ export async function apiFileCreate(req: Request, user: User, config: Config) {
 	const path = body.path ?? '';
 	const content = body.content ?? '';
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 	if (getFile(path) !== undefined)
 		return Response.json({ error: 'File already exists' }, { status: 409 });
 
@@ -163,8 +165,7 @@ export async function apiFileDelete(url: URL, user: User, config: Config) {
 
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 	if (getFile(path) === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
 
 	await deleteFileFromRepo(path, config);
@@ -417,8 +418,7 @@ export async function apiImageDelete(
 export async function apiFileHistory(url: URL, config: Config) {
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 	const commits = await gitFileLog(config, path);
 	const enriched = await Promise.all(
 		commits.map(async (c, idx) => {
@@ -451,8 +451,7 @@ export async function apiFileDiff(url: URL, config: Config) {
 	const shortSha = url.searchParams.get('sha') ?? '';
 	if (!path || !shortSha)
 		return Response.json({ error: 'path and sha required' }, { status: 400 });
-	if (!isSafePath(config.repoPath, path))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, path)) return new Response('Forbidden', { status: 403 });
 
 	const commits = await gitFileLog(config, path, 500);
 	const idx = commits.findIndex((c) => c.fullSha.startsWith(shortSha) || c.sha === shortSha);
@@ -489,8 +488,7 @@ export async function apiFileDiff(url: URL, config: Config) {
 
 // GET /images/:filename
 export async function serveRepoAsset(assetPath: string, config: Config): Promise<Response> {
-	if (!isSafePath(config.repoPath, assetPath))
-		return new Response('Forbidden', { status: 403 });
+	if (!isSafePath(config.repoPath, assetPath)) return new Response('Forbidden', { status: 403 });
 
 	const fullPath = resolve(config.repoPath, assetPath);
 	const MIME: Record<string, string> = {

@@ -66,7 +66,9 @@ async function _stageAndCommit(
 		const statusOpts = filePaths.length > 0 ? { filepaths: filePaths } : {};
 		const status = await git.statusMatrix({ fs, dir: config.repoPath, ...statusOpts });
 		// stage=1 means index equals HEAD (nothing staged for this file)
-		const hasChanges = status.some(([, , , stage]: [string, number, number, number]) => stage !== 1);
+		const hasChanges = status.some(
+			([, , , stage]: [string, number, number, number]) => stage !== 1,
+		);
 		if (!hasChanges) {
 			const sha = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' });
 			return { sha: sha.slice(0, 7), committed: false };
@@ -101,7 +103,13 @@ async function pushWithRetry(
 		// Push failed (non-fast-forward) — fetch + merge remote changes, then retry.
 		// isomorphic-git does not support rebase, so we merge instead.
 		try {
-			await git.fetch({ fs, http, dir: config.repoPath, remote: 'origin', singleBranch: true });
+			await git.fetch({
+				fs,
+				http,
+				dir: config.repoPath,
+				remote: 'origin',
+				singleBranch: true,
+			});
 			await git.merge({
 				fs,
 				dir: config.repoPath,
