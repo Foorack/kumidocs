@@ -85,8 +85,10 @@ export const SlideMarkdownViewer = memo(function SlideMarkdownViewer({
 	const isCenter = isTitle || isSection || directives.classes.includes('center');
 	const isBlank = directives.classes.includes('blank');
 
+	// Override --slide-fg so that .prose inherits the directive color via
+	// `color: var(--slide-fg)` in the CSS — avoids fighting Tailwind prose specificity.
 	const colorStyle = directives.color
-		? ({ color: directives.color } as React.CSSProperties)
+		? ({ '--slide-fg': directives.color } as React.CSSProperties)
 		: undefined;
 
 	// ── Split layout: two columns divided at the second ## heading ────────────

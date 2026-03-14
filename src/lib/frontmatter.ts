@@ -41,6 +41,8 @@ export function buildFrontmatter(meta: PageMeta): string {
 	const lines: string[] = [];
 	if (meta.emoji) lines.push(`emoji: ${meta.emoji}`);
 	if (meta.slides) lines.push('slides: true');
+	if (meta.theme && meta.theme !== 'default') lines.push(`theme: ${meta.theme}`);
+	if (meta.paginate) lines.push('paginate: true');
 	if (lines.length === 0) return '';
 	return `---\n${lines.join('\n')}\n---\n`;
 }

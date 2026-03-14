@@ -176,6 +176,13 @@
 	overflow: hidden;
 }
 
+/* Force Tailwind's .prose to use the theme/directive foreground color.
+   Without this, .prose sets color via --tw-prose-body (always dark)
+   which overrides the canvas color even on dark-background themes. */
+.slide-canvas .prose {
+	color: var(--slide-fg) !important;
+}
+
 /* ── Themes ──────────────────────────────────────────────────────────────── */
 /* default: inherits the app's bg/fg — adapts to light/dark mode automatically */
 .slide-theme-default {

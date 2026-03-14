@@ -17,17 +17,36 @@ import { cn } from '@/lib/utils';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
 
-/** Split markdown content into individual slides on `---` separator lines. */
+/**
+ * Split markdown content into individual slides on `---` separator lines.
+ * Lines inside fenced code blocks (``` or ~~~) are never treated as separators.
+ */
 function splitSlides(content: string): string[] {
 	const slides: string[] = [];
 	let current: string[] = [];
+	let fence: string | null = null;
 	for (const line of content.split('\n')) {
-		if (line.trim() === '---') {
-			slides.push(current.join('\n').trim());
-			current = [];
+		const trimmed = line.trimStart();
+		if (fence === null) {
+			const m = /^(`{3,}|~{3,})/.exec(trimmed);
+			if (m) {
+				// Opening a fenced code block — capture the fence character string
+				fence = m[1] ?? '```';
+				current.push(line);
+				continue;
+			}
+			// Only treat bare `---` as a slide separator when outside a code fence
+			if (line.trim() === '---') {
+				slides.push(current.join('\n').trim());
+				current = [];
+				continue;
+			}
 		} else {
-			current.push(line);
+			// Inside a fence — check if this line closes it
+			const closeRe = new RegExp(`^${fence[0] ?? '`'}{${String(fence.length)},}\\s*$`);
+			if (closeRe.test(trimmed)) fence = null;
 		}
+		current.push(line);
 	}
 	slides.push(current.join('\n').trim());
 	return slides.filter((s) => s.length > 0);
