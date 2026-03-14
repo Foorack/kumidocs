@@ -1,4 +1,4 @@
-import { join, extname, dirname } from 'path';
+import { join, extname, dirname, resolve } from 'path';
 import { readFile, writeFile, mkdir, rename, stat } from 'fs/promises';
 import { createHash } from 'crypto';
 import { createTwoFilesPatch } from 'diff';
@@ -22,8 +22,18 @@ import {
 	gitBlobAt,
 } from './git';
 import { searchDocs, updateInIndex, removeFromIndex } from './search';
-import { broadcastPageChanged, broadcastPageDeleted, broadcastPageCreated } from './websocket';
+import { broadcastPageChanged, broadcastPageDeleted, broadcastPageCreated, getEditorForPage } from './websocket';
 import { IMAGE_TYPES } from '@/lib/filetypes';
+
+/**
+ * Returns true if `userPath` resolves to a location inside `repoPath`.
+ * Prevents path traversal attacks (e.g. "../../etc/passwd").
+ */
+function isSafePath(repoPath: string, userPath: string): boolean {
+	const safeBase = resolve(repoPath);
+	const full = resolve(repoPath, userPath);
+	return full === safeBase || full.startsWith(safeBase + '/');
+}
 
 // GET /api/me
 export function apiMe(user: User, config: Config) {
@@ -43,6 +53,8 @@ export function apiTree() {
 export async function apiFileGet(url: URL, config: Config) {
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
 
 	const content = getFile(path);
 	if (content === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
@@ -57,6 +69,18 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
+
+	// Enforce the WebSocket edit lock: reject writes from users who don't hold it
+	// if another active session is currently editing this page.
+	const lockHolder = getEditorForPage(path);
+	if (lockHolder && lockHolder.id !== user.id) {
+		return Response.json(
+			{ error: 'Page is locked by another editor', editedBy: lockHolder.displayName },
+			{ status: 423 }, // 423 Locked
+		);
+	}
 
 	let body: { content?: string };
 	try {
@@ -112,6 +136,8 @@ export async function apiFileCreate(req: Request, user: User, config: Config) {
 	const path = body.path ?? '';
 	const content = body.content ?? '';
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
 	if (getFile(path) !== undefined)
 		return Response.json({ error: 'File already exists' }, { status: 409 });
 
@@ -137,6 +163,8 @@ export async function apiFileDelete(url: URL, user: User, config: Config) {
 
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
 	if (getFile(path) === undefined) return Response.json({ error: 'Not found' }, { status: 404 });
 
 	await deleteFileFromRepo(path, config);
@@ -168,6 +196,8 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 
 	const { from, to } = body;
 	if (!from || !to) return Response.json({ error: 'from and to required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, from) || !isSafePath(config.repoPath, to))
+		return new Response('Forbidden', { status: 403 });
 	if (from === to) return Response.json({ sha: null, from, to });
 
 	// Collect all files that must move: the page itself plus any sub-pages living
@@ -177,26 +207,40 @@ export async function apiFileRename(req: Request, user: User, config: Config) {
 	const allPaths = getAllPaths();
 	const subFiles = allPaths.filter((p) => p.startsWith(fromDir));
 
-	// Move the primary file using fs.rename so binary files (images, etc.) are
-	// preserved correctly — the in-memory cache stores empty string for binaries.
-	await mkdir(dirname(join(config.repoPath, to)), { recursive: true });
-	await rename(join(config.repoPath, from), join(config.repoPath, to));
-	moveInCache(from, to);
-	removeFromIndex(from);
-	updateInIndex(to);
+	// Build the full list of (abs-from, abs-to) pairs for all fs.rename calls.
+	const renameOps = [
+		{ relFrom: from, relTo: to },
+		...subFiles.map((s) => ({ relFrom: s, relTo: toDir + s.slice(fromDir.length) })),
+	];
 
-	// Move each sub-page/sub-file
-	for (const sub of subFiles) {
-		const subTo = toDir + sub.slice(fromDir.length);
-		await mkdir(dirname(join(config.repoPath, subTo)), { recursive: true });
-		await rename(join(config.repoPath, sub), join(config.repoPath, subTo));
-		moveInCache(sub, subTo);
-		removeFromIndex(sub);
-		updateInIndex(subTo);
+	// Perform all renames; roll back completed ones if any step fails.
+	const completed: { relFrom: string; relTo: string }[] = [];
+	try {
+		for (const op of renameOps) {
+			await mkdir(dirname(join(config.repoPath, op.relTo)), { recursive: true });
+			await rename(join(config.repoPath, op.relFrom), join(config.repoPath, op.relTo));
+			completed.push(op);
+		}
+	} catch (err: unknown) {
+		// Roll back in reverse order
+		for (const op of completed.reverse()) {
+			await rename(join(config.repoPath, op.relTo), join(config.repoPath, op.relFrom)).catch(
+				() => undefined,
+			);
+		}
+		console.error('apiFileRename: fs.rename failed, rolled back:', err);
+		return Response.json({ error: 'Failed to rename files' }, { status: 500 });
 	}
 
-	const movedPaths = [from, ...subFiles];
-	const newPaths = [to, ...subFiles.map((s) => toDir + s.slice(fromDir.length))];
+	// All fs operations succeeded — update in-memory state
+	for (const op of renameOps) {
+		moveInCache(op.relFrom, op.relTo);
+		removeFromIndex(op.relFrom);
+		updateInIndex(op.relTo);
+	}
+
+	const movedPaths = renameOps.map((o) => o.relFrom);
+	const newPaths = renameOps.map((o) => o.relTo);
 
 	const msg = `docs: rename ${from} → ${to} by ${user.displayName}`;
 	const extraMoves = subFiles.map((s) => ({ from: s, to: toDir + s.slice(fromDir.length) }));
@@ -373,6 +417,8 @@ export async function apiImageDelete(
 export async function apiFileHistory(url: URL, config: Config) {
 	const path = decodeURIComponent(url.searchParams.get('path') ?? '');
 	if (!path) return Response.json({ error: 'path required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
 	const commits = await gitFileLog(config, path);
 	const enriched = await Promise.all(
 		commits.map(async (c, idx) => {
@@ -405,6 +451,8 @@ export async function apiFileDiff(url: URL, config: Config) {
 	const shortSha = url.searchParams.get('sha') ?? '';
 	if (!path || !shortSha)
 		return Response.json({ error: 'path and sha required' }, { status: 400 });
+	if (!isSafePath(config.repoPath, path))
+		return new Response('Forbidden', { status: 403 });
 
 	const commits = await gitFileLog(config, path, 500);
 	const idx = commits.findIndex((c) => c.fullSha.startsWith(shortSha) || c.sha === shortSha);
@@ -441,14 +489,10 @@ export async function apiFileDiff(url: URL, config: Config) {
 
 // GET /images/:filename
 export async function serveRepoAsset(assetPath: string, config: Config): Promise<Response> {
-	// Guard against path traversal: resolve and verify the final path stays within repoPath.
-	const { resolve } = await import('path');
-	const safeBase = resolve(config.repoPath);
-	const fullPath = resolve(config.repoPath, assetPath);
-	if (!fullPath.startsWith(safeBase + '/') && fullPath !== safeBase) {
+	if (!isSafePath(config.repoPath, assetPath))
 		return new Response('Forbidden', { status: 403 });
-	}
 
+	const fullPath = resolve(config.repoPath, assetPath);
 	const MIME: Record<string, string> = {
 		'.png': 'image/png',
 		'.jpg': 'image/jpeg',

@@ -7,7 +7,7 @@ import { loadConfig } from './server/config';
 import { parseUser, setPermissions } from './server/auth';
 import type { KumiDocsPermissions } from './server/auth';
 import { loadFilestore } from './server/filestore';
-import { initSearch, rebuildIndex } from './server/search';
+import { initSearch, updateInIndex, removeFromIndex } from './server/search';
 import { gitPull, gitFetchAndRebase, gitStageAndCommit } from './server/git';
 import {
 	wsOpen,
@@ -93,18 +93,20 @@ setInterval(() => {
 	void (async () => {
 		const result = await gitFetchAndRebase(config);
 		if (result.advanced) {
-			// Re-read changed files
+			// Re-read changed files and update the search index incrementally.
+			// Use per-file updateInIndex/removeFromIndex (same as API write paths)
+			// rather than a full rebuild to avoid redundant work.
 			await loadPermissions();
 			for (const changedPath of result.changed) {
 				if (changedPath === '.kumidocs.json') continue;
 				const fullPath = join(config.repoPath, changedPath);
 				if (existsSync(fullPath)) {
 					await reloadFile(changedPath, config);
-					rebuildIndex();
+					updateInIndex(changedPath);
 					broadcastPageChanged(changedPath, result.sha, 'upstream', 'Remote');
 				} else {
 					removeFromCache(changedPath);
-					rebuildIndex();
+					removeFromIndex(changedPath);
 					broadcastPageDeleted(changedPath);
 				}
 			}

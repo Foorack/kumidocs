@@ -3,7 +3,25 @@ import { promises as fs } from 'fs';
 import http from 'isomorphic-git/http/node';
 import type { Config } from './config';
 
-export async function gitPull(config: Config): Promise<void> {
+// ── Serial queue ──────────────────────────────────────────────────────────────
+// All operations that touch the .git/index or working tree run through this
+// queue so concurrent HTTP saves and the background pull loop never race.
+let gitTail = Promise.resolve<unknown>(undefined);
+function withGitLock<T>(fn: () => Promise<T>): Promise<T> {
+	const result = gitTail.then(fn);
+	// Swallow errors on the tail so one failed op doesn't stall the queue.
+	gitTail = result.then(
+		() => undefined,
+		() => undefined,
+	);
+	return result;
+}
+
+export function gitPull(config: Config): Promise<void> {
+	return withGitLock(() => _gitPull(config));
+}
+
+async function _gitPull(config: Config): Promise<void> {
 	try {
 		await git.pull({
 			fs,
@@ -19,7 +37,17 @@ export async function gitPull(config: Config): Promise<void> {
 	}
 }
 
-export async function gitStageAndCommit(
+export function gitStageAndCommit(
+	config: Config,
+	filePaths: string[],
+	message: string,
+	authorName: string,
+	authorEmail: string,
+): Promise<{ sha: string; error?: string; committed?: boolean }> {
+	return withGitLock(() => _stageAndCommit(config, filePaths, message, authorName, authorEmail));
+}
+
+async function _stageAndCommit(
 	config: Config,
 	filePaths: string[],
 	message: string,
@@ -27,27 +55,23 @@ export async function gitStageAndCommit(
 	authorEmail: string,
 ): Promise<{ sha: string; error?: string; committed?: boolean }> {
 	try {
-		// Stage files
 		for (const fp of filePaths) {
 			await git.add({ fs, dir: config.repoPath, filepath: fp });
 		}
 
-		// Check if there are changes to commit
-		const status = await git.statusMatrix({ fs, dir: config.repoPath });
-		const hasChanges = status.some(
-			([, head, workdir, stage]: [string, number, number, number]) =>
-				head !== workdir || head !== stage || workdir !== stage,
-		);
+		// Scope the status check to the paths we staged so we don't accidentally
+		// commit unrelated workdir noise or pick up changes staged concurrently.
+		// When filePaths is empty (remove/move callers pre-stage externally) we
+		// fall back to the full scan — the lock guarantees exclusivity in that case.
+		const statusOpts = filePaths.length > 0 ? { filepaths: filePaths } : {};
+		const status = await git.statusMatrix({ fs, dir: config.repoPath, ...statusOpts });
+		// stage=1 means index equals HEAD (nothing staged for this file)
+		const hasChanges = status.some(([, , , stage]: [string, number, number, number]) => stage !== 1);
 		if (!hasChanges) {
-			const sha = await git.resolveRef({
-				fs,
-				dir: config.repoPath,
-				ref: 'HEAD',
-			});
+			const sha = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' });
 			return { sha: sha.slice(0, 7), committed: false };
 		}
 
-		// Commit
 		const sha = await git.commit({
 			fs,
 			dir: config.repoPath,
@@ -59,11 +83,7 @@ export async function gitStageAndCommit(
 		return { ...result, committed: true };
 	} catch (err) {
 		try {
-			const sha = await git.resolveRef({
-				fs,
-				dir: config.repoPath,
-				ref: 'HEAD',
-			});
+			const sha = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' });
 			return { sha: sha.slice(0, 7), error: String(err) };
 		} catch {
 			return { sha: 'unknown', error: String(err) };
@@ -76,23 +96,12 @@ async function pushWithRetry(
 	commitSha: string,
 ): Promise<{ sha: string; error?: string }> {
 	try {
-		await git.push({
-			fs,
-			http,
-			dir: config.repoPath,
-			remote: 'origin',
-		});
+		await git.push({ fs, http, dir: config.repoPath, remote: 'origin' });
 	} catch {
 		// Push failed (non-fast-forward) — fetch + merge remote changes, then retry.
 		// isomorphic-git does not support rebase, so we merge instead.
 		try {
-			await git.fetch({
-				fs,
-				http,
-				dir: config.repoPath,
-				remote: 'origin',
-				singleBranch: true,
-			});
+			await git.fetch({ fs, http, dir: config.repoPath, remote: 'origin', singleBranch: true });
 			await git.merge({
 				fs,
 				dir: config.repoPath,
@@ -100,12 +109,7 @@ async function pushWithRetry(
 				theirs: 'FETCH_HEAD',
 				author: { name: 'KumiDocs', email: 'kumidocs@localhost' },
 			});
-			await git.push({
-				fs,
-				http,
-				dir: config.repoPath,
-				remote: 'origin',
-			});
+			await git.push({ fs, http, dir: config.repoPath, remote: 'origin' });
 		} catch {
 			return { sha: commitSha.slice(0, 7), error: 'conflict' };
 		}
@@ -113,18 +117,20 @@ async function pushWithRetry(
 	return { sha: commitSha.slice(0, 7) };
 }
 
-export async function gitRemoveAndCommit(
+export function gitRemoveAndCommit(
 	config: Config,
 	filePath: string,
 	message: string,
 	authorName: string,
 	authorEmail: string,
 ): Promise<{ sha: string; error?: string }> {
-	await git.remove({ fs, dir: config.repoPath, filepath: filePath });
-	return gitStageAndCommit(config, [], message, authorName, authorEmail);
+	return withGitLock(async () => {
+		await git.remove({ fs, dir: config.repoPath, filepath: filePath });
+		return _stageAndCommit(config, [], message, authorName, authorEmail);
+	});
 }
 
-export async function gitMoveAndCommit(
+export function gitMoveAndCommit(
 	config: Config,
 	from: string,
 	to: string,
@@ -133,31 +139,31 @@ export async function gitMoveAndCommit(
 	authorEmail: string,
 	extraMoves?: { from: string; to: string }[],
 ): Promise<{ sha: string; error?: string }> {
-	// isomorphic-git doesn't have a native move, so we:
-	// 1. Add the new file 2. Remove the old file
-	await git.add({ fs, dir: config.repoPath, filepath: to });
-	await git.remove({ fs, dir: config.repoPath, filepath: from });
-	// Stage any additional moved files (e.g. sub-pages)
-	for (const extra of extraMoves ?? []) {
-		await git.add({ fs, dir: config.repoPath, filepath: extra.to });
-		await git.remove({ fs, dir: config.repoPath, filepath: extra.from });
-	}
-	return gitStageAndCommit(config, [], message, authorName, authorEmail);
+	return withGitLock(async () => {
+		// isomorphic-git has no native move: add the new path, remove the old one.
+		await git.add({ fs, dir: config.repoPath, filepath: to });
+		await git.remove({ fs, dir: config.repoPath, filepath: from });
+		for (const extra of extraMoves ?? []) {
+			await git.add({ fs, dir: config.repoPath, filepath: extra.to });
+			await git.remove({ fs, dir: config.repoPath, filepath: extra.from });
+		}
+		return _stageAndCommit(config, [], message, authorName, authorEmail);
+	});
 }
 
-export async function gitFetchAndRebase(
+export function gitFetchAndRebase(
+	config: Config,
+): Promise<{ changed: string[]; sha: string; advanced: boolean }> {
+	return withGitLock(() => _fetchAndRebase(config));
+}
+
+async function _fetchAndRebase(
 	config: Config,
 ): Promise<{ changed: string[]; sha: string; advanced: boolean }> {
 	const before = await git.resolveRef({ fs, dir: config.repoPath, ref: 'HEAD' }).catch(() => '');
 
 	try {
-		await git.fetch({
-			fs,
-			http,
-			dir: config.repoPath,
-			remote: 'origin',
-			singleBranch: true,
-		});
+		await git.fetch({ fs, http, dir: config.repoPath, remote: 'origin', singleBranch: true });
 		await git.merge({
 			fs,
 			dir: config.repoPath,
@@ -176,13 +182,11 @@ export async function gitFetchAndRebase(
 	const changed: string[] = [];
 	if (advanced) {
 		try {
-			// Walk both commit trees and collect paths whose blob OID changed.
 			await git.walk({
 				fs,
 				dir: config.repoPath,
 				trees: [TREE({ ref: before }), TREE({ ref: after })],
 				map: async (filepath, [A, B]) => {
-					// Skip root and recurse into subdirectories automatically
 					if ((await A?.type()) === 'tree' || (await B?.type()) === 'tree') return;
 					const aOid = await A?.oid();
 					const bOid = await B?.oid();

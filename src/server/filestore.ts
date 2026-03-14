@@ -7,6 +7,11 @@ import { CODE_TYPES, IMAGE_TYPES, extensionToType, pathExtension } from '@/lib/f
 import { extractHeadingTitle } from '@/lib/frontmatter';
 
 const fileCache = new Map<string, string>(); // relPath -> content
+let treeCache: TreeNode[] | null = null; // invalidated on every write/delete/move
+
+function invalidateTree(): void {
+	treeCache = null;
+}
 
 const IGNORED_NAMES = new Set([
 	'.git',
@@ -80,12 +85,14 @@ export async function writeFileToRepo(
 	const normalised = isBinary || content.endsWith('\n') ? content : `${content}\n`;
 	await writeFile(fullPath, normalised, 'utf-8');
 	fileCache.set(path, normalised);
+	invalidateTree();
 }
 
 export async function deleteFileFromRepo(path: string, config: Config): Promise<void> {
 	const fullPath = join(config.repoPath, path);
 	await unlink(fullPath);
 	fileCache.delete(path);
+	invalidateTree();
 }
 
 export async function reloadFile(path: string, config: Config): Promise<void> {
@@ -96,24 +103,30 @@ export async function reloadFile(path: string, config: Config): Promise<void> {
 	} catch {
 		fileCache.delete(path);
 	}
+	invalidateTree();
 }
 
 export function addToCache(path: string, content: string): void {
 	fileCache.set(path, content);
+	invalidateTree();
 }
 
 export function removeFromCache(path: string): void {
 	fileCache.delete(path);
+	invalidateTree();
 }
 
 export function moveInCache(from: string, to: string): void {
 	const content = fileCache.get(from) ?? '';
 	fileCache.set(to, content);
 	fileCache.delete(from);
+	invalidateTree();
 }
 
 // Build file tree for /api/tree
 export function buildFileTree(): TreeNode[] {
+	if (treeCache) return treeCache;
+
 	const allPaths = getAllPaths();
 	// Filter out hidden / internal files and the images/ directory (shown via Image Library)
 	const visible = allPaths.filter(
@@ -155,6 +168,7 @@ export function buildFileTree(): TreeNode[] {
 		}
 	}
 
+	treeCache = root;
 	return root;
 }
 
