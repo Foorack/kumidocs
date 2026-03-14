@@ -58,15 +58,15 @@ function splitSlides(content: string): string[] {
 }
 
 // ── Slide canvas size ─────────────────────────────────────────────────────────
-const SLIDE_W = 960;
-const SLIDE_H = 540;
+export const SLIDE_W = 960;
+export const SLIDE_H = 540;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 /**
  * Renders a single 960×540 slide canvas, scaled to `scale` and optionally
  * showing a slide number badge.  Theme and per-slide directives are both applied.
  */
-function ScaledSlide({
+export function ScaledSlide({
 	slide,
 	scale,
 	theme,

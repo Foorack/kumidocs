@@ -1,9 +1,11 @@
+import { useState } from 'react';
+import { X } from 'lucide-react';
 import { useUser } from '@/store/user';
-import { useTheme } from '@/store/theme';
-import { isBgDark } from '@/lib/slide';
-import type { SlideThemeDef } from '@/lib/slide';
-import { cn } from '@/lib/utils';
+import { parseSlideDirectives } from '@/lib/slide';
+import type { SlideThemeDef, SlideThemeMap } from '@/lib/slide';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ScaledSlide, SlideViewer, SLIDE_W, SLIDE_H } from '@/components/editor/SlideViewer';
 
 // ── Built-in theme catalogue ────────────────────────────────────────────────
 
@@ -21,81 +23,43 @@ const BUILTIN_THEMES: BuiltInTheme[] = [
 	{ id: 'gradient', name: 'Gradient', description: 'Purple-to-pink gradient' },
 ];
 
-const DARK_BUILTIN = new Set(['dark', 'corporate', 'gradient']);
+// ── Thumbnail constants ─────────────────────────────────────────────────────
 
-// ── Miniature slide preview ─────────────────────────────────────────────────
+const CARD_W = 320;
+const CARD_SCALE = CARD_W / SLIDE_W;
+const CARD_H = Math.round(SLIDE_H * CARD_SCALE);
 
-const PREVIEW_W = 960;
-const PREVIEW_H = 540;
-const CARD_W = 256;
-const SCALE = CARD_W / PREVIEW_W;
-const CARD_H = Math.round(PREVIEW_H * SCALE);
+// ── Demo slide content generator ────────────────────────────────────────────
 
-function ThemePreview({
-	themeClass,
-	canvasDark,
-	customBg,
-	customFg,
-	name,
-	description,
-}: {
-	themeClass?: string;
-	canvasDark: boolean;
-	customBg?: string;
-	customFg?: string;
-	name: string;
-	description: string;
-}) {
-	const canvasStyle: React.CSSProperties = {};
-	if (customBg) {
-		canvasStyle.background = customBg;
-		canvasStyle.backgroundSize = 'cover';
-		canvasStyle.backgroundPosition = 'center';
+const STANDARD_LAYOUTS = new Set([
+	'title',
+	'section',
+	'split',
+	'center',
+	'invert',
+	'blank',
+	'default',
+]);
+
+function generateDemoMarkdown(name: string, customDef?: SlideThemeDef): string {
+	const slides = [
+		`<!-- class: title -->\n# ${name}\n\nYour collaborative wiki and presentation platform.`,
+		`# Key Features\n\n- Real-time collaboration with presence\n- Markdown-first rich presentations\n- Custom themes via \`.kumidocs.json\``,
+		`<!-- class: section -->\n## Getting Started`,
+		`<!-- class: split -->\n## What We Do\n\nLeft column content.\n\n## How We Do It\n\nRight column content.`,
+	];
+
+	if (customDef?.layouts) {
+		for (const layoutKey of Object.keys(customDef.layouts)) {
+			if (!STANDARD_LAYOUTS.has(layoutKey)) {
+				slides.push(
+					`<!-- class: ${layoutKey} -->\n# ${layoutKey}\n\nCustom layout variant.`,
+				);
+			}
+		}
 	}
-	if (customFg) {
-		(canvasStyle as Record<string, unknown>)['--slide-fg'] = customFg;
-	}
 
-	return (
-		<div
-			style={{ width: CARD_W, height: CARD_H, overflow: 'hidden', position: 'relative' }}
-			className="rounded-sm"
-		>
-			<div
-				style={{
-					width: PREVIEW_W,
-					height: PREVIEW_H,
-					transform: `scale(${String(SCALE)})`,
-					transformOrigin: 'top left',
-					...canvasStyle,
-				}}
-				className={cn('slide-canvas', themeClass, canvasDark ? 'dark' : 'light')}
-			>
-				<div
-					style={{
-						padding: '3.5rem 4rem',
-						height: '100%',
-						display: 'flex',
-						flexDirection: 'column',
-						justifyContent: 'center',
-						color: 'var(--slide-fg)',
-					}}
-				>
-					<h1
-						style={{
-							fontSize: '3.5rem',
-							fontWeight: 700,
-							marginBottom: '1rem',
-							lineHeight: 1.1,
-						}}
-					>
-						{name}
-					</h1>
-					<p style={{ fontSize: '1.75rem', opacity: 0.65 }}>{description}</p>
-				</div>
-			</div>
-		</div>
-	);
+	return slides.join('\n\n---\n\n');
 }
 
 // ── Theme card ─────────────────────────────────────────────────────────────
@@ -105,29 +69,40 @@ function ThemeCard({
 	name,
 	description,
 	custom,
+	slideThemes,
+	onClick,
 }: {
 	id: string;
 	name: string;
 	description: string;
 	custom?: SlideThemeDef;
+	slideThemes: SlideThemeMap;
+	onClick: () => void;
 }) {
-	const { theme: siteTheme } = useTheme();
-
-	const canvasDark = custom
-		? isBgDark(custom.bg ?? '')
-		: DARK_BUILTIN.has(id) || (id === 'default' && siteTheme === 'dark');
+	const titleSlide = parseSlideDirectives(`<!-- class: title -->\n# ${name}\n\n${description}`);
 
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="rounded-md overflow-hidden border border-border shadow-sm">
-				<ThemePreview
-					themeClass={custom ? undefined : `slide-theme-${id}`}
-					canvasDark={canvasDark}
-					customBg={custom?.bg}
-					customFg={custom?.fg}
-					name={name}
-					description={description}
-				/>
+		<button type="button" className="flex flex-col gap-2 text-left group" onClick={onClick}>
+			<div className="rounded-md overflow-hidden border border-border shadow-sm group-hover:border-primary/50 group-hover:shadow-md transition-[box-shadow,border-color]">
+				<div
+					style={{
+						width: CARD_W,
+						height: CARD_H,
+						overflow: 'hidden',
+						position: 'relative',
+					}}
+				>
+					<ScaledSlide
+						slide={titleSlide}
+						scale={CARD_SCALE}
+						theme={id}
+						paginate={false}
+						slideNum={1}
+						total={1}
+						slideThemes={slideThemes}
+						origin="top left"
+					/>
+				</div>
 			</div>
 			<div className="flex items-start gap-2">
 				<div className="flex-1 min-w-0">
@@ -140,17 +115,26 @@ function ThemeCard({
 					</Badge>
 				)}
 			</div>
-		</div>
+		</button>
 	);
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
+interface ActiveItem {
+	id: string;
+	name: string;
+	custom?: SlideThemeDef;
+}
+
 export default function ThemeLibraryPage() {
 	const { slideThemes } = useUser();
-	const customEntries = Object.entries(slideThemes);
+	const [active, setActive] = useState<ActiveItem | null>(null);
 
+	const customEntries = Object.entries(slideThemes);
 	const total = BUILTIN_THEMES.length + customEntries.length;
+
+	const demoMarkdown = active ? generateDemoMarkdown(active.name, active.custom) : '';
 
 	return (
 		<div className="flex flex-col h-full">
@@ -173,7 +157,14 @@ export default function ThemeLibraryPage() {
 					style={{ gridTemplateColumns: `repeat(auto-fill, ${String(CARD_W)}px)` }}
 				>
 					{BUILTIN_THEMES.map((t) => (
-						<ThemeCard key={t.id} id={t.id} name={t.name} description={t.description} />
+						<ThemeCard
+							key={t.id}
+							id={t.id}
+							name={t.name}
+							description={t.description}
+							slideThemes={slideThemes}
+						onClick={() => { setActive({ id: t.id, name: t.name }); }}
+						/>
 					))}
 				</div>
 
@@ -196,12 +187,59 @@ export default function ThemeLibraryPage() {
 									name={id}
 									description={def.bg ?? 'Custom theme'}
 									custom={def}
+									slideThemes={slideThemes}
+							onClick={() => { setActive({ id, name: id, custom: def }); }}
 								/>
 							))}
 						</div>
 					</>
 				)}
 			</div>
+
+			{/* Demo dialog */}
+			<Dialog
+				open={active !== null}
+				onOpenChange={(open) => {
+					if (!open) setActive(null);
+				}}
+			>
+				<DialogContent
+					showCloseButton={false}
+					className="max-w-5xl w-full p-0 gap-0 overflow-hidden flex flex-col h-[85vh]"
+				>
+					{/* Dialog header */}
+					<div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+						<div className="flex items-center gap-2">
+							<span className="text-sm font-semibold">{active?.name}</span>
+							{active?.custom && (
+								<Badge variant="secondary" className="text-xs">
+									custom
+								</Badge>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={() => { setActive(null); }}
+							className="rounded-sm opacity-70 hover:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						>
+							<X className="size-4" />
+							<span className="sr-only">Close</span>
+						</button>
+					</div>
+
+					{/* Slide viewer */}
+					<div className="flex-1 min-h-0">
+						{active && (
+							<SlideViewer
+								value={demoMarkdown}
+								theme={active.id}
+								slideThemes={slideThemes}
+								paginate
+							/>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
