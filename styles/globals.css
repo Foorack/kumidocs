@@ -189,6 +189,13 @@
 	--tw-prose-code: var(--slide-fg);
 }
 
+/* Inline code: force slide-fg text and a subtle tinted background so it's
+   readable regardless of site light/dark mode or slide theme. */
+.slide-canvas .prose :not(pre) > code {
+	color: var(--slide-fg) !important;
+	background-color: oklch(from var(--slide-fg) l c h / 0.12) !important;
+}
+
 /* ── Themes ──────────────────────────────────────────────────────────────── */
 /* default: inherits the app's bg/fg — adapts to light/dark mode automatically */
 .slide-theme-default {
