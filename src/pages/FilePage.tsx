@@ -642,6 +642,10 @@ export default function FilePage() {
 							slideTheme={meta.theme}
 							slidePaginate={meta.paginate}
 							slideThemes={slideThemes}
+							onMetaChange={(m) => {
+								metaRef.current = m;
+								setMeta(m);
+							}}
 						/>
 					) : fileType === 'slide' ? (
 						<SlideViewer

@@ -5,8 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { MarkdownViewer } from './MarkdownViewer';
 import { SlideViewer } from './SlideViewer';
+import { parseFrontmatter, buildFrontmatter } from '@/lib/frontmatter';
+import type { PageMeta } from '@/lib/frontmatter';
+import { BUILTIN_SLIDE_THEMES } from '@/lib/slide';
 import type { SlideThemeMap } from '@/lib/slide';
-import { parseFrontmatter } from '@/lib/frontmatter';
+import { Checkbox } from '../ui/checkbox';
+import { Label } from '../ui/label';
 import {
 	Bold,
 	Code,
@@ -19,6 +23,7 @@ import {
 	List,
 	ListChecks,
 	ListOrdered,
+	Settings2,
 	Strikethrough,
 	TextQuote,
 } from 'lucide-react';
@@ -191,6 +196,7 @@ interface MarkdownEditorProps {
 	slideTheme?: string;
 	slidePaginate?: boolean;
 	slideThemes?: SlideThemeMap;
+	onMetaChange?: (meta: PageMeta) => void;
 }
 
 const HEADING_OPTIONS = [
@@ -212,6 +218,7 @@ export function MarkdownEditor({
 	slideTheme,
 	slidePaginate,
 	slideThemes,
+	onMetaChange,
 }: MarkdownEditorProps) {
 	const taRef = useRef<HTMLTextAreaElement>(null);
 	const previewRef = useRef<HTMLDivElement>(null);
@@ -219,8 +226,18 @@ export function MarkdownEditor({
 	const [headingValue, setHeadingValue] = useState('normal');
 	const [helpOpen, setHelpOpen] = useState(false);
 	const [showPreview, setShowPreview] = useState(true);
+	const [propsOpen, setPropsOpen] = useState(false);
+	const [dlgMeta, setDlgMeta] = useState<PageMeta>({});
 	// Strip frontmatter from value for the preview pane (textarea shows full raw content).
 	const previewValue = useMemo(() => parseFrontmatter(value).content, [value]);
+	// Available theme names for the properties dialog.
+	const themeOptions = useMemo(() => {
+		const builtin = Object.keys(BUILTIN_SLIDE_THEMES);
+		const custom = slideThemes
+			? Object.keys(slideThemes).filter((k) => !builtin.includes(k))
+			: [];
+		return ['default', ...builtin, ...custom];
+	}, [slideThemes]);
 	// Track the last known cursor/selection so toolbar actions that steal focus
 	// (especially the heading Select dropdown) still operate at the right position.
 	const savedSelectionRef = useRef({ start: 0, end: 0 });
@@ -237,6 +254,25 @@ export function MarkdownEditor({
 	const syncChange = useCallback(() => {
 		if (taRef.current) onChange(taRef.current.value);
 	}, [onChange]);
+
+	const handlePropsOpen = useCallback(
+		(open: boolean) => {
+			if (open) setDlgMeta(parseFrontmatter(value).data);
+			setPropsOpen(open);
+		},
+		[value],
+	);
+
+	const applyMeta = useCallback(
+		(newMeta: PageMeta) => {
+			setDlgMeta(newMeta);
+			const body = parseFrontmatter(value).content;
+			const newRaw = buildFrontmatter(newMeta) + body;
+			onChange(newRaw);
+			onMetaChange?.(newMeta);
+		},
+		[value, onChange, onMetaChange],
+	);
 
 	const handleHeading = useCallback(
 		(val: string) => {
@@ -539,6 +575,24 @@ export function MarkdownEditor({
 					>
 						<Image />
 					</Button>
+
+					<div className="w-px h-4 bg-border mx-0.5" />
+
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 w-7 p-0"
+						onClick={() => {
+							handlePropsOpen(true);
+						}}
+						onMouseDown={(e) => {
+							e.preventDefault();
+						}}
+						disabled={disabled}
+						title="Page properties"
+					>
+						<Settings2 />
+					</Button>
 				</div>
 
 				{/* Right: meta controls */}
@@ -591,7 +645,68 @@ export function MarkdownEditor({
 					</Dialog>
 				</div>
 			</div>
+			{/* ── Properties dialog ── */}
+			<Dialog open={propsOpen} onOpenChange={handlePropsOpen}>
+				<DialogContent className="max-w-sm">
+					<DialogHeader>
+						<DialogTitle>Page properties</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4 mt-2">
 
+						{/* Presentation mode */}
+						<div className="flex items-center gap-2">
+							<Checkbox
+								id="props-slides"
+								checked={!!dlgMeta.slides}
+								onCheckedChange={(checked) => {
+									applyMeta({ ...dlgMeta, slides: !!checked });
+								}}
+							/>
+							<Label htmlFor="props-slides">Presentation mode</Label>
+						</div>
+						{dlgMeta.slides && (
+							<>
+								<div className="border-t border-border" />
+								{/* Theme */}
+								<div className="flex items-center justify-between gap-4">
+									<Label>Theme</Label>
+									<Select
+										value={dlgMeta.theme ?? 'default'}
+										onValueChange={(v) => {
+											applyMeta({
+												...dlgMeta,
+												theme: v === 'default' ? undefined : v,
+											});
+										}}
+									>
+										<SelectTrigger size="sm" className="w-36 h-7 text-xs">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{themeOptions.map((t) => (
+												<SelectItem key={t} value={t} className="text-xs">
+													{t.charAt(0).toUpperCase() + t.slice(1)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								{/* Paginate */}
+								<div className="flex items-center gap-2">
+									<Checkbox
+										id="props-paginate"
+										checked={!!dlgMeta.paginate}
+										onCheckedChange={(checked) => {
+											applyMeta({ ...dlgMeta, paginate: !!checked });
+										}}
+									/>
+									<Label htmlFor="props-paginate">Show page numbers</Label>
+								</div>
+							</>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
 			{/* ── Two-pane content ── */}
 			<div className="flex flex-1 min-h-0 overflow-hidden">
 				{/* Left — editor */}
