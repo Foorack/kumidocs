@@ -15,30 +15,8 @@ import { SlideOverlay } from './SlideOverlay';
 import { parseSlideDirectives, resolveCustomTheme } from '@/lib/slide';
 import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/store/theme';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
-
-// Built-in themes that are inherently dark (should always force dark: utilities)
-const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate', 'gradient']);
-
-/**
- * Returns true if a CSS color string represents a dark background.
- * Handles hex (#rrggbb / #rgb) and oklch(L ...) formats.
- */
-function isBgDark(color: string): boolean {
-	const hex = /^#([0-9a-f]{3,6})$/i.exec(color.trim())?.[1];
-	if (hex) {
-		const full = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex;
-		const r = parseInt(full.slice(0, 2), 16);
-		const g = parseInt(full.slice(2, 4), 16);
-		const b = parseInt(full.slice(4, 6), 16);
-		return 0.299 * r + 0.587 * g + 0.114 * b < 128;
-	}
-	const l = /oklch\(\s*([\d.]+)/.exec(color);
-	if (l) return parseFloat(l[1] ?? '1') < 0.4;
-	return false;
-}
 
 /**
  * Split markdown content into individual slides on `---` separator lines.
@@ -111,17 +89,9 @@ function ScaledSlide({
 	absolute?: boolean;
 }) {
 	const { directives } = slide;
-	const { theme: siteTheme } = useTheme();
-
 	// Resolve custom theme from the map (null = use built-in CSS class instead)
 	const layoutClass = directives.classes[0] ?? '';
 	const customTheme = slideThemes ? resolveCustomTheme(slideThemes, theme, layoutClass) : null;
-
-	// Determine whether this slide is dark so we can add/remove the .dark class on the
-	// canvas — this isolates dark: utility styles (Shiki, prose) from the site dark mode.
-	const isDark = customTheme
-		? isBgDark(customTheme.bg ?? '')
-		: DARK_BUILT_IN_THEMES.has(theme) || (theme === 'default' && siteTheme === 'dark');
 
 	// Extract first heading for template variable substitution
 	const slideTitle = useMemo(() => {
@@ -162,10 +132,6 @@ function ScaledSlide({
 				'slide-canvas overflow-hidden',
 				// Only apply CSS theme class when not using a custom theme definition
 				customTheme ? undefined : `slide-theme-${theme}`,
-				// Add .dark to force dark: utilities on dark-background slides regardless of
-				// site dark mode. The @custom-variant dark rule in globals.css scopes dark:
-				// utilities to .slide-canvas.dark descendants, so slides are fully isolated.
-				isDark && 'dark',
 				directives.classes.includes('invert') && 'slide-layout-invert',
 				shadow && 'shadow-xl',
 				rounded && 'rounded-sm',
