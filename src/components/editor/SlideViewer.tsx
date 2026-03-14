@@ -20,7 +20,7 @@ import { useTheme } from '@/store/theme';
 // ── Slide parsing ─────────────────────────────────────────────────────────────
 
 // Built-in themes that are inherently dark
-const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate', 'gradient']);
+const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate']);
 
 /**
  * Split markdown content into individual slides on `---` separator lines.
