@@ -112,6 +112,37 @@
 	--sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Explicit light-mode token reset — applied to .slide-canvas when the slide
+   theme is light, so it overrides any parent .dark class from the site. */
+.light {
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.205 0 0);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.205 0 0);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
@@ -175,20 +206,9 @@
 	overflow: hidden;
 }
 
-/* Override typography plugin prose color vars with slide-fg so dark themes get light text.
-   Also remap Tailwind --color-* vars here so bg-sidebar, bg-muted etc. inside prose
-   (tables, code wrappers) respect the slide theme regardless of site light/dark mode. */
+/* Typography plugin sets --tw-prose-* using --foreground directly (not --color-foreground),
+   so we still need to point them at --slide-fg for correct colours on dark themes. */
 .slide-canvas .prose {
-	--color-background: var(--slide-bg);
-	--color-foreground: var(--slide-fg);
-	--color-sidebar: var(--slide-bg);
-	--color-muted: var(--slide-bg);
-	--color-card: var(--slide-bg);
-	--color-muted-foreground: var(--slide-fg);
-	--color-sidebar-foreground: var(--slide-fg);
-	--color-card-foreground: var(--slide-fg);
-	--color-border: oklch(from var(--slide-fg) l c h / 0.15);
-	--sidebar: var(--slide-bg);
 	--tw-prose-body: var(--slide-fg);
 	--tw-prose-headings: var(--slide-fg);
 	--tw-prose-lead: var(--slide-fg);

@@ -15,8 +15,36 @@ import { SlideOverlay } from './SlideOverlay';
 import { parseSlideDirectives, resolveCustomTheme } from '@/lib/slide';
 import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/store/theme';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
+
+// Built-in themes that are inherently dark
+const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate', 'gradient']);
+
+/**
+ * Returns true if a CSS color string represents a dark background.
+ * Handles hex (#rrggbb / #rgb) and oklch(L ...) formats.
+ */
+function isBgDark(color: string): boolean {
+	const hex = /^#([0-9a-f]{3,6})$/i.exec(color.trim())?.[1];
+	if (hex) {
+		const full =
+			hex.length === 3
+				? hex
+						.split('')
+						.map((c) => c + c)
+						.join('')
+				: hex;
+		const r = parseInt(full.slice(0, 2), 16);
+		const g = parseInt(full.slice(2, 4), 16);
+		const b = parseInt(full.slice(4, 6), 16);
+		return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+	}
+	const l = /oklch\(\s*([\d.]+)/.exec(color);
+	if (l) return parseFloat(l[1] ?? '1') < 0.4;
+	return false;
+}
 
 /**
  * Split markdown content into individual slides on `---` separator lines.
@@ -89,9 +117,18 @@ function ScaledSlide({
 	absolute?: boolean;
 }) {
 	const { directives } = slide;
+	const { theme: siteTheme } = useTheme();
+
 	// Resolve custom theme from the map (null = use built-in CSS class instead)
 	const layoutClass = directives.classes[0] ?? '';
 	const customTheme = slideThemes ? resolveCustomTheme(slideThemes, theme, layoutClass) : null;
+
+	// Determine whether the slide is dark to stamp .dark or .light on the canvas.
+	// This isolates all CSS theme tokens (--background, --sidebar, --muted, etc.) and
+	// dark: Tailwind utilities from the site's own light/dark mode.
+	const isDark = customTheme
+		? isBgDark(customTheme.bg ?? '')
+		: DARK_BUILT_IN_THEMES.has(theme) || (theme === 'default' && siteTheme === 'dark');
 
 	// Extract first heading for template variable substitution
 	const slideTitle = useMemo(() => {
@@ -130,6 +167,8 @@ function ScaledSlide({
 			}}
 			className={cn(
 				'slide-canvas overflow-hidden',
+				// Always stamp .dark or .light so canvas tokens are independent of site mode
+				isDark ? 'dark' : 'light',
 				// Only apply CSS theme class when not using a custom theme definition
 				customTheme ? undefined : `slide-theme-${theme}`,
 				directives.classes.includes('invert') && 'slide-layout-invert',
