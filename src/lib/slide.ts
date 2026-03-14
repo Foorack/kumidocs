@@ -91,6 +91,8 @@ export type SlideThemeElement =
 export interface SlideThemeDef {
 	bg?: string;
 	fg?: string;
+	/** CSS font-family value applied to the entire slide canvas. Inherits to all content. */
+	fontFamily?: string;
 	contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
 	elements?: SlideThemeElement[];
 	layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
@@ -131,6 +133,7 @@ export const BUILTIN_SLIDE_THEMES: SlideThemeMap = {
 	corporate: {
 		bg: '#ffffff',
 		fg: '#1a1a1a',
+		fontFamily: "Georgia, 'Times New Roman', serif",
 		contentPadding: { bottom: 36 },
 		elements: [{ type: 'rect', fill: '#005251', left: 0, right: 0, bottom: 0, height: 36 }],
 		layouts: {

@@ -118,6 +118,9 @@ export function ScaledSlide({
 	if (resolvedTheme?.fg) {
 		(canvasStyle as Record<string, unknown>)['--slide-fg'] = resolvedTheme.fg;
 	}
+	if (resolvedTheme?.fontFamily) {
+		canvasStyle.fontFamily = resolvedTheme.fontFamily;
+	}
 	// Per-slide bg overrides custom theme bg
 	if (directives.bg) {
 		canvasStyle.background = directives.bg;
