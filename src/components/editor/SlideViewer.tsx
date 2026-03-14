@@ -10,6 +10,13 @@ import {
 	Spotlight,
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+} from '../ui/context-menu';
 import { SlideMarkdownViewer } from './SlideMarkdownViewer';
 import { SlideOverlay } from './SlideOverlay';
 import { parseSlideDirectives, resolveTheme, isBgDark } from '@/lib/slide';
@@ -211,6 +218,8 @@ export function SlideViewer({
 	const [spotlightScale, setSpotlightScale] = useState(1);
 	const [isExporting, setIsExporting] = useState(false);
 	const [scrollMode, setScrollMode] = useState(!standalone);
+	const [pointerVisible, setPointerVisible] = useState(false);
+	const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
 
 	const stageRef = useRef<HTMLDivElement>(null);
 	const fullscreenRef = useRef<HTMLDivElement>(null);
@@ -391,21 +400,80 @@ export function SlideViewer({
 			>
 				{/* ── Spotlight overlay — bare fullscreen, slide only ── */}
 				{isSpotlight && (
-					<div
-						ref={spotlightRef}
-						className="fixed inset-0 z-[9999] bg-black flex items-center justify-center cursor-none"
-						onClick={next}
-					>
-						<ScaledSlide
-							slide={currentSlide}
-							scale={spotlightScale}
-							theme={theme}
-							paginate={paginate}
-							slideNum={index + 1}
-							total={total}
-							slideThemes={slideThemes}
-						/>
-					</div>
+					<ContextMenu>
+						<ContextMenuTrigger asChild>
+							<div
+								ref={spotlightRef}
+								className="fixed inset-0 z-[9999] bg-black flex items-center justify-center cursor-none select-none"
+								onClick={next}
+								onMouseMove={(e) => {
+									setPointerPos({ x: e.clientX, y: e.clientY });
+								}}
+							>
+								<ScaledSlide
+									slide={currentSlide}
+									scale={spotlightScale}
+									theme={theme}
+									paginate={paginate}
+									slideNum={index + 1}
+									total={total}
+									slideThemes={slideThemes}
+								/>
+								{/* Laser pointer dot */}
+								{pointerVisible && (
+									<div
+										aria-hidden="true"
+										style={{
+											position: 'fixed',
+											left: pointerPos.x,
+											top: pointerPos.y,
+											transform: 'translate(-50%, -50%)',
+											width: 18,
+											height: 18,
+											borderRadius: '50%',
+											backgroundColor: 'rgba(255, 30, 30, 0.92)',
+											boxShadow:
+												'0 0 6px 3px rgba(255, 60, 60, 0.8), 0 0 18px 6px rgba(255, 0, 0, 0.45)',
+											pointerEvents: 'none',
+											zIndex: 10000,
+										}}
+									/>
+								)}
+							</div>
+						</ContextMenuTrigger>
+						<ContextMenuContent className="z-[10001] min-w-[200px]">
+							<ContextMenuItem
+								onClick={() => {
+									document.exitFullscreen().catch(() => undefined);
+								}}
+							>
+								Exit fullscreen
+							</ContextMenuItem>
+							<ContextMenuSeparator />
+							<ContextMenuItem
+								onClick={() => {
+									window.location.reload();
+								}}
+							>
+								Refresh
+							</ContextMenuItem>
+							<ContextMenuItem
+								onClick={() => {
+									setIndex(0);
+								}}
+							>
+								Go to start
+							</ContextMenuItem>
+							<ContextMenuSeparator />
+							<ContextMenuItem
+								onClick={() => {
+									setPointerVisible((v) => !v);
+								}}
+							>
+								{pointerVisible ? 'Hide laser pointer' : 'Show laser pointer'}
+							</ContextMenuItem>
+						</ContextMenuContent>
+					</ContextMenu>
 				)}
 
 				{/* ── Slide stage ── */}
