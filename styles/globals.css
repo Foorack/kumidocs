@@ -173,6 +173,18 @@
 	background: var(--slide-bg);
 	position: relative;
 	overflow: hidden;
+
+	/* Wire all prose text colors to --slide-fg so dark themes get light text */
+	--tw-prose-body: var(--slide-fg);
+	--tw-prose-headings: var(--slide-fg);
+	--tw-prose-lead: var(--slide-fg);
+	--tw-prose-links: var(--slide-fg);
+	--tw-prose-bold: var(--slide-fg);
+	--tw-prose-bullets: var(--slide-fg);
+	--tw-prose-counters: var(--slide-fg);
+	--tw-prose-quotes: var(--slide-fg);
+	--tw-prose-captions: var(--slide-fg);
+	--tw-prose-code: var(--slide-fg);
 }
 
 /* ── Themes ──────────────────────────────────────────────────────────────── */
