@@ -282,13 +282,13 @@ Controls bar: slide count / prev·counter·next; `Maximize`/`Minimize`, `Spotlig
 
 **Built-in** (CSS class `.slide-theme-{name}` on canvas):
 
-| Name        | Background                       | Foreground             |
-| ----------- | -------------------------------- | ---------------------- |
-| `default`   | App bg (follows site light/dark) | App fg                 |
-| `dark`      | `oklch(0.13 0 0)`                | `oklch(0.93 0 0)`      |
-| `corporate` | Navy `#1a2744`                   | `#e8edf8`              |
-| `minimal`   | `oklch(0.96 0.005 240)`          | `oklch(0.18 0.01 240)` |
-| `gradient`  | Cyan→yellow-green diagonal (`72.44deg`) | Dark `#1a2020` |
+| Name        | Background                              | Foreground             |
+| ----------- | --------------------------------------- | ---------------------- |
+| `default`   | App bg (follows site light/dark)        | App fg                 |
+| `dark`      | `oklch(0.13 0 0)`                       | `oklch(0.93 0 0)`      |
+| `corporate` | Navy `#1a2744`                          | `#e8edf8`              |
+| `minimal`   | `oklch(0.96 0.005 240)`                 | `oklch(0.18 0.01 240)` |
+| `gradient`  | Cyan→yellow-green diagonal (`72.44deg`) | Dark `#1a2020`         |
 
 **Dark/light isolation:** `ScaledSlide` always stamps `.dark` or `.light` on `.slide-canvas`. Logic: custom theme → `isBgDark(bg)` (from `src/lib/slide.ts`); built-in → `DARK_BUILT_IN_THEMES.has(theme)` or `(theme==='default' && siteTheme==='dark')`. `.light {}` CSS block mirrors `:root` light-mode vars. This fully isolates slide tokens from site dark mode.
 

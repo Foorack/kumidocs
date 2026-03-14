@@ -129,12 +129,10 @@ export const BUILTIN_SLIDE_THEMES: SlideThemeMap = {
 		fg: 'oklch(0.93 0 0)',
 	},
 	corporate: {
-		bg: '#1a2744',
-		fg: '#e8edf8',
+		bg: '#ffffff',
+		fg: '#1a1a1a',
 		contentPadding: { bottom: 36 },
-		elements: [
-			{ type: 'rect', fill: '#005251', left: 0, right: 0, bottom: 0, height: 36 },
-		],
+		elements: [{ type: 'rect', fill: '#005251', left: 0, right: 0, bottom: 0, height: 36 }],
 		layouts: {
 			title: {
 				bg: '#005251',

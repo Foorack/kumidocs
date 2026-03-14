@@ -145,10 +145,10 @@ export function ScaledSlide({
 				absolute && 'absolute top-0 left-0',
 			)}
 		>
-		<SlideMarkdownViewer slide={slide} contentPadding={resolvedTheme?.contentPadding} />
-		{resolvedTheme?.elements && resolvedTheme.elements.length > 0 && (
-			<SlideOverlay
-				elements={resolvedTheme.elements}
+			<SlideMarkdownViewer slide={slide} contentPadding={resolvedTheme?.contentPadding} />
+			{resolvedTheme?.elements && resolvedTheme.elements.length > 0 && (
+				<SlideOverlay
+					elements={resolvedTheme.elements}
 					slideNum={slideNum}
 					total={total}
 					title={slideTitle}
