@@ -69,11 +69,7 @@ function ThemePreview({
 					transformOrigin: 'top left',
 					...canvasStyle,
 				}}
-				className={cn(
-					'slide-canvas',
-					themeClass,
-					canvasDark ? 'dark' : 'light',
-				)}
+				className={cn('slide-canvas', themeClass, canvasDark ? 'dark' : 'light')}
 			>
 				<div
 					style={{
@@ -189,7 +185,9 @@ export default function ThemeLibraryPage() {
 						</h2>
 						<div
 							className="grid gap-6"
-							style={{ gridTemplateColumns: `repeat(auto-fill, ${String(CARD_W)}px)` }}
+							style={{
+								gridTemplateColumns: `repeat(auto-fill, ${String(CARD_W)}px)`,
+							}}
 						>
 							{customEntries.map(([id, def]) => (
 								<ThemeCard
