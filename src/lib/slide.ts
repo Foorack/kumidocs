@@ -122,6 +122,51 @@ export function isBgDark(color: string): boolean {
 	return false;
 }
 
+/** Built-in slide themes expressed as code. 'default' is intentionally absent — it inherits app tokens via .slide-canvas CSS. */
+export const BUILTIN_SLIDE_THEMES: SlideThemeMap = {
+	dark: {
+		bg: 'oklch(0.13 0 0)',
+		fg: 'oklch(0.93 0 0)',
+	},
+	corporate: {
+		bg: '#1a2744',
+		fg: '#e8edf8',
+		contentPadding: { bottom: 36 },
+		elements: [
+			{ type: 'rect', fill: '#005251', left: 0, right: 0, bottom: 0, height: 36 },
+		],
+		layouts: {
+			title: {
+				bg: '#005251',
+				fg: '#ffffff',
+				contentPadding: { top: 80, left: 60, right: 60, bottom: 60 },
+				elements: [],
+			},
+		},
+	},
+	minimal: {
+		bg: 'oklch(0.96 0.005 240)',
+		fg: 'oklch(0.18 0.01 240)',
+	},
+	gradient: {
+		bg: 'linear-gradient(72.44deg, rgb(156, 246, 250) 0%, rgb(227, 237, 185) 100%)',
+		fg: '#1a2020',
+	},
+};
+
+/** Resolve a theme for a slide: user-defined custom themes take priority over built-ins. */
+export function resolveTheme(
+	slideThemes: SlideThemeMap | undefined,
+	themeName: string,
+	layoutClass: string,
+): Omit<SlideThemeDef, 'layouts'> | null {
+	if (slideThemes) {
+		const custom = resolveCustomTheme(slideThemes, themeName, layoutClass);
+		if (custom) return custom;
+	}
+	return resolveCustomTheme(BUILTIN_SLIDE_THEMES, themeName, layoutClass);
+}
+
 /** Resolve effective theme def for a slide, checking layout override first. */
 export function resolveCustomTheme(
 	map: SlideThemeMap,

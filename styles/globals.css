@@ -231,32 +231,6 @@
 	background-color: oklch(from var(--slide-fg) l c h / 0.12) !important;
 }
 
-/* ── Themes ──────────────────────────────────────────────────────────────── */
-/* default: inherits the app's bg/fg — adapts to light/dark mode automatically */
-.slide-theme-default {
-}
-
-.slide-theme-dark {
-	--slide-bg: oklch(0.13 0 0);
-	--slide-fg: oklch(0.93 0 0);
-}
-
-.slide-theme-corporate {
-	--slide-bg: #1a2744;
-	--slide-fg: #e8edf8;
-}
-
-.slide-theme-minimal {
-	--slide-bg: oklch(0.96 0.005 240);
-	--slide-fg: oklch(0.18 0.01 240);
-}
-
-/* gradient: background overridden via CSS; fg dark */
-.slide-theme-gradient {
-	--slide-fg: #1a2020;
-	background: linear-gradient(72.44deg, rgb(156, 246, 250) 0%, rgb(227, 237, 185) 100%) !important;
-}
-
 /* ── Invert layout ───────────────────────────────────────────────────────── */
 /* Swaps bg/fg relative to the current theme. */
 .slide-layout-invert {

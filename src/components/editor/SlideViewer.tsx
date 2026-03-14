@@ -12,15 +12,12 @@ import {
 import { Button } from '../ui/button';
 import { SlideMarkdownViewer } from './SlideMarkdownViewer';
 import { SlideOverlay } from './SlideOverlay';
-import { parseSlideDirectives, resolveCustomTheme, isBgDark } from '@/lib/slide';
+import { parseSlideDirectives, resolveTheme, isBgDark } from '@/lib/slide';
 import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/store/theme';
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
-
-// Built-in themes that are inherently dark
-const DARK_BUILT_IN_THEMES = new Set(['dark', 'corporate']);
 
 /**
  * Split markdown content into individual slides on `---` separator lines.
@@ -95,16 +92,14 @@ export function ScaledSlide({
 	const { directives } = slide;
 	const { theme: siteTheme } = useTheme();
 
-	// Resolve custom theme from the map (null = use built-in CSS class instead)
+	// Resolve theme: user-defined custom themes first, then built-ins, then default (null)
 	const layoutClass = directives.classes[0] ?? '';
-	const customTheme = slideThemes ? resolveCustomTheme(slideThemes, theme, layoutClass) : null;
+	const resolvedTheme = resolveTheme(slideThemes, theme, layoutClass);
 
-	// Determine whether the slide is dark to stamp .dark or .light on the canvas.
-	// This isolates all CSS theme tokens (--background, --sidebar, --muted, etc.) and
-	// dark: Tailwind utilities from the site's own light/dark mode.
-	const isDark = customTheme
-		? isBgDark(customTheme.bg ?? '')
-		: DARK_BUILT_IN_THEMES.has(theme) || (theme === 'default' && siteTheme === 'dark');
+	// Stamp .dark or .light on canvas to isolate slide tokens from site mode.
+	const isDark = resolvedTheme
+		? isBgDark(resolvedTheme.bg ?? '')
+		: theme === 'default' && siteTheme === 'dark';
 
 	// Extract first heading for template variable substitution
 	const slideTitle = useMemo(() => {
@@ -114,14 +109,14 @@ export function ScaledSlide({
 
 	// Build canvas inline style: custom theme bg/fg first, then per-slide directive overrides
 	const canvasStyle: React.CSSProperties = {};
-	if (customTheme?.bg) {
-		canvasStyle.background = customTheme.bg;
+	if (resolvedTheme?.bg) {
+		canvasStyle.background = resolvedTheme.bg;
 		canvasStyle.backgroundSize = 'cover';
 		canvasStyle.backgroundPosition = 'center';
 		canvasStyle.backgroundRepeat = 'no-repeat';
 	}
-	if (customTheme?.fg) {
-		(canvasStyle as Record<string, unknown>)['--slide-fg'] = customTheme.fg;
+	if (resolvedTheme?.fg) {
+		(canvasStyle as Record<string, unknown>)['--slide-fg'] = resolvedTheme.fg;
 	}
 	// Per-slide bg overrides custom theme bg
 	if (directives.bg) {
@@ -143,20 +138,17 @@ export function ScaledSlide({
 			}}
 			className={cn(
 				'slide-canvas overflow-hidden',
-				// Always stamp .dark or .light so canvas tokens are independent of site mode
 				isDark ? 'dark' : 'light',
-				// Only apply CSS theme class when not using a custom theme definition
-				customTheme ? undefined : `slide-theme-${theme}`,
 				directives.classes.includes('invert') && 'slide-layout-invert',
 				shadow && 'shadow-xl',
 				rounded && 'rounded-sm',
 				absolute && 'absolute top-0 left-0',
 			)}
 		>
-			<SlideMarkdownViewer slide={slide} contentPadding={customTheme?.contentPadding} />
-			{customTheme?.elements && customTheme.elements.length > 0 && (
-				<SlideOverlay
-					elements={customTheme.elements}
+		<SlideMarkdownViewer slide={slide} contentPadding={resolvedTheme?.contentPadding} />
+		{resolvedTheme?.elements && resolvedTheme.elements.length > 0 && (
+			<SlideOverlay
+				elements={resolvedTheme.elements}
 					slideNum={slideNum}
 					total={total}
 					title={slideTitle}
