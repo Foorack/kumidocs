@@ -1,0 +1,5 @@
+{
+	"[dockercompose]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint"
+	}
+}
