@@ -1,6 +1,6 @@
-# KumiDocs — Specification v0.4
+# KumiDocs — Specification v0.5
 
-> Last updated: 2026-03-10 · Status: **FINALIZED — ready for implementation**
+> Last updated: 2026-03-14 · Status: **FINALIZED — ready for implementation**
 
 ---
 
@@ -87,27 +87,48 @@ Any `.md` with `slides: true` frontmatter is a slide deck.
 
 ```yaml
 ---
-emoji: 📄 # sidebar/tab icon (optional, defaults by type — see §6.2)
-description: ... # subtitle shown in search results
-slides: true # marks file as a slide deck (client-side rendered)
+emoji: 📄          # sidebar/tab icon (optional, defaults by type — see §6.2)
+description: ...   # subtitle shown in search results
+slides: true       # marks file as a slide deck (client-side rendered)
+theme: corporate   # deck-level slide theme name (built-in or custom); default: 'default'
+paginate: true     # show slide-number badge (N / total) on each canvas
 ---
 ```
 
 **Title** is not stored in frontmatter. It is derived at runtime from the first `# ` heading in the document body. If no `# ` heading is found, the filename (with hyphens/underscores replaced by spaces) is used as a fallback.
+
+`theme` and `paginate` only affect slide decks (`slides: true`). They are ignored on regular markdown pages.
 
 ### 4.2 `.kumidocs.json`
 
 ```json
 {
 	"instanceName": "KumiDocs",
-	"editors": ["alice@example.com", "bob@example.com"]
+	"editors": ["alice@example.com", "bob@example.com"],
+	"slideThemes": {
+		"my-corp": {
+			"bg": "#ffffff",
+			"fg": "#1a1a1a",
+			"contentPadding": { "bottom": 36 },
+			"elements": [ ],
+			"layouts": {
+				"title": {
+					"bg": "#003087",
+					"fg": "#ffffff",
+					"contentPadding": { "top": 80, "left": 60, "right": 60, "bottom": 60 },
+					"elements": [ ]
+				}
+			}
+		}
+	}
 }
 ```
 
 - **Any authenticated user can VIEW.**
 - **Only users in `editors` can EDIT.**
 - Re-read from disk after every background pull (changes take effect within `KUMIDOCS_PULL_INTERVAL`).
-- **Never served via API. Never shown in the file tree or UI.**
+- **Never served via API directly. Never shown in the file tree or UI.**
+- `slideThemes` is included in the `/api/me` response so the client can apply custom themes without any additional round-trips. See §11.5 for the full custom theme schema.
 
 ---
 
@@ -405,27 +426,191 @@ Every commit is **immediately followed by `git push`**. This keeps the remote in
 ### 11.2 Slide Viewer
 
 - **Fully client-side** — server is unaware of slide format; it stores and serves `.md` files like any other.
-- Slides are split on `---` separator lines (each line containing only `---`).
-- Each slide is rendered via a shared `ScaledSlide` component wrapping `MarkdownViewer` (Streamdown pipeline — same components, dark mode, emoji, etc.).
+- Slides are split on `---` separator lines. Lines inside fenced code blocks (` ``` ` / `~~~`) are never treated as separators.
+- Each slide is rendered via `ScaledSlide` → `SlideMarkdownViewer` (Streamdown pipeline with slide-optimised typography; no `dark:prose-invert` — themes control bg/fg via CSS custom properties).
 - Slides are rendered at a fixed virtual canvas (960×540, 16:9) and CSS `transform: scale()` to fit the container, calculated via `ResizeObserver`. Scale formula: `Math.min((width - 192) / 960, (height - 96) / 540)` — identical across all modes.
 - **Three viewing modes** (toggled via controls bar):
     - **Scroll mode** (default): all slides stacked vertically, center-aligned, smooth-scrolled to active slide on arrow-key navigation.
-    - **Paginate mode**: single centered slide with prev/next buttons and slide counter (arrow keys + buttons).
-    - **Spotlight mode**: bare fullscreen overlay (`fixed inset-0 z-[9999] bg-background`), requests browser fullscreen on entry, click advances to next slide. Exits when browser fullscreen is dismissed.
+    - **Paginate mode**: single centered slide with prev/next buttons and slide counter (arrow keys + buttons). Thin progress bar shown between stage and controls bar.
+    - **Spotlight mode**: bare fullscreen overlay (`fixed inset-0 z-[9999] bg-black`), requests browser fullscreen on entry, click advances to next slide. Exits when browser fullscreen is dismissed.
 - **Standalone mode** (`standalone` prop on `SlideViewer`): paginate-only, scroll/paginate toggle hidden.
 - Controls bar: scroll mode shows total slide count; paginate mode shows prev/counter/next; both show fullscreen (`Maximize`/`Minimize`) and spotlight (`Spotlight`) icon buttons. Mode toggle (`GalleryVertical` / `BookOpen`) hidden in standalone mode.
 - Navigation: arrow keys (←↑ = prev, →↓Space = next) work in all modes; in scroll mode the active slide is also scrolled into view.
 - No **Present** button in the FilePage header — presentation is launched entirely from within the embedded `SlideViewer`.
 
-### 11.3 Editing Slides
+### 11.3 Per-slide Directives
+
+HTML comments of the form `<!-- key: value -->` placed anywhere in a slide are parsed and stripped before rendering. They never appear in the output.
+
+| Directive | Effect |
+|---|---|
+| `<!-- class: title -->` | Apply a layout class to this slide (see §11.4) |
+| `<!-- bg: #003087 -->` | Override background for this slide (any valid CSS `background` value, including gradients and image URLs) |
+| `<!-- color: white -->` | Override text colour for this slide |
+
+Multiple directives can appear on the same slide. `bg` and `color` are per-slide overrides; they supplement the deck theme without replacing it.
+
+### 11.4 Layout Classes
+
+Layout is set via `<!-- class: NAME -->`. One layout per slide.
+
+| Class | Description |
+|---|---|
+| *(none)* | Default: `px-8 py-6` padding, content flows top-to-bottom |
+| `title` | Full-height flex centre, `text-center`; h1 enlarged to 3.5 rem |
+| `section` | Full-height flex centre, `text-center`; h2 enlarged to 3.5 rem / 800 weight |
+| `center` | Full-height flex centre, `text-center`; normal heading sizes |
+| `split` | Two equal columns divided at the second `##` heading, with a vertical divider |
+| `blank` | `p-0` — content fills edge-to-edge (images, full-bleed graphics) |
+| `invert` | Swaps `--slide-bg` and `--slide-fg` relative to the active theme |
+
+### 11.5 Slide Themes
+
+#### Built-in themes
+
+Set via `theme:` in the deck's frontmatter. Applied as a CSS class `.slide-theme-{name}` on the canvas element.
+
+| Name | Background | Foreground |
+|---|---|---|
+| `default` | App background (follows light/dark mode) | App foreground |
+| `dark` | Near-black `oklch(0.13 0 0)` | Light grey `oklch(0.93 0 0)` |
+| `corporate` | Navy `#1a2744` | Soft blue-white `#e8edf8` |
+| `minimal` | Off-white `oklch(0.96 0.005 240)` | Near-black `oklch(0.18 0.01 240)` |
+| `gradient` | Indigo → violet → pink diagonal gradient | White |
+
+All themes set `--slide-bg` and `--slide-fg` CSS custom properties on `.slide-canvas`. Tailwind's `.prose` is forced to `color: var(--slide-fg)` on the canvas so theme foreground colours are never overridden by prose defaults.
+
+#### Custom themes (via `.kumidocs.json`)
+
+Instances can define custom themes in `.kumidocs.json` under `slideThemes`. The `slideThemes` object is included in the `/api/me` response so the client can apply them without additional round-trips.
+
+When a deck specifies `theme: my-corp`, `ScaledSlide` first checks `slideThemes` from the user store. If found, it applies the custom theme definition instead of a CSS class.
+
+**Theme definition schema:**
+
+```typescript
+interface SlideThemeDef {
+  /** Canvas background CSS value (color, gradient, …). */
+  bg?: string;
+  /** Canvas foreground / text color. Sets --slide-fg. */
+  fg?: string;
+  /**
+   * Inset the markdown content area to avoid overlap with overlay elements.
+   * Values in px relative to the 960×540 canvas.
+   */
+  contentPadding?: { top?: number; right?: number; bottom?: number; left?: number };
+  /** Overlay elements rendered on top of slide content. In z-order (first = bottom). */
+  elements?: SlideThemeElement[];
+  /**
+   * Per-layout overrides. Key = layout class name ('title', 'section', 'split', …
+   * or 'default' for slides with no class directive).
+   * A matching layout entry COMPLETELY REPLACES the base theme for that slide
+   * (bg, fg, contentPadding, elements are all replaced).
+   */
+  layouts?: Record<string, Omit<SlideThemeDef, 'layouts'>>;
+}
+```
+
+**Element types:**
+
+```typescript
+type SlideThemeElement =
+  | {
+      type: 'rect';
+      fill: string;             // CSS color
+      // Position: at least one horizontal + one vertical anchor required
+      left?: number; right?: number; width?: number;   // px on 960-wide canvas
+      top?: number;  bottom?: number; height?: number; // px on 540-high canvas
+      // Omit width/height and set both left+right (or top+bottom) to span full axis
+    }
+  | {
+      type: 'text';
+      content: string;          // supports template variables (see below)
+      color?: string;
+      fontSize?: number;        // px, default 12
+      bold?: boolean;
+      align?: 'left' | 'center' | 'right'; // default 'left'
+      left?: number; right?: number; centerX?: boolean;
+      top?: number;  bottom?: number; centerY?: boolean;
+    }
+  | {
+      type: 'image';
+      src: string;              // data: URI (base64) or absolute URL
+      opacity?: number;         // 0–1, default 1
+      left?: number; right?: number; width?: number;  centerX?: boolean;
+      top?: number;  bottom?: number; height?: number; centerY?: boolean;
+    };
+```
+
+**Template variables** in `text` content:
+
+| Variable | Expands to |
+|---|---|
+| `{{slideNum}}` | Current slide number (1-based) |
+| `{{slideTotal}}` | Total slide count |
+| `{{date}}` | Today's date, `YYYY-MM-DD` |
+| `{{date:FORMAT}}` | Today's date with custom format (e.g. `YYYY.MM.DD`) |
+| `{{title}}` | First `#` heading on the current slide, or empty string |
+
+**Positioning model** (all values in px on the 960×540 canvas):
+
+- Horizontal: `left: N` (from left edge), `right: N` (from right edge), `centerX: true` (centred), or `left: 0` + `right: 0` (span full width).
+- Vertical: `top: N` (from top edge), `bottom: N` (from bottom edge), `centerY: true` (centred), or `top: 0` + `bottom: 0` (span full height).
+- Elements are rendered in array order — earlier = lower z-layer. Full-bleed background images go first.
+- Elements are rendered inside an absolutely-positioned overlay div that sits on top of `SlideMarkdownViewer`. They do **not** participate in the markdown content flow.
+
+**`contentPadding`** insets the markdown content area so body text does not overlap fixed overlay elements (e.g. a 36 px bottom bar → `"contentPadding": { "bottom": 36 }`).
+
+**Layout overrides** — the `layouts` key lets a theme define completely different element sets for specific slide types:
+
+```json
+"layouts": {
+  "title": {
+    "bg": "#003087",
+    "fg": "#ffffff",
+    "contentPadding": { "top": 80, "left": 60, "right": 60, "bottom": 60 },
+    "elements": [
+      { "type": "image", "src": "data:image/png;base64,...",
+        "left": 0, "top": 0, "width": 960, "height": 540 }
+    ]
+  },
+  "default": {
+    "elements": [
+      { "type": "rect", "fill": "#003087",
+        "left": 0, "right": 0, "bottom": 0, "height": 36 },
+      { "type": "text", "content": "© Acme Corp",
+        "centerX": true, "bottom": 11, "color": "#fff", "fontSize": 12 }
+    ]
+  }
+}
+```
+
+If a slide's layout class has no matching entry in `layouts`, the base theme (`bg`, `fg`, `contentPadding`, `elements`) is used. A `"default"` layout key matches slides with no `<!-- class: ... -->` directive.
+
+### 11.6 Slide Typography
+
+`SlideMarkdownViewer` applies slide-optimised prose:
+
+| Element | Size |
+|---|---|
+| Body / lists | 1.2 rem |
+| h3 | 1.5 rem |
+| h2 | 2 rem |
+| h1 | 2.75 rem |
+| title-layout h1 | 3.5 rem |
+| section-layout h2 | 3.5 rem / 800 weight |
+
+All heading and body colours use `color: inherit` so theme and directive colours cascade correctly.
+
+### 11.7 Editing Slides
 
 - Same custom split-pane editor as markdown.
 - Preview pane shows live Streamdown preview of the raw markdown (not slide-split).
 
-### 11.4 Export
+### 11.8 Export
 
 - **Markdown pages**: client-side PDF export via `html2canvas-pro` + `jspdf` (dynamically imported). Triggered from the "···" page menu ("Export as PDF" item, visible in view mode only). An offscreen `MarkdownViewer` renders the document at 800 px width with `z-index: -9999` (not `opacity: 0` — html2canvas-pro inherits and propagates opacity, causing blank output). Pages are sliced into A4 tiles and stitched into a multi-page PDF, saved as `<title>.pdf`.
-- **Slide decks**: client-side PDF export via `html2canvas-pro` + `jspdf`, triggered from the SlideViewer controls bar (`ImageDown` button). Each 960×540 slide is captured individually and placed on its own A4 landscape page.
+- **Slide decks**: client-side PDF export via `html2canvas-pro` + `jspdf`, triggered from the SlideViewer controls bar (`ImageDown` button). Each 960×540 slide is captured individually (including overlay elements) and placed on its own landscape page.
 - Marp/server-side PDF export (Playwright, Chromium-gated): deferred to v2.
 
 ---
@@ -527,7 +712,7 @@ Top-right toast stack: `success` (green), `warning` (amber), `error` (red), `inf
 All routes require valid auth header. JSON responses.
 
 ```
-GET    /api/me                          → current user info
+GET    /api/me                          → current user info + slideThemes from .kumidocs.json
 GET    /api/tree                        → full file tree { path, type, emoji, title }
 GET    /api/file?path=<path>            → file content + metadata
 PUT    /api/file?path=<path>            → write file (editors only)
@@ -580,11 +765,13 @@ src/
 │   ├── dialogs/
 │   │   └── NewPageDialog.tsx
 │   ├── editor/
-│   │   ├── MarkdownEditor.tsx   ← custom split-pane markdown editor
-│   │   ├── MarkdownViewer.tsx   ← streamdown → direct DOM render
-│   │   ├── SlideViewer.tsx      ← client-side slide viewer + PDF export
+│   │   ├── MarkdownEditor.tsx        ← custom split-pane markdown editor
+│   │   ├── MarkdownViewer.tsx        ← streamdown → direct DOM render
+│   │   ├── SlideViewer.tsx           ← client-side slide viewer + PDF export
+│   │   ├── SlideMarkdownViewer.tsx   ← slide-optimised prose renderer (no dark:prose-invert)
 │   │   ├── rehypeEmojiPlugin.ts
-│   │   └── rehypeHeadingIdsPlugin.ts
+│   │   ├── rehypeHeadingIdsPlugin.ts
+│   │   └── rehypeImageAttrsPlugin.ts
 │   ├── layout/
 │   │   ├── AppShell.tsx
 │   │   ├── PageInfoPanel.tsx
@@ -603,6 +790,8 @@ src/
 ├── lib/
 │   ├── avatar.ts
 │   ├── filetypes.ts
+│   ├── frontmatter.ts   ← client-side YAML frontmatter parser + serialiser
+│   ├── slide.ts         ← parseSlideDirectives(), splitAtSecondH2()
 │   ├── types.ts
 │   └── utils.ts
 ├── pages/
@@ -666,3 +855,5 @@ SPEC.md
 - [x] Slide viewer (scroll/paginate/spotlight modes, fullscreen, arrow-key navigation, standalone presentation route)
 - [x] Client-side PDF export for slide decks (html2canvas-pro + jspdf, via SlideViewer controls bar)
 - [x] Code file editor (CodeMirror + language packs, `@uiw/codemirror-extensions-langs`, `@uiw/codemirror-theme-github`)
+- [x] Slide styling system: per-slide `<!-- class/bg/color -->` directives, 6 layout classes, 5 built-in themes, `theme` + `paginate` frontmatter, progress bar, slide number badge, fence-aware `---` splitting
+- [ ] Custom slide themes via `.kumidocs.json` `slideThemes` (element overlay renderer, layout overrides, template variables, `contentPadding`)
