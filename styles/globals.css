@@ -173,10 +173,12 @@
 	background: var(--slide-bg);
 	position: relative;
 	overflow: hidden;
+}
 
-	/* Remap Tailwind color utilities to slide-local values so bg-sidebar,
-	   bg-muted, bg-background etc. all respect the active slide theme
-	   regardless of site light/dark mode. No circular refs: --color-* ≠ --slide-bg. */
+/* Override typography plugin prose color vars with slide-fg so dark themes get light text.
+   Also remap Tailwind --color-* vars here so bg-sidebar, bg-muted etc. inside prose
+   (tables, code wrappers) respect the slide theme regardless of site light/dark mode. */
+.slide-canvas .prose {
 	--color-background: var(--slide-bg);
 	--color-foreground: var(--slide-fg);
 	--color-sidebar: var(--slide-bg);
@@ -186,10 +188,6 @@
 	--color-sidebar-foreground: var(--slide-fg);
 	--color-card-foreground: var(--slide-fg);
 	--color-border: oklch(from var(--slide-fg) l c h / 0.15);
-}
-
-/* Override typography plugin prose color vars with slide-fg so dark themes get light text */
-.slide-canvas .prose {
 	--tw-prose-body: var(--slide-fg);
 	--tw-prose-headings: var(--slide-fg);
 	--tw-prose-lead: var(--slide-fg);
