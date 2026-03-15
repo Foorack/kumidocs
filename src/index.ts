@@ -1,5 +1,5 @@
 import { serve } from 'bun';
-import { existsSync } from 'fs';
+import { existsSync, watch } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import index from './index.html';
@@ -79,6 +79,38 @@ async function loadPermissions() {
 }
 
 await loadPermissions();
+
+// Watch entire repo folder for on-disk changes and reload immediately
+const debounceMap = new Map<string, ReturnType<typeof setTimeout>>();
+watch(config.repoPath, { recursive: true }, (_, filename) => {
+	if (!filename) return;
+	const relPath = filename.replace(/\\/g, '/');
+	if (relPath.startsWith('.git/') || relPath === '.git') return;
+	const prev = debounceMap.get(relPath);
+	if (prev) clearTimeout(prev);
+	debounceMap.set(
+		relPath,
+		setTimeout(() => {
+			debounceMap.delete(relPath);
+			if (relPath === '.kumidocs.json') {
+				void loadPermissions().then(() => console.log('Reloaded .kumidocs.json'));
+				return;
+			}
+			const fullPath = join(config.repoPath, relPath);
+			if (existsSync(fullPath)) {
+				void reloadFile(relPath, config).then(() => {
+					updateInIndex(relPath);
+					broadcastPageChanged(relPath, '', 'disk', 'Local');
+				});
+			} else {
+				removeFromCache(relPath);
+				removeFromIndex(relPath);
+				broadcastPageDeleted(relPath);
+			}
+		}, 100),
+	);
+});
+
 await gitPull(config);
 await loadFilestore(config);
 initSearch();
