@@ -378,8 +378,9 @@ export default function FilePage() {
 		if (!container) return;
 		const style = document.createElement('style');
 		style.textContent = [
+			// @page must be top-level — nesting inside @media print is ignored by Chrome/Edge
+			'@page { size: A4 portrait; margin: 2cm; }',
 			'@media print {',
-			'  @page { size: A4 portrait; margin: 2cm; }',
 			'  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
 			'  body * { visibility: hidden; }',
 			'  #kumi-doc-print-root {',
@@ -580,7 +581,9 @@ export default function FilePage() {
 										void handlePageDuplicate();
 									}}
 									onExportPdf={
-										fileType === 'doc' && !editMode ? () => printDoc() : undefined
+										fileType === 'doc' && !editMode
+											? () => printDoc()
+											: undefined
 									}
 									onMove={(p) => {
 										openMove(p).catch((err: unknown) => {

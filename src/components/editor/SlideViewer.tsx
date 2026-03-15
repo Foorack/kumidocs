@@ -323,8 +323,9 @@ export function SlideViewer({
 		if (!container) return;
 		const style = document.createElement('style');
 		style.textContent = [
+			// @page must be top-level — nesting inside @media print is ignored by Chrome/Edge
+			'@page { size: 960px 540px landscape; margin: 0; }',
 			'@media print {',
-			'  @page { size: 960px 540px landscape; margin: 0; }',
 			'  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
 			'  body * { visibility: hidden; }',
 			'  #kumi-slide-print-root {',
