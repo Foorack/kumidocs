@@ -98,7 +98,7 @@ This project follows a **Project Owner + Lead Developer** model for AI-assisted 
 
 **Example bad interaction**:  
 ❌ Developer: "Would you like me to use Discord or generic OIDC?"  
-✅ Developer: "Configured Discord OAuth with provided credentials. SSO-proxy running on port 8080."
+✅ Developer: "Configured Discord OAuth with provided credentials. SSO-proxy running on port 5865."
 
 **Example good interaction**:  
 ✅ Developer: "Discord OAuth doesn't provide OIDC discovery. Options: (1) Use oauth2-proxy generic provider with manual endpoint config, (2) Switch to a Discord-native auth library. Proceeding with option 1 unless you prefer option 2."

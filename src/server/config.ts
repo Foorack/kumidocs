@@ -65,7 +65,7 @@ const OPTIONS: OptionDef[] = [
 		key: 'port',
 		coerce: coercePort,
 		env: 'KUMIDOCS_PORT',
-		default: 3000,
+		default: 5864,
 		description: 'Port to listen on',
 	},
 	{

@@ -11,7 +11,7 @@ services:
         environment:
             - NODE_ENV=development
             - KUMIDOCS_REPO_PATH=/repo
-            - KUMIDOCS_PORT=3000
+            - KUMIDOCS_PORT=5864
             - KUMIDOCS_INSTANCE_NAME=${KUMIDOCS_INSTANCE_NAME:-KumiDocs}
             - KUMIDOCS_AUTH_HEADER=X-Forwarded-Email
             - KUMIDOCS_AUTO_SAVE_DELAY=5000
@@ -26,13 +26,13 @@ services:
         command:
             - |
                 exec oauth2-proxy \
-                  --http-address=0.0.0.0:8080 \
-                  --upstream=http://localhost:3000 \
+                  --http-address=0.0.0.0:5865 \
+                  --upstream=http://localhost:5864 \
                   --reverse-proxy=true \
                   --provider=${SSO_PROXY_PROVIDER:-github} \
                   --client-id=${SSO_PROXY_CLIENT_ID} \
                   --client-secret=${SSO_PROXY_CLIENT_SECRET} \
-                  --redirect-url=${SSO_PROXY_REDIRECT_URL:-http://localhost:8080/oauth2/callback} \
+                  --redirect-url=${SSO_PROXY_REDIRECT_URL:-http://localhost:5865/oauth2/callback} \
                   --email-domain=* \
                   --set-xauthrequest=true \
                   --pass-user-headers=true \

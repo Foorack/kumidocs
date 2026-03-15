@@ -427,7 +427,10 @@ export default function FilePage() {
 				let ancestor: Element | null = (node as Text).parentElement;
 				let inSvg = false;
 				while (ancestor) {
-					if (ancestor.tagName.toLowerCase() === 'svg') { inSvg = true; break; }
+					if (ancestor.tagName.toLowerCase() === 'svg') {
+						inSvg = true;
+						break;
+					}
 					ancestor = ancestor.parentElement;
 				}
 				if (inSvg) continue;

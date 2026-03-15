@@ -37,7 +37,10 @@ function overlaySelectableLayer(pdf: JsPDF, root: HTMLElement): void {
 		let ancestor: Element | null = node.parentElement;
 		let inSvg = false;
 		while (ancestor) {
-			if (ancestor.tagName.toLowerCase() === 'svg') { inSvg = true; break; }
+			if (ancestor.tagName.toLowerCase() === 'svg') {
+				inSvg = true;
+				break;
+			}
 			ancestor = ancestor.parentElement;
 		}
 		if (inSvg) continue;
