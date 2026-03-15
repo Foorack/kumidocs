@@ -101,6 +101,29 @@ function interpolate(
 	return result;
 }
 
+// ── SVG dimension patcher ─────────────────────────────────────────────────────
+// html2canvas renders <img src="...svg..."> at the SVG's own intrinsic size,
+// ignoring CSS width/height, which crops the image to the top-left corner.
+// Patching the SVG root's width/height attributes to match the display size
+// before rendering tells html2canvas the correct raster dimensions.
+
+function patchSvgDimensions(src: string, width?: number, height?: number): string {
+	if (!src.startsWith('data:image/svg+xml;base64,') || !width || !height) return src;
+	try {
+		const b64 = src.slice('data:image/svg+xml;base64,'.length);
+		let svg = atob(b64);
+		svg = svg.replace(/<svg([^>]*)>/i, (_match, attrs: string) => {
+			const cleaned = attrs
+				.replace(/\s+width="[^"]*"/g, '')
+				.replace(/\s+height="[^"]*"/g, '');
+			return `<svg${cleaned} width="${width}" height="${height}">`;
+		});
+		return 'data:image/svg+xml;base64,' + btoa(svg);
+	} catch {
+		return src;
+	}
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface SlideOverlayProps {
@@ -150,11 +173,12 @@ export function SlideOverlay({ elements, slideNum, total, title, themeVars }: Sl
 				return (
 					<img
 						key={i}
-						src={el.src}
+						src={patchSvgDimensions(el.src, el.width, el.height)}
 						alt=""
 						style={{
 							opacity: el.opacity,
-							objectFit: 'cover',
+							objectFit: 'contain',
+							objectPosition: 'left center',
 							...posStyle,
 						}}
 					/>
