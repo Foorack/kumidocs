@@ -4,8 +4,8 @@ import {
 	BookOpen,
 	ChevronLeft,
 	ChevronRight,
+	Download,
 	GalleryVertical,
-	ImageDown,
 	Maximize,
 	Minimize,
 	Mouse,
@@ -748,7 +748,7 @@ export function SlideViewer({
 						disabled={isExporting}
 						title="Export as PDF"
 					>
-						<ImageDown className="w-4 h-4" />
+						<Download className="w-4 h-4" />
 					</Button>
 				</div>
 			</div>
