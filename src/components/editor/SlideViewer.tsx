@@ -49,7 +49,7 @@ function overlaySelectableLayer(pdf: JsPDF, root: HTMLElement): void {
 		const br = range.getBoundingClientRect();
 		if (br.width <= 0 || br.height <= 0) continue;
 		const fsPx = parseFloat(window.getComputedStyle(node.parentElement).fontSize);
-		pdf.setFontSize((isNaN(fsPx) ? 12 : fsPx) * 0.75); // CSS px → PDF pt
+		pdf.setFontSize(isNaN(fsPx) ? 12 : fsPx);
 		pdf.text(text, br.left - rootRect.left, br.top - rootRect.top, {
 			renderingMode: 'invisible',
 			baseline: 'top',

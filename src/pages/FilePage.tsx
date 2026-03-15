@@ -445,7 +445,7 @@ export default function FilePage() {
 					window.getComputedStyle((node as Text).parentElement!).fontSize,
 				);
 				pdf.setPage(pageIdx + 1);
-				pdf.setFontSize((isNaN(fsPx) ? 12 : fsPx) * 0.75); // CSS px → PDF pt
+				pdf.setFontSize(isNaN(fsPx) ? 12 : fsPx);
 				pdf.text(text, br.left - rootRect.left, yOnPage, {
 					renderingMode: 'invisible',
 					baseline: 'top',
