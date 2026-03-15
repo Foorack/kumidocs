@@ -446,10 +446,16 @@ export default function FilePage() {
 				);
 				pdf.setPage(pageIdx + 1);
 				pdf.setFontSize(isNaN(fsPx) ? 12 : fsPx);
+				// Stretch/compress char spacing so the invisible text spans the same
+				// pixel width as the actual DOM render, compensating for font differences.
+				const pdfWidth = pdf.getTextWidth(text);
+				const charSpace = text.length > 1 ? (br.width - pdfWidth) / (text.length - 1) : 0;
+				pdf.setCharSpace(charSpace);
 				pdf.text(text, br.left - rootRect.left, yOnPage, {
 					renderingMode: 'invisible',
 					baseline: 'top',
 				});
+				pdf.setCharSpace(0);
 			}
 
 			// ── Link hotspots (per-page) ──────────────────────────────────────
