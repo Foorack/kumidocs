@@ -5,10 +5,10 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	GalleryVertical,
+	ImageDown,
 	Maximize,
 	Minimize,
 	Mouse,
-	Printer,
 	Spotlight,
 	Square,
 } from 'lucide-react';
@@ -218,6 +218,7 @@ export function SlideViewer({
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [isSpotlight, setIsSpotlight] = useState(false);
 	const [spotlightScale, setSpotlightScale] = useState(1);
+	const [isExporting, setIsExporting] = useState(false);
 	const [scrollMode, setScrollMode] = useState(!standalone);
 	const [pointerVisible, setPointerVisible] = useState(false);
 	const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
@@ -317,41 +318,39 @@ export function SlideViewer({
 		setIsSpotlight(true);
 	}, []);
 
-	// ── Print / PDF export ───────────────────────────────────────────────────
-	const printSlides = useCallback(() => {
-		const container = offscreenRef.current;
-		if (!container) return;
-		const style = document.createElement('style');
-		style.textContent = [
-			'@media print {',
-			'  @page { size: 960px 540px landscape; margin: 0; }',
-			'  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }',
-			'  body * { visibility: hidden; }',
-			'  #kumi-slide-print-root {',
-			'    visibility: visible !important;',
-			'    position: absolute !important;',
-			'    top: 0 !important; left: 0 !important;',
-			'    width: 960px !important;',
-			'    opacity: 1 !important;',
-			'    z-index: 99999 !important;',
-			'    overflow: visible !important;',
-			'  }',
-			'  #kumi-slide-print-root * { visibility: visible !important; }',
-			'  #kumi-slide-print-root > div { break-after: page; }',
-			'}',
-		].join('\n');
-		document.head.appendChild(style);
-		container.id = 'kumi-slide-print-root';
-		window.addEventListener(
-			'afterprint',
-			() => {
-				document.head.removeChild(style);
-				container.removeAttribute('id');
-			},
-			{ once: true },
-		);
-		window.print();
-	}, []);
+	// ── PDF export ───────────────────────────────────────────────────────────
+	const exportPdf = useCallback(async () => {
+		if (isExporting) return;
+		setIsExporting(true);
+		try {
+			const container = offscreenRef.current;
+			if (!container) return;
+			const { default: html2canvas } = await import('html2canvas-pro');
+			const { jsPDF } = await import('jspdf');
+			const pdf = new jsPDF({
+				orientation: 'landscape',
+				unit: 'px',
+				format: [SLIDE_W, SLIDE_H],
+			});
+			const slideEls = Array.from(container.children) as HTMLElement[];
+			for (let i = 0; i < slideEls.length; i++) {
+				const el = slideEls[i];
+				if (!el) continue;
+				const canvas = await html2canvas(el, {
+					width: SLIDE_W,
+					height: SLIDE_H,
+					scale: 2,
+					useCORS: true,
+					logging: false,
+				});
+				if (i > 0) pdf.addPage();
+				pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, SLIDE_W, SLIDE_H);
+			}
+			pdf.save(`${filename}.pdf`);
+		} finally {
+			setIsExporting(false);
+		}
+	}, [isExporting, filename]);
 
 	const currentSlide = parsedSlides[index] ?? { content: '', directives: { classes: [] } };
 
@@ -696,11 +695,12 @@ export function SlideViewer({
 						size="icon"
 						className="h-7 w-7"
 						onClick={() => {
-							printSlides();
+							void exportPdf();
 						}}
+						disabled={isExporting}
 						title="Export as PDF"
 					>
-						<Printer className="w-4 h-4" />
+						<ImageDown className="w-4 h-4" />
 					</Button>
 				</div>
 			</div>
