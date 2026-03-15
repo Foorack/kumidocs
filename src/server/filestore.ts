@@ -9,6 +9,17 @@ import { extractHeadingTitle } from '@/lib/frontmatter';
 const fileCache = new Map<string, string>(); // relPath -> content
 let treeCache: TreeNode[] | null = null; // invalidated on every write/delete/move
 
+// Paths written by this server process — watcher should not re-broadcast these.
+const recentlyWritten = new Set<string>();
+export function markWritten(relPath: string): void {
+	recentlyWritten.add(relPath);
+}
+export function consumeWritten(relPath: string): boolean {
+	if (!recentlyWritten.has(relPath)) return false;
+	recentlyWritten.delete(relPath);
+	return true;
+}
+
 function invalidateTree(): void {
 	treeCache = null;
 }
@@ -79,6 +90,7 @@ export async function writeFileToRepo(
 	content: string,
 	config: Config,
 ): Promise<void> {
+	markWritten(path); // suppress watcher broadcast for this server-initiated write
 	const fullPath = join(config.repoPath, path);
 	await mkdir(dirname(fullPath), { recursive: true });
 	const isBinary = IMAGE_TYPES.has(extname(path).toLowerCase());

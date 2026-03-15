@@ -17,7 +17,7 @@ import {
 	broadcastPageChanged,
 	broadcastPageDeleted,
 } from './server/websocket';
-import { reloadFile, removeFromCache } from './server/filestore';
+import { reloadFile, removeFromCache, consumeWritten } from './server/filestore';
 import {
 	apiMe,
 	apiTree,
@@ -100,7 +100,10 @@ watch(config.repoPath, { recursive: true }, (_, filename) => {
 			if (existsSync(fullPath)) {
 				void reloadFile(relPath, config).then(() => {
 					updateInIndex(relPath);
-					broadcastPageChanged(relPath, '', 'disk', 'Local');
+					// Skip broadcast for writes originated by this server process
+					if (!consumeWritten(relPath)) {
+						broadcastPageChanged(relPath, '', 'disk', 'Local');
+					}
 				});
 			} else {
 				removeFromCache(relPath);
