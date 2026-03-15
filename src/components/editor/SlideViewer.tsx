@@ -19,6 +19,50 @@ import { parseSlideDirectives, resolveTheme, isBgDark } from '@/lib/slide';
 import type { ParsedSlide, SlideThemeMap } from '@/lib/slide';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/store/theme';
+import type { jsPDF as JsPDF } from 'jspdf';
+
+// ── PDF selectable layer ─────────────────────────────────────────────────────
+// Walks the DOM of a rendered slide and adds invisible text + link hotspots
+// on top of the bitmap image so PDF readers can search/select text and follow links.
+
+function overlaySelectableLayer(pdf: JsPDF, root: HTMLElement): void {
+	const rootRect = root.getBoundingClientRect();
+
+	// Invisible text
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+		if (!text || !node.parentElement) continue;
+		// Skip text nodes inside SVG (rendered as vector paths, not text)
+		let ancestor: Element | null = node.parentElement;
+		let inSvg = false;
+		while (ancestor) {
+			if (ancestor.tagName.toLowerCase() === 'svg') { inSvg = true; break; }
+			ancestor = ancestor.parentElement;
+		}
+		if (inSvg) continue;
+		const range = document.createRange();
+		range.selectNode(node);
+		const br = range.getBoundingClientRect();
+		if (br.width <= 0 || br.height <= 0) continue;
+		const fsPx = parseFloat(window.getComputedStyle(node.parentElement).fontSize);
+		pdf.setFontSize((isNaN(fsPx) ? 12 : fsPx) * 0.75); // CSS px → PDF pt
+		pdf.text(text, br.left - rootRect.left, br.top - rootRect.top, {
+			renderingMode: 'invisible',
+			baseline: 'top',
+		});
+	}
+
+	// Link hotspots
+	for (const a of Array.from(root.querySelectorAll<HTMLAnchorElement>('a[href]'))) {
+		const rect = a.getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0) continue;
+		const x = rect.left - rootRect.left;
+		const y = rect.top - rootRect.top;
+		if (x < 0 || y < 0) continue;
+		pdf.link(x, y, rect.width, rect.height, { url: a.href });
+	}
+}
 
 // ── Slide parsing ─────────────────────────────────────────────────────────────
 
@@ -345,6 +389,7 @@ export function SlideViewer({
 				});
 				if (i > 0) pdf.addPage();
 				pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, SLIDE_W, SLIDE_H);
+				overlaySelectableLayer(pdf, el);
 			}
 			pdf.save(`${filename}.pdf`);
 		} finally {

@@ -385,6 +385,7 @@ export default function FilePage() {
 			const RENDER_W = 800;
 			const SCALE = 1.5;
 			const PAGE_H_PX = Math.floor((RENDER_W * 297) / 210); // A4 portrait ratio ≈ 1131px
+			const rootRect = el.getBoundingClientRect();
 			const canvas = await html2canvas(el, {
 				width: RENDER_W,
 				scale: SCALE,
@@ -417,6 +418,50 @@ export default function FilePage() {
 				);
 				yOffset += scaledPageH;
 			}
+
+			// ── Invisible text overlay (per-page) ─────────────────────────────
+			const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+			for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+				const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+				if (!text || !(node as Text).parentElement) continue;
+				let ancestor: Element | null = (node as Text).parentElement;
+				let inSvg = false;
+				while (ancestor) {
+					if (ancestor.tagName.toLowerCase() === 'svg') { inSvg = true; break; }
+					ancestor = ancestor.parentElement;
+				}
+				if (inSvg) continue;
+				const range = document.createRange();
+				range.selectNode(node);
+				const br = range.getBoundingClientRect();
+				if (br.width <= 0 || br.height <= 0) continue;
+				const yLocal = br.top - rootRect.top;
+				const pageIdx = Math.floor(yLocal / PAGE_H_PX);
+				const yOnPage = yLocal - pageIdx * PAGE_H_PX;
+				const fsPx = parseFloat(
+					window.getComputedStyle((node as Text).parentElement!).fontSize,
+				);
+				pdf.setPage(pageIdx + 1);
+				pdf.setFontSize((isNaN(fsPx) ? 12 : fsPx) * 0.75); // CSS px → PDF pt
+				pdf.text(text, br.left - rootRect.left, yOnPage, {
+					renderingMode: 'invisible',
+					baseline: 'top',
+				});
+			}
+
+			// ── Link hotspots (per-page) ──────────────────────────────────────
+			for (const a of Array.from(el.querySelectorAll<HTMLAnchorElement>('a[href]'))) {
+				const rect = a.getBoundingClientRect();
+				if (rect.width <= 0 || rect.height <= 0) continue;
+				const x = rect.left - rootRect.left;
+				const yLocal = rect.top - rootRect.top;
+				const pageIdx = Math.floor(yLocal / PAGE_H_PX);
+				const yOnPage = yLocal - pageIdx * PAGE_H_PX;
+				if (x < 0 || yOnPage < 0) continue;
+				pdf.setPage(pageIdx + 1);
+				pdf.link(x, yOnPage, rect.width, rect.height, { url: a.href });
+			}
+
 			pdf.save(`${title}.pdf`);
 		} finally {
 			setIsPdfExporting(false);
