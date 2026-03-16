@@ -1,8 +1,34 @@
 import { serve } from 'bun';
 import { existsSync, watch } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
-import index from './index.html';
+import { join, sep } from 'path';
+// In dev (bun --hot), Bun bundles the frontend on-the-fly with HMR.
+// In production (dist/index.js), __BUNDLED__ is injected by scripts/build.ts and
+// serveSPA reads from the pre-built dist/public/ directory instead.
+import devIndex from './index.html';
+declare const __BUNDLED__: boolean | undefined;
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+const isBundled = typeof __BUNDLED__ !== 'undefined';
+const publicDir = join(import.meta.dir, 'public');
+async function serveSPA(req: Request): Promise<Response> {
+	const rel = new URL(req.url).pathname.replace(/^\/+/, '') || 'index.html';
+	const filePath = join(publicDir, rel);
+	// Guard against directory traversal (join resolves ../ segments)
+	if (!filePath.startsWith(publicDir + sep)) {
+		return new Response(Bun.file(join(publicDir, 'index.html')));
+	}
+	const file = Bun.file(filePath);
+	if (await file.exists()) {
+		return new Response(file, {
+			headers:
+				rel !== 'index.html'
+					? { 'Cache-Control': 'public, max-age=31536000, immutable' }
+					: {},
+		});
+	}
+	// SPA fallback — let React Router handle unknown paths
+	return new Response(Bun.file(join(publicDir, 'index.html')));
+}
 import { loadConfig } from './server/config';
 import { parseUser, setPermissions } from './server/auth';
 import type { KumiDocsPermissions } from './server/auth';
@@ -156,7 +182,7 @@ const server = serve<WsData>({
 	port: config.port,
 
 	routes: {
-		'/*': index,
+		'/*': isBundled ? serveSPA : devIndex,
 
 		'/api/avatar/:hash': {
 			async GET(req: Request) {
