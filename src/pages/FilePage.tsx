@@ -243,7 +243,9 @@ export default function FilePage() {
 						setLastSha(data.sha);
 						reloadTree();
 						if (data.pushWarning) {
-							toast.warning('Saved locally. Remote push failed — check git remote config.');
+							toast.warning(
+								'Saved locally. Remote push failed — check git remote config.',
+							);
 						}
 					} else {
 						setSaveStatus('error');
