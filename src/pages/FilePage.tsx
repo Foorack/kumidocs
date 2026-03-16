@@ -225,7 +225,7 @@ export default function FilePage() {
 						body: JSON.stringify({ content: fullContent }),
 					});
 					if (res.ok) {
-						const data = (await res.json()) as { sha: string };
+						const data = (await res.json()) as { sha: string; pushWarning?: boolean };
 						if (isRaw) {
 							// Re-parse to keep content + meta in sync for view mode.
 							const parsed = parseFrontmatter(currentContent);
@@ -242,12 +242,9 @@ export default function FilePage() {
 						setSaveStatus('saved');
 						setLastSha(data.sha);
 						reloadTree();
-					} else if (res.status === 409) {
-						setSaveStatus('error');
-						toast.error('Conflict: changes were reverted by a remote update.');
-						loadDoc(filePath).catch((err: unknown) => {
-							console.error('Failed to reload document after conflict:', err);
-						});
+						if (data.pushWarning) {
+							toast.warning('Saved locally. Remote push failed — check git remote config.');
+						}
 					} else {
 						setSaveStatus('error');
 						toast.error('Save failed.');

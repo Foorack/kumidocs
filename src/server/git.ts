@@ -119,7 +119,9 @@ async function pushWithRetry(
 			});
 			await git.push({ fs, http, dir: config.repoPath, remote: 'origin' });
 		} catch {
-			return { sha: commitSha.slice(0, 7), error: 'conflict' };
+			// The commit is still present locally — the content is safe.
+			// 'push_failed' signals a remote-sync problem, not data loss.
+			return { sha: commitSha.slice(0, 7), error: 'push_failed' };
 		}
 	}
 	return { sha: commitSha.slice(0, 7) };

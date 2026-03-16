@@ -107,19 +107,15 @@ export async function apiFilePut(url: URL, req: Request, user: User, config: Con
 		user.email || 'kumidocs@localhost',
 	);
 
-	if (result.error === 'conflict') {
-		return Response.json(
-			{
-				sha: result.sha,
-				warning: 'Remote conflict — changes reverted by remote.',
-			},
-			{ status: 409 },
-		);
-	}
-
 	// Only broadcast if a new commit was actually made — skip no-op saves
 	if (result.committed !== false) {
 		broadcastPageChanged(path, result.sha, user.id, user.displayName);
+	}
+
+	if (result.error === 'push_failed') {
+		// Commit is local — content is safe, but could not sync to remote.
+		// Return 200 so the client marks the page as saved.
+		return Response.json({ sha: result.sha, pushWarning: true });
 	}
 	return Response.json({ sha: result.sha });
 }
