@@ -11,19 +11,26 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"files": ["src", "styles", "bunfig.toml", "tsconfig.json"],
+	"engines": {
+		"bun": ">=1.1.0"
+	},
+	"files": ["dist"],
 	"bin": {
-		"kumidocs": "src/index.ts"
+		"kumidocs": "dist/index.js"
 	},
 	"type": "module",
 	"scripts": {
+		"build": "bun scripts/build.ts",
+		"prepublishOnly": "bun run build",
 		"dev": "bun --hot src/index.ts",
 		"start": "NODE_ENV=production bun src/index.ts",
 		"lint": "bunx prettier --check . && bunx eslint .",
 		"format": "bunx prettier --write .",
 		"ts": "bunx tsc --noEmit"
 	},
-	"dependencies": {
+	"dependencies": {},
+	"devDependencies": {
+		"bun-plugin-tailwind": "0.1.2",
 		"@fluentui/react-icons": "2.0.320",
 		"@noble/hashes": "2.0.1",
 		"@radix-ui/react-label": "2.1.8",
@@ -55,9 +62,7 @@
 		"rehype-harden": "1.1.8",
 		"sonner": "2.0.7",
 		"streamdown": "2.4.0",
-		"tailwind-merge": "3.5.0"
-	},
-	"devDependencies": {
+		"tailwind-merge": "3.5.0",
 		"@eslint/js": "10.0.1",
 		"@types/bun": "1.3.10",
 		"@types/react": "19.2.14",
