@@ -9,9 +9,16 @@ interface PageContextValue {
   rawContent: string;
   /** Full file tree from the server. */
   tree: TreeNode[];
+  /** Whether the page is currently being edited (vs. viewed read-only). */
+  editMode: boolean;
 }
 
-const PageContext = createContext<PageContextValue>({ pagePath: "", rawContent: "", tree: [] });
+const PageContext = createContext<PageContextValue>({
+  editMode: false,
+  pagePath: "",
+  rawContent: "",
+  tree: [],
+});
 
 function usePageContext(): PageContextValue {
   return useContext(PageContext);
@@ -21,10 +28,13 @@ function PageContextProvider({
   pagePath,
   rawContent,
   tree,
+  editMode,
   children,
 }: PageContextValue & { children: ReactNode }): JSX.Element {
   return (
-    <PageContext.Provider value={{ pagePath, rawContent, tree }}>{children}</PageContext.Provider>
+    <PageContext.Provider value={{ editMode, pagePath, rawContent, tree }}>
+      {children}
+    </PageContext.Provider>
   );
 }
 
