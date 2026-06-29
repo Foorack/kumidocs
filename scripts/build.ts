@@ -25,8 +25,9 @@ const root = join(import.meta.dir, "..");
 const distDir = join(root, "dist");
 const publicDir = join(distDir, "public");
 
-const pkg = JSON.parse(await Bun.file(join(root, "package.json")).text());
-const appVersion = pkg.version as string;
+// oxlint-disable-next-line typescript/no-unsafe-assignment
+const pkg: { version: string } = JSON.parse(await Bun.file(join(root, "package.json")).text());
+const appVersion = pkg.version;
 
 const t0 = performance.now();
 console.log(`Building KumiDocs v${appVersion}...`);

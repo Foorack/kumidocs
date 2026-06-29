@@ -78,7 +78,7 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
               <div className="w-full border-t border-border pt-2 mt-1 text-center">
                 <p className="text-xs text-muted-foreground">VERSION</p>
                 <a
-                  href={`https://www.npmjs.com/package/kumidocs/v/${APP_VERSION}`}
+                  href="https://www.npmjs.com/package/kumidocs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs font-mono text-foreground hover:text-primary hover:underline"
