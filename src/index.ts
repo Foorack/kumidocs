@@ -308,7 +308,7 @@ const server = serve<WsData>({
 
   port: config.port,
 
-  routes: buildRoutes(config, requireUser),
+  routes: await buildRoutes(config, requireUser),
 
   websocket: {
     close: wsClose,

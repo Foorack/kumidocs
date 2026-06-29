@@ -19,7 +19,6 @@ import {
   serveRepoAsset,
 } from "./api";
 import { makeUser } from "./auth";
-import devIndex from "@/index.html";
 import path from "node:path";
 import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
@@ -64,7 +63,10 @@ async function serveCatchAll(req: Request): Promise<Response> {
   return serveSPA(req);
 }
 
-function buildRoutes(config: Config, requireUser: RequireUser): Record<string, unknown> {
+async function buildRoutes(
+  config: Config,
+  requireUser: RequireUser,
+): Promise<Record<string, unknown>> {
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
   mutationLimiter.startCleanup();
@@ -287,7 +289,9 @@ function buildRoutes(config: Config, requireUser: RequireUser): Record<string, u
 
   // Dev mode only: Bun's HTMLBundle enables HMR and .tsx transpilation.
   // In production the SPA is served by fetch() -> serveCatchAll.
+  // Read at runtime so the bundler doesn't trace frontend dependencies here.
   if (!isBundled) {
+    const devIndex = await Bun.file(new URL("../index.html", import.meta.url)).text();
     routes["/*"] = devIndex;
   }
 
