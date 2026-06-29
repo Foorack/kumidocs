@@ -1,4 +1,4 @@
-import { ArrowLeftRegular } from "@fluentui/react-icons";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -82,7 +82,7 @@ const NotFound = (): JSX.Element => {
             void navigate("/p/README.md");
           }}
         >
-          <ArrowLeftRegular className="mr-2 w-4 h-4" />
+          <ArrowLeft className="mr-2 w-4 h-4" />
           Go to home
         </Button>
       </div>

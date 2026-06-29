@@ -3,7 +3,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Popover as PopoverPrimitive } from "radix-ui";
-import { SearchRegular } from "@fluentui/react-icons";
+import { Search } from "lucide-react";
 import { UserAvatar } from "@/components/ui/avatar";
 import { useTheme } from "@/store/theme";
 import { useUser } from "@/store/user";
@@ -94,7 +94,7 @@ const TopBar = (allProps: TopBarProps): JSX.Element => {
           className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal w-full max-w-96 justify-start bg-white hover:bg-white/90"
           onClick={onSearchOpen}
         >
-          <SearchRegular className="w-3.5 h-3.5 shrink-0" />
+          <Search className="w-3.5 h-3.5 shrink-0" />
           <span>Search...</span>
           <KbdGroup className="ml-auto">
             <Kbd>⌘</Kbd>

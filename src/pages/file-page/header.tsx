@@ -5,11 +5,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
-import {
-  InfoRegular,
-  MoreHorizontalRegular,
-  TextBulletListLtrRegular,
-} from "@fluentui/react-icons";
+import { Info, List, MoreHorizontal } from "lucide-react";
 import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -197,7 +193,7 @@ function FilePageHeader({
               });
             }}
           >
-            <TextBulletListLtrRegular className="w-4 h-4" />
+            <List className="w-4 h-4" />
             TOC
           </Button>
         )}
@@ -220,7 +216,7 @@ function FilePageHeader({
               });
             }}
           >
-            <InfoRegular className="w-4 h-4" />
+            <Info className="w-4 h-4" />
             Info
           </Button>
         )}
@@ -230,7 +226,7 @@ function FilePageHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="h-7 w-7">
-                <MoreHorizontalRegular className="w-4 h-4" />
+                <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

@@ -1,4 +1,4 @@
-import { ChevronDownRegular, ChevronRightRegular } from "@fluentui/react-icons";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Link } from "react-router-dom";
 import buildPageTree from "@/lib/page-tree";
@@ -44,9 +44,9 @@ function PageTreeItem({
             }}
           >
             {open ? (
-              <ChevronDownRegular className="w-3 h-3" />
+              <ChevronDown className="w-3 h-3" />
             ) : (
-              <ChevronRightRegular className="w-3 h-3" />
+              <ChevronRight className="w-3 h-3" />
             )}
           </button>
         ) : (

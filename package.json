@@ -30,7 +30,6 @@
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"@fluentui/react-icons": "2.0.331",
 		"@iconify-json/devicon": "1.2.62",
 		"@iconify-json/flag": "1.2.12",
 		"@iconify-json/fluent-color": "1.2.21",

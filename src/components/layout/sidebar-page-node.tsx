@@ -1,10 +1,5 @@
 import { duplicatePage } from "@/lib/api";
-import {
-  ChevronDownRegular,
-  ChevronRightRegular,
-  MoreHorizontalFilled,
-  MoreHorizontalRegular,
-} from "@fluentui/react-icons";
+import { ChevronDown, ChevronRight, MoreHorizontal } from "lucide-react";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
   DropdownMenu,
@@ -190,9 +185,9 @@ function PageNodeRow({
 
   const dotsIcon =
     dotsHovered || dotsOpen ? (
-      <MoreHorizontalFilled className="w-4 h-4" />
+      <MoreHorizontal className="w-4 h-4" />
     ) : (
-      <MoreHorizontalRegular className="w-4 h-4" />
+      <MoreHorizontal className="w-4 h-4" />
     );
 
   const toggleOpen = (ev: React.MouseEvent): void => {
@@ -208,8 +203,8 @@ function PageNodeRow({
       }`}
       onClick={hasChildren ? toggleOpen : undefined}
     >
-      {hasChildren && open && <ChevronDownRegular className="w-3 h-3" />}
-      {hasChildren && !open && <ChevronRightRegular className="w-3 h-3" />}
+      {hasChildren && open && <ChevronDown className="w-3 h-3" />}
+      {hasChildren && !open && <ChevronRight className="w-3 h-3" />}
     </span>
   );
 

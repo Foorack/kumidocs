@@ -1,10 +1,4 @@
-import {
-  AddRegular,
-  BookTemplateRegular,
-  DocumentTextRegular,
-  ImageRegular,
-  MoreHorizontalRegular,
-} from "@fluentui/react-icons";
+import { BookOpen, FileText, Image, MoreHorizontal, Plus } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -74,7 +68,7 @@ export default function Sidebar({
                 className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 title="Wiki options"
               >
-                <MoreHorizontalRegular className="w-4 h-4" />
+                <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -83,7 +77,7 @@ export default function Sidebar({
                   void navigate("/i");
                 }}
               >
-                <ImageRegular className="mr-2 w-4 h-4" />
+                <Image className="mr-2 w-4 h-4" />
                 Image library
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -91,7 +85,7 @@ export default function Sidebar({
                   void navigate("/s");
                 }}
               >
-                <BookTemplateRegular className="mr-2 w-4 h-4" />
+                <BookOpen className="mr-2 w-4 h-4" />
                 Slide themes
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -99,7 +93,7 @@ export default function Sidebar({
                   void navigate("/p");
                 }}
               >
-                <DocumentTextRegular className="mr-2 w-4 h-4" />
+                <FileText className="mr-2 w-4 h-4" />
                 Page themes
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -133,7 +127,7 @@ export default function Sidebar({
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem onClick={onNewPage}>
-              <AddRegular className="mr-2 w-4 h-4" />
+              <Plus className="mr-2 w-4 h-4" />
               Create page
             </ContextMenuItem>
           </ContextMenuContent>
@@ -146,7 +140,7 @@ export default function Sidebar({
             className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
             onClick={onNewPage}
           >
-            <AddRegular className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5" />
             New page
           </Button>
         </div>

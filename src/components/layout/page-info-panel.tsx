@@ -1,9 +1,4 @@
-import {
-  ChevronDownRegular,
-  ChevronRightRegular,
-  DismissRegular,
-  DocumentRegular,
-} from "@fluentui/react-icons";
+import { ChevronDown, ChevronRight, File, X } from "lucide-react";
 import { getBacklinks, getFileDiff, getFileHistory } from "@/lib/api";
 import { useMemo, useState } from "react";
 import type { BacklinkEntry, CommitEntry } from "@/lib/types";
@@ -144,9 +139,9 @@ export default function PageInfoPanel({
                 }}
               >
                 {isCollapsed ? (
-                  <ChevronRightRegular className="w-3 h-3 shrink-0" />
+                  <ChevronRight className="w-3 h-3 shrink-0" />
                 ) : (
-                  <ChevronDownRegular className="w-3 h-3 shrink-0" />
+                  <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
                 <span className="font-medium">{label}</span>
                 <span className="ml-auto tabular-nums">{groupCommits.length}</span>
@@ -185,7 +180,7 @@ export default function PageInfoPanel({
                           </span>
                         )}
                       </span>
-                      <ChevronRightRegular className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
+                      <ChevronRight className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
                     </button>
                   ))}
                 </div>
@@ -201,7 +196,7 @@ export default function PageInfoPanel({
     <div className="w-72 shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
       <div className="px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <DocumentRegular className="w-4 h-4 shrink-0" />
+          <File className="w-4 h-4 shrink-0" />
           <span className="flex-1">Page info</span>
           {onClose && (
             <button
@@ -209,7 +204,7 @@ export default function PageInfoPanel({
               onClick={onClose}
               aria-label="Close"
             >
-              <DismissRegular className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

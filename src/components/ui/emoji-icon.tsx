@@ -1,32 +1,25 @@
-// oxlint-disable typescript/no-deprecated
 /** Fluent for system icons, Fluent Emoji SVGs for page emoji. */
-import type { CSSProperties, FC } from "react";
-import {
-  Code24Color,
-  Image24Color,
-  QuestionCircle24Color,
-  SlideTextSparkle24Color,
-  TextBulletListSquare24Color,
-} from "@fluentui/react-icons";
+import type { CSSProperties } from "react";
+import ICONS from "@/components/ui/icon/fluent";
 import EMOJI_SVGS from "./emoji/emojis";
 import type { FileType } from "@/lib/types";
 import { Fragment } from "react";
 
-// File type strings for EmojiIcon: well-known values listed for autocomplete, open to any string
-const FILE_TYPE_ICONS: Record<string, FC<{ style?: CSSProperties; className?: string }>> = {
-  code: Code24Color,
-  doc: TextBulletListSquare24Color,
-  image: Image24Color,
-  slide: SlideTextSparkle24Color,
+// File type icon names in the ICONS map; the fallback is QuestionCircle24Color.
+const FILE_TYPE_ICONS: Record<string, string> = {
+  code: "Code24Color",
+  doc: "TextBulletListSquare24Color",
+  image: "Image24Color",
+  slide: "SlideTextSparkle24Color",
 };
+
+const FILE_TYPE_FALLBACK = "QuestionCircle24Color";
 
 interface EmojiIconProps {
   /** Emoji character to render (may be overridden to a Color icon). */
   emoji?: string;
   /** File type string rendered when no emoji is set. */
   fileType?: FileType;
-  /** Fluent React Icon component to render directly (lowest priority). */
-  icon?: FC<{ style?: CSSProperties; className?: string }>;
   /** Pixel size or CSS length (e.g. "1.2em") for both the icon and the emoji. Default: 16. */
   size?: number | string;
   className?: string;
@@ -36,7 +29,6 @@ interface EmojiIconProps {
 function EmojiIcon({
   emoji,
   fileType,
-  icon,
   size = 16,
   className,
   style,
@@ -88,23 +80,18 @@ function EmojiIcon({
     );
   }
 
-  // File-type path: resolve icon from central map, fall back to DocumentRegular
+  // File-type path: resolve icon from central map, fall back to QuestionCircle24Color.
   if (fileType) {
-    const TypeIcon = FILE_TYPE_ICONS[fileType] ?? QuestionCircle24Color;
+    const iconName = FILE_TYPE_ICONS[fileType] ?? FILE_TYPE_FALLBACK;
+    const svg = ICONS[iconName];
     const isMuted = fileType === "code" || fileType === "image";
     return (
       <span style={wrapStyle} className={isMuted ? "text-muted-foreground" : className}>
-        <TypeIcon style={innerStyle} />
-      </span>
-    );
-  }
-
-  // Explicit icon path
-  if (icon) {
-    const Icon = icon;
-    return (
-      <span style={wrapStyle} className={className}>
-        <Icon style={innerStyle} />
+        {svg === undefined ? (
+          <span style={innerStyle} />
+        ) : (
+          <span dangerouslySetInnerHTML={{ __html: svg }} style={innerStyle} />
+        )}
       </span>
     );
   }

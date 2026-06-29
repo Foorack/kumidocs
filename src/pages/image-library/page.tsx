@@ -1,5 +1,5 @@
 import { ApiError, deleteImage, getImages } from "@/lib/api";
-import { DeleteRegular, DismissRegular } from "@fluentui/react-icons";
+import { Trash2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,7 +78,7 @@ function ImageDetailPanel({
         </span>
         <Link to="/i" replace>
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-            <DismissRegular className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </Button>
         </Link>
       </div>
@@ -151,7 +151,7 @@ function ImageDetailPanel({
               setConfirmOpen(true);
             }}
           >
-            <DeleteRegular className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" />
             Delete
           </Button>
 

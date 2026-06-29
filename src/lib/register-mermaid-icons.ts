@@ -3,29 +3,24 @@
  *
  * Registers Iconify icon packs with Mermaid so architecture diagrams
  * can use icon prefixes like `logos:*`, `devicon:*`, `flag:*`,
- * `fluent-color:*`, and `glyphs-poly:*`: all embedded at build time.
+ * `fluent-color:*`, and `glyphs-poly:*`.
+ *
+ * Icon data is loaded lazily from the server at runtime so it doesn't
+ * bloat the initial JS bundle.  Only fetched when a page with Mermaid
+ * diagrams actually needs them.
  *
  * Usage: call once at app startup (client-side only):
  *   import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
  *   registerMermaidIcons();
- *
- * No CDN fetches; icons are bundled via npm packages.
  */
 
-// Icon pack imports (bundled at build time)
-// Each @iconify-json/* package exports a JSON file with the Iconify schema:
-//   { prefix: string, icons: Record<string, IconifyIcon>, ... }
-import deviconIcons from "@iconify-json/devicon/icons.json";
-import flagIcons from "@iconify-json/flag/icons.json";
-import fluentColorIcons from "@iconify-json/fluent-color/icons.json";
-import glyphsPolyIcons from "@iconify-json/glyphs-poly/icons.json";
-import logosIcons from "@iconify-json/logos/icons.json";
-
-/** Shape of an Iconify JSON collection. */
-interface IconifyJSON {
-  prefix: string;
-  icons: Record<string, { body: string }>;
-}
+const ICON_PACKS = [
+  { name: "devicon", path: "devicon" },
+  { name: "flag", path: "flag" },
+  { name: "fluent-color", path: "fluent-color" },
+  { name: "glyphs-poly", path: "glyphs-poly" },
+  { name: "logos", path: "logos" },
+] as const;
 
 /**
  * Register all icon packs with Mermaid.
@@ -34,59 +29,45 @@ interface IconifyJSON {
  */
 // oxlint-disable-next-line import/prefer-default-export
 export async function registerMermaidIcons(): Promise<void> {
-  // Mermaid's module only exports `default`; dynamic import gives us
-  // { default: mermaid }, so we need `.default.registerIconPacks`.
-  // We also try `registerIconPacks` directly in case the bundler
-  // flattens the module differently (dev vs production).
-  try {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const { default: mermaid } = await (import("mermaid") as Promise<{
-      default: { registerIconPacks: (packs: unknown[]) => void };
-    }>);
+  // Mermaid is already bundled via @streamdown/mermaid; static import
+  // deduplicates with no extra cost.
+  const { default: mermaid } = await import("mermaid");
 
-    if (typeof mermaid.registerIconPacks !== "function") {
-      console.warn("[kumidocs] Mermaid registerIconPacks not available");
-      return;
-    }
-
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    interface IconPack {
-      icons: IconifyJSON;
-      name: string;
-    }
-    const iconPacks: IconPack[] = [
-      {
-        icons: deviconIcons as IconifyJSON,
-        name: "devicon",
-      },
-      {
-        icons: flagIcons as IconifyJSON,
-        name: "flag",
-      },
-      {
-        icons: fluentColorIcons as IconifyJSON,
-        name: "fluent-color",
-      },
-      {
-        icons: glyphsPolyIcons as IconifyJSON,
-        name: "glyphs-poly",
-      },
-      {
-        icons: logosIcons as IconifyJSON,
-        name: "logos",
-      },
-    ];
-    mermaid.registerIconPacks(iconPacks);
-
-    console.debug(
-      `[kumidocs] Mermaid icons registered: ` +
-        `devicon (${Object.keys(deviconIcons.icons).length}), ` +
-        `flag (${Object.keys(flagIcons.icons).length}), ` +
-        `fluent-color (${Object.keys(fluentColorIcons.icons).length}), ` +
-        `glyphs-poly (${Object.keys(glyphsPolyIcons.icons).length}), ` +
-        `logos (${Object.keys(logosIcons.icons).length})`,
-    );
-  } catch (error: unknown) {
-    console.warn("[kumidocs] Failed to register Mermaid icon packs:", error);
+  if (typeof mermaid.registerIconPacks !== "function") {
+    console.warn("[kumidocs] Mermaid registerIconPacks not available");
+    return;
   }
+
+  // Load each icon pack lazily from the server.
+  const results = await Promise.all(
+    ICON_PACKS.map(async ({ name, path }) => {
+      try {
+        const resp = await fetch(`/icon-packs/${path}.json`);
+        if (!resp.ok) {
+          return undefined;
+        }
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        const body = (await resp.json()) as {
+          prefix: string;
+          icons: Record<string, { body: string }>;
+        };
+        return { icons: body, name };
+      } catch {
+        return undefined;
+      }
+    }),
+  );
+
+  const valid = results.filter(
+    (pack): pack is NonNullable<typeof pack> => pack !== undefined,
+  );
+  if (valid.length === 0) {
+    return;
+  }
+
+  mermaid.registerIconPacks(valid);
+
+  console.debug(
+    `[kumidocs] Mermaid icons registered: ${valid.map((pack) => `${pack.name} (${Object.keys(pack.icons.icons).length})`).join(", ")}`,
+  );
 }

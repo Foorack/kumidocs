@@ -1,14 +1,7 @@
-import {
-  AddRegular,
-  ArrowDownloadRegular,
-  CopyRegular,
-  LinkRegular,
-  OpenRegular,
-} from "@fluentui/react-icons";
 import { ApiError, createFile } from "@/lib/api";
 import { ContextMenuItem, ContextMenuSeparator } from "./context-menu";
 import { DropdownMenuItem, DropdownMenuSeparator } from "./dropdown-menu";
-import { Square } from "lucide-react";
+import { Copy, Download, ExternalLink, Link, Plus, Square } from "lucide-react";
 import { toast } from "@/components/ui/toaster";
 import { useNavigate } from "react-router-dom";
 
@@ -55,7 +48,7 @@ const CreateSection = (allProps: CreateSectionProps): JSX.Element => {
             onNewSubPage(path.replace(/\.md$/iu, ""));
           }}
         >
-          <AddRegular className="mr-2 w-4 h-4" />
+          <Plus className="mr-2 w-4 h-4" />
           New subpage
         </Item>
       )}
@@ -71,7 +64,7 @@ const CreateSection = (allProps: CreateSectionProps): JSX.Element => {
       )}
       {onDuplicate && (
         <Item onClick={onDuplicate}>
-          <CopyRegular className="mr-2 w-4 h-4" />
+          <Copy className="mr-2 w-4 h-4" />
           Duplicate
         </Item>
       )}
@@ -193,7 +186,7 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
           globalThis.open(href, "_blank");
         }}
       >
-        <OpenRegular className="mr-2 w-4 h-4" />
+        <ExternalLink className="mr-2 w-4 h-4" />
         Open in new tab
       </Item>
       <Item
@@ -206,18 +199,18 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
           }
         }}
       >
-        <LinkRegular className="mr-2 w-4 h-4" />
+        <Link className="mr-2 w-4 h-4" />
         Copy link
       </Item>
       {onCopyHtml && (
         <Item onClick={onCopyHtml}>
-          <CopyRegular className="mr-2 w-4 h-4" />
+          <Copy className="mr-2 w-4 h-4" />
           Copy as HTML
         </Item>
       )}
       {onExportPdf && (
         <Item onClick={onExportPdf}>
-          <ArrowDownloadRegular className="mr-2 w-4 h-4" />
+          <Download className="mr-2 w-4 h-4" />
           Export as PDF
         </Item>
       )}

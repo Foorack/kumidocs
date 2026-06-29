@@ -17,7 +17,7 @@
  */
 
 import tailwindPlugin from "bun-plugin-tailwind";
-import { chmod, rm } from "node:fs/promises";
+import { chmod, mkdir, rm } from "node:fs/promises";
 
 const join = (...segments: string[]): string => segments.join("/");
 
@@ -53,10 +53,23 @@ if (!frontendResult.success) {
   process.exit(1);
 }
 
-// Step 2: Server (bun target)
+// Step 2: Icon packs (lazy-loaded by the client when Mermaid diagrams use them)
+console.log("  [2/3] Icon packs…");
+const iconPacksDir = join(publicDir, "icon-packs");
+await mkdir(iconPacksDir, { recursive: true });
+const iconPacks = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
+await Promise.all(
+  iconPacks.map(async (name) => {
+    const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
+    const dest = join(iconPacksDir, `${name}.json`);
+    await Bun.write(dest, Bun.file(src));
+  }),
+);
+
+// Step 3: Server (bun target)
 // __BUNDLED__ is injected so the server switches from Bun's HTML-import HMR
 // route (dev) to the static file handler that reads from import.meta.dir/public/.
-console.log("  [2/2] Server...");
+console.log("  [3/3] Server…");
 const result = await Bun.build({
   define: { __BUNDLED__: JSON.stringify("true") },
   entrypoints: [join(root, "src/index.ts")],

@@ -289,9 +289,11 @@ async function buildRoutes(
 
   // Dev mode only: Bun's HTMLBundle enables HMR and .tsx transpilation.
   // In production the SPA is served by fetch() -> serveCatchAll.
-  // Read at runtime so the bundler doesn't trace frontend dependencies here.
+  // Variable path prevents Bun's production bundler from tracing the import.
   if (!isBundled) {
-    const devIndex = await Bun.file(new URL("../index.html", import.meta.url)).text();
+    const htmlPath = "@/index.html";
+    // oxlint-disable-next-line typescript/no-unsafe-assignment, typescript/no-unsafe-member-access
+    const { default: devIndex } = await import(htmlPath);
     routes["/*"] = devIndex;
   }
 

@@ -1,4 +1,4 @@
-import { DismissRegular, TextBulletListLtrRegular } from "@fluentui/react-icons";
+import { List, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { extractTocItems } from "@/lib/heading";
@@ -90,7 +90,7 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
       {/* Header bar: matches PageInfoPanel */}
       <div className="px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <TextBulletListLtrRegular className="w-4 h-4 shrink-0" />
+          <List className="w-4 h-4 shrink-0" />
           <span className="flex-1">On this page</span>
           {onClose && (
             <button
@@ -98,7 +98,7 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
               onClick={onClose}
               aria-label="Close"
             >
-              <DismissRegular className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
