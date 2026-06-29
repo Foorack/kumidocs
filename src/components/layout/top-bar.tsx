@@ -8,6 +8,11 @@ import { UserAvatar } from "@/components/ui/avatar";
 import { useTheme } from "@/store/theme";
 import { useUser } from "@/store/user";
 
+// oxlint-disable-next-line no-underscore-dangle
+declare const __VERSION__: string | undefined;
+// oxlint-disable-next-line no-underscore-dangle, unicorn/no-typeof-undefined, unicorn/no-negated-condition
+const APP_VERSION = typeof __VERSION__ === "undefined" ? "dev" : __VERSION__;
+
 interface TopBarProps {
   instanceName: string;
   headSha: string;
@@ -70,6 +75,17 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
                   <code className="text-xs font-mono text-foreground">{headSha}</code>
                 </div>
               )}
+              <div className="w-full border-t border-border pt-2 mt-1 text-center">
+                <p className="text-xs text-muted-foreground">VERSION</p>
+                <a
+                  href={`https://www.npmjs.com/package/kumidocs/v/${APP_VERSION}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-mono text-foreground hover:text-primary hover:underline"
+                >
+                  v{APP_VERSION}
+                </a>
+              </div>
             </div>
           </PopoverPrimitive.Content>
         </PopoverPrimitive.Portal>

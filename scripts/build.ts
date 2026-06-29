@@ -25,8 +25,11 @@ const root = join(import.meta.dir, "..");
 const distDir = join(root, "dist");
 const publicDir = join(distDir, "public");
 
+const pkg = JSON.parse(await Bun.file(join(root, "package.json")).text());
+const appVersion = pkg.version as string;
+
 const t0 = performance.now();
-console.log("Building KumiDocs...");
+console.log(`Building KumiDocs v${appVersion}...`);
 
 // Always start from a clean slate so stale hashed files don't accumulate.
 await rm(distDir, { force: true, recursive: true });
@@ -36,6 +39,7 @@ await rm(distDir, { force: true, recursive: true });
 // then serves these files from disk via import.meta.dir, which is CWD-independent.
 console.log("  [1/2] Frontend...");
 const frontendResult = await Bun.build({
+  define: { __VERSION__: JSON.stringify(appVersion) },
   entrypoints: [join(root, "src/index.html")],
   minify: true,
   outdir: publicDir,
@@ -71,7 +75,10 @@ await Promise.all(
 // route (dev) to the static file handler that reads from import.meta.dir/public/.
 console.log("  [3/3] Server…");
 const result = await Bun.build({
-  define: { __BUNDLED__: JSON.stringify("true") },
+  define: {
+    __BUNDLED__: JSON.stringify("true"),
+    __VERSION__: JSON.stringify(appVersion),
+  },
   entrypoints: [join(root, "src/index.ts")],
   minify: true,
   outdir: distDir,
