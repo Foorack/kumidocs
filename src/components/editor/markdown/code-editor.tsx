@@ -1,7 +1,42 @@
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
-import type { LanguageName } from "@uiw/codemirror-extensions-langs";
-import { loadLanguage } from "@uiw/codemirror-extensions-langs";
+import { useCallback, useRef } from "react";
+import Editor from "react-simple-code-editor";
+import Prism from "prismjs";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-yaml";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-json";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-typescript";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-javascript";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-css";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-scss";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-markup";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-bash";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-python";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-go";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-rust";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-markdown";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-c";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-cpp";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-toml";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/components/prism-hcl";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/themes/prism.css";
+// oxlint-disable-next-line import/no-unassigned-import
+import "prismjs/themes/prism-dark.css";
 import { useTheme } from "@/store/theme";
 
 interface CodeEditorProps {
@@ -13,80 +48,111 @@ interface CodeEditorProps {
 }
 
 const EXT_TO_LANG: Record<string, string> = {
-  bash: "sh",
   cjs: "js",
-  fish: "sh",
+  fish: "bash",
   gql: "graphql",
   htm: "html",
   jsonc: "json",
   kt: "kotlin",
   kts: "kotlin",
   mjs: "js",
-  scss: "sass",
+  scss: "scss",
   tf: "hcl",
   tfvars: "hcl",
   yml: "yaml",
-  zsh: "sh",
 };
 
-const resolveLanguage = (ext: string): NonNullable<ReturnType<typeof loadLanguage>>[] => {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const name = (EXT_TO_LANG[ext] ?? ext) as LanguageName;
-  try {
-    const lang = loadLanguage(name);
-    let result: NonNullable<ReturnType<typeof loadLanguage>>[] = [];
-    if (lang) {
-      result = [lang];
-    }
-    return result;
-  } catch {
-    return [];
-  }
+/**
+ * Prism language identifiers that differ from the file extension.
+ */
+const LANG_ALIAS: Record<string, string> = {
+  css: "css",
+  go: "go",
+  html: "html",
+  js: "javascript",
+  json: "json",
+  md: "markdown",
+  py: "python",
+  rb: "ruby",
+  rs: "rust",
+  sh: "bash",
+  svg: "markup",
+  ts: "typescript",
+  xml: "markup",
+  yaml: "yaml",
 };
+
+function resolvePrismLang(ext: string): string {
+  const mapped = EXT_TO_LANG[ext] ?? ext;
+  return LANG_ALIAS[mapped] ?? mapped;
+}
 
 const CodeEditor = (allProps: CodeEditorProps): JSX.Element => {
   const { value, language, readOnly = false, onChange, onSave } = allProps;
   const { theme } = useTheme();
+  const isDark = theme === "dark";
+  // Track latest value so the keydown handler sees it
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
-  let onSaveExtension: ReturnType<typeof EditorView.domEventHandlers>[] = [];
-  if (onSave) {
-    onSaveExtension = [
-      EditorView.domEventHandlers({
-        keydown(event) {
-          if ((event.ctrlKey || event.metaKey) && event.key === "s") {
-            event.preventDefault();
-            onSave();
-          }
-        },
-      }),
-    ];
-  }
+  const prismLang = resolvePrismLang(language);
 
-  const extensions = [...resolveLanguage(language), EditorView.lineWrapping, ...onSaveExtension];
+  const highlight = useCallback(
+    (code: string) => {
+      const grammar = Prism.languages[prismLang];
+      if (!grammar) {
+        // HTML-escape and preserve newlines as a plain-text fallback.
+        const escaped = code
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+        return escaped.replaceAll("\n", "<br>");
+      }
+      return Prism.highlight(code, grammar, prismLang);
+    },
+    [prismLang],
+  );
 
-  let resolvedTheme = githubLight;
-  if (theme === "dark") {
-    resolvedTheme = githubDark;
-  }
+  const handleKeyDown = useCallback(
+    (ev: React.KeyboardEvent) => {
+      if (onSave && (ev.ctrlKey || ev.metaKey) && ev.key === "s") {
+        ev.preventDefault();
+        onSave();
+      }
+    },
+    [onSave],
+  );
 
   return (
-    <div className="h-full overflow-auto text-sm [&_.cm-editor]:h-full [&_.cm-scroller]:min-h-full [&_.cm-editor.cm-focused]:outline-none">
-      <CodeMirror
-        value={value}
-        height="100%"
-        theme={resolvedTheme}
-        extensions={extensions}
-        readOnly={readOnly}
-        basicSetup={{
-          autocompletion: false,
-          closeBrackets: false,
-          foldGutter: true,
-          highlightActiveLine: !readOnly,
-          highlightSelectionMatches: true,
-          lineNumbers: true,
-        }}
-        onChange={onChange}
-      />
+    <div
+      className={`not-prose h-full overflow-auto text-sm ${isDark ? "dark" : ""}`}
+      onKeyDown={handleKeyDown}
+    >
+      <style>{`
+        /* Reset Prism background so it blends with our UI */
+        .npm-deps-editor-wrapper pre[class*="language-"],
+        .npm-deps-editor-wrapper code[class*="language-"] {
+          background: transparent !important;
+        }
+      `}</style>
+      <div className="npm-deps-editor-wrapper h-full font-mono">
+        <Editor
+          value={value}
+          onValueChange={(code) => {
+            onChange?.(code);
+          }}
+          highlight={highlight}
+          padding={16}
+          readOnly={readOnly}
+          textareaClassName="focus:outline-none"
+          style={{
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+            fontSize: "0.875rem",
+            lineHeight: "1.5",
+            minHeight: "100%",
+          }}
+        />
+      </div>
     </div>
   );
 };
