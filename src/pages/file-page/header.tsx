@@ -26,7 +26,9 @@ interface FilePageHeaderProps {
   editMode: boolean;
   editLocked: PresenceUser | undefined;
   viewers: PresenceUser[];
+  manualSaveOnly: boolean;
   saveStatus: SaveStatus;
+  toggleManualSaveOnly: () => void;
   infoOpen: boolean;
   tocOpen: boolean;
   rawPath: string;
@@ -43,6 +45,38 @@ interface FilePageHeaderProps {
   openDelete: () => void;
 }
 
+function saveLabel(manualSaveOnly: boolean, saveStatus: SaveStatus): string {
+  if (manualSaveOnly && (saveStatus === "saved" || saveStatus === "unsaved")) {
+    return saveStatus === "saved" ? "Saved, no auto-save" : "Auto-save disabled";
+  }
+  return SAVE_BADGE_TEXT[saveStatus];
+}
+
+function SaveBadge({
+  manualSaveOnly,
+  saveStatus,
+  saveBadgeClass,
+  toggleManualSaveOnly,
+}: {
+  manualSaveOnly: boolean;
+  saveStatus: SaveStatus;
+  saveBadgeClass: string;
+  toggleManualSaveOnly: () => void;
+}): JSX.Element {
+  return (
+    <Badge
+      variant="outline"
+      className={`text-xs h-5 shrink-0 cursor-pointer select-none${
+        manualSaveOnly ? " border-destructive text-destructive" : saveBadgeClass
+      }`}
+      onClick={toggleManualSaveOnly}
+      role="button"
+    >
+      {saveLabel(manualSaveOnly, saveStatus)}
+    </Badge>
+  );
+}
+
 function FilePageHeader({
   meta,
   fileType,
@@ -52,7 +86,9 @@ function FilePageHeader({
   editMode,
   editLocked,
   viewers,
+  manualSaveOnly,
   saveStatus,
+  toggleManualSaveOnly,
   infoOpen,
   tocOpen,
   rawPath,
@@ -149,9 +185,12 @@ function FilePageHeader({
 
       {/* Save status - inline next to Edit button */}
       {editMode && (
-        <Badge variant="outline" className={`text-xs h-5 shrink-0${saveBadgeClass}`}>
-          {SAVE_BADGE_TEXT[saveStatus]}
-        </Badge>
+        <SaveBadge
+          manualSaveOnly={manualSaveOnly}
+          saveStatus={saveStatus}
+          saveBadgeClass={saveBadgeClass}
+          toggleManualSaveOnly={toggleManualSaveOnly}
+        />
       )}
 
       {/* Right: viewers + info + dropdown */}

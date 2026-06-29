@@ -18,6 +18,8 @@ interface UseFilePageSaveProps {
 
 interface UseFilePageSaveReturn {
   content: string;
+  manualSaveOnly: boolean;
+  toggleManualSaveOnly: () => void;
   contentRef: RefObject<string>;
   doSave: (currentContent: string, isRaw?: boolean) => Promise<void>;
   handleChange: (val: string) => void;
@@ -58,6 +60,7 @@ function useFilePageSave({
   const [notFound, setNotFound] = useState(false);
   const [saveError, setSaveError] = useState<string | undefined>();
   const [loadError, setLoadError] = useState<string | undefined>();
+  const [manualSaveOnly, setManualSaveOnly] = useState(false);
 
   const autoSaveTimer = useRef(undefined as ReturnType<typeof setTimeout> | undefined);
   useMountEffect(() => (): void => {
@@ -172,6 +175,7 @@ function useFilePageSave({
             savedContentRef.current = currentContent;
           }
           isDirtyRef.current = false;
+          setManualSaveOnly(false);
           setSaveStatus("saved");
           setSaveError(undefined);
           setLastSha(data.sha);
@@ -190,12 +194,19 @@ function useFilePageSave({
     [filePath, reloadTree],
   );
 
+  const toggleManualSaveOnly = useCallback(() => {
+    setManualSaveOnly((prev) => !prev);
+  }, []);
+
   const handleChange = useCallback(
     (val: string) => {
       setRawContent(val);
       rawContentRef.current = val;
       setSaveStatus("unsaved");
       isDirtyRef.current = true;
+      if (manualSaveOnly) {
+        return;
+      }
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current);
       }
@@ -207,12 +218,13 @@ function useFilePageSave({
         }
       }, autoSaveDelay);
     },
-    [doSave, autoSaveDelay],
+    [doSave, autoSaveDelay, manualSaveOnly],
   );
 
   const handleSave = useCallback(async () => {
     try {
       await doSave(rawContentRef.current, true);
+      setManualSaveOnly(false);
     } catch (error: unknown) {
       console.error("Manual save failed:", error);
     }
@@ -229,6 +241,7 @@ function useFilePageSave({
     loadDoc,
     loadError,
     loading,
+    manualSaveOnly,
     meta,
     metaRef,
     notFound,
@@ -241,6 +254,7 @@ function useFilePageSave({
     setContent,
     setMeta,
     setRawContent,
+    toggleManualSaveOnly,
   };
 }
 

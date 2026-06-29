@@ -53,6 +53,7 @@ interface UseFilePageReturn {
   loadDoc: (path: string) => Promise<void>;
   loading: boolean;
   loadError: string | undefined;
+  manualSaveOnly: boolean;
   meta: DocMeta;
   metaRef: RefObject<DocMeta>;
   notFound: boolean;
@@ -73,6 +74,7 @@ interface UseFilePageReturn {
   slideThemes: SlideThemeMap;
   pageTemplates: PageTemplateMap;
   title: string;
+  toggleManualSaveOnly: () => void;
   user: User | undefined;
   viewers: PresenceUser[];
 }
@@ -102,10 +104,12 @@ function useFilePage(): UseFilePageReturn {
     rawContent,
     rawContentRef,
     saveError,
+    manualSaveOnly,
     savePromiseRef,
     saveStatus,
     setMeta,
     setRawContent,
+    toggleManualSaveOnly,
   } = useFilePageSave({ autoSaveDelay, filePath, reloadTree, setEditMode, setFilePath });
 
   const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
@@ -231,6 +235,7 @@ function useFilePage(): UseFilePageReturn {
     loadDoc,
     loadError,
     loading,
+    manualSaveOnly,
     meta,
     metaRef,
     notFound,
@@ -255,6 +260,7 @@ function useFilePage(): UseFilePageReturn {
     slideThemes,
     title,
     tocOpen,
+    toggleManualSaveOnly,
     user,
     viewers,
   };

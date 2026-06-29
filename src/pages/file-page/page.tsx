@@ -24,10 +24,12 @@ export default function FilePage(): JSX.Element {
     rawContent,
     meta,
     setMeta,
+    manualSaveOnly,
     saveStatus,
     loading,
     notFound,
     metaRef,
+    toggleManualSaveOnly,
     loadDoc,
     handleChange,
     handleSave,
@@ -208,7 +210,9 @@ export default function FilePage(): JSX.Element {
           editMode={editMode}
           editLocked={editLocked}
           viewers={viewers}
+          manualSaveOnly={manualSaveOnly}
           saveStatus={saveStatus}
+          toggleManualSaveOnly={toggleManualSaveOnly}
           infoOpen={infoOpen}
           tocOpen={tocOpen}
           rawPath={rawPath}
