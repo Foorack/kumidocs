@@ -60,11 +60,37 @@ function parseNode(raw: unknown): SvgNode {
   return { tag, attrs, children };
 }
 
+/**
+ * Convert a JSX camelCase attribute name to the correct SVG attribute name.
+ *
+ * Most SVG attributes are kebab-case in raw HTML (stopColor -> stop-color),
+ * but a few are natively camelCase in the SVG spec.
+ */
+const SVG_CAMEL_ATTRS = new Set([
+  "viewBox",
+  "gradientUnits",
+  "gradientTransform",
+  "clipPath",
+  "calcMode",
+  "baseFrequency",
+  "numOctaves",
+  "stdDeviation",
+  "edgeMode",
+  "preserveAlpha",
+  "xmlns",
+  "xlinkHref",
+]);
+function svgAttrName(key: string): string {
+  if (SVG_CAMEL_ATTRS.has(key)) return key;
+  // Convert camelCase to kebab-case: fillOpacity -> fill-opacity
+  return key.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
+
 /** Serialise an SVG node tree back to an SVG element string. */
 function nodeToHtml(node: SvgNode): string {
   const attrString = node.attrs
     ? Object.entries(node.attrs)
-        .map(([k, v]) => ` ${k}="${xmlEscape(v)}"`)
+        .map(([k, v]) => ` ${svgAttrName(k)}="${xmlEscape(v)}"`)
         .join("")
     : "";
   if (node.children.length === 0) {
