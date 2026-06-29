@@ -43,11 +43,7 @@ function PageTreeItem({
               setOpen(!open);
             }}
           >
-            {open ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
+            {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           </button>
         ) : (
           <span className="w-4 shrink-0" />

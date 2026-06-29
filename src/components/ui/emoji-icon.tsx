@@ -26,13 +26,7 @@ interface EmojiIconProps {
   style?: CSSProperties;
 }
 
-function EmojiIcon({
-  emoji,
-  fileType,
-  size = 16,
-  className,
-  style,
-}: EmojiIconProps): JSX.Element {
+function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconProps): JSX.Element {
   const wrapStyle: CSSProperties = {
     ...style,
     alignItems: "center",

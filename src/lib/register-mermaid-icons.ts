@@ -58,9 +58,7 @@ export async function registerMermaidIcons(): Promise<void> {
     }),
   );
 
-  const valid = results.filter(
-    (pack): pack is NonNullable<typeof pack> => pack !== undefined,
-  );
+  const valid = results.filter((pack): pack is NonNullable<typeof pack> => pack !== undefined);
   if (valid.length === 0) {
     return;
   }
