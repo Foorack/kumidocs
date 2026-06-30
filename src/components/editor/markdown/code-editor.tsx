@@ -129,10 +129,13 @@ const CodeEditor = (allProps: CodeEditorProps): JSX.Element => {
       onKeyDown={handleKeyDown}
     >
       <style>{`
-        /* Reset Prism background so it blends with our UI */
-        .npm-deps-editor-wrapper pre[class*="language-"],
-        .npm-deps-editor-wrapper code[class*="language-"] {
-          background: transparent !important;
+        :not(pre) > code[class*="language-"],
+        pre[class*="language-"] {
+          text-shadow: none !important;
+          background: none !important;
+          box-shadow: none !important;
+          border: none !important;
+          padding: 0 !important;
         }
       `}</style>
       <div className="npm-deps-editor-wrapper h-full font-mono">
