@@ -128,16 +128,6 @@ const CodeEditor = (allProps: CodeEditorProps): JSX.Element => {
       className={`not-prose h-full overflow-auto text-sm ${isDark ? "dark" : ""}`}
       onKeyDown={handleKeyDown}
     >
-      <style>{`
-        :not(pre) > code[class*="language-"],
-        pre[class*="language-"] {
-          text-shadow: none !important;
-          background: none !important;
-          box-shadow: none !important;
-          border: none !important;
-          padding: 0 !important;
-        }
-      `}</style>
       <div className="npm-deps-editor-wrapper h-full font-mono">
         <Editor
           value={value}
