@@ -18,6 +18,12 @@ pre[class*="language-"] {
   padding: 0 !important;
 }
 
+/* Radix ScrollArea's internal content wrapper uses display:table which breaks
+   flex/grid children and causes content to overflow the viewport. */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
