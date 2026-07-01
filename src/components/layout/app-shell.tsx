@@ -108,9 +108,10 @@ export default function AppShell(): JSX.Element {
   // Reload tree whenever the WS reopens (initial connect or reconnect)
   // so the sidebar is never stale after a WS disconnect.
   useMountEffect(() => {
-    wsClient.onReopen(() => {
+    const unsubscribe = wsClient.onReopen(() => {
       scheduleTreeReload();
     });
+    return unsubscribe;
   });
 
   // Clean up any pending tree reload timer on unmount
