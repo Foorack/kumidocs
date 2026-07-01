@@ -117,6 +117,30 @@ function isWatcherIgnored(relPath: string): boolean {
 
 const debounceMap = new Map<string, ReturnType<typeof setTimeout>>();
 const watchedDirs = new Set<string>();
+const watcherHandles = new Map<string, ReturnType<typeof watch>>();
+
+/** Close a directory watcher and remove it from tracking sets. */
+function closeWatcher(absDir: string): void {
+  const handle = watcherHandles.get(absDir);
+  if (handle) {
+    handle.close();
+    watcherHandles.delete(absDir);
+  }
+  watchedDirs.delete(absDir);
+}
+
+/** Close watchers for a directory and all its subdirectories. */
+function closeWatcherTree(absDir: string): void {
+  const prefix = absDir.endsWith("/") ? absDir : `${absDir}/`;
+  // Close children first
+  for (const dir of watchedDirs) {
+    if (dir.startsWith(prefix)) {
+      closeWatcher(dir);
+    }
+  }
+  // Close the directory itself
+  closeWatcher(absDir);
+}
 
 async function processFileChange(relPath: string): Promise<void> {
   if (relPath === ".kumidocs.json") {
@@ -154,8 +178,16 @@ async function watchDir(absDir: string): Promise<void> {
   // Watch this single directory (non-recursive) to avoid creating inotify
   // watches for every subdirectory in the tree (which exhausts the OS limit
   // when node_modules or similar large directories are present).
-  watch(absDir, {}, async (_event, filename) => {
+  const handle = watch(absDir, {}, async (_event, filename) => {
+    // When filename is null, the directory itself may have been deleted or
+    // renamed. Check if the directory still exists; if not, clean up the
+    // watcher to prevent leaking OS inotify handles.
     if (filename === null) {
+      try {
+        await stat(absDir);
+      } catch {
+        closeWatcherTree(absDir);
+      }
       return;
     }
     const absFile = path.join(absDir, filename);
@@ -172,7 +204,11 @@ async function watchDir(absDir: string): Promise<void> {
         return;
       }
     } catch {
-      // Deleted or inaccessible; treat as file change
+      // If the deleted path was a watched directory, clean up its watcher
+      if (watchedDirs.has(absFile)) {
+        closeWatcherTree(absFile);
+      }
+      // Treat as file change for the remaining logic
     }
 
     const prev = debounceMap.get(relFile);
@@ -187,6 +223,7 @@ async function watchDir(absDir: string): Promise<void> {
       }, 100),
     );
   });
+  watcherHandles.set(absDir, handle);
 
   // Recurse into non-ignored subdirectories
   try {
