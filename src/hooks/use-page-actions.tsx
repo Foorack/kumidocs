@@ -47,8 +47,12 @@ export default function usePageActions(reloadTree: () => void): UsePageActionsRe
     setParentOpen(false);
   }, []);
 
-  // Remove any stale listener on unmount (e.g. route navigation while dropdown is open)
-  useMountEffect(() => closeParentDropdown);
+  // Remove any stale listener on mount and clean up on unmount (e.g. route
+  // navigation while dropdown is open) to prevent leaking event listeners.
+  useMountEffect(() => {
+    closeParentDropdown();
+    return closeParentDropdown;
+  });
 
   // Close the parent combobox dropdown when clicking outside
   const openParentDropdown = useCallback(() => {
