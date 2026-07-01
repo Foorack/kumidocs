@@ -12,8 +12,17 @@ const fileCache = new Map<string, string>(); // relPath -> content
 let treeCache: TreeNode[] | undefined; // invalidated on every write/delete/move
 
 // Paths written by this server process; watcher should not re-broadcast these.
+// Safety cap prevents unbounded growth if watcher events are ever dropped.
+const RECENTLY_WRITTEN_MAX = 500;
 const recentlyWritten = new Set<string>();
 function markWritten(relPath: string): void {
+  // Evict oldest entry when over cap to guard against watcher event loss
+  if (recentlyWritten.size >= RECENTLY_WRITTEN_MAX) {
+    const oldest = recentlyWritten.values().next();
+    if (oldest.value !== undefined) {
+      recentlyWritten.delete(oldest.value);
+    }
+  }
   recentlyWritten.add(relPath);
 }
 function consumeWritten(relPath: string): boolean {
