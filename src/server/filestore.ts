@@ -61,7 +61,7 @@ function setHiddenPatterns(patterns: string[] | undefined): void {
   invalidateTree();
 }
 
-const IGNORED_NAMES = new Set([".git", "node_modules", ".DS_Store", ".env", "dist"]);
+const IGNORED_NAMES = new Set([".git", "node_modules", ".DS_Store", ".env", "dist", "core"]);
 
 const IGNORED_EXT = new Set([".lock", ".log", ".map"]);
 
