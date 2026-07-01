@@ -37,8 +37,43 @@ async function withGitLock<TResult>(fn: () => Promise<TResult>): Promise<TResult
   return fnResult;
 }
 
+// HEAD SHA cache
+// Avoids spawning `git rev-parse --short HEAD` on every page view.
+// Invalidated after any write operation (commit, rebase, pull, etc.)
+// so the next read picks up the new value. Reads are lock-free since
+// rev-parse is read-only and concurrent writes always invalidate first.
+let cachedHeadSha: string | undefined;
+let headShaPromise: Promise<string> | undefined;
+
+function invalidateHeadShaCache(): void {
+  cachedHeadSha = undefined;
+  headShaPromise = undefined;
+}
+
+async function getHeadSha(config: Config): Promise<string> {
+  if (cachedHeadSha !== undefined) {
+    return cachedHeadSha;
+  }
+  if (headShaPromise !== undefined) {
+    return headShaPromise;
+  }
+  headShaPromise = (async (): Promise<string> => {
+    try {
+      const sha = await getHeadShaNative(config);
+      cachedHeadSha = sha;
+      return sha;
+    } finally {
+      headShaPromise = undefined;
+    }
+  })();
+  return headShaPromise;
+}
+
 async function gitPull(config: Config): Promise<void> {
-  return withGitLock(async () => gitPullNative(config));
+  invalidateHeadShaCache();
+  return withGitLock(async () => gitPullNative(config)).finally(() => {
+    invalidateHeadShaCache();
+  });
 }
 
 async function gitStageAndCommit(
@@ -48,9 +83,12 @@ async function gitStageAndCommit(
   authorName: string,
   authorEmail: string,
 ): Promise<{ sha: string; error?: string; committed?: boolean }> {
+  invalidateHeadShaCache();
   return withGitLock(async () =>
     gitStageAndCommitNative(config, filePaths, message, authorName, authorEmail),
-  );
+  ).finally(() => {
+    invalidateHeadShaCache();
+  });
 }
 
 async function gitRemoveAndCommit(
@@ -60,9 +98,12 @@ async function gitRemoveAndCommit(
   authorName: string,
   authorEmail: string,
 ): Promise<{ sha: string; error?: string }> {
+  invalidateHeadShaCache();
   return withGitLock(async () =>
     gitRemoveAndCommitNative(config, filePath, message, authorName, authorEmail),
-  );
+  ).finally(() => {
+    invalidateHeadShaCache();
+  });
 }
 
 async function gitMoveAndCommit(
@@ -74,9 +115,12 @@ async function gitMoveAndCommit(
   authorEmail: string,
   extraMoves?: { from: string; to: string }[],
 ): Promise<{ sha: string; error?: string }> {
+  invalidateHeadShaCache();
   return withGitLock(async () =>
     gitMoveAndCommitNative(config, from, to, message, authorName, authorEmail, extraMoves),
-  );
+  ).finally(() => {
+    invalidateHeadShaCache();
+  });
 }
 
 interface FetchResult {
@@ -87,11 +131,10 @@ interface FetchResult {
 }
 
 async function gitFetchAndRebase(config: Config): Promise<FetchResult> {
-  return withGitLock(async () => gitFetchAndRebaseNative(config));
-}
-
-async function getHeadSha(config: Config): Promise<string> {
-  return getHeadShaNative(config);
+  invalidateHeadShaCache();
+  return withGitLock(async () => gitFetchAndRebaseNative(config)).finally(() => {
+    invalidateHeadShaCache();
+  });
 }
 
 /** Return commits that touched `filepath`, most recent first. */
@@ -120,6 +163,7 @@ export {
   gitMoveAndCommit,
   gitFetchAndRebase,
   getHeadSha,
+  invalidateHeadShaCache,
   type CommitEntry,
   type FetchResult,
   gitFileLog,
