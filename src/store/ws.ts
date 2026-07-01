@@ -49,9 +49,93 @@ class WsClient {
   private currentPageId?: string;
   private userId?: string;
 
-  /** Register a callback that fires each time the WS opens (initial + reconnects). */
-  public onReopen(fn: () => void): void {
+  // Bound listener refs so they can be removed with removeEventListener
+  private readonly onWsOpen: () => void;
+  private readonly onWsMessage: (event: MessageEvent) => void;
+  private readonly onWsClose: () => void;
+  private readonly onWsError: () => void;
+
+  public constructor() {
+    this.onWsOpen = this.handleWsOpen.bind(this);
+    this.onWsMessage = this.handleWsMessage.bind(this);
+    this.onWsClose = this.handleWsClose.bind(this);
+    this.onWsError = this.handleWsError.bind(this);
+  }
+
+  private handleWsOpen(): void {
+    notifyState("connected");
+    if (
+      this.currentPageId !== undefined &&
+      this.currentPageId !== "" &&
+      this.userId !== undefined &&
+      this.userId !== ""
+    ) {
+      this.send({
+        pageId: this.currentPageId,
+        type: "hello",
+        userId: this.userId,
+      });
+    }
+    this.startHeartbeat();
+    for (const cb of this.reopenCallbacks) {
+      // oxlint-disable-next-line node/callback-return, promise/prefer-await-to-callbacks
+      cb();
+    }
+  }
+
+  private handleWsMessage(event: MessageEvent): void {
+    try {
+      const raw: unknown = event.data;
+      const parsed: unknown = JSON.parse(typeof raw === "string" ? raw : "");
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const msg = parsed as WsServerMessage;
+      for (const listener of this.listeners) {
+        listener(msg);
+      }
+    } catch (error: unknown) {
+      console.error("WebSocket message parse error:", error);
+    }
+  }
+
+  private handleWsClose(): void {
+    notifyState("disconnected");
+    this.stopHeartbeat();
+    this.reconnectTimer = setTimeout((): void => {
+      this.doConnect();
+    }, RECONNECT_DELAY_MS);
+  }
+
+  private handleWsError(): void {
+    notifyState("disconnected");
+    if (this.ws) {
+      this.ws.close();
+    }
+  }
+
+  /** Remove all event listeners from the current WebSocket to prevent
+   *  stale listener accumulation across reconnects. */
+  private removeWsListeners(): void {
+    if (!this.ws) {
+      return;
+    }
+    this.ws.removeEventListener("open", this.onWsOpen);
+    this.ws.removeEventListener("message", this.onWsMessage);
+    this.ws.removeEventListener("close", this.onWsClose);
+    this.ws.removeEventListener("error", this.onWsError);
+  }
+
+  /**
+   * Register a callback that fires each time the WS opens (initial + reconnects).
+   * Returns an unsubscribe function to remove the callback.
+   */
+  public onReopen(fn: () => void): () => void {
     this.reopenCallbacks.push(fn);
+    return (): void => {
+      const idx = this.reopenCallbacks.indexOf(fn);
+      if (idx !== -1) {
+        this.reopenCallbacks.splice(idx, 1);
+      }
+    };
   }
 
   public connect(userId: string): void {
@@ -66,6 +150,9 @@ class WsClient {
   }
 
   private doConnect(): void {
+    // Detach listeners from the previous WebSocket before creating a new one
+    this.removeWsListeners();
+
     notifyState("connecting");
     let proto = "ws:";
     if (location.protocol === "https:") {
@@ -73,55 +160,10 @@ class WsClient {
     }
     this.ws = new WebSocket(`${proto}//${location.host}/ws`);
 
-    this.ws.addEventListener("open", (): void => {
-      notifyState("connected");
-      if (
-        this.currentPageId !== undefined &&
-        this.currentPageId !== "" &&
-        this.userId !== undefined &&
-        this.userId !== ""
-      ) {
-        this.send({
-          pageId: this.currentPageId,
-          type: "hello",
-          userId: this.userId,
-        });
-      }
-      this.startHeartbeat();
-      for (const cb of this.reopenCallbacks) {
-        // oxlint-disable-next-line node/callback-return, promise/prefer-await-to-callbacks
-        cb();
-      }
-    });
-
-    this.ws.addEventListener("message", (event: MessageEvent): void => {
-      try {
-        const raw: unknown = event.data;
-        const parsed: unknown = JSON.parse(typeof raw === "string" ? raw : "");
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const msg = parsed as WsServerMessage;
-        for (const listener of this.listeners) {
-          listener(msg);
-        }
-      } catch (error: unknown) {
-        console.error("WebSocket message parse error:", error);
-      }
-    });
-
-    this.ws.addEventListener("close", (): void => {
-      notifyState("disconnected");
-      this.stopHeartbeat();
-      this.reconnectTimer = setTimeout((): void => {
-        this.doConnect();
-      }, RECONNECT_DELAY_MS);
-    });
-
-    this.ws.addEventListener("error", (): void => {
-      notifyState("disconnected");
-      if (this.ws) {
-        this.ws.close();
-      }
-    });
+    this.ws.addEventListener("open", this.onWsOpen);
+    this.ws.addEventListener("message", this.onWsMessage);
+    this.ws.addEventListener("close", this.onWsClose);
+    this.ws.addEventListener("error", this.onWsError);
   }
 
   public send(msg: WsClientMessage): void {
@@ -183,6 +225,7 @@ class WsClient {
       delete this.reconnectTimer;
     }
     this.stopHeartbeat();
+    this.removeWsListeners();
     if (this.ws) {
       this.ws.close();
     }
