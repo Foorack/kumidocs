@@ -275,6 +275,30 @@ async function buildRoutes(
       },
     },
 
+    "/icon-packs/:filename": {
+      async GET(req: Request) {
+        const packName = new URL(req.url).pathname
+          .slice("/icon-packs/".length)
+          .replace(/\.json$/u, "");
+        const packPath = path.join(
+          import.meta.dir,
+          "..",
+          "..",
+          "node_modules",
+          "@iconify-json",
+          packName,
+          "icons.json",
+        );
+        const file = Bun.file(packPath);
+        if (await file.exists()) {
+          return new Response(file, {
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("Not found", { status: 404 });
+      },
+    },
+
     "/images/:filename": {
       async GET(req: Request) {
         const user = requireUser(req);
