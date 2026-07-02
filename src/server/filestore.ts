@@ -75,7 +75,8 @@ async function scanDir(basePath: string, dirPath: string, ig: IgnoreChecker): Pr
 
   await Promise.all(
     entries.map(async (entry) => {
-      if (IGNORED_NAMES.has(entry.name)) {
+      // "core" in IGNORED_NAMES is for core dump files; don't skip directories
+      if (IGNORED_NAMES.has(entry.name) && (entry.name !== "core" || !entry.isDirectory())) {
         return;
       }
       const fullPath = path.join(dirPath, entry.name);
