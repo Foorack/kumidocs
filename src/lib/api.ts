@@ -60,9 +60,13 @@ interface DiffData {
   unifiedDiff: string;
 }
 
-// Core request helper
+// In-flight GET request deduplication.
+// When multiple callers request the same URL concurrently (e.g. due to
+// StrictMode double-mount or redundant mount effects), only one fetch
+// reaches the network; all callers share the same pending promise.
+const inflight = new Map<string, Promise<unknown>>();
 
-async function request<TResponse>(url: string, init?: RequestInit): Promise<TResponse> {
+async function doFetch<TResponse>(url: string, init?: RequestInit): Promise<TResponse> {
   const res = await fetch(url, init);
   if (!res.ok) {
     let body: unknown;
@@ -76,6 +80,33 @@ async function request<TResponse>(url: string, init?: RequestInit): Promise<TRes
   const data: unknown = await res.json();
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return data as TResponse;
+}
+
+async function request<TResponse>(url: string, init?: RequestInit): Promise<TResponse> {
+  // Deduplicate only idempotent GET requests without custom init
+  const isGet = init === undefined || init.method === undefined || init.method === "GET";
+  if (isGet) {
+    const pending = inflight.get(url);
+    if (pending !== undefined) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      return pending as Promise<TResponse>;
+    }
+    const promise = doFetch<TResponse>(url, init);
+    inflight.set(url, promise);
+    // Clean up cache when the request settles, regardless of success/failure
+    void (async (): Promise<void> => {
+      try {
+        await promise;
+      } finally {
+        // Only remove if ours is still the cached entry (avoid clearing a newer request)
+        if (inflight.get(url) === promise) {
+          inflight.delete(url);
+        }
+      }
+    })();
+    return promise;
+  }
+  return doFetch<TResponse>(url, init);
 }
 
 // API functions
