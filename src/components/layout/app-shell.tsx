@@ -1,5 +1,5 @@
 import type { PresenceUser, SyncStatus, TreeNode } from "@/lib/types";
-import { getMe, getTree } from "@/lib/api";
+import { getTree } from "@/lib/api";
 import { useCallback, useRef, useState } from "react";
 import { useWsConnectionState, useWsListener, wsClient } from "@/store/ws";
 import { Button } from "@/components/ui/button";
@@ -34,18 +34,14 @@ const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
 
 export default function AppShell(): JSX.Element {
-  const { user } = useUser();
+  const { user, instanceName, autoSaveDelay, headSha, refreshUser } = useUser();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tree, setTree] = useState<TreeNode[]>([]);
-  const [instanceName, setInstanceName] = useState("KumiDocs");
-  const [autoSaveDelay, setAutoSaveDelay] = useState(5000);
-  const [headSha, setHeadSha] = useState("");
   const [presenceByPage, setPresenceByPage] = useState<Map<string, PresenceUser[]>>(new Map());
   const [newPageOpen, setNewPageOpen] = useState(false);
   const [newPageParentDir, setNewPageParentDir] = useState<string | undefined>();
   const [syncStatus, setSyncStatus] = useState<SyncStatus | undefined>();
   const [treeError, setTreeError] = useState<string | undefined>();
-  const [configError, setConfigError] = useState<string | undefined>();
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     const stored = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     if (stored === null || stored === "") {
@@ -85,26 +81,6 @@ export default function AppShell(): JSX.Element {
     }, 200);
   }, [loadTree]);
 
-  // Load instance config from server
-  const loadInstanceConfig = useCallback(async (): Promise<void> => {
-    try {
-      const data = await getMe();
-      if (data.instanceName !== undefined && data.instanceName !== "") {
-        setInstanceName(data.instanceName);
-      }
-      if (data.autoSaveDelay !== undefined && data.autoSaveDelay !== 0) {
-        setAutoSaveDelay(data.autoSaveDelay);
-      }
-      if (data.headSha !== undefined && data.headSha !== "") {
-        setHeadSha(data.headSha);
-      }
-      setConfigError(undefined);
-    } catch (error: unknown) {
-      console.error("Failed to load instance info:", error);
-      setConfigError("Failed to connect to the server. Some features may be unavailable.");
-    }
-  }, []);
-
   // Reload tree whenever the WS reopens (initial connect or reconnect)
   // so the sidebar is never stale after a WS disconnect.
   useMountEffect(() => {
@@ -120,11 +96,8 @@ export default function AppShell(): JSX.Element {
   });
 
   useMountEffect(() => {
-    void loadInstanceConfig();
     void loadTree();
   });
-
-  const { refreshUser } = useUser();
 
   // Update per-page presence map from WS presence updates
   useWsListener((msg) => {
@@ -158,7 +131,6 @@ export default function AppShell(): JSX.Element {
       scheduleTreeReload();
     }
     if (msg.type === "config_changed") {
-      void loadInstanceConfig();
       void refreshUser();
     }
   });
@@ -241,28 +213,6 @@ export default function AppShell(): JSX.Element {
               ? "Connecting to server…"
               : "Disconnected from server. Real-time features (collaboration, live updates) are unavailable."}
           </span>
-        </div>,
-      );
-    }
-
-    // Config load error
-    if (configError !== undefined && configError !== "") {
-      banners.push(
-        <div
-          key="config"
-          className="bg-red-50 dark:bg-red-950 border-b border-red-200 dark:border-red-800 px-4 py-1.5 flex items-center gap-2 text-sm text-red-800 dark:text-red-200 shrink-0"
-        >
-          <span className="flex-1">{configError}</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 text-xs"
-            onClick={() => {
-              setConfigError(undefined);
-            }}
-          >
-            Dismiss
-          </Button>
         </div>,
       );
     }

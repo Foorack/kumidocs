@@ -12,7 +12,7 @@ import {
   setHiddenPatterns,
 } from "./server/filestore";
 import { buildIgnoreChecker } from "./server/git-ignore";
-import { gitFetchAndRebase, gitPull, gitStageAndCommit } from "./server/git";
+import { getHeadSha, gitFetchAndRebase, gitPull, gitStageAndCommit } from "./server/git";
 import { initSearch, removeFromIndex, updateInIndex } from "./server/search";
 import {
   broadcastConfigChanged,
@@ -241,6 +241,10 @@ async function watchDir(absDir: string): Promise<void> {
 await gitPull(config);
 await loadFilestore(config, ig);
 initSearch();
+
+// Warm the HEAD SHA cache so the first page view doesn't spawn a git
+// subprocess. This is safe to call before the server starts listening.
+void getHeadSha(config);
 
 // Start watching AFTER the filestore is fully loaded and indexed so we
 // never process change events against an empty or half-built cache.

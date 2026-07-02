@@ -15,6 +15,7 @@ import type { PresenceUser, TreeNode } from "@/lib/types";
 import buildPageTree from "@/lib/page-tree";
 import { Button } from "@/components/ui/button";
 import PageNodeRow from "./sidebar-page-node";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import usePageActions from "@/hooks/use-page-actions";
 import { useUser } from "@/store/user";
@@ -36,7 +37,7 @@ export default function Sidebar({
   presenceByPage,
   reloadTree,
 }: SidebarProps): JSX.Element {
-  const pages = buildPageTree(tree);
+  const pages = useMemo(() => buildPageTree(tree), [tree]);
   const { user: currentUser, sidebarDefaultDepth } = useUser();
   const navigate = useNavigate();
   const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
