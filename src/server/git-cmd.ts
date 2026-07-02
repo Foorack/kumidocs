@@ -20,12 +20,16 @@ async function runGit(
 
   const killTimer = setTimeout(() => {
     console.warn(`Git timeout: killing "git ${args.join(" ")}" after ${GIT_TIMEOUT_MS}ms`);
-    proc.kill();
+    proc.kill(9);
   }, GIT_TIMEOUT_MS);
 
+  // Read stdout and stderr concurrently. Each stream is caught individually
+  // so a premature close (kill, crash) doesn't short-circuit Promise.all and
+  // abandon proc.exited -- without that await Bun never calls waitpid() and
+  // the child process becomes a permanent zombie.
   const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
+    new Response(proc.stdout).text().catch(() => ""),
+    new Response(proc.stderr).text().catch(() => ""),
     proc.exited,
   ]);
 
