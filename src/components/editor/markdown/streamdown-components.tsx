@@ -4,6 +4,7 @@ import type { PluggableList } from "unified";
 import type { ReactNode } from "react";
 import { harden } from "rehype-harden";
 import { Pages, Toc, Tree } from "./tree-components";
+import { usePageContext } from "@/lib/page-context";
 import rehypeEmojiPlugin from "@/components/editor/plugins/emoji";
 import rehypeGfmAlertsPlugin from "@/components/editor/plugins/gfm-alerts";
 import rehypeHeadingIdsPlugin from "@/components/editor/plugins/heading-ids";
@@ -80,25 +81,36 @@ interface AnchorProps {
   children?: ReactNode;
 }
 
+/**
+ * Resolve the href/target for a rendered link. Fragment links always target
+ * the current page. Other links open in a new tab while editing (so you
+ * don't lose the editor) and in the same tab while viewing.
+ */
+function resolveAnchor(
+  href: string | undefined,
+  editMode: boolean,
+): { href?: string; target: string } {
+  if (href?.startsWith("#") === true) {
+    // Prepend the current page path so fragment links resolve to headings on
+    // the current page instead of root (broken by harden's defaultOrigin).
+    return { href: window.location.pathname + href, target: "_self" };
+  }
+  return { href, target: editMode ? "_blank" : "_self" };
+}
+
 /** Anchor for document (non-slide) markdown - includes text-primary colour. */
 const AnchorComponent = (allProps: AnchorProps): JSX.Element => {
   const { href, children } = allProps;
-  let target = "_blank";
-  let resolvedHref = href;
-  if (href?.startsWith("#") === true) {
-    target = "_self";
-    // Prepend the current page path so fragment links resolve to headings on
-    // the current page instead of root (broken by harden's defaultOrigin).
-    resolvedHref = window.location.pathname + href;
-  }
+  const { editMode } = usePageContext();
+  const resolved = resolveAnchor(href, editMode);
   return (
     <a
       className="wrap-anywhere font-medium text-primary underline"
       data-incomplete="false"
       data-streamdown="link"
-      href={resolvedHref}
+      href={resolved.href}
       rel="noopener noreferrer"
-      target={target}
+      target={resolved.target}
     >
       {children}
     </a>
@@ -108,20 +120,16 @@ const AnchorComponent = (allProps: AnchorProps): JSX.Element => {
 /** Anchor for slide markdown - same as AnchorComponent but without text-primary. */
 const SlideAnchorComponent = (allProps: AnchorProps): JSX.Element => {
   const { href, children } = allProps;
-  let target = "_blank";
-  let resolvedHref = href;
-  if (href?.startsWith("#") === true) {
-    target = "_self";
-    resolvedHref = window.location.pathname + href;
-  }
+  const { editMode } = usePageContext();
+  const resolved = resolveAnchor(href, editMode);
   return (
     <a
       className="wrap-anywhere font-medium text-primary underline"
       data-incomplete="false"
       data-streamdown="link"
-      href={resolvedHref}
+      href={resolved.href}
       rel="noopener noreferrer"
-      target={target}
+      target={resolved.target}
     >
       {children}
     </a>
