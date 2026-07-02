@@ -54,11 +54,6 @@ setReadonly(config.readonly);
 
 // Load .kumidocs.json permissions
 async function loadPermissions(): Promise<void> {
-  if (config.readonly) {
-    setPermissions({});
-    setHiddenPatterns(undefined);
-    return;
-  }
   const configPath = path.join(config.repoPath, ".kumidocs.json");
   try {
     const raw = await Bun.file(configPath).text();
@@ -70,24 +65,30 @@ async function loadPermissions(): Promise<void> {
   } catch (error: unknown) {
     // If file doesn't exist, create it with default config
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      const defaultConfig = {
-        editors: [],
-        instanceName: "KumiDocs",
-      };
-      await Bun.write(configPath, JSON.stringify(defaultConfig, undefined, 2));
-      setPermissions(defaultConfig);
-      setHiddenPatterns(undefined);
-      console.log("Created .kumidocs.json with default configuration");
+      if (config.readonly) {
+        // Don't create files or touch git in readonly mode
+        setPermissions({});
+        setHiddenPatterns(undefined);
+      } else {
+        const defaultConfig = {
+          editors: [],
+          instanceName: "KumiDocs",
+        };
+        await Bun.write(configPath, JSON.stringify(defaultConfig, undefined, 2));
+        setPermissions(defaultConfig);
+        setHiddenPatterns(undefined);
+        console.log("Created .kumidocs.json with default configuration");
 
-      // Commit and push the new config file
-      await gitStageAndCommit(
-        config,
-        [".kumidocs.json"],
-        "chore: initialize .kumidocs.json",
-        "KumiDocs",
-        "kumidocs@localhost",
-      );
-      console.log("Committed and pushed .kumidocs.json to repository");
+        // Commit and push the new config file
+        await gitStageAndCommit(
+          config,
+          [".kumidocs.json"],
+          "chore: initialize .kumidocs.json",
+          "KumiDocs",
+          "kumidocs@localhost",
+        );
+        console.log("Committed and pushed .kumidocs.json to repository");
+      }
     } else {
       setPermissions({});
       setHiddenPatterns(undefined);
