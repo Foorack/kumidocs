@@ -1,3 +1,4 @@
+// oxlint-disable unicorn/number-literal-case
 /**
  * emoji-gen.ts generates src/components/ui/emoji/emojis.ts
  *
@@ -22,23 +23,26 @@
  */
 
 import { readdir, readFile, mkdir, rm, exists, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import path from "node:path";
 import { $ } from "bun";
 
 // Paths
 
 const REPO_URL = "https://github.com/microsoft/fluentui-emoji";
 const CLONE_DIR = "/tmp/fluentui-emoji";
-const ASSETS_DIR = join(CLONE_DIR, "assets");
+const ASSETS_DIR = path.join(CLONE_DIR, "assets");
 
 const SCRIPT_DIR = import.meta.dir;
-const PROJECT_ROOT = resolve(SCRIPT_DIR, "..");
-const EMOJI_DATA_PATH = join(PROJECT_ROOT, "src/components/ui/emoji/emojimart-data-all-15.json");
-const OUTPUT_FILE = join(PROJECT_ROOT, "src/components/ui/emoji/emojis.ts");
+const PROJECT_ROOT = path.resolve(SCRIPT_DIR, "..");
+const EMOJI_DATA_PATH = path.join(
+  PROJECT_ROOT,
+  "src/components/ui/emoji/emojimart-data-all-15.json",
+);
+const OUTPUT_FILE = path.join(PROJECT_ROOT, "src/components/ui/emoji/emojis.ts");
 // Legacy individual-SVG directory; cleaned up if present
-const COLOR_DIR = join(PROJECT_ROOT, "src/components/ui/emoji/color");
+const COLOR_DIR = path.join(PROJECT_ROOT, "src/components/ui/emoji/color");
 // country-flag-icons 3x2 SVG directory (installed as dev dependency)
-const FLAG_SVGS_DIR = join(PROJECT_ROOT, "node_modules/country-flag-icons/3x2");
+const FLAG_SVGS_DIR = path.join(PROJECT_ROOT, "node_modules/country-flag-icons/3x2");
 
 // Types
 
@@ -53,8 +57,16 @@ interface EmojiMartData {
   categories: { id: string; emojis: string[] }[];
   emojis: Record<string, EmojiEntry>;
 }
+
+function isEmojiMartData(value: unknown): value is EmojiMartData {
+  return typeof value === "object" && value !== null && "categories" in value && "emojis" in value;
+}
 interface FluentMeta {
   glyph: string;
+}
+
+function isFluentMeta(value: unknown): value is FluentMeta {
+  return typeof value === "object" && value !== null && "glyph" in value;
 }
 
 // Helpers: Fluent Emoji
@@ -64,44 +76,67 @@ async function buildGlyphMap(assetsDir: string): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   const assetNames = await readdir(assetsDir);
 
-  for (const assetName of assetNames) {
-    const metaPath = join(assetsDir, assetName, "metadata.json");
+  interface AssetResult {
+    glyph: string;
+    svgPath: string;
+  }
 
-    let meta: FluentMeta;
-    try {
-      meta = JSON.parse(await readFile(metaPath, "utf8")) as FluentMeta;
-    } catch {
-      continue;
-    }
+  const results: (AssetResult | undefined)[] = await Promise.all(
+    assetNames.map(async (assetName) => {
+      const metaPath = path.join(assetsDir, assetName, "metadata.json");
 
-    if (!meta.glyph) continue;
-
-    let svgPath: string | null = null;
-
-    // Pass 1: direct Color/ subdirectory (older flat structure)
-    const directColorDir = join(assetsDir, assetName, "Color");
-    try {
-      const colorFiles = await readdir(directColorDir);
-      const svg = colorFiles.find((f) => f.endsWith(".svg"));
-      if (svg) svgPath = join(directColorDir, svg);
-    } catch {
-      // Not found directly; check variant subdirectories
-    }
-
-    // Pass 2: Default variant subdirectory (newer nested structure)
-    if (!svgPath) {
-      const variantColorDir = join(assetsDir, assetName, "Default", "Color");
+      let meta: FluentMeta;
       try {
-        const colorFiles = await readdir(variantColorDir);
-        const svg = colorFiles.find((f) => f.endsWith(".svg"));
-        if (svg) svgPath = join(variantColorDir, svg);
+        const metaRaw: unknown = JSON.parse(await readFile(metaPath, "utf8"));
+        if (!isFluentMeta(metaRaw)) {
+          return undefined;
+        }
+        meta = metaRaw;
       } catch {
-        // No Default/Color dir; skip this asset
+        return undefined;
       }
-    }
+      if (!meta.glyph) {
+        return undefined;
+      }
 
-    if (svgPath) {
-      map.set(meta.glyph, svgPath);
+      let svgPath: string | undefined;
+
+      // Pass 1: direct Color/ subdirectory (older flat structure)
+      const directColorDir = path.join(assetsDir, assetName, "Color");
+      try {
+        const colorFiles = await readdir(directColorDir);
+        const svgFile = colorFiles.find((file) => file.endsWith(".svg"));
+        if (svgFile !== undefined) {
+          svgPath = path.join(directColorDir, svgFile);
+        }
+      } catch {
+        // Not found directly; check variant subdirectories
+      }
+
+      // Pass 2: Default variant subdirectory (newer nested structure)
+      if (svgPath === undefined) {
+        const variantColorDir = path.join(assetsDir, assetName, "Default", "Color");
+        try {
+          const colorFiles = await readdir(variantColorDir);
+          const svgFile = colorFiles.find((file) => file.endsWith(".svg"));
+          if (svgFile !== undefined) {
+            svgPath = path.join(variantColorDir, svgFile);
+          }
+        } catch {
+          // No Default/Color dir; skip this asset
+        }
+      }
+
+      if (svgPath !== undefined) {
+        return { glyph: meta.glyph, svgPath };
+      }
+      return undefined;
+    }),
+  );
+
+  for (const result of results) {
+    if (result) {
+      map.set(result.glyph, result.svgPath);
     }
   }
 
@@ -112,26 +147,39 @@ async function buildGlyphMap(assetsDir: string): Promise<Map<string, string>> {
 
 /**
  * Decode a regional-indicator flag emoji (e.g. 🇺🇸) to its ISO 3166-1 alpha-2
- * code ("US"). Returns null for non-flag emoji or unsupported sequences.
+ * code ("US"). Returns undefined for non-flag emoji or unsupported sequences.
  */
-function flagEmojiToISO(native: string): string | null {
+function flagEmojiToISO(native: string): string | undefined {
   // Use TextEncoder to safely extract UTF-32 code points from the flag emoji
   const enc = new TextEncoder().encode(native);
   // Regional indicator pairs are always two 4-byte UTF-8 sequences = 8 bytes
-  if (enc.length !== 8) return null;
-  const a =
+  if (enc.length !== 8) {
+    return undefined;
+  }
+  // oxlint-disable no-bitwise
+  const codePointA =
     (((enc[0] ?? 0) & 0x07) << 18) |
     (((enc[1] ?? 0) & 0x3f) << 12) |
     (((enc[2] ?? 0) & 0x3f) << 6) |
     ((enc[3] ?? 0) & 0x3f);
-  const b =
+  const codePointB =
     (((enc[4] ?? 0) & 0x07) << 18) |
     (((enc[5] ?? 0) & 0x3f) << 12) |
     (((enc[6] ?? 0) & 0x3f) << 6) |
     ((enc[7] ?? 0) & 0x3f);
-  if (a < 0x1f1e6 || a > 0x1f1ff || b < 0x1f1e6 || b > 0x1f1ff) return null;
-  return String.fromCharCode(a - 0x1f1e6 + 65, b - 0x1f1e6 + 65);
+  // oxlint-enable no-bitwise
+  // oxlint-disable unicorn/numeric-separators-style
+  if (
+    codePointA < 0x1f1e6 ||
+    codePointA > 0x1f1ff ||
+    codePointB < 0x1f1e6 ||
+    codePointB > 0x1f1ff
+  ) {
+    return undefined;
+  }
+  return String.fromCodePoint(codePointA - 0x1f1e6 + 65, codePointB - 0x1f1e6 + 65);
 }
+// oxlint-enable unicorn/numeric-separators-style
 
 // Main
 
@@ -140,15 +188,15 @@ const forceClone = process.argv.includes("--clone");
 // 1. Clone (or reuse) the fluentui-emoji repo
 if (forceClone && (await exists(CLONE_DIR))) {
   console.log("Removing existing clone…");
-  await rm(CLONE_DIR, { recursive: true, force: true });
+  await rm(CLONE_DIR, { force: true, recursive: true });
 }
 
-if (!(await exists(CLONE_DIR))) {
+if (await exists(CLONE_DIR)) {
+  console.log(`Reusing existing clone at ${CLONE_DIR}`);
+} else {
   console.log(`Cloning ${REPO_URL} (depth 1)…`);
   await $`git clone --depth 1 ${REPO_URL} ${CLONE_DIR}`;
   console.log("Clone complete.");
-} else {
-  console.log(`Reusing existing clone at ${CLONE_DIR}`);
 }
 
 // 2. Build glyph -> SVG path map
@@ -157,16 +205,22 @@ const glyphMap = await buildGlyphMap(ASSETS_DIR);
 console.log(`  ${String(glyphMap.size)} assets indexed.`);
 
 // 3. Load emojimart data
-const martData = JSON.parse(await readFile(EMOJI_DATA_PATH, "utf8")) as EmojiMartData;
+const martRaw: unknown = JSON.parse(await readFile(EMOJI_DATA_PATH, "utf8"));
+if (!isEmojiMartData(martRaw)) {
+  throw new Error("Invalid emojimart data file");
+}
+const martData: EmojiMartData = martRaw;
 
 const allIds = new Set<string>();
 for (const cat of martData.categories) {
-  for (const id of cat.emojis) allIds.add(id);
+  for (const id of cat.emojis) {
+    allIds.add(id);
+  }
 }
 console.log(`  ${String(allIds.size)} emoji IDs in emojimart data.`);
 
 // 4. Build map: native char -> base64 data URI
-await mkdir(join(PROJECT_ROOT, "src/components/ui/emoji"), { recursive: true });
+await mkdir(path.join(PROJECT_ROOT, "src/components/ui/emoji"), { recursive: true });
 
 let matchedFluent = 0;
 let matchedFlag = 0;
@@ -176,42 +230,56 @@ const skippedList: string[] = [];
 // Collect entries in category order so the TS file mirrors picker order
 const entries: { native: string; dataUri: string }[] = [];
 
-for (const id of allIds) {
-  const entry = martData.emojis[id];
-  if (!entry?.skins[0]) {
-    skipped++;
-    skippedList.push(`${id} (no skin data)`);
-    continue;
-  }
+interface EmojiResult {
+  dataUri: string;
+  native: string;
+}
 
-  const { native } = entry.skins[0];
-
-  // Pass 1: Fluent Emoji
-  const svgSrc = glyphMap.get(native);
-  if (svgSrc) {
-    const b64 = (await readFile(svgSrc)).toString("base64");
-    entries.push({ native, dataUri: `data:image/svg+xml;base64,${b64}` });
-    matchedFluent++;
-    continue;
-  }
-
-  // Pass 2: Country flag via country-flag-icons
-  const iso = flagEmojiToISO(native);
-  if (iso) {
-    const flagPath = join(FLAG_SVGS_DIR, `${iso}.svg`);
-    try {
-      const sourceSvg = await readFile(flagPath, "utf8");
-      const b64 = Buffer.from(sourceSvg, "utf8").toString("base64");
-      entries.push({ native, dataUri: `data:image/svg+xml;base64,${b64}` });
-      matchedFlag++;
-      continue;
-    } catch {
-      // SVG not present for this ISO code; fall through to skipped
+const idList = [...allIds];
+const emojiResults = await Promise.all(
+  idList.map(async (id) => {
+    const entry = martData.emojis[id];
+    if (!entry?.skins[0]) {
+      skippedList.push(`${id} (no skin data)`);
+      return undefined;
     }
-  }
 
-  skipped++;
-  skippedList.push(`${id} (${native}: not in fluentui assets or country-flag-icons)`);
+    const { native } = entry.skins[0];
+
+    // Pass 1: Fluent Emoji
+    const svgSrc = glyphMap.get(native);
+    if (svgSrc !== undefined && svgSrc !== "") {
+      const svgFileContent = await readFile(svgSrc);
+      const b64 = svgFileContent.toString("base64");
+      matchedFluent++;
+      return { dataUri: `data:image/svg+xml;base64,${b64}`, native } satisfies EmojiResult;
+    }
+
+    // Pass 2: Country flag via country-flag-icons
+    const iso = flagEmojiToISO(native);
+    if (iso !== undefined && iso !== "") {
+      const flagPath = path.join(FLAG_SVGS_DIR, `${iso}.svg`);
+      try {
+        const sourceSvg = await readFile(flagPath, "utf8");
+        const b64 = Buffer.from(sourceSvg, "utf8").toString("base64");
+        matchedFlag++;
+        return { dataUri: `data:image/svg+xml;base64,${b64}`, native } satisfies EmojiResult;
+      } catch {
+        // SVG not present for this ISO code; fall through to skipped
+      }
+    }
+
+    skippedList.push(`${id} (${native}: not in fluentui assets or country-flag-icons)`);
+    return undefined;
+  }),
+);
+
+for (const result of emojiResults) {
+  if (result) {
+    entries.push(result);
+  } else {
+    skipped++;
+  }
 }
 
 // 5. Write emojis.ts
@@ -229,28 +297,34 @@ for (const { native, dataUri } of entries) {
   // Escape via TextEncoder to safely handle multi-byte / surrogate code points
   const enc2 = new TextEncoder().encode(native);
   let escaped = "";
-  let i = 0;
-  while (i < enc2.length) {
-    const b0 = enc2[i] ?? 0;
-    let cp: number;
+  let index = 0;
+  while (index < enc2.length) {
+    const b0 = enc2[index] ?? 0;
+    let codePoint: number;
+    // oxlint-disable no-bitwise
     if (b0 < 0x80) {
-      cp = b0;
-      i += 1;
+      codePoint = b0;
+      index += 1;
     } else if (b0 < 0xe0) {
-      cp = ((b0 & 0x1f) << 6) | ((enc2[i + 1] ?? 0) & 0x3f);
-      i += 2;
+      codePoint = ((b0 & 0x1f) << 6) | ((enc2[index + 1] ?? 0) & 0x3f);
+      index += 2;
     } else if (b0 < 0xf0) {
-      cp = ((b0 & 0x0f) << 12) | (((enc2[i + 1] ?? 0) & 0x3f) << 6) | ((enc2[i + 2] ?? 0) & 0x3f);
-      i += 3;
+      codePoint =
+        ((b0 & 0x0f) << 12) |
+        (((enc2[index + 1] ?? 0) & 0x3f) << 6) |
+        ((enc2[index + 2] ?? 0) & 0x3f);
+      index += 3;
     } else {
-      cp =
+      codePoint =
         ((b0 & 0x07) << 18) |
-        (((enc2[i + 1] ?? 0) & 0x3f) << 12) |
-        (((enc2[i + 2] ?? 0) & 0x3f) << 6) |
-        ((enc2[i + 3] ?? 0) & 0x3f);
-      i += 4;
+        (((enc2[index + 1] ?? 0) & 0x3f) << 12) |
+        (((enc2[index + 2] ?? 0) & 0x3f) << 6) |
+        ((enc2[index + 3] ?? 0) & 0x3f);
+      index += 4;
     }
-    escaped += cp > 0x7f ? `\\u{${cp.toString(16)}}` : String.fromCodePoint(cp);
+    // oxlint-enable no-bitwise
+    escaped +=
+      codePoint > 0x7f ? `\\u{${codePoint.toString(16)}}` : String.fromCodePoint(codePoint);
   }
   // JSON.stringify the data URI to handle any embedded quotes safely
   lines.push(`\t"${escaped}": ${JSON.stringify(dataUri)},`);
@@ -264,7 +338,7 @@ console.log(`\nWrote ${OUTPUT_FILE}`);
 // 6. Clean up legacy color/ directory if it exists (replaced by emojis.ts)
 if (await exists(COLOR_DIR)) {
   console.log("Cleaning up legacy color/ directory…");
-  await rm(COLOR_DIR, { recursive: true, force: true });
+  await rm(COLOR_DIR, { force: true, recursive: true });
 }
 
 // 7. Report
@@ -274,5 +348,7 @@ console.log(`  Country flags: ${String(matchedFlag)}`);
 console.log(`  Skipped      : ${String(skipped)} (fallback to native text rendering)`);
 if (skippedList.length > 0 && process.argv.includes("--verbose")) {
   console.log("\nSkipped emoji (--verbose):");
-  for (const s of skippedList) console.log(`  - ${s}`);
+  for (const skippedEntry of skippedList) {
+    console.log(`  - ${skippedEntry}`);
+  }
 }
