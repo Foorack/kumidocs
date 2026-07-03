@@ -7,14 +7,23 @@
 		"type": "git",
 		"url": "https://github.com/Foorack/kumidocs.git"
 	},
-	"keywords": ["wiki", "docs", "markdown", "git", "bun", "self-hosted"],
+	"keywords": [
+		"wiki",
+		"docs",
+		"markdown",
+		"git",
+		"bun",
+		"self-hosted"
+	],
 	"publishConfig": {
 		"access": "public"
 	},
 	"engines": {
 		"bun": ">=1.1.0"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"bin": {
 		"kumidocs": "dist/index.js"
 	},
