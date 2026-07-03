@@ -292,7 +292,7 @@ async function buildRoutes(
         const file = Bun.file(packPath);
         if (await file.exists()) {
           return new Response(file, {
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json; charset=utf-8" },
           });
         }
         return new Response("Not found", { status: 404 });
