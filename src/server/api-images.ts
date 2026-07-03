@@ -5,6 +5,14 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
+import {
+  doesFileExist,
+  getFileSize,
+  readTextFile,
+  serveFileResponse,
+  sha256Hex,
+  writeFileBytes,
+} from "./runtime";
 
 async function apiUploadImage(req: Request, user: User, config: Config): Promise<Response> {
   if (!user.canEdit) {
@@ -20,28 +28,27 @@ async function apiUploadImage(req: Request, user: User, config: Config): Promise
     return Response.json({ error: "Invalid form data" }, { status: 400 });
   }
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const file = formData.get("file") as File | null;
-  if (file === null) {
+  const entry = formData.get("file");
+  if (!(entry instanceof File)) {
     return Response.json({ error: "No file provided" }, { status: 400 });
   }
-  if (file.size > MAX) {
+  if (entry.size > MAX) {
     return Response.json({ error: "File too large (max 25 MB)" }, { status: 413 });
   }
 
-  const ext = path.extname(file.name).toLowerCase();
+  const ext = path.extname(entry.name).toLowerCase();
   if (!IMAGE_TYPES.has(ext)) {
     return Response.json({ error: "File type not allowed" }, { status: 415 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const sha256 = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+  const bytes = await entry.arrayBuffer();
+  const sha256 = sha256Hex(bytes);
   const filename = `${sha256}${ext}`;
   const repoPath = `images/${filename}`;
   const fullPath = path.join(config.repoPath, repoPath);
 
   await mkdir(path.join(config.repoPath, "images"), { recursive: true });
-  await Bun.write(fullPath, bytes);
+  await writeFileBytes(fullPath, bytes);
   addToCache(repoPath, "");
 
   const msg = `docs: upload image ${filename} by ${user.displayName}`;
@@ -57,31 +64,33 @@ async function apiUploadImage(req: Request, user: User, config: Config): Promise
 }
 
 // GET /api/images
-function apiImagesList(config: Config): Response {
+async function apiImagesList(config: Config): Promise<Response> {
   const all = getAllPaths();
   const imagePaths = all.filter((filePath) => filePath.startsWith("images/"));
   const mdPaths = all.filter((filePath) => filePath.endsWith(".md"));
 
-  const results = imagePaths.map((repoPath) => {
-    const filename = repoPath.slice("images/".length);
-    // The sha256 portion is the part before the extension
-    const dotIdx = filename.lastIndexOf(".");
-    const sha256 = dotIdx === -1 ? filename : filename.slice(0, dotIdx);
+  const results = await Promise.all(
+    imagePaths.map(async (repoPath) => {
+      const filename = repoPath.slice("images/".length);
+      // The sha256 portion is the part before the extension
+      const dotIdx = filename.lastIndexOf(".");
+      const sha256 = dotIdx === -1 ? filename : filename.slice(0, dotIdx);
 
-    let size = 0;
-    try {
-      size = Bun.file(path.join(config.repoPath, repoPath)).size;
-    } catch {
-      // file may be transiently unavailable
-    }
+      let size = 0;
+      try {
+        size = await getFileSize(path.join(config.repoPath, repoPath));
+      } catch {
+        // file may be transiently unavailable
+      }
 
-    const usedIn = mdPaths.filter((mdPath) => {
-      const content = getFile(mdPath) ?? "";
-      return content.includes(sha256);
-    });
+      const usedIn = mdPaths.filter((mdPath) => {
+        const content = getFile(mdPath) ?? "";
+        return content.includes(sha256);
+      });
 
-    return { filename, path: repoPath, size, url: `/images/${filename}`, usedIn };
-  });
+      return { filename, path: repoPath, size, url: `/images/${filename}`, usedIn };
+    }),
+  );
 
   return Response.json(results);
 }
@@ -192,15 +201,14 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
   const ext = path.extname(assetPath).toLowerCase();
   const mime = MIME[ext] ?? "application/octet-stream";
 
-  const bunFile = Bun.file(fullPath);
-  if (!(await bunFile.exists())) {
+  if (!(await doesFileExist(fullPath))) {
     return new Response("Not found", { status: 404 });
   }
 
   // SVGs are sanitized in-memory at serve time so stored files are never mutated.
   // A restrictive CSP provides defence-in-depth in case the sanitizer misses anything.
   if (ext === ".svg") {
-    const raw = await bunFile.text();
+    const raw = await readTextFile(fullPath);
     const sanitized = sanitizeSvg(raw);
     return new Response(sanitized, {
       headers: {
@@ -212,12 +220,10 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
     });
   }
 
-  return new Response(bunFile, {
-    headers: {
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Type": mime,
-      "X-Content-Type-Options": "nosniff",
-    },
+  return serveFileResponse(fullPath, {
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "Content-Type": mime,
+    "X-Content-Type-Options": "nosniff",
   });
 }
 

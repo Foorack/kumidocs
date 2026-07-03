@@ -2,6 +2,7 @@ import { serve } from "bun";
 import { existsSync, watch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { parseUser, setPermissions, setReadonly } from "./server/auth";
+import { readTextFile, writeFileBytes } from "./server/runtime";
 import { loadConfig } from "./server/config";
 import {
   IGNORED_NAMES,
@@ -56,7 +57,7 @@ setReadonly(config.readonly);
 async function loadPermissions(): Promise<void> {
   const configPath = path.join(config.repoPath, ".kumidocs.json");
   try {
-    const raw = await Bun.file(configPath).text();
+    const raw = await readTextFile(configPath);
     const parsed: unknown = JSON.parse(raw);
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     setPermissions(parsed as KumiDocsPermissions);
@@ -74,7 +75,7 @@ async function loadPermissions(): Promise<void> {
           editors: [],
           instanceName: "KumiDocs",
         };
-        await Bun.write(configPath, JSON.stringify(defaultConfig, undefined, 2));
+        await writeFileBytes(configPath, JSON.stringify(defaultConfig, undefined, 2));
         setPermissions(defaultConfig);
         setHiddenPatterns(undefined);
         console.log("Created .kumidocs.json with default configuration");

@@ -1,5 +1,6 @@
 import type { CommitEntry } from "@/lib/types";
 import type { Config } from "./config";
+import { runtimeEnv, spawnProcess } from "./runtime";
 
 // Subprocess helper
 
@@ -12,29 +13,16 @@ async function runGit(
   args: string[],
   env?: Record<string, string>,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(["git", "-C", repoPath, ...args], {
-    env: { ...Bun.env, ...env },
-    stderr: "pipe",
-    stdout: "pipe",
+  const result = await spawnProcess("git", ["-C", repoPath, ...args], {
+    env: { ...runtimeEnv, ...env },
+    timeoutMs: GIT_TIMEOUT_MS,
   });
 
-  const killTimer = setTimeout(() => {
+  if (result.exitCode === -1) {
     console.warn(`Git timeout: killing "git ${args.join(" ")}" after ${GIT_TIMEOUT_MS}ms`);
-    proc.kill(9);
-  }, GIT_TIMEOUT_MS);
+  }
 
-  // Read stdout and stderr concurrently. Each stream is caught individually
-  // so a premature close (kill, crash) doesn't short-circuit Promise.all and
-  // abandon proc.exited -- without that await Bun never calls waitpid() and
-  // the child process becomes a permanent zombie.
-  const [stdout, stderr, exitCode] = await Promise.all([
-    new Response(proc.stdout).text().catch(() => ""),
-    new Response(proc.stderr).text().catch(() => ""),
-    proc.exited,
-  ]);
-
-  clearTimeout(killTimer);
-  return { exitCode, stderr, stdout };
+  return result;
 }
 
 // Read-only operations (no lock needed)

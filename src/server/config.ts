@@ -1,5 +1,6 @@
 import path from "node:path";
 import pkg from "@root/package.json";
+import { runtimeEnv } from "./runtime";
 
 // ExitRequest - thrown instead of process.exit() for clean exit handling
 class ExitRequestError extends Error {
@@ -260,7 +261,7 @@ const loadConfig = (): Config => {
   const config = {} as Config;
   for (const opt of OPTIONS) {
     const cli = cliOverrides[opt.key];
-    setConfigKey(config, opt.key, cli ?? applyEnv(opt, Bun.env[opt.env]));
+    setConfigKey(config, opt.key, cli ?? applyEnv(opt, runtimeEnv[opt.env]));
   }
   return config;
 };

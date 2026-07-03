@@ -48,7 +48,8 @@ const walk = (node: Root | RootContent, pageDir: string): void => {
   }
 };
 
-const rehypeResolveRelativeUrlsPlugin = (): ((tree: Root) => void) =>
+const rehypeResolveRelativeUrlsPlugin =
+  (): ((tree: Root) => void) =>
   (tree: Root): void => {
     // oxlint-disable-next-line typescript/no-unnecessary-condition
     const pathname = globalThis.location === undefined ? "/" : globalThis.location.pathname;

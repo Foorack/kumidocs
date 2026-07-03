@@ -23,6 +23,7 @@ import path from "node:path";
 import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
+import { doesFileExist, readFileBuffer, serveFileResponse } from "./runtime";
 
 // oxlint-disable-next-line no-underscore-dangle
 declare const __BUNDLED__: boolean | undefined;
@@ -36,11 +37,14 @@ async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
   const filePath = path.join(publicDir, rel);
   if (!filePath.startsWith(publicDir + path.sep)) {
-    return new Response(Bun.file(path.join(publicDir, "index.html")));
+    return serveFileResponse(path.join(publicDir, "index.html"), {
+      "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
+    });
   }
-  const file = Bun.file(filePath);
-  if (await file.exists()) {
-    return new Response(file, {
+  if (await doesFileExist(filePath)) {
+    const content = await readFileBuffer(filePath);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return new Response(content as unknown as BodyInit, {
       headers:
         rel === "index.html"
           ? {
@@ -49,10 +53,8 @@ async function serveSPA(req: Request): Promise<Response> {
           : { "Cache-Control": "public, max-age=31536000, immutable" },
     });
   }
-  return new Response(Bun.file(path.join(publicDir, "index.html")), {
-    headers: {
-      "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
-    },
+  return serveFileResponse(path.join(publicDir, "index.html"), {
+    "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
   });
 }
 
@@ -289,10 +291,9 @@ async function buildRoutes(
           packName,
           "icons.json",
         );
-        const file = Bun.file(packPath);
-        if (await file.exists()) {
-          return new Response(file, {
-            headers: { "Content-Type": "application/json; charset=utf-8" },
+        if (await doesFileExist(packPath)) {
+          return serveFileResponse(packPath, {
+            "Content-Type": "application/json; charset=utf-8",
           });
         }
         return new Response("Not found", { status: 404 });

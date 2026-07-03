@@ -4,6 +4,7 @@ import { mkdir, readdir, unlink } from "node:fs/promises";
 import type { FileEntry, TreeNode } from "@/lib/types";
 import type { Config } from "./config";
 import type { IgnoreChecker } from "./git-ignore";
+import { readTextFile, writeFileBytes } from "./runtime";
 import ignore from "ignore";
 import matter from "gray-matter";
 import path from "node:path";
@@ -96,7 +97,7 @@ async function scanDir(basePath: string, dirPath: string, ig: IgnoreChecker): Pr
         // Only read text files; for others store empty string as marker
         if (ext === ".md" || CODE_TYPES.has(ext) || ext === "") {
           try {
-            const content = await Bun.file(fullPath).text();
+            const content = await readTextFile(fullPath);
             fileCache.set(relPath, content);
           } catch {
             fileCache.set(relPath, "");
@@ -130,7 +131,7 @@ async function writeFileToRepo(filePath: string, content: string, config: Config
   await mkdir(path.dirname(fullPath), { recursive: true });
   const isBinary = IMAGE_TYPES.has(path.extname(filePath).toLowerCase());
   const normalised = isBinary || content.endsWith("\n") ? content : `${content}\n`;
-  await Bun.write(fullPath, normalised);
+  await writeFileBytes(fullPath, normalised);
   fileCache.set(filePath, normalised);
   invalidateTree();
 }
@@ -145,7 +146,7 @@ async function deleteFileFromRepo(filePath: string, config: Config): Promise<voi
 async function reloadFile(filePath: string, config: Config): Promise<void> {
   const fullPath = path.join(config.repoPath, filePath);
   try {
-    const content = await Bun.file(fullPath).text();
+    const content = await readTextFile(fullPath);
     fileCache.set(filePath, content);
   } catch {
     fileCache.delete(filePath);
