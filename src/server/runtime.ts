@@ -6,7 +6,6 @@
  *
  * Current Bun-specific APIs STILL used directly (not abstracted here):
  *   - `import { serve } from "bun"` -- HTTP/WS server entry point
- *   - `import type { ServerWebSocket } from "bun"` -- WS type with ws.data
  *   - `import.meta.dir / import.meta.url` -- also supported in Node 21+
  *   - `__BUNDLED__` -- Bun build-time constant
  */

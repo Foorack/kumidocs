@@ -1,5 +1,4 @@
 import type { PresenceUser, User, WsClientMessage, WsServerMessage } from "@/lib/types";
-import type { ServerWebSocket } from "bun";
 import { getFile } from "./filestore";
 
 interface WsData {
@@ -9,13 +8,25 @@ interface WsData {
   lastHeartbeat: number;
 }
 
+// Per-connection data store. On Bun the initial data is populated by
+// srv.upgrade()'s `data` option; on Node the upgrade handler would set it.
+const wsDataStore = new WeakMap<WebSocket, WsData>();
+
 let sessionCounter = 0;
 
-const sessions = new Map<string, ServerWebSocket<WsData>>(); // sessionId -> ws
+const sessions = new Map<string, WebSocket>(); // sessionId -> ws
 const pageViewers = new Map<string, Set<string>>(); // pageId -> Set<sessionId>
 const pageEditors = new Map<string, string>(); // pageId -> sessionId holding edit-lock
 
-function send(ws: ServerWebSocket<WsData>, msg: WsServerMessage): void {
+function getWsData(ws: WebSocket): WsData {
+  const data = wsDataStore.get(ws);
+  // wsOpen always sets data before any handler runs, so this should never
+  // be undefined in practice. The assertion keeps the call sites clean.
+  // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return data!;
+}
+
+function send(ws: WebSocket, msg: WsServerMessage): void {
   try {
     ws.send(JSON.stringify(msg));
   } catch (error: unknown) {
@@ -95,10 +106,11 @@ function presenceUpdate(pageId: string): WsServerMessage {
     if (!ws) {
       continue;
     }
+    const wsInfo = getWsData(ws);
     const presenceUser: PresenceUser = {
-      email: ws.data.user.email,
-      id: ws.data.user.id,
-      name: ws.data.user.displayName,
+      email: wsInfo.user.email,
+      id: wsInfo.user.id,
+      name: wsInfo.user.displayName,
     };
     viewers.push(presenceUser);
     if (sid === editorSid) {
@@ -109,9 +121,10 @@ function presenceUpdate(pageId: string): WsServerMessage {
   return { editor, pageId, type: "presence_update", viewers };
 }
 
-function leaveCurrentPage(ws: ServerWebSocket<WsData>): void {
-  const sid = ws.data.sessionId;
-  const pageId = ws.data.pageId;
+function leaveCurrentPage(ws: WebSocket): void {
+  const wsInfo = getWsData(ws);
+  const sid = wsInfo.sessionId;
+  const pageId = wsInfo.pageId;
   if (pageId === undefined || pageId === "") {
     return;
   }
@@ -132,27 +145,35 @@ function leaveCurrentPage(ws: ServerWebSocket<WsData>): void {
   if (hadViewers || pageEditors.has(pageId)) {
     broadcastToAll(presenceUpdate(pageId));
   }
-  ws.data.pageId = undefined;
+  wsInfo.pageId = undefined;
 }
 
-function wsOpen(ws: ServerWebSocket<WsData>): void {
-  ws.data.sessionId = String(++sessionCounter);
-  ws.data.pageId = undefined;
-  ws.data.lastHeartbeat = Date.now();
-  sessions.set(ws.data.sessionId, ws);
+function wsOpen(ws: WebSocket): void {
+  // Copy initial data set by Bun's srv.upgrade() into our own store.
+  // This is the only place we touch the Bun-specific ws.data property.
+  // oxlint-disable-next-line no-unsafe-type-assertion
+  const initial = (ws as unknown as { data: WsData | undefined }).data;
+  if (initial) {
+    wsDataStore.set(ws, initial);
+  }
+  const wsInfo = getWsData(ws);
+  wsInfo.sessionId = String(++sessionCounter);
+  wsInfo.lastHeartbeat = Date.now();
+  sessions.set(wsInfo.sessionId, ws);
 }
 
-function handleHello(ws: ServerWebSocket<WsData>, sid: string, rawPid: string): void {
+function handleHello(ws: WebSocket, sid: string, rawPid: string): void {
   if (typeof rawPid !== "string" || rawPid === "") {
     return;
   }
   if (getFile(rawPid) === undefined) {
     return;
   }
-  if (ws.data.pageId !== rawPid) {
+  const wsInfo = getWsData(ws);
+  if (wsInfo.pageId !== rawPid) {
     leaveCurrentPage(ws);
   }
-  ws.data.pageId = rawPid;
+  wsInfo.pageId = rawPid;
   if (!pageViewers.has(rawPid)) {
     pageViewers.set(rawPid, new Set());
   }
@@ -170,11 +191,11 @@ function handleHello(ws: ServerWebSocket<WsData>, sid: string, rawPid: string): 
   send(ws, { ...getSyncStatus(), type: "sync_status" });
 }
 
-function handleEditingStart(ws: ServerWebSocket<WsData>, sid: string, rawPid: string): void {
+function handleEditingStart(ws: WebSocket, sid: string, rawPid: string): void {
   if (typeof rawPid !== "string" || rawPid === "") {
     return;
   }
-  if (!ws.data.user.canEdit) {
+  if (!getWsData(ws).user.canEdit) {
     return;
   }
   const existingSid = pageEditors.get(rawPid);
@@ -191,7 +212,7 @@ function handleEditingStart(ws: ServerWebSocket<WsData>, sid: string, rawPid: st
   broadcastToPage(rawPid, presenceUpdate(rawPid));
 }
 
-function handleEditingStop(_ws: ServerWebSocket<WsData>, sid: string, rawPid: string): void {
+function handleEditingStop(_ws: WebSocket, sid: string, rawPid: string): void {
   if (typeof rawPid !== "string" || rawPid === "") {
     return;
   }
@@ -201,8 +222,8 @@ function handleEditingStop(_ws: ServerWebSocket<WsData>, sid: string, rawPid: st
   }
 }
 
-function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): void {
-  ws.data.lastHeartbeat = Date.now();
+function wsMessage(ws: WebSocket, raw: string | Buffer): void {
+  getWsData(ws).lastHeartbeat = Date.now();
   let msg: WsClientMessage;
   try {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -211,7 +232,7 @@ function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): void {
     return;
   }
 
-  const sid = ws.data.sessionId;
+  const sid = getWsData(ws).sessionId;
 
   switch (msg.type) {
     case "hello": {
@@ -244,8 +265,8 @@ function wsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer): void {
   }
 }
 
-function wsClose(ws: ServerWebSocket<WsData>): void {
-  const sid = ws.data.sessionId;
+function wsClose(ws: WebSocket): void {
+  const sid = getWsData(ws).sessionId;
   leaveCurrentPage(ws);
   sessions.delete(sid);
 }
@@ -287,7 +308,7 @@ function broadcastPageCreated(pageId: string, path: string): void {
 
 function sendSaveConflict(userId: string, pageId: string): void {
   for (const ws of sessions.values()) {
-    if (ws.data.user.id === userId) {
+    if (getWsData(ws).user.id === userId) {
       send(ws, {
         message: "Save conflict: remote changes could not be merged.",
         pageId,
@@ -303,7 +324,10 @@ function getEditorForPage(pageId: string): User | undefined {
     return undefined;
   }
   const ws = sessions.get(sid);
-  return ws?.data.user;
+  if (!ws) {
+    return undefined;
+  }
+  return getWsData(ws).user;
 }
 
 // Prune sessions that haven't sent a heartbeat in 90 seconds.
@@ -312,7 +336,10 @@ function getEditorForPage(pageId: string): User | undefined {
 function pruneDeadSessions(): void {
   const cutoff = Date.now() - 90_000;
   for (const ws of sessions.values()) {
-    if (ws.data.lastHeartbeat < cutoff) {
+    // Can't use getWsData here because ws may already be half-closed
+    // and its data may have been cleaned up. Attempt the lookup safely.
+    const wsInfo = wsDataStore.get(ws);
+    if (wsInfo && wsInfo.lastHeartbeat < cutoff) {
       ws.close(1001, "Heartbeat timeout");
     }
   }

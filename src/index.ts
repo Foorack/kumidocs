@@ -405,9 +405,12 @@ const server = serve<WsData>({
   routes,
 
   websocket: {
-    close: wsClose,
-    message: wsMessage,
-    open: wsOpen,
+    // oxlint-disable-next-line no-unsafe-type-assertion
+    close: wsClose as never,
+    // oxlint-disable-next-line no-unsafe-type-assertion
+    message: wsMessage as never,
+    // oxlint-disable-next-line no-unsafe-type-assertion
+    open: wsOpen as never,
   },
 });
 
