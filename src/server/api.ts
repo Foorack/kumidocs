@@ -42,20 +42,23 @@ function apiSearch(url: URL): Response {
 
 // GET /api/emojis
 // Serves the emoji text file gzip-compressed on-the-fly.
-let emojiGzipped: Buffer | null = null;
+let emojiGzipped: Uint8Array | undefined;
 const emojiFilePath = path.join(import.meta.dir, "..", "..", "dist", "public", "emojis.txt");
 
 function apiEmojis(): Response {
   try {
     if (!emojiGzipped) {
+      // oxlint-disable-next-line node/no-sync
       const raw = readFileSync(emojiFilePath);
+      // oxlint-disable-next-line node/no-sync
       emojiGzipped = gzipSync(raw);
     }
-    return new Response(emojiGzipped, {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return new Response(emojiGzipped as unknown as BodyInit, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Content-Encoding": "gzip",
         "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Encoding": "gzip",
+        "Content-Type": "text/plain; charset=utf-8",
       },
     });
   } catch {

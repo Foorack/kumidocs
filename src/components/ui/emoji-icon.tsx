@@ -1,7 +1,7 @@
 /** Fluent for system icons, Fluent Emoji SVGs for page emoji. */
 import type { CSSProperties } from "react";
 import ICONS from "@/components/ui/icon/fluent";
-import { EMOJI_SVGS } from "./emoji/emoji-loader";
+import { EMOJI_SVGS } from "@/lib/emoji-loader";
 import type { FileType } from "@/lib/types";
 import { Fragment } from "react";
 
@@ -41,13 +41,14 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
 
   // Emoji path: check for overrides first
   if (emoji !== undefined && emoji !== "") {
-    const svgDataUri = EMOJI_SVGS[emoji];
-    if (svgDataUri !== undefined && svgDataUri !== "") {
+    const svgText = EMOJI_SVGS[emoji];
+    if (svgText !== undefined && svgText !== "") {
+      const dataUri = `data:image/svg+xml;base64,${btoa(svgText)}`;
       return (
         <span style={wrapStyle} className={className}>
           <img
             // oxlint-disable-next-line typescript/no-unsafe-assignment
-            src={svgDataUri}
+            src={dataUri}
             alt={emoji}
             style={{
               display: "block",

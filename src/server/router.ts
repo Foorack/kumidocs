@@ -115,12 +115,6 @@ async function buildRoutes(
       },
     },
 
-    "/api/emojis": {
-      GET() {
-        return apiEmojis();
-      },
-    },
-
     "/api/backlinks": {
       async GET(req: Request) {
         const user = requireUser(req);
@@ -128,6 +122,12 @@ async function buildRoutes(
           return new Response("Unauthorized", { status: 401 });
         }
         return apiBacklinks(new URL(req.url));
+      },
+    },
+
+    "/api/emojis": {
+      GET() {
+        return apiEmojis();
       },
     },
 
