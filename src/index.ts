@@ -307,6 +307,50 @@ setTimeout(() => {
 // Prune dead WS sessions every 30s
 setInterval(pruneDeadSessions, 30_000);
 
+// Request logging: wraps a Response to log method, user, path, status, duration.
+async function logResponse(
+  req: Request,
+  resPromise: Response | Promise<Response>,
+  start: number,
+): Promise<Response> {
+  const url = new URL(req.url);
+  const user = parseUser(req.headers, config.authHeader);
+  const who = user ? user.email : "-";
+  try {
+    const res = await resPromise;
+    console.log(
+      `${req.method} ${who} ${decodeURIComponent(url.pathname)} ${res.status} ${Date.now() - start}ms`,
+    );
+    return res;
+  } catch (error: unknown) {
+    console.log(
+      `${req.method} ${who} ${decodeURIComponent(url.pathname)} ERR ${Date.now() - start}ms`,
+    );
+    throw error;
+  }
+}
+
+const routes = await buildRoutes(config, requireUser);
+
+// Wrap each route handler with request logging
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+const routeMap = routes as Record<string, Record<string, unknown>>;
+for (const [, handlerMethods] of Object.entries(routeMap)) {
+  for (const method of Object.keys(handlerMethods)) {
+    const original = handlerMethods[method];
+    if (typeof original !== "function") {
+      continue;
+    }
+    // oxlint-disable-next-line no-param-reassign, typescript/no-unsafe-type-assertion
+    handlerMethods[method] = async (req: Request): Promise<Response> => {
+      const start = Date.now();
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const routeFn = original as (req: Request) => Response | Promise<Response>;
+      return logResponse(req, routeFn(req), start);
+    };
+  }
+}
+
 const server = serve<WsData>({
   // oxlint-disable-next-line node/no-process-env
   development: process.env.NODE_ENV !== "production" && {
@@ -331,6 +375,10 @@ const server = serve<WsData>({
           user,
         },
       });
+      // ws upgrades return undefined when successful; log separately
+      if (upgraded) {
+        console.log(`WS  ${user.email} ${decodeURIComponent(url.pathname)} 101`);
+      }
       return upgraded ? undefined : new Response("WS upgrade failed", { status: 400 });
     }
 
@@ -342,15 +390,18 @@ const server = serve<WsData>({
     // All non-WS, non-API paths: serve the SPA catch-all.
     // oxlint-disable-next-line no-underscore-dangle
     if (__BUNDLED__ !== undefined) {
-      return serveCatchAll(req);
+      const start = Date.now();
+      return logResponse(req, serveCatchAll(req), start);
     }
-    // Dev mode: let routes["/*"] handle it (Bun HTMLBundle needs routes).
+    // Dev mode: routes["/*"] (Bun HTMLBundle) handles it; log without status.
+    const who = parseUser(req.headers, config.authHeader);
+    console.log(`${req.method} ${who ? who.email : "-"} ${decodeURIComponent(url.pathname)}`);
     return undefined;
   },
 
   port: config.port,
 
-  routes: await buildRoutes(config, requireUser),
+  routes,
 
   websocket: {
     close: wsClose,
