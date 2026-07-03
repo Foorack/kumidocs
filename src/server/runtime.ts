@@ -3,11 +3,6 @@
  *
  * Bun is the preferred runtime, but these helpers let the same code work
  * under Node.js without changes.  Scripts/ remain Bun-only.
- *
- * Current Bun-specific APIs STILL used directly (not abstracted here):
- *   - `import { serve } from "bun"` -- HTTP/WS server entry point
- *   - `import.meta.dir / import.meta.url` -- also supported in Node 21+
- *   - `__BUNDLED__` -- Bun build-time constant
  */
 
 import { createHash } from "node:crypto";

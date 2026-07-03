@@ -148,14 +148,36 @@ function leaveCurrentPage(ws: WebSocket): void {
   wsInfo.pageId = undefined;
 }
 
+/** Set the initial data for a WebSocket connection (called by the HTTP
+ *  server adapter before wsOpen, so getWsData works immediately). */
+function initWsData(ws: WebSocket, data: WsData): void {
+  wsDataStore.set(ws, data);
+}
+
 function wsOpen(ws: WebSocket): void {
-  // Copy initial data set by Bun's srv.upgrade() into our own store.
-  // This is the only place we touch the Bun-specific ws.data property.
+  // Bun path: initial data was set via srv.upgrade()'s `data` option.
   // oxlint-disable-next-line no-unsafe-type-assertion
-  const initial = (ws as unknown as { data: WsData | undefined }).data;
-  if (initial) {
-    wsDataStore.set(ws, initial);
+  const bunData = (ws as unknown as { data: Record<string, unknown> | undefined }).data;
+  // ws library path: auth data was set by the http-server upgrade handler.
+  // oxlint-disable-next-line no-unsafe-type-assertion
+  const authData = (ws as unknown as { wsAuthData: Record<string, unknown> | undefined })
+    .wsAuthData;
+
+  if (bunData) {
+    // oxlint-disable-next-line no-unsafe-type-assertion
+    wsDataStore.set(ws, bunData as unknown as WsData);
+  } else if (authData) {
+    // Create initial WsData from the authentication result
+    const data: WsData = {
+      lastHeartbeat: Date.now(),
+      pageId: undefined,
+      sessionId: "",
+      // oxlint-disable-next-line no-unsafe-type-assertion
+      user: authData.user as WsData["user"],
+    };
+    wsDataStore.set(ws, data);
   }
+
   const wsInfo = getWsData(ws);
   wsInfo.sessionId = String(++sessionCounter);
   wsInfo.lastHeartbeat = Date.now();
@@ -347,6 +369,7 @@ function pruneDeadSessions(): void {
 
 export {
   type WsData,
+  initWsData,
   wsOpen,
   wsMessage,
   wsClose,

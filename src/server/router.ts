@@ -25,20 +25,17 @@ import type { Config } from "./config";
 import type { User } from "@/lib/types";
 import { doesFileExist, readFileBuffer, serveFileResponse } from "./runtime";
 
-// oxlint-disable-next-line no-underscore-dangle
-declare const __BUNDLED__: boolean | undefined;
-// oxlint-disable-next-line unicorn/no-typeof-undefined
-const isBundled = typeof __BUNDLED__ !== "undefined";
-const publicDir = isBundled
-  ? path.join(import.meta.dir, "public")
-  : path.join(import.meta.dir, "..", "public");
+// Resolve the public directory relative to this module.
+// In dev, import.meta.dir is src/server/ so ../public = src/public.
+// In production (if bundled or copied), it depends on deployment layout.
+const publicDir = path.join(import.meta.dir, "..", "public");
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
   const filePath = path.join(publicDir, rel);
   if (!filePath.startsWith(publicDir + path.sep)) {
     return serveFileResponse(path.join(publicDir, "index.html"), {
-      "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
+      "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
     });
   }
   if (await doesFileExist(filePath)) {
@@ -48,13 +45,13 @@ async function serveSPA(req: Request): Promise<Response> {
       headers:
         rel === "index.html"
           ? {
-              "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
+              "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
             }
           : { "Cache-Control": "public, max-age=31536000, immutable" },
     });
   }
   return serveFileResponse(path.join(publicDir, "index.html"), {
-    "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'${isBundled ? "" : " 'unsafe-eval'"}; font-src 'self' data:; connect-src 'self' ws: wss:`,
+    "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
   });
 }
 
@@ -311,19 +308,6 @@ async function buildRoutes(
       },
     },
   };
-
-  // Dev mode only: Bun's HTMLBundle enables HMR and .tsx transpilation.
-  // In production the SPA is served by fetch() -> serveCatchAll.
-  // Dynamic import via URL prevents both Bun's bundler and oxlint from
-  // tracing the module, keeping the frontend out of the server bundle.
-  if (!isBundled) {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const devModule = (await import(new URL("../index.html", import.meta.url).href)) as {
-      default: string;
-    };
-    const devIndex = devModule.default;
-    routes["/*"] = devIndex;
-  }
 
   return routes;
 }

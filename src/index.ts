@@ -1,4 +1,3 @@
-import { serve } from "bun";
 import { existsSync, watch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { parseUser, setPermissions, setReadonly } from "./server/auth";
@@ -26,12 +25,10 @@ import {
   wsOpen,
 } from "./server/websocket";
 import type { User } from "./lib/types";
-import type { WsData } from "./server/websocket";
 import path from "node:path";
 import buildRoutes, { serveCatchAll } from "./server/router";
 import type { KumiDocsPermissions } from "./server/auth";
-// oxlint-disable-next-line no-underscore-dangle
-declare const __BUNDLED__: boolean | undefined;
+import { startServer } from "./server/http-server";
 
 let config: ReturnType<typeof loadConfig>;
 try {
@@ -352,67 +349,34 @@ for (const [, handlerMethods] of Object.entries(routeMap)) {
   }
 }
 
-const server = serve<WsData>({
-  // oxlint-disable-next-line node/no-process-env
-  development: process.env.NODE_ENV !== "production" && {
-    console: true,
-    hmr: true,
-  },
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+const typedRoutes = routes as Record<string, Record<string, unknown>>;
 
-  async fetch(req, srv) {
-    const url = new URL(req.url);
-
-    // WebSocket upgrade (checked before API/SPA fallthrough)
-    if (url.pathname === "/ws") {
-      const user = requireUser(req);
-      if (!user) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-      const upgraded = srv.upgrade(req, {
-        data: {
-          lastHeartbeat: Date.now(),
-          pageId: undefined,
-          sessionId: "",
-          user,
-        },
-      });
-      // ws upgrades return undefined when successful; log separately
-      if (upgraded) {
-        console.log(`WS  ${user.email} ${decodeURIComponent(url.pathname)} 101`);
-      }
-      return upgraded ? undefined : new Response("WS upgrade failed", { status: 400 });
-    }
-
-    // API paths: fall through to the routes object for method-specific handling.
-    if (url.pathname.startsWith("/api/")) {
-      return undefined;
-    }
-
-    // All non-WS, non-API paths: serve the SPA catch-all.
-    // oxlint-disable-next-line no-underscore-dangle
-    if (__BUNDLED__ !== undefined) {
-      const start = Date.now();
-      return logResponse(req, serveCatchAll(req), start);
-    }
-    // Dev mode: routes["/*"] (Bun HTMLBundle) handles it; log without status.
-    const who = parseUser(req.headers, config.authHeader);
-    console.log(`${req.method} ${who ? who.email : "-"} ${decodeURIComponent(url.pathname)}`);
-    return undefined;
+const { url } = await startServer({
+  async onRequest(req) {
+    // All non-API, non-WS paths: serve the SPA catch-all.
+    const start = Date.now();
+    return logResponse(req, serveCatchAll(req), start);
   },
 
   port: config.port,
 
-  routes,
+  routes: typedRoutes,
 
   websocket: {
-    // oxlint-disable-next-line no-unsafe-type-assertion
-    close: wsClose as never,
-    // oxlint-disable-next-line no-unsafe-type-assertion
-    message: wsMessage as never,
-    // oxlint-disable-next-line no-unsafe-type-assertion
-    open: wsOpen as never,
+    authenticate(req) {
+      const user = requireUser(req);
+      if (!user) {
+        return undefined;
+      }
+      console.log(`WS  ${user.email} /ws 101`);
+      return { user };
+    },
+    close: wsClose,
+    message: wsMessage,
+    open: wsOpen,
   },
 });
 
-console.log(`🚀 KumiDocs running at ${server.url}`);
+console.log(`🚀 KumiDocs running at ${url}`);
 console.log(`📁 Repo: ${config.repoPath}`);
