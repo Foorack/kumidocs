@@ -149,6 +149,14 @@ async function buildGlyphMap(assetsDir: string): Promise<Map<string, string>> {
  * Decode a regional-indicator flag emoji (e.g. 🇺🇸) to its ISO 3166-1 alpha-2
  * code ("US"). Returns undefined for non-flag emoji or unsupported sequences.
  */
+/** Minify an SVG string: trim each line, join into a single line. */
+function minifySvg(svg: string): string {
+  return svg
+    .split("\n")
+    .map((line) => line.trim())
+    .join("");
+}
+
 function flagEmojiToISO(native: string): string | undefined {
   // Use TextEncoder to safely extract UTF-32 code points from the flag emoji
   const enc = new TextEncoder().encode(native);
@@ -249,8 +257,8 @@ const emojiResults = await Promise.all(
     // Pass 1: Fluent Emoji
     const svgSrc = glyphMap.get(native);
     if (svgSrc !== undefined && svgSrc !== "") {
-      const svgFileContent = await readFile(svgSrc);
-      const b64 = svgFileContent.toString("base64");
+      const svgText = await readFile(svgSrc, "utf8");
+      const b64 = Buffer.from(minifySvg(svgText), "utf8").toString("base64");
       matchedFluent++;
       return { dataUri: `data:image/svg+xml;base64,${b64}`, native } satisfies EmojiResult;
     }
@@ -261,7 +269,7 @@ const emojiResults = await Promise.all(
       const flagPath = path.join(FLAG_SVGS_DIR, `${iso}.svg`);
       try {
         const sourceSvg = await readFile(flagPath, "utf8");
-        const b64 = Buffer.from(sourceSvg, "utf8").toString("base64");
+        const b64 = Buffer.from(minifySvg(sourceSvg), "utf8").toString("base64");
         matchedFlag++;
         return { dataUri: `data:image/svg+xml;base64,${b64}`, native } satisfies EmojiResult;
       } catch {
