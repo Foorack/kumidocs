@@ -3,12 +3,10 @@ import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
-import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
 import {
   COMPONENTS_SLIDE,
   REHYPE_PLUGINS,
 } from "@/components/editor/markdown/streamdown-components";
-import useMountEffect from "@/hooks/use-mount-effect";
 
 interface SlideStreamdownProps {
   value: string;
@@ -16,10 +14,6 @@ interface SlideStreamdownProps {
 
 const SlideStreamdown = (allProps: SlideStreamdownProps): JSX.Element => {
   const { value } = allProps;
-
-  useMountEffect(() => {
-    void registerMermaidIcons();
-  });
 
   return (
     <Streamdown

@@ -12,6 +12,7 @@ import App from "./app";
 import { StrictMode } from "react";
 import { adjust as _khromaAdjust } from "khroma";
 import { createRoot } from "react-dom/client";
+import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
 
 const elemOrNull = document.querySelector("#root");
 if (!elemOrNull) {
@@ -24,6 +25,9 @@ const app = (
     <App />
   </StrictMode>
 );
+
+// Kick off lazy icon pack loading before React renders.
+void registerMermaidIcons();
 
 // Import.meta.hot is available in Bun dev (HMR) mode; undefined after production bundling
 // Bun requires direct access to import.meta.hot.data: no aliasing

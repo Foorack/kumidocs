@@ -4,9 +4,7 @@ import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { memo } from "react";
 import { mermaid } from "@streamdown/mermaid";
-import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
 import { COMPONENTS_DOC, REHYPE_PLUGINS } from "./streamdown-components";
-import useMountEffect from "@/hooks/use-mount-effect";
 
 interface MarkdownViewerProps {
   value: string;
@@ -14,10 +12,6 @@ interface MarkdownViewerProps {
 
 const MarkdownViewerInner = (allProps: MarkdownViewerProps): JSX.Element => {
   const { value } = allProps;
-
-  useMountEffect(() => {
-    void registerMermaidIcons();
-  });
 
   return (
     <div className="prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent prose-pre:text-foreground dark:prose-invert max-w-none px-8 py-6">

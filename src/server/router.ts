@@ -300,6 +300,7 @@ async function buildRoutes(
         );
         if (await doesFileExist(packPath)) {
           return serveFileResponse(packPath, {
+            "Cache-Control": "public, max-age=31536000, immutable",
             "Content-Type": "application/json; charset=utf-8",
           });
         }

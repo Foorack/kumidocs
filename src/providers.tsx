@@ -69,6 +69,7 @@ interface ProvidersProps {
 
 const Providers = (allProps: ProvidersProps): JSX.Element => {
   const { children } = allProps;
+
   return (
     <ThemeProvider>
       <UserProvider>
