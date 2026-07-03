@@ -1,3 +1,6 @@
+import { gzipSync } from "bun";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { apiBacklinks, apiPagesLookup } from "./backlinks";
 import { buildFileTree, getFile } from "./filestore";
 import type { Config } from "./config";
@@ -37,13 +40,36 @@ function apiSearch(url: URL): Response {
   return Response.json(searchDocs(query));
 }
 
+// GET /api/emojis
+// Serves the emoji text file gzip-compressed on-the-fly.
+let emojiGzipped: Buffer | null = null;
+const emojiFilePath = path.join(import.meta.dir, "..", "..", "dist", "public", "emojis.txt");
+
+function apiEmojis(): Response {
+  try {
+    if (!emojiGzipped) {
+      const raw = readFileSync(emojiFilePath);
+      emojiGzipped = gzipSync(raw);
+    }
+    return new Response(emojiGzipped, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Encoding": "gzip",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch {
+    return new Response("Emoji data not found", { status: 404 });
+  }
+}
+
 // GET /api/sidebar
 function apiSidebar(): Response {
   const content = getFile("_sidebar.md") ?? "";
   return Response.json({ content });
 }
 
-export { apiBacklinks, apiMe, apiPagesLookup, apiSearch, apiSidebar, apiTree };
+export { apiBacklinks, apiEmojis, apiMe, apiPagesLookup, apiSearch, apiSidebar, apiTree };
 export { apiFileCreate, apiFileDelete, apiFileGet, apiFilePut, apiFileRename } from "./api-file";
 export { apiFileDiff, apiFileHistory } from "./api-history";
 export {

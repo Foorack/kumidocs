@@ -1,7 +1,7 @@
 /** Fluent for system icons, Fluent Emoji SVGs for page emoji. */
 import type { CSSProperties } from "react";
 import ICONS from "@/components/ui/icon/fluent";
-import EMOJI_SVGS from "./emoji/emojis";
+import { EMOJI_SVGS } from "./emoji/emoji-loader";
 import type { FileType } from "@/lib/types";
 import { Fragment } from "react";
 

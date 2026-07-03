@@ -7,6 +7,7 @@ import {
   apiFileGet,
   apiFileHistory,
   apiFilePut,
+  apiEmojis,
   apiFileRename,
   apiImageDelete,
   apiImagesList,
@@ -111,6 +112,12 @@ async function buildRoutes(
       async GET(req: Request) {
         const hash = new URL(req.url).pathname.slice("/api/avatar/".length);
         return apiAvatarProxy(hash);
+      },
+    },
+
+    "/api/emojis": {
+      GET() {
+        return apiEmojis();
       },
     },
 

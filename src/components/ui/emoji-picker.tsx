@@ -6,7 +6,7 @@
  * of the app. SVGs are baked into the JS bundle; zero HTTP requests.
  */
 import { memo, useMemo, useState } from "react";
-import EMOJI_SVGS from "./emoji/emojis";
+import { EMOJI_SVGS } from "./emoji/emoji-loader";
 import { EmojiIcon } from "./emoji-icon";
 import Input from "./input";
 import { ScrollArea } from "./scroll-area";

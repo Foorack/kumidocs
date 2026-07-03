@@ -71,6 +71,12 @@ await Promise.all(
   }),
 );
 
+// Emoji data (text file, served gzipped via /api/emojis endpoint)
+await Bun.write(
+  join(publicDir, "emojis.txt"),
+  Bun.file(join(root, "src/components/ui/emoji/emojis.txt")),
+);
+
 // Step 3: Server (bun target)
 // __BUNDLED__ is injected so the server switches from Bun's HTML-import HMR
 // route (dev) to the static file handler that reads from import.meta.dir/public/.
