@@ -147,7 +147,7 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
       let responded = false;
       for (const [pattern, handlers] of Object.entries(routes)) {
         const params = matchRoute(pattern, pathname);
-        if (params === null) {
+        if (params === undefined) {
           continue;
         }
         const method = request.method ?? "GET";

@@ -23,35 +23,45 @@ import path from "node:path";
 import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
-import { doesFileExist, readFileBuffer, serveFileResponse } from "./runtime";
+import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } from "./runtime";
+
+const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`;
 
 // Resolve the public directory relative to this module.
-// In dev, import.meta.dir is src/server/ so ../public = src/public.
-// In production (if bundled or copied), it depends on deployment layout.
-const publicDir = path.join(import.meta.dir, "..", "public");
+// import.meta.dir is src/server/ so ../../dist/public = dist/public/.
+// In dev, ensure you run `bun run build` first, or set KUMIDOCS_PUBLIC_DIR.
+const publicDir =
+  // oxlint-disable-next-line unicorn/no-process-env
+  process.env.KUMIDOCS_PUBLIC_DIR ?? path.join(import.meta.dir, "..", "..", "dist", "public");
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
   const filePath = path.join(publicDir, rel);
   if (!filePath.startsWith(publicDir + path.sep)) {
     return serveFileResponse(path.join(publicDir, "index.html"), {
-      "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
+      "Content-Security-Policy": SPA_CSP,
     });
   }
   if (await doesFileExist(filePath)) {
     const content = await readFileBuffer(filePath);
+    const headers: Record<string, string> =
+      rel === "index.html"
+        ? {
+            "Content-Security-Policy": SPA_CSP,
+            "Content-Type": "text/html; charset=utf-8",
+          }
+        : {
+            "Cache-Control": "public, max-age=31536000, immutable",
+          };
+    const mime = mimeTypeFromPath(filePath);
+    if (mime !== undefined && headers["Content-Type"] === undefined) {
+      headers["Content-Type"] = mime;
+    }
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return new Response(content as unknown as BodyInit, {
-      headers:
-        rel === "index.html"
-          ? {
-              "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
-            }
-          : { "Cache-Control": "public, max-age=31536000, immutable" },
-    });
+    return new Response(content as unknown as BodyInit, { headers });
   }
   return serveFileResponse(path.join(publicDir, "index.html"), {
-    "Content-Security-Policy": `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`,
+    "Content-Security-Policy": SPA_CSP,
   });
 }
 

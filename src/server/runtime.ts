@@ -125,13 +125,45 @@ const runtimeEnv: Record<string, string | undefined> = process.env;
 // Response helpers
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// MIME types
+// ---------------------------------------------------------------------------
+
+const MIME_TYPES: Record<string, string> = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+  ".xml": "application/xml",
+};
+
+function mimeTypeFromPath(filePath: string): string | undefined {
+  const ext = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();
+  return MIME_TYPES[ext];
+}
+
 /** Serve a file as an HTTP Response (reads the file into memory first). */
 async function serveFileResponse(
   filePath: string,
   headers?: Record<string, string>,
 ): Promise<Response> {
   const content = await readFile(filePath);
-  return new Response(content, { headers });
+  const resHeaders: Record<string, string> = { ...headers };
+  // oxlint-disable-next-line typescript/strict-boolean-expressions
+  if (!resHeaders["Content-Type"] && !resHeaders["content-type"]) {
+    const mime = mimeTypeFromPath(filePath);
+    // oxlint-disable-next-line typescript/strict-boolean-expressions
+    if (mime !== undefined) {
+      resHeaders["Content-Type"] = mime;
+    }
+  }
+  return new Response(content, { headers: resHeaders });
 }
 
 export {
@@ -139,6 +171,7 @@ export {
   type SpawnResult,
   doesFileExist,
   getFileSize,
+  mimeTypeFromPath,
   readFileBuffer,
   readTextFile,
   runtimeEnv,
