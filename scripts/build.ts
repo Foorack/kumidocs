@@ -42,7 +42,7 @@ console.log("  [1/2] Frontend...");
 const frontendResult = await Bun.build({
   define: { __VERSION__: JSON.stringify(appVersion) },
   entrypoints: [join(root, "src/index.html")],
-  minify: true,
+  minify: false,
   outdir: publicDir,
   plugins: [tailwindPlugin],
 });

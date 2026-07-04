@@ -64,6 +64,7 @@ const CODE_TYPES = new Set([
   ".conf",
   ".ini",
   ".cfg",
+  ".csv",
 ]);
 
 const NO_DOT = -1;

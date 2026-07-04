@@ -1,6 +1,7 @@
 import type { Dispatch, ReactNode, Ref, RefObject, SetStateAction } from "react";
 import type { FileType, PresenceUser, User } from "@/lib/types";
 import CodeEditor from "@/components/editor/markdown/code-editor";
+import CsvGrid from "@/components/editor/markdown/csv-grid";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";
 import MarkdownEditor from "@/components/editor/markdown/editor";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
@@ -121,6 +122,18 @@ function buildEditorContent({
 }: EditorContentProps): ReactNode {
   // Use wiki-link-resolved content in view mode when available
   const viewContent = resolvedContent ?? content;
+  if (fileType === "code" && rawExt === "csv") {
+    return (
+      <div className="h-full overflow-hidden">
+        <CsvGrid
+          value={content}
+          readOnly={!editMode}
+          onChange={editMode ? handleChange : undefined}
+          onSave={editMode ? handleSave : undefined}
+        />
+      </div>
+    );
+  }
   if (fileType === "code") {
     return (
       <CodeEditor
