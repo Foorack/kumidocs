@@ -1,42 +1,5 @@
-import { useCallback, useRef } from "react";
-import Editor from "react-simple-code-editor";
-import Prism from "prismjs";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-yaml";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-json";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-typescript";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-javascript";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-css";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-scss";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-markup";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-bash";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-python";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-go";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-rust";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-markdown";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-c";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-cpp";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-toml";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/components/prism-hcl";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/themes/prism.css";
-// oxlint-disable-next-line import/no-unassigned-import
-import "prismjs/themes/prism-dark.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { code } from "@streamdown/code";
 import { useTheme } from "@/store/theme";
 
 interface CodeEditorProps {
@@ -47,74 +10,178 @@ interface CodeEditorProps {
   onSave?: () => void;
 }
 
-const EXT_TO_LANG: Record<string, string> = {
-  cjs: "js",
-  fish: "bash",
-  gql: "graphql",
-  htm: "html",
-  jsonc: "json",
-  kt: "kotlin",
-  kts: "kotlin",
-  mjs: "js",
-  scss: "scss",
-  tf: "hcl",
-  tfvars: "hcl",
-  yml: "yaml",
-};
-
 /**
- * Prism language identifiers that differ from the file extension.
+ * Map file extensions to Shiki language identifiers.
+ * Shiki uses the same names as VS Code's TextMate grammars.
  */
-const LANG_ALIAS: Record<string, string> = {
+// oxlint-disable id-length
+const LANG_MAP: Record<string, string> = {
+  bash: "bash",
+  c: "c",
+  cjs: "javascript",
+  cpp: "cpp",
   css: "css",
+  dockerfile: "dockerfile",
+  el: "elisp",
+  fish: "bash",
   go: "go",
+  graphql: "graphql",
+  h: "c",
+  hcl: "hcl",
+  hpp: "cpp",
+  htm: "html",
   html: "html",
+  ini: "ini",
+  java: "java",
+  jl: "julia",
   js: "javascript",
   json: "json",
+  jsonc: "json",
+  jsx: "javascript",
+  kt: "kotlin",
+  kts: "kotlin",
+  less: "less",
+  lua: "lua",
   md: "markdown",
+  mjs: "javascript",
+  php: "php",
+  ps1: "powershell",
   py: "python",
+  r: "r",
   rb: "ruby",
   rs: "rust",
+  scala: "scala",
+  scss: "scss",
   sh: "bash",
-  svg: "markup",
+  sql: "sql",
+  swift: "swift",
+  tf: "hcl",
+  tfvars: "hcl",
+  toml: "toml",
   ts: "typescript",
-  xml: "markup",
+  tsx: "tsx",
+  txt: "text",
+  vim: "viml",
+  xml: "xml",
   yaml: "yaml",
+  yml: "yaml",
+  zsh: "bash",
 };
+// oxlint-enable id-length
 
-function resolvePrismLang(ext: string): string {
-  const mapped = EXT_TO_LANG[ext] ?? ext;
-  return LANG_ALIAS[mapped] ?? mapped;
+function shikiLang(ext: string): string {
+  return LANG_MAP[ext] ?? ext;
+}
+
+/**
+ * Parse combined Shiki bg/fg values like "#fff;--shiki-dark-bg:#24292e"
+ * into separate light/dark values.
+ */
+function splitThemeValue(val: string | undefined): { dark: string; light: string } {
+  const light = val?.split(";")[0] ?? "";
+  const darkMatch = val?.match(/--shiki-dark(?:-bg)?:(?<darkColor>#?\w+)/u);
+  // eslint-disable-next-line id-length
+  const darkColor = darkMatch?.groups?.darkColor;
+  return { dark: darkColor ?? light, light };
+}
+
+/** Parse the bg token value to extract the background hex. */
+function extractBg(val: string | undefined): string {
+  return val?.split(";")[0] ?? "";
+}
+
+// Types for the tokens returned by code.highlight()
+interface HighlightToken {
+  content: string;
+  offset: number;
+  htmlStyle?: Record<string, string>;
+}
+interface HighlightResult {
+  tokens: HighlightToken[][];
+  fg?: string;
+  bg?: string;
+}
+
+const DEFAULT_THEMES = ["github-light", "github-dark"] as const;
+
+function CodeViewer({ value, language }: { value: string; language: string }): JSX.Element {
+  const [result, setResult] = useState<HighlightResult | undefined>(undefined);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const lang = shikiLang(language);
+
+  useEffect(() => {
+    let cancelled = false;
+    setResult(undefined);
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const synced = code.highlight(
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      { code: value, language: lang as never, themes: DEFAULT_THEMES as never },
+      (res: HighlightResult) => {
+        if (!cancelled) {
+          setResult(res);
+        }
+      },
+    );
+    // oxlint-disable-next-line typescript/no-unnecessary-condition
+    if (synced && !cancelled) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      setResult(synced as never);
+    }
+    return (): void => {
+      cancelled = true;
+    };
+  }, [value, lang]);
+
+  const bg = result ? extractBg(result.bg) : undefined;
+  const combinedFg = result?.fg;
+  const fg =
+    combinedFg !== undefined && combinedFg !== ""
+      ? splitThemeValue(combinedFg)[isDark ? "dark" : "light"]
+      : undefined;
+
+  const lines = result?.tokens;
+  const hasLines = lines !== undefined && lines.length > 0;
+
+  return (
+    <pre
+      className="shiki-code h-full overflow-auto p-4 font-mono text-sm leading-relaxed"
+      style={{ background: bg, color: fg }}
+    >
+      <code>
+        {hasLines
+          ? lines.map((line, lineIdx) => (
+              <span key={lineIdx} className="line">
+                {line.map((token, tokenIdx) => {
+                  const style = token.htmlStyle;
+                  return (
+                    <span
+                      key={tokenIdx}
+                      style={{ color: isDark ? style?.["--shiki-dark"] : style?.color }}
+                    >
+                      {token.content}
+                    </span>
+                  );
+                })}
+                {lineIdx < lines.length - 1 ? "\n" : ""}
+              </span>
+            ))
+          : value}
+      </code>
+    </pre>
+  );
 }
 
 const CodeEditor = (allProps: CodeEditorProps): JSX.Element => {
   const { value, language, readOnly = false, onChange, onSave } = allProps;
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-  // Track latest value so the keydown handler sees it
+
+  // All hooks at the top, before any conditional return
   const valueRef = useRef(value);
   valueRef.current = value;
 
-  const prismLang = resolvePrismLang(language);
-
-  const highlight = useCallback(
-    (code: string) => {
-      const grammar = Prism.languages[prismLang];
-      if (!grammar) {
-        // HTML-escape and preserve newlines as a plain-text fallback.
-        const escaped = code
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;");
-        return escaped.replaceAll("\n", "<br>");
-      }
-      return Prism.highlight(code, grammar, prismLang);
-    },
-    [prismLang],
-  );
-
   const handleKeyDown = useCallback(
-    (ev: React.KeyboardEvent) => {
+    (ev: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (onSave && (ev.ctrlKey || ev.metaKey) && ev.key === "s") {
         ev.preventDefault();
         onSave();
@@ -123,29 +190,22 @@ const CodeEditor = (allProps: CodeEditorProps): JSX.Element => {
     [onSave],
   );
 
+  if (readOnly) {
+    return <CodeViewer value={value} language={language} />;
+  }
+
+  // Edit mode: plain textarea, not recreated on every keystroke
   return (
-    <div
-      className={`not-prose h-full overflow-auto text-sm ${isDark ? "dark" : ""}`}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="npm-deps-editor-wrapper h-full font-mono">
-        <Editor
-          value={value}
-          onValueChange={(code) => {
-            onChange?.(code);
-          }}
-          highlight={highlight}
-          padding={16}
-          readOnly={readOnly}
-          textareaClassName="focus:outline-none"
-          style={{
-            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
-            fontSize: "0.875rem",
-            lineHeight: "1.5",
-            minHeight: "100%",
-          }}
-        />
-      </div>
+    <div className="h-full">
+      <textarea
+        defaultValue={value}
+        onChange={(ev) => {
+          onChange?.(ev.target.value);
+        }}
+        onKeyDown={handleKeyDown}
+        className="h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-sm text-foreground focus:outline-none"
+        spellCheck={false}
+      />
     </div>
   );
 };
