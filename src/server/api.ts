@@ -40,57 +40,39 @@ function apiSearch(url: URL): Response {
   return Response.json(searchDocs(query));
 }
 
-// GET /api/emojis
-// Serves the emoji text file gzip-compressed on-the-fly.
-let emojiGzipped: Uint8Array | undefined;
-const emojiFilePath = path.join(import.meta.dir, "..", "..", "dist", "public", "emojis.txt");
-
-function apiEmojis(): Response {
+// Helper: eagerly read + gzip a text file at module init, serve from cache.
+function createGzipEndpoint(filePath: string, label: string): () => Response {
+  let gzipped: Uint8Array;
   try {
-    if (!emojiGzipped) {
-      // oxlint-disable-next-line node/no-sync
-      const raw = readFileSync(emojiFilePath);
-      // oxlint-disable-next-line node/no-sync
-      emojiGzipped = gzipSync(raw);
-    }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return new Response(emojiGzipped as unknown as BodyInit, {
-      headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Content-Encoding": "gzip",
-        "Content-Type": "text/plain; charset=utf-8",
-      },
-    });
+    // oxlint-disable-next-line node/no-sync
+    const raw = readFileSync(filePath);
+    // oxlint-disable-next-line node/no-sync
+    gzipped = gzipSync(raw);
   } catch {
-    return new Response("Emoji data not found", { status: 404 });
+    console.error(`[kumidocs] Failed to load ${label} from ${filePath}`);
+    gzipped = new Uint8Array(0);
   }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return (): Response => new Response(gzipped as unknown as BodyInit, {
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+  });
 }
 
-// GET /api/icons
-// Serves the combined icon packs text file gzip-compressed on-the-fly.
-let iconsGzipped: Uint8Array | undefined;
-const iconsFilePath = path.join(import.meta.dir, "..", "..", "dist", "public", "icons.txt");
+const publicDir = path.join(import.meta.dir, "..", "..", "dist", "public");
 
-function apiIcons(): Response {
-  try {
-    if (!iconsGzipped) {
-      // oxlint-disable-next-line node/no-sync
-      const raw = readFileSync(iconsFilePath);
-      // oxlint-disable-next-line node/no-sync
-      iconsGzipped = gzipSync(raw);
-    }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    return new Response(iconsGzipped as unknown as BodyInit, {
-      headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Content-Encoding": "gzip",
-        "Content-Type": "text/plain; charset=utf-8",
-      },
-    });
-  } catch {
-    return new Response("Icon data not found", { status: 404 });
-  }
-}
+const apiEmojis = createGzipEndpoint(
+  path.join(publicDir, "emojis.txt"),
+  "emoji data",
+);
+
+const apiIcons = createGzipEndpoint(
+  path.join(publicDir, "icons.txt"),
+  "icon packs",
+);
 
 // GET /api/sidebar
 function apiSidebar(): Response {
