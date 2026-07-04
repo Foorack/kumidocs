@@ -3,16 +3,18 @@ import { columnLetter, parseCsv, serializeCsv } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toaster";
 import {
+  CodeXml,
   Copy,
   Download,
-  FileText,
   ListMinus,
   ListPlus,
   MapMinus,
   MapPlus,
-  Table,
+  SmilePlus,
   Undo2,
 } from "lucide-react";
+import EmojiPicker from "@/components/ui/emoji-picker";
+import { Popover } from "radix-ui";
 import type { ChangeEvent, KeyboardEvent } from "react";
 
 interface CsvGridProps {
@@ -242,6 +244,18 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
     setFocusedCell(undefined);
   }, [data, colCount, focusedCell, persist, pushUndo]);
 
+  const handleEmoji = useCallback(
+    (emoji: string): void => {
+      if (focusedCell === undefined) {
+        return;
+      }
+      const { row, col } = focusedCell;
+      const cellValue = (data[row] ?? [])[col] ?? "";
+      handleCellChange(row, col, cellValue + emoji);
+    },
+    [focusedCell, data, handleCellChange],
+  );
+
   // --- Shared cell renderer ---
 
   const renderCell = useCallback(
@@ -317,48 +331,71 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
 
   const toolbar = (
     <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border bg-background shrink-0">
-      {readOnly || rawMode ? (
+      {readOnly ? (
         <div />
       ) : (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
-            onClick={handleAddRow}
-            title="Add row below"
-          >
-            <ListPlus />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
-            onClick={handleRemoveRow}
-            title="Remove row"
-          >
-            <ListMinus />
-          </Button>
-          <div className="w-px h-4 bg-border mx-0.5" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
-            onClick={handleAddCol}
-            title="Add column right"
-          >
-            <MapPlus />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
-            onClick={handleRemoveCol}
-            title="Remove column"
-          >
-            <MapMinus />
-          </Button>
-          <div className="w-px h-4 bg-border mx-0.5" />
+          {rawMode ? (
+            <></>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
+                onClick={handleAddRow}
+                title="Add row below"
+              >
+                <ListPlus />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
+                onClick={handleRemoveRow}
+                title="Remove row"
+              >
+                <ListMinus />
+              </Button>
+              <div className="w-px h-4 bg-border mx-0.5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
+                onClick={handleAddCol}
+                title="Add column right"
+              >
+                <MapPlus />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
+                onClick={handleRemoveCol}
+                title="Remove column"
+              >
+                <MapMinus />
+              </Button>
+              <div className="w-px h-4 bg-border mx-0.5" />
+            </>
+          )}
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Insert emoji">
+                <SmilePlus />
+              </Button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content side="bottom" align="start" sideOffset={4} className="z-50">
+                <EmojiPicker
+                  onEmojiSelect={(emoji: string): void => {
+                    handleEmoji(emoji);
+                  }}
+                  autoFocus
+                />
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
           <Button
             variant="ghost"
             size="sm"
@@ -374,11 +411,11 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
             size="sm"
             className="h-7 w-7 p-0"
             onClick={(): void => {
-              setRawMode(true);
+              setRawMode(!rawMode);
             }}
-            title="Edit raw CSV text"
+            title="Toggle between Sheet/Raw"
           >
-            <FileText />
+            <CodeXml />
           </Button>
         </div>
       )}
@@ -411,23 +448,6 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
     return (
       <div className="flex flex-col h-full">
         {toolbar}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-muted/30 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={(): void => {
-              const parsed = parseCsv(rawText);
-              setData(parsed);
-              onChange?.(rawText);
-              setRawMode(false);
-            }}
-            title="Back to sheet view"
-          >
-            <Table />
-          </Button>
-          <span className="text-xs text-muted-foreground">Raw CSV — edit the text directly</span>
-        </div>
         <textarea
           className="h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-sm text-foreground focus:outline-none"
           value={rawText}
