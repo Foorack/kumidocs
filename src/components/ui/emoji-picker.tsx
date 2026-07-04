@@ -5,8 +5,8 @@
  * Every emoji cell is rendered by <EmojiIcon> for visual consistency with the rest
  * of the app. SVGs are baked into the JS bundle; zero HTTP requests.
  */
-import { memo, useMemo, useState } from "react";
-import { EMOJI_SVGS } from "@/lib/emoji-loader";
+import { memo, useEffect, useMemo, useState } from "react";
+import { EMOJI_SVGS, isEmojiDataLoaded, waitForEmojiData } from "@/lib/emoji-loader";
 import { EmojiIcon } from "./emoji-icon";
 import Input from "./input";
 import { ScrollArea } from "./scroll-area";
@@ -50,44 +50,48 @@ const CATEGORY_CONFIG: Record<string, { label: string; icon: string }> = {
   symbols: { icon: "💫", label: "Symbols" },
 };
 
-// Pre-built indexes (run once at module load, not per render)
-
-const CATEGORY_EMOJIS: Record<string, { native: string; name: string }[]> = {};
-for (const cat of emojiData.categories) {
-  CATEGORY_EMOJIS[cat.id] = cat.emojis.flatMap((id): { native: string; name: string }[] => {
-    const entry = emojiData.emojis[id];
-    if (!entry) {
-      return [];
-    }
-    const [skin] = entry.skins;
-    if (!skin) {
-      return [];
-    }
-    if (!(skin.native in EMOJI_SVGS)) {
-      return [];
-    }
-    return [{ name: entry.name, native: skin.native }];
-  });
+/** Build category and search indexes from the current EMOJI_SVGS state. */
+function buildIndexes(): {
+  categoryEmojis: Record<string, { native: string; name: string }[]>;
+  searchIndex: { native: string; name: string; searchText: string }[];
+} {
+  const categoryEmojis: Record<string, { native: string; name: string }[]> = {};
+  for (const cat of emojiData.categories) {
+    categoryEmojis[cat.id] = cat.emojis.flatMap((id): { native: string; name: string }[] => {
+      const entry = emojiData.emojis[id];
+      if (!entry) {
+        return [];
+      }
+      const [skin] = entry.skins;
+      if (!skin) {
+        return [];
+      }
+      if (!(skin.native in EMOJI_SVGS)) {
+        return [];
+      }
+      return [{ name: entry.name, native: skin.native }];
+    });
+  }
+  const searchIndex = Object.values(emojiData.emojis).flatMap(
+    (entry): { native: string; name: string; searchText: string }[] => {
+      const [skin] = entry.skins;
+      if (!skin) {
+        return [];
+      }
+      if (!(skin.native in EMOJI_SVGS)) {
+        return [];
+      }
+      return [
+        {
+          name: entry.name,
+          native: skin.native,
+          searchText: `${entry.name} ${entry.keywords.join(" ")}`.toLowerCase(),
+        },
+      ];
+    },
+  );
+  return { categoryEmojis, searchIndex };
 }
-
-const SEARCH_INDEX = Object.values(emojiData.emojis).flatMap(
-  (entry): { native: string; name: string; searchText: string }[] => {
-    const [skin] = entry.skins;
-    if (!skin) {
-      return [];
-    }
-    if (!(skin.native in EMOJI_SVGS)) {
-      return [];
-    }
-    return [
-      {
-        name: entry.name,
-        native: skin.native,
-        searchText: `${entry.name} ${entry.keywords.join(" ")}`.toLowerCase(),
-      },
-    ];
-  },
-);
 
 const MAX_SEARCH_RESULTS = 96;
 const EMOJI_CELL_SIZE = 36;
@@ -211,16 +215,33 @@ const EmojiPickerInner = (allProps: EmojiPickerProps): JSX.Element => {
   const { onEmojiSelect, autoFocus } = allProps;
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(getInitialCategory);
+  const [ready, setReady] = useState(isEmojiDataLoaded);
+
+  useEffect(() => {
+    if (ready) {
+      return;
+    }
+    const load = async (): Promise<void> => {
+      await waitForEmojiData();
+      setReady(true);
+    };
+    void load();
+  }, [ready]);
+
+  const { categoryEmojis, searchIndex } = useMemo(
+    () => (ready ? buildIndexes() : { categoryEmojis: {}, searchIndex: [] }),
+    [ready],
+  );
+
   const displayEmojis = useMemo((): { native: string; name: string }[] => {
     const query = search.trim().toLowerCase();
     if (!query) {
-      return CATEGORY_EMOJIS[activeCategory] ?? [];
+      return categoryEmojis[activeCategory] ?? [];
     }
-    return SEARCH_INDEX.filter((entry) => entry.searchText.includes(query)).slice(
-      0,
-      MAX_SEARCH_RESULTS,
-    );
-  }, [search, activeCategory]);
+    return searchIndex
+      .filter((entry) => entry.searchText.includes(query))
+      .slice(0, MAX_SEARCH_RESULTS);
+  }, [search, activeCategory, categoryEmojis, searchIndex]);
   return (
     <div className="w-[420px] rounded-lg border border-border bg-popover shadow-lg flex flex-col overflow-hidden">
       <div className="px-2 pt-2 pb-1.5">
@@ -238,7 +259,13 @@ const EmojiPickerInner = (allProps: EmojiPickerProps): JSX.Element => {
         <CategoryTabs activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
       )}
       <div className="h-px bg-border" />
-      <EmojiGrid displayEmojis={displayEmojis} onSelect={onEmojiSelect} />
+      {ready ? (
+        <EmojiGrid displayEmojis={displayEmojis} onSelect={onEmojiSelect} />
+      ) : (
+        <div className="h-[323px] flex items-center justify-center">
+          <p className="text-xs text-muted-foreground">Loading emoji…</p>
+        </div>
+      )}
     </div>
   );
 };

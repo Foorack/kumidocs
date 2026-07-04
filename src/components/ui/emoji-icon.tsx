@@ -15,6 +15,21 @@ const FILE_TYPE_ICONS: Record<string, string> = {
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";
 
+// Cache computed data URIs so btoa() only runs once per emoji
+const dataUriCache = new Map<string, string>();
+
+function getDataUri(emoji: string): string {
+  let uri = dataUriCache.get(emoji);
+  if (uri === undefined) {
+    const svgText = EMOJI_SVGS[emoji];
+    if (svgText !== undefined && svgText !== "") {
+      uri = `data:image/svg+xml;base64,${btoa(svgText)}`;
+      dataUriCache.set(emoji, uri);
+    }
+  }
+  return uri ?? "";
+}
+
 interface EmojiIconProps {
   /** Emoji character to render (may be overridden to a Color icon). */
   emoji?: string;
@@ -41,9 +56,8 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
 
   // Emoji path: check for overrides first
   if (emoji !== undefined && emoji !== "") {
-    const svgText = EMOJI_SVGS[emoji];
-    if (svgText !== undefined && svgText !== "") {
-      const dataUri = `data:image/svg+xml;base64,${btoa(svgText)}`;
+    const dataUri = getDataUri(emoji);
+    if (dataUri !== "") {
       return (
         <span style={wrapStyle} className={className}>
           <img
