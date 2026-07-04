@@ -229,19 +229,36 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
 
 // GET /api/avatar/:hash proxies Gravatar so the client never contacts Gravatar directly.
 // The hash must be a 64-char lowercase hex string (SHA-256).
+const avatarCache = new Map<string, { body: ArrayBuffer; type: string }>();
+
 async function apiAvatarProxy(hash: string): Promise<Response> {
   if (!/^[0-9a-f]{64}$/u.test(hash)) {
     return new Response("Invalid hash", { status: 400 });
   }
+
+  const cached = avatarCache.get(hash);
+  if (cached !== undefined) {
+    return new Response(cached.body, {
+      headers: {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": cached.type,
+      },
+    });
+  }
+
   const upstream = await fetch(`https://gravatar.com/avatar/${hash}?s=80&d=404`);
   if (!upstream.ok) {
     return new Response(undefined, { status: 404 });
   }
+
   const body = await upstream.arrayBuffer();
+  const type = upstream.headers.get("Content-Type") ?? "image/jpeg";
+  avatarCache.set(hash, { body, type });
+
   return new Response(body, {
     headers: {
-      "Cache-Control": "public, max-age=3600",
-      "Content-Type": upstream.headers.get("Content-Type") ?? "image/jpeg",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": type,
     },
   });
 }
