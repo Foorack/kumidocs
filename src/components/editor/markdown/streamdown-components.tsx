@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { harden } from "rehype-harden";
 import { Pages, Toc, Tree } from "./tree-components";
 import { usePageContext } from "@/lib/page-context";
+import rehypeCsvTable from "@/components/editor/plugins/csv-table";
 import rehypeEmojiPlugin from "@/components/editor/plugins/emoji";
 import rehypeGfmAlertsPlugin from "@/components/editor/plugins/gfm-alerts";
 import rehypeHeadingIdsPlugin from "@/components/editor/plugins/heading-ids";
@@ -29,6 +30,7 @@ const LOCAL = "http://localhost:5864";
 const DEFAULT_ORIGIN = globalThis.location === undefined ? LOCAL : globalThis.location.origin;
 
 const REHYPE_PLUGINS: PluggableList = [
+  rehypeCsvTable,
   sanitizePlugin,
   rehypeResolveRelativeUrlsPlugin,
   [
