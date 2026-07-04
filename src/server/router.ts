@@ -81,7 +81,6 @@ async function buildRoutes(
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
   mutationLimiter.startCleanup();
-  // oxlint-disable-next-line eslint/sort-keys
   const routes: Record<string, unknown> = {
     "/api/auth/email": {
       async POST(req: Request) {
@@ -130,11 +129,6 @@ async function buildRoutes(
     "/api/emojis": {
       GET() {
         return apiEmojis();
-      },
-    },
-    "/api/icons": {
-      GET() {
-        return apiIcons();
       },
     },
     "/api/file": {
@@ -207,6 +201,12 @@ async function buildRoutes(
           return new Response("Too many requests", { status: 429 });
         }
         return apiFileRename(req, user, config);
+      },
+    },
+
+    "/api/icons": {
+      GET() {
+        return apiIcons();
       },
     },
 

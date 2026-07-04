@@ -17,7 +17,7 @@
  */
 
 import tailwindPlugin from "bun-plugin-tailwind";
-import { chmod, mkdir, rm } from "node:fs/promises";
+import { chmod, rm } from "node:fs/promises";
 
 const join = (...segments: string[]): string => segments.join("/");
 
