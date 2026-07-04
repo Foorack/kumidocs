@@ -16,6 +16,7 @@ pre[class*="language-"] {
   box-shadow: none !important;
   border: none !important;
   padding: 0 !important;
+  color: inherit !important;
 }
 
 /* Radix ScrollArea's internal content wrapper uses display:table which breaks
