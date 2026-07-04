@@ -46,6 +46,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
   const [rawMode, setRawMode] = useState(false);
   const [rawText, setRawText] = useState(value);
   const [undoStack, setUndoStack] = useState<string[][][]>([]);
+  const [focusMode, setFocusMode] = useState(false);
 
   // Sync internal data when `value` changes from external (server push)
   const prevValueRef = useRef(value);
@@ -126,6 +127,31 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
         return;
       }
 
+      // F2 toggles focus mode
+      if (ev.key === "F2") {
+        ev.preventDefault();
+        setFocusMode((prev) => !prev);
+        return;
+      }
+
+      // Escape exits focus mode
+      if (ev.key === "Escape" && focusMode) {
+        ev.preventDefault();
+        setFocusMode(false);
+        return;
+      }
+
+      // In focus mode, arrow/Home/End work natively inside the input (text cursor)
+      if (focusMode) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          setFocusMode(false);
+          const nextRow = Math.max(0, Math.min(rows - 1, row + 1));
+          focusCell(nextRow, col);
+        }
+        return;
+      }
+
       const navigate = (dRow: number, dCol: number): void => {
         ev.preventDefault();
         focusCell(
@@ -172,7 +198,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
         }
       }
     },
-    [rows, colCount, focusCell, onSave],
+    [rows, colCount, focusCell, onSave, focusMode],
   );
 
   // Column headers: A, B, ..., Z, AA, AB, ...
@@ -269,6 +295,13 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
         );
       }
       const isFocused = (focusedCell?.row ?? -1) === rIdx && (focusedCell?.col ?? -1) === cIdx;
+      let cellBorder = "";
+      if (isFocused && focusMode) {
+        cellBorder =
+          "ring-1 focus:ring-1 ring-red-600 dark:ring-red-500 focus:ring-red-600 dark:focus:ring-red-500 ring-inset";
+      } else if (isFocused) {
+        cellBorder = "ring-1 ring-primary ring-inset";
+      }
       return (
         <td key={cIdx} className="p-0">
           <input
@@ -285,14 +318,12 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
             onKeyDown={(ev: KeyboardEvent<HTMLInputElement>): void => {
               handleKeyDown(ev, rIdx, cIdx);
             }}
-            className={`${CELL_CLASS} h-full w-full bg-background ${
-              isFocused ? "ring-1 ring-primary ring-inset" : ""
-            }`}
+            className={`${CELL_CLASS} h-full w-full bg-background ${cellBorder}`}
           />
         </td>
       );
     },
-    [readOnly, focusedCell, handleInputRef, handleCellChange, handleKeyDown],
+    [readOnly, focusedCell, handleInputRef, handleCellChange, handleKeyDown, focusMode],
   );
 
   // --- Shared table renderer ---
