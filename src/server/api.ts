@@ -53,26 +53,21 @@ function createGzipEndpoint(filePath: string, label: string): () => Response {
     gzipped = new Uint8Array(0);
   }
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return (): Response => new Response(gzipped as unknown as BodyInit, {
+  const resp = new Response(gzipped as unknown as BodyInit, {
     headers: {
       "Cache-Control": "public, max-age=31536000, immutable",
       "Content-Encoding": "gzip",
       "Content-Type": "text/plain; charset=utf-8",
     },
   });
+  return (): Response => resp;
 }
 
 const publicDir = path.join(import.meta.dir, "..", "..", "dist", "public");
 
-const apiEmojis = createGzipEndpoint(
-  path.join(publicDir, "emojis.txt"),
-  "emoji data",
-);
+const apiEmojis = createGzipEndpoint(path.join(publicDir, "emojis.txt"), "emoji data");
 
-const apiIcons = createGzipEndpoint(
-  path.join(publicDir, "icons.txt"),
-  "icon packs",
-);
+const apiIcons = createGzipEndpoint(path.join(publicDir, "icons.txt"), "icon packs");
 
 // GET /api/sidebar
 function apiSidebar(): Response {
