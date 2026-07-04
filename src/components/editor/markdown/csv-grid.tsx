@@ -57,6 +57,15 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
     setUndoStack([]);
   }
 
+  // Re-parse raw text back into grid data when switching from raw to sheet mode
+  const prevRawMode = useRef(rawMode);
+  if (rawMode !== prevRawMode.current) {
+    prevRawMode.current = rawMode;
+    if (!rawMode) {
+      setData(parseCsv(rawText));
+    }
+  }
+
   const rows = data.length;
   // oxlint-disable-next-line id-length
   const colCount = data.length > 0 ? Math.max(...data.map((r) => r.length), 1) : 1;
