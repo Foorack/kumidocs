@@ -1,7 +1,6 @@
 import type { BacklinkEntry, CommitEntry, SearchResult, TreeNode } from "./types";
 import type { PageTemplateMap } from "./page";
 import type { SlideThemeMap } from "./slide";
-import type { WikilinkLookup } from "./wikilinks";
 
 // Error
 
@@ -161,9 +160,6 @@ const deleteImage = async (filename: string): Promise<void> => {
   await request<unknown>(`/api/images/${encodeURIComponent(filename)}`, { method: "DELETE" });
 };
 
-const getPagesLookup = async (): Promise<WikilinkLookup> =>
-  request<WikilinkLookup>("/api/pages/lookup");
-
 const getBacklinks = async (path: string): Promise<BacklinkEntry[]> =>
   request<BacklinkEntry[]>(`/api/backlinks?path=${encodeURIComponent(path)}`);
 
@@ -209,7 +205,6 @@ export {
   getFileHistory,
   getImages,
   getMe,
-  getPagesLookup,
   getTree,
   putFile,
   renameFile,

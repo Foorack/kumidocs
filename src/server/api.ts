@@ -1,7 +1,7 @@
 import { gzipSync } from "bun";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { apiBacklinks, apiPagesLookup } from "./backlinks";
+import { apiBacklinks } from "./backlinks";
 import { buildFileTree, getFile } from "./filestore";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
@@ -75,7 +75,7 @@ function apiSidebar(): Response {
   return Response.json({ content });
 }
 
-export { apiBacklinks, apiEmojis, apiIcons, apiMe, apiPagesLookup, apiSearch, apiSidebar, apiTree };
+export { apiBacklinks, apiEmojis, apiIcons, apiMe, apiSearch, apiSidebar, apiTree };
 export { apiFileCreate, apiFileDelete, apiFileGet, apiFilePut, apiFileRename } from "./api-file";
 export { apiFileDiff, apiFileHistory } from "./api-history";
 export {

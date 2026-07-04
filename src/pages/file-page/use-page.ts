@@ -1,4 +1,4 @@
-import { duplicatePage, getPagesLookup } from "@/lib/api";
+import { duplicatePage } from "@/lib/api";
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
 import type { FileType, PresenceUser, TreeNode, User } from "@/lib/types";
 import { buildFrontmatter, parseFrontmatter } from "@/lib/frontmatter";
@@ -11,12 +11,12 @@ import type { SlideThemeMap } from "@/lib/slide";
 import type { PageTemplateMap } from "@/lib/page";
 import type { WikilinkLookup } from "@/lib/wikilinks";
 import { pathExtension } from "@/lib/filetypes";
-import { resolveWikilinks } from "@/lib/wikilinks";
+import { buildLookupFromTree, resolveWikilinks } from "@/lib/wikilinks";
 import { toast } from "@/components/ui/toaster";
 import { useFilePageSave } from "./use-save";
 import useInfoPanel from "@/hooks/use-info-panel";
-import useMountEffect from "@/hooks/use-mount-effect";
 import usePageActions from "@/hooks/use-page-actions";
+import { usePageContext } from "@/lib/page-context";
 import usePagePdfExport from "./use-pdf-export";
 import usePagePresence from "@/hooks/use-page-presence";
 import { useUser } from "@/store/user";
@@ -137,20 +137,14 @@ function useFilePage(): UseFilePageReturn {
   }, [title, instanceName, loading]);
 
   const breadcrumb = filePath.replace(/\.md$/u, "").split("/").slice(0, -1);
+  const { tree } = usePageContext();
   const { exportPagePdf, pdfContentRef } = usePagePdfExport(title);
 
-  // Wiki-link lookup
-  const [pagesLookup, setPagesLookup] = useState<WikilinkLookup | undefined>();
-  useMountEffect(() => {
-    void (async (): Promise<void> => {
-      try {
-        const lookup = await getPagesLookup();
-        setPagesLookup(lookup);
-      } catch {
-        // lookup unavailable; wikilinks render as dead links
-      }
-    })();
-  });
+  // Wiki-link lookup: build from tree data (already fetched by AppShell)
+  const pagesLookup = useMemo<WikilinkLookup | undefined>(
+    () => (tree.length > 0 ? buildLookupFromTree(tree) : undefined),
+    [tree],
+  );
   const resolvedContent = useMemo(
     () =>
       pagesLookup && (fileType === "doc" || fileType === "slide") && !editMode

@@ -1,5 +1,6 @@
 /** [[Page Name]] -> markdown link resolution. */
 
+import type { TreeNode } from "@/lib/types";
 import { headingToSlug } from "@/lib/heading";
 
 /** Lookup map returned by `GET /api/pages/lookup`. */
@@ -71,5 +72,39 @@ function resolveWikilinks(markdown: string, lookup: WikilinkLookup): string {
   });
 }
 
+/** Build a WikilinkLookup from the full file tree (TreeNode[]). */
+function buildLookupFromTree(tree: TreeNode[]): WikilinkLookup {
+  const byTitle: Record<string, string> = {};
+  const byPath: Record<string, string> = {};
+
+  function walk(nodes: TreeNode[]): void {
+    for (const node of nodes) {
+      if (node.type === "file" && node.fileEntry) {
+        const fe = node.fileEntry;
+        // byTitle: first win for duplicate titles
+        if (!(fe.title in byTitle)) {
+          byTitle[fe.title] = fe.path;
+        }
+        // byPath: path without .md
+        const pathKey = fe.path.replace(/\.md$/u, "");
+        if (!(pathKey in byPath)) {
+          byPath[pathKey] = fe.path;
+        }
+        // Base filename
+        const baseName = fe.path.split("/").pop()?.replace(/\.md$/u, "");
+        if (baseName !== undefined && baseName !== "" && !(baseName in byPath)) {
+          byPath[baseName] = fe.path;
+        }
+      }
+      if (node.children) {
+        walk(node.children);
+      }
+    }
+  }
+
+  walk(tree);
+  return { byPath, byTitle };
+}
+
 export type { WikilinkLookup };
-export { resolveWikilinks, resolveWikilinkTarget, WIKILINK_RE };
+export { buildLookupFromTree, resolveWikilinks, resolveWikilinkTarget, WIKILINK_RE };

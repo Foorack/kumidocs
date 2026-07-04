@@ -44,11 +44,6 @@ function buildLookup(): WikilinkLookup {
   return { byPath, byTitle };
 }
 
-/** Handler for `GET /api/pages/lookup`. */
-function apiPagesLookup(): Response {
-  return Response.json(buildLookup());
-}
-
 // Backlinks
 
 function buildBacklinks(queryPath: string): BacklinkEntry[] {
@@ -112,4 +107,4 @@ function apiBacklinks(url: URL): Response {
   return Response.json(buildBacklinks(queryPath));
 }
 
-export { apiBacklinks, apiPagesLookup, buildLookup };
+export { apiBacklinks, buildLookup };
