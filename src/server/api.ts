@@ -66,13 +66,39 @@ function apiEmojis(): Response {
   }
 }
 
+// GET /api/icons
+// Serves the combined icon packs text file gzip-compressed on-the-fly.
+let iconsGzipped: Uint8Array | undefined;
+const iconsFilePath = path.join(import.meta.dir, "..", "..", "dist", "public", "icons.txt");
+
+function apiIcons(): Response {
+  try {
+    if (!iconsGzipped) {
+      // oxlint-disable-next-line node/no-sync
+      const raw = readFileSync(iconsFilePath);
+      // oxlint-disable-next-line node/no-sync
+      iconsGzipped = gzipSync(raw);
+    }
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return new Response(iconsGzipped as unknown as BodyInit, {
+      headers: {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Encoding": "gzip",
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
+  } catch {
+    return new Response("Icon data not found", { status: 404 });
+  }
+}
+
 // GET /api/sidebar
 function apiSidebar(): Response {
   const content = getFile("_sidebar.md") ?? "";
   return Response.json({ content });
 }
 
-export { apiBacklinks, apiEmojis, apiMe, apiPagesLookup, apiSearch, apiSidebar, apiTree };
+export { apiBacklinks, apiEmojis, apiIcons, apiMe, apiPagesLookup, apiSearch, apiSidebar, apiTree };
 export { apiFileCreate, apiFileDelete, apiFileGet, apiFilePut, apiFileRename } from "./api-file";
 export { apiFileDiff, apiFileHistory } from "./api-history";
 export {

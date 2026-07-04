@@ -5,31 +5,24 @@
  * can use icon prefixes like `logos:*`, `devicon:*`, `flag:*`,
  * `fluent-color:*`, and `glyphs-poly:*`.
  *
- * Icon data is loaded lazily from the server at runtime so it doesn't
- * bloat the initial JS bundle.  Only fetched when a page with Mermaid
- * diagrams actually needs them.
+ * Icon data is served as a single gzipped text file from /api/icons.
+ * Loaded lazily -- only fetched when a page with Mermaid diagrams needs them.
  *
  * Usage: call once at app startup (client-side only):
  *   import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
  *   registerMermaidIcons();
  */
 
-const ICON_PACKS = [
-  { name: "devicon", path: "devicon" },
-  { name: "flag", path: "flag" },
-  { name: "fluent-color", path: "fluent-color" },
-  { name: "glyphs-poly", path: "glyphs-poly" },
-  { name: "logos", path: "logos" },
-] as const;
+interface IconPackResult {
+  name: string;
+  icons: { prefix: string; icons: Record<string, { body: string }> };
+}
 
 /**
  * Register all icon packs with Mermaid.
  * Safe to call multiple times; Mermaid deduplicates by prefix.
  * Must be called on the client (browser) only.
  */
-// Deduplication: no matter how many times registerMermaidIcons is called
-// (mount effects in viewer.tsx, slides/streamdown.tsx, etc.), only one
-// round of fetches runs. All concurrent callers share the same promise.
 let iconsPromise: Promise<void> | undefined;
 
 // oxlint-disable-next-line import/prefer-default-export
@@ -46,35 +39,42 @@ export async function registerMermaidIcons(): Promise<void> {
       return;
     }
 
-    // Load each icon pack lazily from the server.
-    const results = await Promise.all(
-      ICON_PACKS.map(async ({ name, path }) => {
-        try {
-          const resp = await fetch(`/icon-packs/${path}.json`);
-          if (!resp.ok) {
-            return undefined;
-          }
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const body = (await resp.json()) as {
-            prefix: string;
-            icons: Record<string, { body: string }>;
-          };
-          return { icons: body, name };
-        } catch {
-          return undefined;
-        }
-      }),
-    );
-
-    const valid = results.filter((pack): pack is NonNullable<typeof pack> => pack !== undefined);
-    if (valid.length === 0) {
+    // Fetch all icon packs in a single gzipped request.
+    let text: string;
+    try {
+      const resp = await fetch("/api/icons");
+      if (!resp.ok) {
+        return;
+      }
+      text = await resp.text();
+    } catch {
       return;
     }
 
-    mermaid.registerIconPacks(valid);
+    const results: IconPackResult[] = [];
+    for (const line of text.split("\n")) {
+      if (line === "") {
+        continue;
+      }
+      const semiIdx = line.indexOf(";");
+      if (semiIdx === -1) {
+        continue;
+      }
+      const name = line.slice(0, semiIdx);
+      const json = line.slice(semiIdx + 1);
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const body = JSON.parse(json) as { prefix: string; icons: Record<string, { body: string }> };
+      results.push({ icons: body, name });
+    }
+
+    if (results.length === 0) {
+      return;
+    }
+
+    mermaid.registerIconPacks(results);
 
     console.debug(
-      `[kumidocs] Mermaid icons registered: ${valid.map((pack) => `${pack.name} (${Object.keys(pack.icons.icons).length})`).join(", ")}`,
+      `[kumidocs] Mermaid icons registered: ${results.map((pack) => `${pack.name} (${Object.keys(pack.icons.icons).length})`).join(", ")}`,
     );
   })();
 

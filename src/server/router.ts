@@ -8,6 +8,7 @@ import {
   apiFileHistory,
   apiFilePut,
   apiEmojis,
+  apiIcons,
   apiFileRename,
   apiImageDelete,
   apiImagesList,
@@ -80,6 +81,7 @@ async function buildRoutes(
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
   mutationLimiter.startCleanup();
+  // oxlint-disable-next-line eslint/sort-keys
   const routes: Record<string, unknown> = {
     "/api/auth/email": {
       async POST(req: Request) {
@@ -130,7 +132,11 @@ async function buildRoutes(
         return apiEmojis();
       },
     },
-
+    "/api/icons": {
+      GET() {
+        return apiIcons();
+      },
+    },
     "/api/file": {
       async DELETE(req: Request) {
         const user = requireUser(req);
@@ -288,30 +294,6 @@ async function buildRoutes(
           return new Response("Too many requests", { status: 429 });
         }
         return apiUploadImage(req, user, config);
-      },
-    },
-
-    "/icon-packs/:filename": {
-      async GET(req: Request) {
-        const packName = new URL(req.url).pathname
-          .slice("/icon-packs/".length)
-          .replace(/\.json$/u, "");
-        const packPath = path.join(
-          import.meta.dir,
-          "..",
-          "..",
-          "node_modules",
-          "@iconify-json",
-          packName,
-          "icons.json",
-        );
-        if (await doesFileExist(packPath)) {
-          return serveFileResponse(packPath, {
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "Content-Type": "application/json; charset=utf-8",
-          });
-        }
-        return new Response("Not found", { status: 404 });
       },
     },
 

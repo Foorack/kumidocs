@@ -58,18 +58,17 @@ if (!frontendResult.success) {
   process.exit(1);
 }
 
-// Step 2: Icon packs (lazy-loaded by the client when Mermaid diagrams use them)
+// Step 2: Icon packs (combined into a single text file for /api/icons endpoint)
 console.log("  [2/3] Icon packs…");
-const iconPacksDir = join(publicDir, "icon-packs");
-await mkdir(iconPacksDir, { recursive: true });
 const iconPacks = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
-await Promise.all(
-  iconPacks.map(async (name) => {
-    const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
-    const dest = join(iconPacksDir, `${name}.json`);
-    await Bun.write(dest, Bun.file(src));
-  }),
-);
+const iconLines: string[] = [];
+for (const name of iconPacks) {
+  const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
+  // oxlint-disable-next-line typescript/no-unsafe-assignment
+  const data: unknown = JSON.parse(await Bun.file(src).text());
+  iconLines.push(`${name};${JSON.stringify(data)}`);
+}
+await Bun.write(join(publicDir, "icons.txt"), iconLines.join("\n"));
 
 // Emoji data (text file, served gzipped via /api/emojis endpoint)
 await Bun.write(
