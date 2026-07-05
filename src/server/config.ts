@@ -20,6 +20,8 @@ interface Config {
   pullInterval: number;
   rateLimit: { count: number; windowMs: number };
   readonly: boolean;
+  board: boolean;
+  docs: boolean;
 }
 
 // Option definitions
@@ -157,6 +159,24 @@ const OPTIONS: OptionDef[] = [
     key: "readonly",
     needsValue: false,
   },
+  {
+    coerce: coerceBool,
+    default: false,
+    description: "Run in board mode (ticket tracker)",
+    env: "KUMIDOCS_BOARD",
+    flags: ["--board"],
+    key: "board",
+    needsValue: false,
+  },
+  {
+    coerce: coerceBool,
+    default: false,
+    description: "Run in docs mode (wiki, default)",
+    env: "KUMIDOCS_DOCS",
+    flags: ["--docs"],
+    key: "docs",
+    needsValue: false,
+  },
 ];
 
 // Help / version
@@ -263,6 +283,12 @@ const loadConfig = (): Config => {
     const cli = cliOverrides[opt.key];
     setConfigKey(config, opt.key, cli ?? applyEnv(opt, runtimeEnv[opt.env]));
   }
+
+  // --board and --docs are mutually exclusive
+  if (config.board && config.docs) {
+    fatal("--board and --docs cannot be used together.");
+  }
+
   return config;
 };
 

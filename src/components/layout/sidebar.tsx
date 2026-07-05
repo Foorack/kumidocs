@@ -38,7 +38,7 @@ export default function Sidebar({
   reloadTree,
 }: SidebarProps): JSX.Element {
   const pages = useMemo(() => buildPageTree(tree), [tree]);
-  const { user: currentUser, sidebarDefaultDepth } = useUser();
+  const { user: currentUser, sidebarDefaultDepth, mode } = useUser();
   const navigate = useNavigate();
   const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
@@ -62,80 +62,88 @@ export default function Sidebar({
         {/* Pages header */}
         <div className="flex items-center px-3 py-2.5 border-b border-border shrink-0">
           <span className="flex-1 text-sm pt-1 font-semibold text-foreground uppercase tracking-wide select-none">
-            Pages
+            {mode === "board" ? "Boards" : "Pages"}
           </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                title="Wiki options"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  void navigate("/i");
-                }}
-              >
-                <Image className="mr-2 w-4 h-4" />
-                Image library
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  void navigate("/s");
-                }}
-              >
-                <BookOpen className="mr-2 w-4 h-4" />
-                Slide themes
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  void navigate("/p");
-                }}
-              >
-                <FileText className="mr-2 w-4 h-4" />
-                Page themes
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {mode !== "board" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                  title="Docs options"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    void navigate("/i");
+                  }}
+                >
+                  <Image className="mr-2 w-4 h-4" />
+                  Image library
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void navigate("/s");
+                  }}
+                >
+                  <BookOpen className="mr-2 w-4 h-4" />
+                  Slide themes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void navigate("/p");
+                  }}
+                >
+                  <FileText className="mr-2 w-4 h-4" />
+                  Page themes
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
-              {pages.length === 0 ? (
-                <div className="px-3 py-4 text-xs text-foreground text-center">
-                  No pages yet.
-                  <br />
-                  Create your first page below.
-                </div>
-              ) : (
-                pages.map((node) => (
-                  <PageNodeRow
-                    key={`${node.path}-d${sidebarDefaultDepth}`}
-                    node={node}
-                    depth={0}
-                    defaultDepth={sidebarDefaultDepth}
-                    presenceByPage={presenceByPage}
-                    currentUser={currentUser}
-                    onNewSubPage={onNewSubPage}
-                    onMove={handleOpenMove}
-                    onDelete={openDelete}
-                  />
-                ))
-              )}
-            </div>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem onClick={onNewPage}>
-              <Plus className="mr-2 w-4 h-4" />
-              Create page
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+        {mode === "board" ? (
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
+            <div className="px-3 py-4 text-xs text-foreground text-center">No boards yet.</div>
+          </div>
+        ) : (
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">
+                {pages.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-foreground text-center">
+                    No pages yet.
+                    <br />
+                    Create your first page below.
+                  </div>
+                ) : (
+                  pages.map((node) => (
+                    <PageNodeRow
+                      key={`${node.path}-d${sidebarDefaultDepth}`}
+                      node={node}
+                      depth={0}
+                      defaultDepth={sidebarDefaultDepth}
+                      presenceByPage={presenceByPage}
+                      currentUser={currentUser}
+                      onNewSubPage={onNewSubPage}
+                      onMove={handleOpenMove}
+                      onDelete={openDelete}
+                    />
+                  ))
+                )}
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={onNewPage}>
+                <Plus className="mr-2 w-4 h-4" />
+                Create page
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        )}
 
         <div className="p-2 border-t border-border shrink-0">
           <Button
@@ -145,7 +153,7 @@ export default function Sidebar({
             onClick={onNewPage}
           >
             <Plus className="w-3.5 h-3.5" />
-            New page
+            {mode === "board" ? "New board" : "New page"}
           </Button>
         </div>
       </aside>
