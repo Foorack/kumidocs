@@ -15,7 +15,7 @@ import type { PresenceUser, TreeNode } from "@/lib/types";
 import buildPageTree from "@/lib/page-tree";
 import { Button } from "@/components/ui/button";
 import PageNodeRow from "./sidebar-page-node";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import usePageActions from "@/hooks/use-page-actions";
 import { useUser } from "@/store/user";
@@ -42,13 +42,16 @@ export default function Sidebar({
   const navigate = useNavigate();
   const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
-  const handleOpenMove = async (path: string): Promise<void> => {
-    try {
-      await openMove(path);
-    } catch (error: unknown) {
-      console.error("Failed to open move dialog:", error);
-    }
-  };
+  const handleOpenMove = useCallback(
+    async (path: string): Promise<void> => {
+      try {
+        await openMove(path);
+      } catch (error: unknown) {
+        console.error("Failed to open move dialog:", error);
+      }
+    },
+    [openMove],
+  );
 
   return (
     <>
