@@ -25,15 +25,21 @@ import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
 import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } from "./runtime";
+import { existsSync } from "node:fs";
 
 const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`;
 
 // Resolve the public directory relative to this module.
-// import.meta.dir is src/server/ so ../../dist/public = dist/public/.
-// In dev, ensure you run `bun run build` first, or set KUMIDOCS_PUBLIC_DIR.
+// When bundled into dist/index.js, import.meta.dir = dist/, so dist/public
+// is just public/.  Otherwise (dev) it is src/server/, so ../../dist/public.
+const bundledPublic = path.join(import.meta.dir, "public");
 const publicDir =
   // oxlint-disable-next-line unicorn/no-process-env
-  process.env.KUMIDOCS_PUBLIC_DIR ?? path.join(import.meta.dir, "..", "..", "dist", "public");
+  process.env.KUMIDOCS_PUBLIC_DIR ??
+  // oxlint-disable-next-line node/no-sync
+  (existsSync(bundledPublic)
+    ? bundledPublic
+    : path.join(import.meta.dir, "..", "..", "dist", "public"));
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";

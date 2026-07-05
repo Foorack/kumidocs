@@ -1,5 +1,5 @@
 import { gzipSync } from "bun";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { apiBacklinks } from "./backlinks";
 import { buildFileTree, getFile } from "./filestore";
@@ -63,7 +63,12 @@ function createGzipEndpoint(filePath: string, label: string): () => Response {
   return (): Response => resp;
 }
 
-const publicDir = path.join(import.meta.dir, "..", "..", "dist", "public");
+// Detect bundled vs dev by checking whether dist/public exists next to us.
+const bundledPublic = path.join(import.meta.dir, "public");
+// oxlint-disable-next-line node/no-sync
+const publicDir = existsSync(bundledPublic)
+  ? bundledPublic
+  : path.join(import.meta.dir, "..", "..", "dist", "public");
 
 const apiEmojis = createGzipEndpoint(path.join(publicDir, "emojis.txt"), "emoji data");
 
