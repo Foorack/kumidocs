@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import useMountEffect from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toaster";
 import { createFile, getFile, getTree } from "@/lib/api";
-import { defaultBoardConfig, yamlToBoard } from "@/lib/board";
+import { defaultBoardConfig, displayColumnId, yamlToBoard } from "@/lib/board";
 import type { BoardConfig } from "@/lib/board";
 import { Plus, Settings } from "lucide-react";
 import type { ChangeEvent, JSX } from "react";
@@ -55,7 +56,7 @@ function renderContent(
                   key={colIdx}
                   className="inline-block w-2 h-2 rounded-full"
                   style={{ backgroundColor: col.color }}
-                  title={col.name}
+                  title={displayColumnId(col.id)}
                 />
               ))}
             </div>
@@ -66,12 +67,21 @@ function renderContent(
   );
 }
 
+interface OutletCtx {
+  instanceName: string;
+}
+
 interface BoardEntry {
   slug: string;
   config: BoardConfig;
 }
 
 function BoardManagerPage(): JSX.Element {
+  const { instanceName } = useOutletContext<OutletCtx>();
+
+  useMountEffect(() => {
+    document.title = `Board Manager | ${instanceName}`;
+  });
   const navigate = useNavigate();
   const [boards, setBoards] = useState<BoardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,12 +180,12 @@ function BoardManagerPage(): JSX.Element {
           }
         }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New board</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
+          <div className="grid gap-4 py-1">
+            <div className="grid gap-1.5">
               <Label htmlFor="nb-name">Board name</Label>
               <Input
                 id="nb-name"
@@ -187,13 +197,13 @@ function BoardManagerPage(): JSX.Element {
                 className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="grid gap-1.5">
               <Label htmlFor="nb-prefix">Ticket prefix</Label>
               <Input
                 id="nb-prefix"
                 value={newPrefix}
                 onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                  setNewPrefix(ev.target.value.toUpperCase());
+                  setNewPrefix(ev.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase());
                 }}
                 placeholder="PROJ"
                 className="h-8 text-sm w-32 font-mono uppercase"

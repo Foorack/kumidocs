@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ChangeEvent, JSX } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
@@ -8,12 +8,17 @@ import Checkbox from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/toaster";
 import { getFile, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig } from "@/lib/board";
-import { boardToYaml, yamlToBoard } from "@/lib/board";
+import { boardToYaml, displayColumnId, yamlToBoard } from "@/lib/board";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+
+interface OutletCtx {
+  instanceName: string;
+}
 
 const INPUT_CLASS = "h-8 text-sm";
 
 function BoardDetailPage(): JSX.Element {
+  const { instanceName } = useOutletContext<OutletCtx>();
   const params = useParams<{ name: string }>();
   const name = params.name ?? "";
   const navigate = useNavigate();
@@ -31,6 +36,11 @@ function BoardDetailPage(): JSX.Element {
         const resp = await getFile(`${name}.yaml`);
         const parsed = await yamlToBoard(resp.content);
         if (parsed) {
+          // Convert ids to display format (uppercase with spaces)
+          parsed.columns = parsed.columns.map((col) => ({
+            ...col,
+            id: displayColumnId(col.id),
+          }));
           setConfig(parsed);
         }
       } catch {
@@ -42,12 +52,12 @@ function BoardDetailPage(): JSX.Element {
     void load();
   }, [name]);
 
+  useEffect(() => {
+    document.title = config ? `${config.name} | ${instanceName}` : `${name} | ${instanceName}`;
+  }, [config, instanceName, name]);
+
   const updateName = useCallback((val: string) => {
     setConfig((prev) => (prev ? { ...prev, name: val } : prev));
-  }, []);
-
-  const updatePrefix = useCallback((val: string) => {
-    setConfig((prev) => (prev ? { ...prev, prefix: val } : prev));
   }, []);
 
   const updateColumn = useCallback(
@@ -65,6 +75,21 @@ function BoardDetailPage(): JSX.Element {
     [],
   );
 
+  const setDefaultColumn = useCallback((index: number): void => {
+    setConfig((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      return {
+        ...prev,
+        columns: prev.columns.map((col, idx) => ({
+          ...col,
+          default: idx === index,
+        })),
+      };
+    });
+  }, []);
+
   const addColumn = useCallback((): void => {
     setConfig((prev) => {
       if (!prev) {
@@ -72,7 +97,7 @@ function BoardDetailPage(): JSX.Element {
       }
       return {
         ...prev,
-        columns: [...prev.columns, { color: "#6b7280", final: false, name: "" }],
+        columns: [...prev.columns, { color: "#6b7280", final: false, id: "" }],
       };
     });
   }, []);
@@ -92,7 +117,15 @@ function BoardDetailPage(): JSX.Element {
     }
     setSaving(true);
     try {
-      const yaml = boardToYaml(config);
+      // Normalize ids to storage format (lowercase with hyphens)
+      const storageConfig = {
+        ...config,
+        columns: config.columns.map((col) => ({
+          ...col,
+          id: col.id.toLowerCase().replace(/\s+/g, "-"),
+        })),
+      };
+      const yaml = boardToYaml(storageConfig);
       await putFile(`${name}.yaml`, yaml);
       toast.success("Board saved");
     } catch {
@@ -147,16 +180,14 @@ function BoardDetailPage(): JSX.Element {
           />
         </div>
 
-        {/* Prefix */}
+        {/* Prefix (locked after creation — matches board ID) */}
         <div className="space-y-1.5">
           <Label htmlFor="board-prefix">Ticket prefix</Label>
           <Input
             id="board-prefix"
             value={config.prefix}
-            onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-              updatePrefix(ev.target.value.toUpperCase());
-            }}
-            className={`${INPUT_CLASS} w-32 font-mono uppercase`}
+            disabled
+            className={`${INPUT_CLASS} w-32 font-mono uppercase opacity-60`}
             placeholder="PROJ"
             maxLength={10}
           />
@@ -178,49 +209,75 @@ function BoardDetailPage(): JSX.Element {
 
           <div className="space-y-2">
             {config.columns.map((col, index) => (
-              <div key={index} className="flex items-center gap-2 rounded border border-border p-2">
-                {/* Color picker */}
-                <input
-                  type="color"
-                  value={col.color}
-                  onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                    updateColumn(index, "color", ev.target.value);
-                  }}
-                  className="w-8 h-8 rounded cursor-pointer border border-border"
-                />
-
-                {/* Column name */}
-                <Input
-                  value={col.name}
-                  onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                    updateColumn(index, "name", ev.target.value);
-                  }}
-                  className="h-8 text-sm flex-1"
-                  placeholder="Column name"
-                />
-
-                {/* Final toggle */}
-                <label className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 cursor-pointer">
-                  <Checkbox
-                    checked={col.final}
-                    onCheckedChange={(checked) => {
-                      updateColumn(index, "final", checked === true);
+              <div key={index} className="rounded border border-border p-2 space-y-1.5">
+                {/* Line 1: color + name + remove */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={col.color}
+                    onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+                      updateColumn(index, "color", ev.target.value);
                     }}
+                    className="w-8 h-9 cursor-pointer shrink-0"
                   />
-                  Final
-                </label>
 
-                {/* Remove */}
-                <button
-                  type="button"
-                  className="p-1 rounded text-muted-foreground hover:text-red-500 transition-colors"
-                  onClick={() => {
-                    removeColumn(index);
-                  }}
-                  title="Remove column"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <div className="flex-1 min-w-0">
+                    <Input
+                      value={col.id}
+                      onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+                        const raw = ev.target.value
+                          .replace(/[^a-zA-Z0-9\s-]/g, "")
+                          .replace(/-/g, " ")
+                          .toUpperCase();
+                        updateColumn(index, "id", raw);
+                      }}
+                      className="h-8 text-sm w-full"
+                      placeholder="column-id"
+                    />
+                    {col.id && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 px-1">
+                        {displayColumnId(col.id)}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="p-1 rounded text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                    onClick={() => {
+                      removeColumn(index);
+                    }}
+                    title="Remove column"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Line 2: default radio + final checkbox */}
+                <div className="flex items-center gap-4 pl-10">
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                    <input
+                      type="radio"
+                      name="default-column"
+                      checked={col.default === true}
+                      onChange={() => {
+                        setDefaultColumn(index);
+                      }}
+                      className="accent-border"
+                    />
+                    Default
+                  </label>
+
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={col.final}
+                      onCheckedChange={(checked) => {
+                        updateColumn(index, "final", checked === true);
+                      }}
+                    />
+                    Final
+                  </label>
+                </div>
               </div>
             ))}
           </div>

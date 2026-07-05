@@ -1,7 +1,8 @@
 interface BoardColumn {
   color: string;
-  final: boolean;
-  name: string;
+  default?: boolean;
+  final?: boolean;
+  id: string;
 }
 
 interface BoardConfig {
@@ -11,10 +12,10 @@ interface BoardConfig {
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
-  { color: "#6b7280", final: false, name: "Backlog" },
-  { color: "#3b82f6", final: false, name: "In Progress" },
-  { color: "#f59e0b", final: false, name: "Review" },
-  { color: "#22c55e", final: true, name: "Done" },
+  { color: "#6b7280", default: true, id: "backlog" },
+  { color: "#3b82f6", id: "in-progress" },
+  { color: "#f59e0b", id: "review" },
+  { color: "#22c55e", final: true, id: "done" },
 ];
 
 function defaultBoardConfig(name: string, prefix: string): BoardConfig {
@@ -27,6 +28,11 @@ function defaultBoardConfig(name: string, prefix: string): BoardConfig {
 
 const YAML_HEAD_RE = /^---[\s\S]*?---\r?\n/u;
 
+/** Convert a column id (e.g. "in-review") to a display label (e.g. "IN REVIEW"). */
+function displayColumnId(id: string): string {
+  return id.replaceAll("-", " ").toUpperCase();
+}
+
 /** Serialize a board config to a YAML string (without frontmatter). */
 function boardToYaml(config: BoardConfig): string {
   const parts: string[] = [
@@ -34,11 +40,19 @@ function boardToYaml(config: BoardConfig): string {
     `prefix: ${JSON.stringify(config.prefix)}`,
     "columns:",
     // oxlint-disable-next-line id-length
-    ...config.columns.flatMap((col) => [
-      `  - name: ${JSON.stringify(col.name)}`,
-      `    color: ${JSON.stringify(col.color)}`,
-      `    final: ${String(col.final)}`,
-    ]),
+    ...config.columns.flatMap((col) => {
+      const lines = [
+        `  - id: ${JSON.stringify(col.id)}`,
+        `    color: ${JSON.stringify(col.color)}`,
+      ];
+      if (col.final) {
+        lines.push("    final: true");
+      }
+      if (col.default) {
+        lines.push("    default: true");
+      }
+      return lines;
+    }),
     "",
   ];
   return parts.join("\n");
@@ -82,8 +96,9 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
     const rawCol = col as Record<string, unknown>;
     columns.push({
       color: typeof rawCol.color === "string" ? rawCol.color : "#6b7280",
+      default: rawCol.default === true,
       final: rawCol.final === true,
-      name: typeof rawCol.name === "string" ? rawCol.name : "",
+      id: typeof rawCol.id === "string" ? rawCol.id : "",
     });
   }
 
@@ -91,4 +106,4 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
 }
 
 export type { BoardColumn, BoardConfig };
-export { boardToYaml, defaultBoardConfig, DEFAULT_COLUMNS, yamlToBoard };
+export { boardToYaml, defaultBoardConfig, DEFAULT_COLUMNS, displayColumnId, yamlToBoard };
