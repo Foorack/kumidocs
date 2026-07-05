@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/app-shell";
+import BoardDetailPage from "@/pages/board-detail/page";
 import BoardListPage from "@/pages/board-list/page";
 import BoardManagerPage from "@/pages/board-manager/page";
 import BoardPage from "@/pages/board/page";
@@ -35,6 +36,7 @@ function AppRoutes(): JSX.Element {
         <Route path="/p/*" element={<FilePageRoute />} />
         <Route path="/b" element={<BoardListPage />} />
         <Route path="/bm" element={<BoardManagerPage />} />
+        <Route path="/bm/:name" element={<BoardDetailPage />} />
         <Route path="/b/:name" element={<BoardPage />} />
         <Route path="/b/:name/:id" element={<TicketPage />} />
         <Route path="/i" element={<ImageLibraryPage />} />
