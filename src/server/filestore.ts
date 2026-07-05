@@ -12,6 +12,14 @@ import path from "node:path";
 const fileCache = new Map<string, string>(); // relPath -> content
 let treeCache: TreeNode[] | undefined; // invalidated on every write/delete/move
 
+// Generation counter bumped on every file mutation. Other modules (backlinks,
+// search) can cache derived data and check this to know when to rebuild.
+let fileGeneration = 0;
+const getGeneration = (): number => fileGeneration;
+const bumpGeneration = (): void => {
+  fileGeneration++;
+};
+
 // Paths written by this server process; watcher should not re-broadcast these.
 // Safety cap prevents unbounded growth if watcher events are ever dropped.
 const RECENTLY_WRITTEN_MAX = 500;
@@ -36,6 +44,7 @@ function consumeWritten(relPath: string): boolean {
 
 function invalidateTree(): void {
   treeCache = undefined;
+  bumpGeneration();
 }
 
 // User-configured hidden file patterns from .kumidocs.json hideFiles field.
@@ -271,6 +280,7 @@ export {
   extractHeadingTitle,
   getAllPaths,
   getFile,
+  getGeneration,
   IGNORED_NAMES,
   loadFilestore,
   markWritten,

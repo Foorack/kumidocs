@@ -1,10 +1,8 @@
 import { WIKILINK_RE, resolveWikilinkTarget } from "@/lib/wikilinks";
-import { getAllPaths, getFile, parseFileEntry } from "./filestore";
+import { getAllPaths, getFile, getGeneration, parseFileEntry } from "./filestore";
 import type { WikilinkLookup } from "@/lib/wikilinks";
 import type { BacklinkEntry } from "@/lib/types";
 import matter from "gray-matter";
-
-// Lookup
 
 /**
  * Build the wiki-link lookup map from all `.md` files in the repo.
@@ -44,10 +42,23 @@ function buildLookup(): WikilinkLookup {
   return { byPath, byTitle };
 }
 
+// Cached lookup -- rebuilt automatically when the filestore generation advances.
+let cachedLookup: WikilinkLookup | undefined;
+let cachedGeneration = -1;
+
+function getLookup(): WikilinkLookup {
+  const gen = getGeneration();
+  if (cachedGeneration !== gen || cachedLookup === undefined) {
+    cachedLookup = buildLookup();
+    cachedGeneration = gen;
+  }
+  return cachedLookup;
+}
+
 // Backlinks
 
 function buildBacklinks(queryPath: string): BacklinkEntry[] {
-  const lookup = buildLookup();
+  const lookup = getLookup();
   const results: BacklinkEntry[] = [];
   // Normalise the query so both "path/to/page" and "path/to/page.md" work
   const queryNormalised = queryPath.replace(/\.md$/u, "");
