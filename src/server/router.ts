@@ -85,7 +85,6 @@ async function buildRoutes(
 ): Promise<Record<string, unknown>> {
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
-  mutationLimiter.startCleanup();
   const routes: Record<string, unknown> = {
     "/api/auth/email": {
       async POST(req: Request) {

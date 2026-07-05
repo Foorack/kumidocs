@@ -1,6 +1,7 @@
-/** Per-user in-memory sliding-window rate limiter with periodic cleanup. */
-
-const CLEANUP_INTERVAL_MS = 60_000;
+/** Per-user in-memory sliding-window rate limiter.
+ *
+ * No timers -- cleanup is lazy: empty buckets are removed inline during
+ * check() so there's nothing to leak on hot reload or server shutdown. */
 
 interface Bucket {
   /** Monotonically-increasing timestamps of recent requests (ms). */
@@ -11,7 +12,6 @@ class RateLimiter {
   private readonly store = new Map<string, Bucket>();
   private readonly maxRequests: number;
   private readonly windowMs: number;
-  private cleanupTimer: ReturnType<typeof setInterval> | undefined;
 
   /**
    * @param maxRequests  Max number of requests allowed within the window.
@@ -20,24 +20,6 @@ class RateLimiter {
   public constructor(maxRequests: number, windowMs: number) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
-  }
-
-  /** Start the periodic cleanup timer. Call once at server startup. */
-  public startCleanup(): void {
-    if (this.cleanupTimer !== undefined) {
-      return;
-    }
-    this.cleanupTimer = setInterval(() => {
-      this.prune();
-    }, CLEANUP_INTERVAL_MS);
-  }
-
-  /** Stop the cleanup timer. */
-  public stopCleanup(): void {
-    if (this.cleanupTimer !== undefined) {
-      clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
-    }
   }
 
   /**
@@ -56,22 +38,14 @@ class RateLimiter {
     bucket.timestamps = bucket.timestamps.filter((ts) => ts >= cutoff);
 
     if (bucket.timestamps.length >= this.maxRequests) {
+      // Eagerly evict empty buckets so stale entries don't accumulate.
+      if (bucket.timestamps.length === 0) {
+        this.store.delete(key);
+      }
       return false;
     }
     bucket.timestamps.push(now);
     return true;
-  }
-
-  /** Remove stale entries to prevent unbounded memory growth. */
-  private prune(): void {
-    const now = Date.now();
-    const cutoff = now - this.windowMs;
-    for (const [key, bucket] of this.store) {
-      bucket.timestamps = bucket.timestamps.filter((ts) => ts >= cutoff);
-      if (bucket.timestamps.length === 0) {
-        this.store.delete(key);
-      }
-    }
   }
 }
 
