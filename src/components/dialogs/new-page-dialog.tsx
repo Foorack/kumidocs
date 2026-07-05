@@ -48,6 +48,7 @@ export default function NewPageDialog({
   const [pageType, setPageType] = useState<MarkdownType>("doc");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | undefined>();
+  const [dialogKey, setDialogKey] = useState(0);
 
   // Auto-derive slug from title unless user has manually edited it (derived state, no effect needed)
   const effectiveSlug = slugEdited ? slug : slugify(title);
@@ -87,11 +88,7 @@ export default function NewPageDialog({
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
     if (ev.key === "Enter" && !creating && title.trim() && effectiveSlug) {
-      try {
-        await handleCreate();
-      } catch (error: unknown) {
-        console.error("Failed to create page:", error);
-      }
+      await handleCreate();
     }
   };
 
@@ -100,18 +97,13 @@ export default function NewPageDialog({
       open={open}
       onOpenChange={(isOpen) => {
         if (isOpen) {
-          setTitle("");
-          setSlug("");
-          setSlugEdited(false);
-          setPageType("doc");
-          setCreating(false);
-          setCreateError(undefined);
+          setDialogKey((prev) => prev + 1);
         } else {
           onClose();
         }
       }}
     >
-      <DialogContent className="sm:max-w-md" onKeyDown={handleKeyDown}>
+      <DialogContent key={dialogKey} className="sm:max-w-md" onKeyDown={handleKeyDown}>
         <DialogHeader>
           <DialogTitle>New page</DialogTitle>
           <DialogDescription>
