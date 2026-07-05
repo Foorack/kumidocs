@@ -6,7 +6,7 @@ interface User {
   canEdit: boolean;
 }
 
-type MarkdownType = "doc" | "slide" | "page";
+type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType = MarkdownType | "code" | "image" | "other";
 
 interface FileEntry {

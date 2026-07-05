@@ -97,6 +97,9 @@ const extensionToType = (inputExt: string): FileType => {
   if (IMAGE_TYPES.has(ext)) {
     return "image";
   }
+  if (ext === ".csv") {
+    return "sheet";
+  }
   if (CODE_TYPES.has(ext)) {
     return "code";
   }

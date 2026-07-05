@@ -52,8 +52,9 @@ export default function NewPageDialog({
   // Auto-derive slug from title unless user has manually edited it (derived state, no effect needed)
   const effectiveSlug = slugEdited ? slug : slugify(title);
 
+  const ext = pageType === "sheet" ? ".csv" : ".md";
   const finalPath = effectiveSlug
-    ? `${parentDir !== undefined && parentDir !== "" ? `${parentDir}/` : ""}${effectiveSlug}.md`
+    ? `${parentDir !== undefined && parentDir !== "" ? `${parentDir}/` : ""}${effectiveSlug}${ext}`
     : "";
 
   const handleCreate = useCallback(async () => {
@@ -65,7 +66,7 @@ export default function NewPageDialog({
     setCreateError(undefined);
 
     const slidesHeader = pageType === "slide" ? "---\nslides: true\n---\n\n" : "";
-    const stub = `${slidesHeader}# ${title.trim()}\n`;
+    const stub = pageType === "sheet" ? "" : `${slidesHeader}# ${title.trim()}\n`;
 
     try {
       await createFile(finalPath, stub);
@@ -148,6 +149,18 @@ export default function NewPageDialog({
               >
                 <EmojiIcon fileType="slide" size={14} />
                 Slides
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={pageType === "sheet" ? "default" : "outline"}
+                className="flex-1 h-8 text-xs gap-1.5"
+                onClick={() => {
+                  setPageType("sheet");
+                }}
+              >
+                <EmojiIcon fileType="sheet" size={14} />
+                Sheet
               </Button>
             </div>
           </div>

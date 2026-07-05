@@ -10,6 +10,7 @@ const FILE_TYPE_ICONS: Record<string, string> = {
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   image: "Image24Color",
+  sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
 };
 

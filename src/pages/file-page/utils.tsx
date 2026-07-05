@@ -122,7 +122,7 @@ function buildEditorContent({
 }: EditorContentProps): ReactNode {
   // Use wiki-link-resolved content in view mode when available
   const viewContent = resolvedContent ?? content;
-  if (fileType === "code" && rawExt === "csv") {
+  if (fileType === "sheet") {
     return (
       <div className="h-full overflow-hidden">
         <CsvGrid
