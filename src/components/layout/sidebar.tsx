@@ -1,4 +1,4 @@
-import { BookOpen, FileText, Image, MoreHorizontal, Plus } from "lucide-react";
+import { BookOpen, FileText, Image, Layers, MoreHorizontal, Plus } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -64,46 +64,57 @@ export default function Sidebar({
           <span className="flex-1 text-sm pt-1 font-semibold text-foreground uppercase tracking-wide select-none">
             {mode === "board" ? "Boards" : "Pages"}
           </span>
-          {mode !== "board" && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                  title="Docs options"
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                title="Options"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {mode === "board" ? (
                 <DropdownMenuItem
                   onClick={() => {
-                    void navigate("/i");
+                    void navigate("/bm");
                   }}
                 >
-                  <Image className="mr-2 w-4 h-4" />
-                  Image library
+                  <Layers className="mr-2 w-4 h-4" />
+                  Board manager
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    void navigate("/s");
-                  }}
-                >
-                  <BookOpen className="mr-2 w-4 h-4" />
-                  Slide themes
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    void navigate("/p");
-                  }}
-                >
-                  <FileText className="mr-2 w-4 h-4" />
-                  Page themes
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void navigate("/i");
+                    }}
+                  >
+                    <Image className="mr-2 w-4 h-4" />
+                    Image library
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void navigate("/s");
+                    }}
+                  >
+                    <BookOpen className="mr-2 w-4 h-4" />
+                    Slide themes
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void navigate("/p");
+                    }}
+                  >
+                    <FileText className="mr-2 w-4 h-4" />
+                    Page themes
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {mode === "board" ? (
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2">

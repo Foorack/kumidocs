@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { UserAvatar } from "@/components/ui/avatar";
 import { useTheme } from "@/store/theme";
 import { useUser } from "@/store/user";
@@ -96,12 +97,19 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
 
 const TopBar = (allProps: TopBarProps): JSX.Element => {
   const { instanceName, headSha, onSearchOpen } = allProps;
+  const navigate = useNavigate();
   return (
     <header className="h-11 border-b border-neutral-800 bg-black grid grid-cols-3 items-center px-3 gap-2 shrink-0 z-10 shadow-sm">
       <div className="flex justify-start">
-        <span className="font-mono font-bold text-2xl text-white select-none pt-[3px]">
+        <button
+          type="button"
+          className="font-mono font-bold text-2xl text-white select-none pt-[3px] hover:opacity-80 transition-opacity cursor-pointer"
+          onClick={() => {
+            void navigate("/");
+          }}
+        >
           {instanceName}
-        </span>
+        </button>
       </div>
       <div className="flex justify-center">
         <Button
