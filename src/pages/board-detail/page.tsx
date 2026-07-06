@@ -14,8 +14,6 @@ import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ColorPicker,
-  ColorPickerAlpha,
-  ColorPickerEyeDropper,
   ColorPickerFormat,
   ColorPickerHue,
   ColorPickerOutput,
@@ -360,7 +358,7 @@ function BoardDetailPage(): JSX.Element {
               }
             }}
           >
-            <DialogContent className="sm:max-w-xs">
+            <DialogContent className="sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Column color</DialogTitle>
               </DialogHeader>
@@ -381,9 +379,7 @@ function BoardDetailPage(): JSX.Element {
                 >
                   <ColorPickerSelection className="h-36 rounded-lg" />
                   <ColorPickerHue />
-                  <ColorPickerAlpha />
                   <div className="flex items-center gap-2">
-                    <ColorPickerEyeDropper />
                     <ColorPickerOutput />
                     <ColorPickerFormat />
                   </div>
