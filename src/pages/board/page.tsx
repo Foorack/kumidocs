@@ -4,10 +4,8 @@ import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { DndContext } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { Plus, Info } from "lucide-react";
+import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
+import { Info } from "lucide-react";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
@@ -41,14 +39,13 @@ function TicketCard({
   onClick,
   columnColor,
 }: TicketCardProps): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `${boardSlug}/${ticket.id}`,
   });
 
   const style = {
     opacity: isDragging ? 0.4 : undefined,
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
   };
 
   return (
@@ -80,7 +77,6 @@ interface ColumnProps {
   prefix: string;
   boardSlug: string;
   onTicketClick: (ticket: TicketData) => void;
-  onNewTicket: () => void;
 }
 
 function BoardColumnView({
@@ -89,10 +85,16 @@ function BoardColumnView({
   prefix,
   boardSlug,
   onTicketClick,
-  onNewTicket,
 }: ColumnProps): JSX.Element {
+  const { setNodeRef: dropRef } = useDroppable({
+    id: `${boardSlug}/${column.id}`,
+  });
+
   return (
-    <div className="flex flex-col w-72 shrink-0 border-r border-border last:border-r-0">
+    <div
+      ref={dropRef}
+      className="flex flex-col w-72 shrink-0 border-r border-border last:border-r-0"
+    >
       {/* Column header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
         <span
@@ -110,35 +112,18 @@ function BoardColumnView({
         {tickets.length === 0 && (
           <div className="px-1 py-6 text-xs text-muted-foreground text-center">No tickets</div>
         )}
-        <SortableContext
-          items={tickets.map((tic) => `${boardSlug}/${tic.id}`)}
-          strategy={verticalListSortingStrategy}
-        >
-          {tickets.map((ticket) => (
-            <TicketCard
-              key={`${boardSlug}/${ticket.id}`}
-              ticket={ticket}
-              prefix={prefix}
-              boardSlug={boardSlug}
-              columnColor={column.color}
-              onClick={() => {
-                onTicketClick(ticket);
-              }}
-            />
-          ))}
-        </SortableContext>
-      </div>
-
-      {/* New ticket button */}
-      <div className="px-2 pb-2">
-        <button
-          type="button"
-          onClick={onNewTicket}
-          className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/50 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add ticket
-        </button>
+        {tickets.map((ticket) => (
+          <TicketCard
+            key={`${boardSlug}/${ticket.id}`}
+            ticket={ticket}
+            prefix={prefix}
+            boardSlug={boardSlug}
+            columnColor={column.color}
+            onClick={() => {
+              onTicketClick(ticket);
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -342,12 +327,6 @@ function BoardPage(): JSX.Element {
     setDialogOpen(true);
   }, []);
 
-  // Open create dialog for a specific column
-  const openCreateDialog = useCallback((_columnId: string): void => {
-    setEditTicket(undefined);
-    setDialogOpen(true);
-  }, []);
-
   // Handle drag end (move ticket between columns)
   const handleDragEnd = useCallback(
     async (event: DragEndEvent): Promise<void> => {
@@ -363,9 +342,8 @@ function BoardPage(): JSX.Element {
         return;
       }
 
-      // Determine target column
-      const overTicket = tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === overId);
-      const targetColId = overTicket?.column ?? "";
+      // Target is a droppable column: "boardSlug/columnId"
+      const targetColId = overId.replace(`${boardSlug}/`, "");
 
       if (!targetColId || targetColId === activeTicket.column) {
         return;
@@ -390,7 +368,7 @@ function BoardPage(): JSX.Element {
         // will revert on next reload
       }
     },
-    [tickets],
+    [tickets, boardSlug],
   );
 
   if (loading) {
@@ -471,9 +449,6 @@ function BoardPage(): JSX.Element {
                     prefix={config.prefix}
                     boardSlug={boardSlug}
                     onTicketClick={openEditDialog}
-                    onNewTicket={() => {
-                      openCreateDialog(column.id);
-                    }}
                   />
                 );
               })}
