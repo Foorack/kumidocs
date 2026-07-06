@@ -168,14 +168,10 @@ export default function PageInfoPanel({
                         {(commit.added !== undefined || commit.removed !== undefined) && (
                           <span className="flex gap-1 mt-0.5">
                             {(commit.added ?? 0) > 0 && (
-                              <span className="text-green-600 dark:text-green-400 font-mono">
-                                +{commit.added}
-                              </span>
+                              <span className="text-green font-mono">+{commit.added}</span>
                             )}
                             {(commit.removed ?? 0) > 0 && (
-                              <span className="text-red-600 dark:text-red-400 font-mono">
-                                -{commit.removed}
-                              </span>
+                              <span className="text-red font-mono">-{commit.removed}</span>
                             )}
                           </span>
                         )}

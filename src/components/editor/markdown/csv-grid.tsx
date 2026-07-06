@@ -306,8 +306,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
       const isFocused = (focusedCell?.row ?? -1) === rIdx && (focusedCell?.col ?? -1) === cIdx;
       let cellBorder = "";
       if (isFocused && focusMode) {
-        cellBorder =
-          "ring-1 focus:ring-1 ring-red-600 dark:ring-red-500 focus:ring-red-600 dark:focus:ring-red-500 ring-inset";
+        cellBorder = "ring-1 ring-red ring-inset";
       } else if (isFocused) {
         cellBorder = "ring-1 ring-primary ring-inset";
       }
@@ -382,7 +381,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
+                className="h-7 w-7 p-0 text-green"
                 onClick={handleAddRow}
                 title="Add row below"
               >
@@ -391,7 +390,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
+                className="h-7 w-7 p-0 text-red"
                 onClick={handleRemoveRow}
                 title="Remove row"
               >
@@ -401,7 +400,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-green-600 dark:text-green-500"
+                className="h-7 w-7 p-0 text-green"
                 onClick={handleAddCol}
                 title="Add column right"
               >
@@ -410,7 +409,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-red-600 dark:text-red-500"
+                className="h-7 w-7 p-0 text-red"
                 onClick={handleRemoveCol}
                 title="Remove column"
               >

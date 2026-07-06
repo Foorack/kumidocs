@@ -15,14 +15,14 @@ interface ErrorBannerProps {
 
 const VARIANT_STYLES = {
   error: {
-    bg: "bg-red-50 dark:bg-red-950",
-    border: "border-red-200 dark:border-red-800",
-    text: "text-red-800 dark:text-red-200",
+    bg: "bg-red/10",
+    border: "border-red/20",
+    text: "text-red",
   },
   warning: {
-    bg: "bg-amber-50 dark:bg-amber-950",
-    border: "border-amber-200 dark:border-amber-800",
-    text: "text-amber-800 dark:text-amber-200",
+    bg: "bg-amber/10",
+    border: "border-amber/20",
+    text: "text-amber",
   },
 } as const;
 

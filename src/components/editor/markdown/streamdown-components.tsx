@@ -230,12 +230,12 @@ const ALERT_ICONS: Record<string, string> = {
 };
 
 const ALERT_CLASSES: Record<string, string> = {
-  CAUTION: "border-red-500 bg-red-50 dark:bg-red-950 text-red-800 dark:text-red-200",
+  CAUTION: "border-red bg-red/10 text-red",
   IMPORTANT:
-    "border-purple-500 bg-purple-50 dark:bg-purple-950 text-purple-800 dark:text-purple-200",
-  NOTE: "border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200",
-  TIP: "border-green-500 bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-200",
-  WARNING: "border-amber-500 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-200",
+    "border-purple bg-purple/10 text-purple",
+  NOTE: "border-blue bg-blue/10 text-blue",
+  TIP: "border-green bg-green/10 text-green",
+  WARNING: "border-amber bg-amber/10 text-amber",
 };
 
 const KumiAlert = (allProps: KumiAlertProps): JSX.Element => {

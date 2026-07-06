@@ -69,7 +69,7 @@ function getEditButtonClass(
 
 function getSaveBadgeClass(saveStatus: SaveStatus): string {
   if (saveStatus === "saved") {
-    return " border-green-600 text-green-600 dark:border-green-500 dark:text-green-500";
+    return " border-green text-green";
   }
   if (saveStatus === "error") {
     return " border-destructive text-destructive";

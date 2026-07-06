@@ -188,7 +188,7 @@ function PageActionDialogs({
             </div>
           </div>
           {moveError !== undefined && moveError !== "" && (
-            <p className="text-xs text-red-600 dark:text-red-400 text-center">{moveError}</p>
+            <p className="text-xs text-red text-center">{moveError}</p>
           )}
           <DialogFooter>
             <Button
@@ -225,7 +225,7 @@ function PageActionDialogs({
             </DialogDescription>
           </DialogHeader>
           {deleteError !== undefined && deleteError !== "" && (
-            <p className="text-xs text-red-600 dark:text-red-400 text-center">{deleteError}</p>
+            <p className="text-xs text-red text-center">{deleteError}</p>
           )}
           <DialogFooter>
             <Button

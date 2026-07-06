@@ -371,7 +371,7 @@ function BoardDetailPage(): JSX.Element {
 
                             <button
                               type="button"
-                              className="p-1 rounded text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                              className="p-1 rounded text-muted-foreground hover:text-red transition-colors shrink-0"
                               onClick={() => {
                                 removeColumn(index);
                               }}
@@ -469,7 +469,7 @@ function BoardDetailPage(): JSX.Element {
           <Button
             variant="outline"
             size="sm"
-            className="text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
+            className="text-red border-red/30 hover:border-red"
             onClick={() => {
               setDeleteOpen(true);
             }}
@@ -489,7 +489,7 @@ function BoardDetailPage(): JSX.Element {
               This action cannot be undone in the interface, but all history remains in Git.
             </DialogDescription>
           </DialogHeader>
-          {deleteError !== "" && <p className="text-xs text-red-500 px-6">{deleteError}</p>}
+          {deleteError !== "" && <p className="text-xs text-red px-6">{deleteError}</p>}
           <DialogFooter>
             <Button
               variant="outline"

@@ -304,7 +304,7 @@ function PageNodeRow({
 
       {sidebarDuplicateError !== undefined && sidebarDuplicateError !== "" && (
         <p
-          className="text-xs text-red-600 dark:text-red-400 px-3 pt-0.5 pb-1 cursor-pointer"
+          className="text-xs text-red px-3 pt-0.5 pb-1 cursor-pointer"
           onClick={() => {
             setSidebarDuplicateError(undefined);
           }}
