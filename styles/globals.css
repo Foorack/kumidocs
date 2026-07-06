@@ -46,7 +46,23 @@ pre[class*="language-"] {
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
-  --color-destructive: var(--destructive);
+  --color-destructive: var(--red);
+  --color-red: var(--red);
+  --color-orange: var(--orange);
+  --color-amber: var(--amber);
+  --color-yellow: var(--yellow);
+  --color-lime: var(--lime);
+  --color-green: var(--green);
+  --color-teal: var(--teal);
+  --color-cyan: var(--cyan);
+  --color-sky: var(--sky);
+  --color-blue: var(--blue);
+  --color-indigo: var(--indigo);
+  --color-violet: var(--violet);
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-rose: var(--rose);
+  --color-neutral: var(--neutral);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -81,7 +97,23 @@ pre[class*="language-"] {
   --muted-foreground: oklch(0.52 0.015 264);
   --accent: oklch(0.94 0.015 264);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.637 0.208 25.331); /* red-500 */
+  --red: oklch(0.637 0.208 25.331); /* red-500 */
+  --orange: oklch(0.705 0.213 47.604); /* orange-500 */
+  --amber: oklch(0.769 0.188 70.08); /* amber-500 */
+  --yellow: oklch(0.795 0.184 86.047); /* yellow-500 */
+  --lime: oklch(0.768 0.233 130.85); /* lime-500 */
+  --green: oklch(0.623 0.214 149.214); /* green-500 */
+  --teal: oklch(0.6 0.183 184.704); /* teal-500 */
+  --cyan: oklch(0.647 0.189 197.137); /* cyan-500 */
+  --sky: oklch(0.685 0.169 237.323); /* sky-500 */
+  --blue: oklch(0.623 0.214 259.815); /* blue-500 */
+  --indigo: oklch(0.585 0.233 277.117); /* indigo-500 */
+  --violet: oklch(0.606 0.25 292.717); /* violet-500 */
+  --purple: oklch(0.627 0.265 303.9); /* purple-500 */
+  --pink: oklch(0.656 0.241 354.308); /* pink-500 */
+  --rose: oklch(0.645 0.246 16.439); /* rose-500 */
+  --neutral: oklch(0.5 0 0);
   --border: oklch(0.6 0.16 264);
   --input: oklch(0.6 0.16 264);
   --ring: oklch(0.65 0.2 264);
@@ -115,7 +147,23 @@ pre[class*="language-"] {
   --muted-foreground: oklch(0.65 0.015 264);
   --accent: oklch(0.25 0.015 264);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: oklch(0.577 0.245 27.325); /* red-600 */
+  --red: oklch(0.577 0.245 27.325); /* red-600 */
+  --orange: oklch(0.646 0.222 41.116); /* orange-600 */
+  --amber: oklch(0.666 0.179 58.318); /* amber-600 */
+  --yellow: oklch(0.681 0.162 75.834); /* yellow-600 */
+  --lime: oklch(0.648 0.2 131.684); /* lime-600 */
+  --green: oklch(0.527 0.154 150.069); /* green-600 */
+  --teal: oklch(0.511 0.096 186.391); /* teal-600 */
+  --cyan: oklch(0.585 0.12 198.359); /* cyan-600 */
+  --sky: oklch(0.62 0.119 229.57); /* sky-600 */
+  --blue: oklch(0.546 0.245 262.881); /* blue-600 */
+  --indigo: oklch(0.511 0.262 276.966); /* indigo-600 */
+  --violet: oklch(0.541 0.281 293.009); /* violet-600 */
+  --purple: oklch(0.558 0.288 302.321); /* purple-600 */
+  --pink: oklch(0.592 0.249 0.584); /* pink-600 */
+  --rose: oklch(0.586 0.253 17.585); /* rose-600 */
+  --neutral: oklch(0.65 0 0);
   --border: oklch(0.6 0.14 264 / 45%);
   --input: oklch(0.6 0.14 264 / 45%);
   --ring: oklch(0.75 0.16 264);
@@ -151,7 +199,23 @@ pre[class*="language-"] {
   --muted-foreground: oklch(0.52 0.015 264);
   --accent: oklch(0.94 0.015 264);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.637 0.208 25.331); /* red-500 */
+  --red: oklch(0.637 0.208 25.331); /* red-500 */
+  --orange: oklch(0.705 0.213 47.604); /* orange-500 */
+  --amber: oklch(0.769 0.188 70.08); /* amber-500 */
+  --yellow: oklch(0.795 0.184 86.047); /* yellow-500 */
+  --lime: oklch(0.768 0.233 130.85); /* lime-500 */
+  --green: oklch(0.623 0.214 149.214); /* green-500 */
+  --teal: oklch(0.6 0.183 184.704); /* teal-500 */
+  --cyan: oklch(0.647 0.189 197.137); /* cyan-500 */
+  --sky: oklch(0.685 0.169 237.323); /* sky-500 */
+  --blue: oklch(0.623 0.214 259.815); /* blue-500 */
+  --indigo: oklch(0.585 0.233 277.117); /* indigo-500 */
+  --violet: oklch(0.606 0.25 292.717); /* violet-500 */
+  --purple: oklch(0.627 0.265 303.9); /* purple-500 */
+  --pink: oklch(0.656 0.241 354.308); /* pink-500 */
+  --rose: oklch(0.645 0.246 16.439); /* rose-500 */
+  --neutral: oklch(0.5 0 0);
   --border: oklch(0.6 0.16 264);
   --input: oklch(0.6 0.16 264);
   --ring: oklch(0.65 0.2 264);
@@ -215,14 +279,14 @@ pre[class*="language-"] {
   background-color: oklch(0.556 0 0 / 80%);
 }
 
-/* ── Slide presentation ──────────────────────────────────────────────────────
-   Slide canvases are fixed 960×540 px boxes scaled to fit the viewer container.
+/* -- Slide presentation -------------------------------------------------------
+   Slide canvases are fixed 960x540 px boxes scaled to fit the viewer container.
    Themes control bg/fg via --slide-bg / --slide-fg CSS custom properties.
    Per-slide <!-- bg: ... --> directives apply an inline background style that
    overrides the theme background while keeping the theme's --slide-fg color.
- ─────────────────────────────────────────────────────────────────────────── */
+ --------------------------------------------------------------------------- */
 
-/* ── Canvas base ─────────────────────────────────────────────────────────── */
+/* -- Canvas base ------------------------------------------------------------ */
 .slide-canvas {
   --slide-bg: var(--background);
   --slide-fg: var(--foreground);
@@ -253,7 +317,7 @@ pre[class*="language-"] {
   background-color: oklch(from var(--slide-fg) l c h / 0.12) !important;
 }
 
-/* ── Invert layout ───────────────────────────────────────────────────────── */
+/* -- Invert layout ---------------------------------------------------------- */
 /* Swaps bg/fg relative to the current theme. */
 .slide-layout-invert {
   --slide-bg: var(--slide-fg);
@@ -274,7 +338,7 @@ pre[class*="language-"] {
   margin-bottom: 1.5rem;
 }
 
-/* ── Typography ──────────────────────────────────────────────────────────── */
+/* -- Typography ------------------------------------------------------------- */
 /* slide-prose class enlarges all prose elements relative to document mode   */
 
 .slide-canvas .slide-prose {
@@ -312,7 +376,7 @@ pre[class*="language-"] {
   text-decoration-color: currentColor;
 }
 
-/* ── Title layout typography ─────────────────────────────────────────────── */
+/* -- Title layout typography ------------------------------------------------ */
 /* Larger h1, centered sub-headings and paragraphs */
 .slide-canvas .slide-prose-title h1 {
   color: var(--slide-h1-color, inherit);
@@ -334,7 +398,7 @@ pre[class*="language-"] {
   opacity: 0.8;
 }
 
-/* ── Section layout typography ───────────────────────────────────────────── */
+/* -- Section layout typography ---------------------------------------------- */
 /* Single large heading, vertically centred */
 .slide-canvas .slide-prose-section h2 {
   font-size: 3.5rem;
@@ -342,7 +406,7 @@ pre[class*="language-"] {
   letter-spacing: -0.025em;
 }
 
-/* ── Slide number badge ──────────────────────────────────────────────────── */
+/* -- Slide number badge ----------------------------------------------------- */
 .slide-number {
   position: absolute;
   bottom: 8px;
