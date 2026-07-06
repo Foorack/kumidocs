@@ -9,8 +9,10 @@ import { toast } from "@/components/ui/toaster";
 import { deleteFile, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig } from "@/lib/board";
 import { boardToYaml, displayColumnId, yamlToBoard } from "@/lib/board";
-import type { DropResult } from "@hello-pangea/dnd";
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext } from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,108 @@ interface OutletCtx {
 }
 
 const INPUT_CLASS = "h-8 text-sm";
+
+function SortableColumn({
+  col,
+  index,
+  updateColumn,
+  setDefaultColumn,
+  removeColumn,
+  setColorPickerColumn,
+}: {
+  col: BoardColumn;
+  index: number;
+  updateColumn: (index: number, field: keyof BoardColumn, value: string | boolean) => void;
+  setDefaultColumn: (index: number) => void;
+  removeColumn: (index: number) => void;
+  setColorPickerColumn: (index: number | undefined) => void;
+}): JSX.Element {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: col.id || String(index),
+  });
+
+  const style = {
+    backgroundColor: `${col.color}33`,
+    borderColor: col.color,
+    opacity: isDragging ? 0.5 : undefined,
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="rounded border-3 px-3 py-5 space-y-1.5">
+      {/* Line 1: grip + color + name + remove */}
+      <div className="flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+        <button
+          type="button"
+          className="w-8 h-9 shrink-0 rounded border border-border cursor-pointer"
+          style={{ backgroundColor: col.color }}
+          onClick={() => {
+            setColorPickerColumn(index);
+          }}
+          title="Pick color"
+        />
+
+        <Input
+          value={col.id}
+          onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+            const raw = ev.target.value
+              .replaceAll(/[^a-zA-Z0-9\s-]/gu, "")
+              .replaceAll("-", " ")
+              .toUpperCase();
+            updateColumn(index, "id", raw);
+          }}
+          className="h-8 text-sm w-full"
+          placeholder="column-id"
+        />
+
+        <button
+          type="button"
+          className="p-1 rounded text-muted-foreground hover:text-red transition-colors shrink-0"
+          onClick={() => {
+            removeColumn(index);
+          }}
+          title="Remove column"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Line 2: default radio + final checkbox */}
+      <div className="flex items-center gap-4 pl-[3.25rem]">
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+          <input
+            type="radio"
+            name="default-column"
+            checked={col.default === true}
+            onChange={() => {
+              setDefaultColumn(index);
+            }}
+            className="accent-border"
+          />
+          Default
+        </label>
+
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+          <Checkbox
+            checked={col.final}
+            onCheckedChange={(checked) => {
+              updateColumn(index, "final", checked === true);
+            }}
+          />
+          Final
+        </label>
+      </div>
+    </div>
+  );
+}
 
 function BoardDetailPage(): JSX.Element {
   const { instanceName } = useOutletContext<OutletCtx>();
@@ -123,30 +227,32 @@ function BoardDetailPage(): JSX.Element {
     });
   }, []);
 
-  const moveColumn = useCallback((from: number, to: number): void => {
+  const handleDragEnd = useCallback((event: DragEndEvent): void => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
     setConfig((prev) => {
       if (!prev) {
         return prev;
       }
+      const items = prev.columns.map((col, index) => col.id || String(index));
+      const oldIndex = items.indexOf(String(active.id));
+      const newIndex = items.indexOf(String(over.id));
+      if (oldIndex === -1 || newIndex === -1) {
+        return prev;
+      }
+
       const cols = [...prev.columns];
-      const moved = cols.splice(from, 1)[0];
+      const moved = cols.splice(oldIndex, 1)[0];
       if (!moved) {
         return prev;
       }
-      cols.splice(to, 0, moved);
+      cols.splice(newIndex, 0, moved);
       return { ...prev, columns: cols };
     });
   }, []);
-
-  const handleDragEnd = useCallback(
-    (result: DropResult): void => {
-      if (!result.destination || result.source.index === result.destination.index) {
-        return;
-      }
-      moveColumn(result.source.index, result.destination.index);
-    },
-    [moveColumn],
-  );
 
   const removeColumn = useCallback((index: number): void => {
     setConfig((prev) => {
@@ -316,109 +422,26 @@ function BoardDetailPage(): JSX.Element {
             </Button>
           </div>
 
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="columns">
-              {(droppableProvided) => (
-                <div
-                  ref={droppableProvided.innerRef}
-                  {...droppableProvided.droppableProps}
-                  className="space-y-2"
-                >
-                  {config.columns.map((col, index) => (
-                    <Draggable
-                      key={col.id || index}
-                      draggableId={col.id || String(index)}
-                      index={index}
-                    >
-                      {(draggableProvided) => (
-                        // oxlint-disable typescript/no-unsafe-type-assertion
-                        <div
-                          ref={draggableProvided.innerRef}
-                          {...(draggableProvided.draggableProps as React.HTMLAttributes<HTMLDivElement>)}
-                          // oxlint-enable typescript/no-unsafe-type-assertion
-                          className="rounded border-3 px-3 py-5 space-y-1.5"
-                          style={{
-                            backgroundColor: `${col.color}33`,
-                            borderColor: col.color,
-                          }}
-                        >
-                          {/* Line 1: grip + color + name + remove */}
-                          <div className="flex items-center gap-2">
-                            <div
-                              {...draggableProvided.dragHandleProps}
-                              className="shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
-                            >
-                              <GripVertical className="w-4 h-4" />
-                            </div>
-                            <button
-                              type="button"
-                              className="w-8 h-9 shrink-0 rounded border border-border cursor-pointer"
-                              style={{ backgroundColor: col.color }}
-                              onClick={() => {
-                                setColorPickerColumn(index);
-                              }}
-                              title="Pick color"
-                            />
-
-                            <Input
-                              value={col.id}
-                              onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                                const raw = ev.target.value
-                                  .replaceAll(/[^a-zA-Z0-9\s-]/gu, "")
-                                  .replaceAll("-", " ")
-                                  .toUpperCase();
-                                updateColumn(index, "id", raw);
-                              }}
-                              className="h-8 text-sm w-full"
-                              placeholder="column-id"
-                            />
-
-                            <button
-                              type="button"
-                              className="p-1 rounded text-muted-foreground hover:text-red transition-colors shrink-0"
-                              onClick={() => {
-                                removeColumn(index);
-                              }}
-                              title="Remove column"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          {/* Line 2: default radio + final checkbox */}
-                          <div className="flex items-center gap-4 pl-[3.25rem]">
-                            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                              <input
-                                type="radio"
-                                name="default-column"
-                                checked={col.default === true}
-                                onChange={() => {
-                                  setDefaultColumn(index);
-                                }}
-                                className="accent-border"
-                              />
-                              Default
-                            </label>
-
-                            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                              <Checkbox
-                                checked={col.final}
-                                onCheckedChange={(checked) => {
-                                  updateColumn(index, "final", checked === true);
-                                }}
-                              />
-                              Final
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {droppableProvided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <DndContext onDragEnd={handleDragEnd}>
+            <SortableContext
+              items={config.columns.map((col, index) => col.id || String(index))}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {config.columns.map((col, index) => (
+                  <SortableColumn
+                    key={col.id || index}
+                    col={col}
+                    index={index}
+                    updateColumn={updateColumn}
+                    setDefaultColumn={setDefaultColumn}
+                    removeColumn={removeColumn}
+                    setColorPickerColumn={setColorPickerColumn}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           <Dialog
             open={colorPickerColumn !== undefined}
