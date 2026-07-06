@@ -150,6 +150,27 @@ async function parseTicketYaml(
   };
 }
 
+/** Serialize a ticket to a YAML string (without frontmatter). */
+function ticketToYaml(data: { column: string; title: string; body?: string }): string {
+  const lines: string[] = [
+    `title: ${JSON.stringify(data.title)}`,
+    `column: ${JSON.stringify(data.column)}`,
+  ];
+  if (data.body !== undefined && data.body !== "") {
+    // Use literal block scalar for multi-line body
+    if (data.body.includes("\n")) {
+      lines.push(`body: |`);
+      for (const line of data.body.split("\n")) {
+        lines.push(`  ${line}`);
+      }
+    } else {
+      lines.push(`body: ${JSON.stringify(data.body)}`);
+    }
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
 export type { BoardColumn, BoardConfig, TicketData };
 export {
   boardToYaml,
@@ -157,5 +178,6 @@ export {
   DEFAULT_COLUMNS,
   displayColumnId,
   parseTicketYaml,
+  ticketToYaml,
   yamlToBoard,
 };

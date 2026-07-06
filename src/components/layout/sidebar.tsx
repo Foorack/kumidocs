@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Kbd } from "@/components/ui/kbd";
 import type { PresenceUser, TreeNode } from "@/lib/types";
 import buildPageTree from "@/lib/page-tree";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { useUser } from "@/store/user";
 import { getFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
+import TicketDialog from "@/components/dialogs/ticket-dialog";
 
 interface BoardSidebarContentProps {
   boardConfigs: Map<string, BoardConfig>;
@@ -171,6 +173,7 @@ export default function Sidebar({
   const [boardConfigs, setBoardConfigs] = useState<Map<string, BoardConfig>>(new Map());
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [boardLoading, setBoardLoading] = useState(false);
+  const [newTicketOpen, setNewTicketOpen] = useState(false);
 
   // Derive current board from URL path
   const currentBoardSlug = useMemo<string | undefined>(() => {
@@ -287,6 +290,71 @@ export default function Sidebar({
     [boardConfigs],
   );
 
+  // Board name map for the new ticket dialog
+  const boardNameMap = useMemo<Map<string, string>>(
+    () => new Map([...boardConfigs.entries()].map(([slug, config]) => [slug, config.name])),
+    [boardConfigs],
+  );
+
+  // Default board for new ticket dialog: selected > localStorage > first alphabetically
+  const defaultNewTicketBoard = useMemo<string | undefined>(() => {
+    if (selectedBoardSlug !== undefined) {
+      return selectedBoardSlug;
+    }
+    const stored = ((): string | undefined => {
+      try {
+        const val = localStorage.getItem("kumidocs:last-ticket-board");
+        return val ?? undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    if (stored !== undefined && boardConfigs.has(stored)) {
+      return stored;
+    }
+    if (boardEntries.length > 0) {
+      const firstEntry = boardEntries[0];
+      if (firstEntry !== undefined) {
+        return firstEntry.slug;
+      }
+      return undefined;
+    }
+    return undefined;
+  }, [selectedBoardSlug, boardConfigs, boardEntries]);
+
+  // Persist selected board to localStorage when it changes
+  useEffect(() => {
+    if (selectedBoardSlug !== undefined) {
+      try {
+        localStorage.setItem("kumidocs:last-ticket-board", selectedBoardSlug);
+      } catch {
+        // localStorage may be unavailable
+      }
+    }
+  }, [selectedBoardSlug]);
+
+  // n key opens new ticket dialog (board mode only, not when typing in an input)
+  useEffect(() => {
+    if (mode !== "board" || boardEntries.length === 0) {
+      return undefined;
+    }
+    const handler = (ev: KeyboardEvent): void => {
+      if (ev.key === "n" && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+        const target = ev.target;
+        const tag = target instanceof Element ? target.tagName : "";
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+          return;
+        }
+        ev.preventDefault();
+        setNewTicketOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return (): void => {
+      window.removeEventListener("keydown", handler);
+    };
+  }, [mode, boardEntries.length]);
+
   return (
     <>
       <aside
@@ -397,26 +465,50 @@ export default function Sidebar({
           </ContextMenu>
         )}
 
-        <div className="p-2 border-t border-border shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
-            onClick={() => {
-              if (mode === "board") {
-                void navigate("/bm");
-              } else {
+        {mode === "board" && boardEntries.length > 0 && (
+          <div className="p-2 border-t border-border shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+              onClick={() => {
+                setNewTicketOpen(true);
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="flex-1 text-left">New ticket</span>
+              <Kbd>n</Kbd>
+            </Button>
+          </div>
+        )}
+        {mode === "docs" && (
+          <div className="p-2 border-t border-border shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+              onClick={() => {
                 onNewPage();
-              }
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {mode === "board" ? "New board" : "New page"}
-          </Button>
-        </div>
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New page
+            </Button>
+          </div>
+        )}
       </aside>
 
       {pageActionDialogs}
+
+      <TicketDialog
+        open={newTicketOpen}
+        onClose={() => {
+          setNewTicketOpen(false);
+        }}
+        boards={boardNameMap}
+        initialBoardSlug={defaultNewTicketBoard}
+        onCreated={reloadTree}
+      />
     </>
   );
 }
