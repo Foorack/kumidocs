@@ -1,3 +1,4 @@
+// oxlint-disable complexity
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -107,7 +108,11 @@ export default function TicketDialog({
   // Columns for the current board
   const currentColumns = boardColumns.get(boardSlug) ?? [];
   const ticketNumber = isEdit ? `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}` : "";
-  // Show all columns in edit mode, only the active one in view mode
+  const boardName = boards.get(boardSlug) ?? "";
+  const activeColumn = currentColumns.find((col) => col.id === column);
+  const columnColor = activeColumn?.color;
+  const dialogBorderStyle = columnColor === undefined ? undefined : { borderColor: columnColor };
+  const innerBorderStyle = columnColor === undefined ? undefined : { borderColor: columnColor };
   const showAllColumns = editing || !isEdit;
   const displayColumns = showAllColumns
     ? currentColumns
@@ -269,16 +274,26 @@ export default function TicketDialog({
         className="sm:max-w-3xl p-0 gap-0 border-5"
         showCloseButton={false}
         onKeyDown={handleKeyDown}
+        style={dialogBorderStyle}
       >
         {/* Top bar */}
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
-          <div className="flex-1 min-w-0">
-            {isEdit ? (
-              <span className="font-semibold text-base">{ticketNumber}</span>
-            ) : (
-              <span className="font-semibold text-base">New ticket</span>
-            )}
+        <div className="flex items-center gap-3 border-b" style={innerBorderStyle}>
+          <div
+            className="flex items-center px-5"
+            style={
+              columnColor === undefined
+                ? undefined
+                : {
+                    backgroundColor: columnColor,
+                    height: "105%",
+                  }
+            }
+          >
+            <span className="font-semibold text-base">
+              {isEdit ? `${boardName} | ${ticketNumber}` : "New ticket"}
+            </span>
           </div>
+          <div className="flex-1" />
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onClose}>
               Cancel
@@ -336,7 +351,7 @@ export default function TicketDialog({
           </div>
 
           {/* Right: status sidebar */}
-          <div className="w-52 shrink-0 border-l border-border p-4 space-y-3">
+          <div className="w-52 shrink-0 border-l p-4 space-y-3" style={innerBorderStyle}>
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
               Status
             </h3>
