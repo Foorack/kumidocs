@@ -8,17 +8,6 @@
   --tw-prose-body: var(--foreground);
 }
 
-/* Kill Prism's awful text-shadow and other unwanted decorations */
-:not(pre) > code[class*="language-"],
-pre[class*="language-"] {
-  text-shadow: none !important;
-  background: none !important;
-  box-shadow: none !important;
-  border: none !important;
-  padding: 0 !important;
-  color: inherit !important;
-}
-
 /* Radix ScrollArea's internal content wrapper uses display:table which breaks
    flex/grid children and causes content to overflow the viewport. */
 [data-radix-scroll-area-viewport] > div {

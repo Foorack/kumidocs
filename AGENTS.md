@@ -50,16 +50,15 @@ If the user asks the AI to deploy or publish, tell them to run it themselves and
 
 ### Stack
 
-| Layer       | Choice                                             | Notes                                                        |
-| ----------- | -------------------------------------------------- | ------------------------------------------------------------ |
-| Runtime     | **Bun**                                            | Server + build + git operations                              |
-| Frontend    | **React + TypeScript**                             | SPA                                                          |
-| Styling     | **Tailwind + shadcn/ui + @tailwindcss/typography** | Standard shadcn components in `src/components/ui/`           |
-| Icons       | **@fluentui/react-icons** + **lucide-react**       | Fluent for app chrome, lucide for SlideViewer                |
-| Markdown    | **streamdown**                                     | remark/rehype -> React DOM. `rehype-harden` for sanitization |
-| Code editor | **react-simple-code-editor** + **prismjs**         | Syntax highlighting via Prism, selective language bundles    |
-| Search      | **MiniSearch**                                     | In-memory, full-text, fuzzy                                  |
-| Real-time   | **WebSocket** (Bun native)                         | Presence + live reload                                       |
+| Layer     | Choice                                             | Notes                                                        |
+| --------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| Runtime   | **Bun**                                            | Server + build + git operations                              |
+| Frontend  | **React + TypeScript**                             | SPA                                                          |
+| Styling   | **Tailwind + shadcn/ui + @tailwindcss/typography** | Standard shadcn components in `src/components/ui/`           |
+| Icons     | **@fluentui/react-icons** + **lucide-react**       | Fluent for app chrome, lucide for SlideViewer                |
+| Markdown  | **streamdown**                                     | remark/rehype -> React DOM. `rehype-harden` for sanitization |
+| Search    | **MiniSearch**                                     | In-memory, full-text, fuzzy                                  |
+| Real-time | **WebSocket** (Bun native)                         | Presence + live reload                                       |
 
 ### Project Layout
 
