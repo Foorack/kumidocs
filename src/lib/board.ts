@@ -11,6 +11,14 @@ interface BoardConfig {
   prefix: string;
 }
 
+interface TicketData {
+  id: string;
+  title: string;
+  column: string;
+  /** The board this ticket belongs to. */
+  boardSlug: string;
+}
+
 const DEFAULT_COLUMNS: BoardColumn[] = [
   { color: "#bfbfbf", id: "not-now" },
   { color: "#1677ff", default: true, id: "maybe" },
@@ -106,5 +114,48 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
   return { columns, name: obj.name, prefix: obj.prefix };
 }
 
-export type { BoardColumn, BoardConfig };
-export { boardToYaml, defaultBoardConfig, DEFAULT_COLUMNS, displayColumnId, yamlToBoard };
+/** Parse a ticket's YAML string into TicketData. */
+async function parseTicketYaml(
+  raw: string,
+  boardSlug: string,
+  ticketId: string,
+): Promise<TicketData> {
+  const defaultData: TicketData = { boardSlug, column: "", id: ticketId, title: ticketId };
+
+  let yaml = raw;
+  const fmMatch = YAML_HEAD_RE.exec(yaml);
+  if (fmMatch) {
+    yaml = yaml.slice(fmMatch[0].length);
+  }
+
+  let parsed: unknown;
+  try {
+    const { load } = await import("js-yaml");
+    parsed = load(yaml);
+  } catch {
+    return defaultData;
+  }
+
+  if (typeof parsed !== "object" || parsed === null) {
+    return defaultData;
+  }
+
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const obj = parsed as Record<string, unknown>;
+  return {
+    boardSlug,
+    column: typeof obj.column === "string" ? obj.column : "",
+    id: ticketId,
+    title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
+  };
+}
+
+export type { BoardColumn, BoardConfig, TicketData };
+export {
+  boardToYaml,
+  defaultBoardConfig,
+  DEFAULT_COLUMNS,
+  displayColumnId,
+  parseTicketYaml,
+  yamlToBoard,
+};
