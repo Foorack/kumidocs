@@ -5,7 +5,7 @@ import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
-import { Info } from "lucide-react";
+import { GripVertical, Info } from "lucide-react";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
@@ -49,23 +49,33 @@ function TicketCard({
   };
 
   return (
-    <button
+    <div
       ref={setNodeRef}
       style={style}
-      type="button"
-      onClick={onClick}
-      {...attributes}
-      {...listeners}
-      className="w-full text-left rounded-lg border border-border bg-card px-3 py-2.5 text-sm hover:bg-accent/50 transition-colors shadow-xs"
+      className="rounded-lg border border-border bg-card text-sm shadow-xs"
     >
-      <div className="flex items-center gap-1.5 mb-0.5">
+      {/* Drag handle row */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 cursor-grab active:cursor-grabbing text-muted-foreground"
+      >
+        <GripVertical className="w-3 h-3 shrink-0" />
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
         <span className="text-xs font-mono text-muted-foreground">
           {prefix}-{ticket.id}
         </span>
       </div>
-      <p className="text-foreground leading-snug line-clamp-2">{ticket.title}</p>
-    </button>
+
+      {/* Clickable body */}
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full text-left px-3 pb-2.5 hover:bg-accent/50 transition-colors rounded-b-lg"
+      >
+        <p className="text-foreground leading-snug line-clamp-2">{ticket.title}</p>
+      </button>
+    </div>
   );
 }
 
