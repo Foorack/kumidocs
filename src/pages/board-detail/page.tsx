@@ -6,12 +6,19 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import Checkbox from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/toaster";
-import { getFile, putFile } from "@/lib/api";
+import { deleteFile, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig } from "@/lib/board";
 import { boardToYaml, displayColumnId, yamlToBoard } from "@/lib/board";
 import type { DropResult } from "@hello-pangea/dnd";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ColorPicker,
   ColorPickerFormat,
@@ -36,6 +43,9 @@ function BoardDetailPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [colorPickerColumn, setColorPickerColumn] = useState<number | undefined>(undefined);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (name === "") {
@@ -171,6 +181,69 @@ function BoardDetailPage(): JSX.Element {
     }
   }, [config, name]);
 
+  const handleDelete = useCallback(async () => {
+    if (!name || !config) {
+      return;
+    }
+    setDeleteError("");
+    setDeleting(true);
+    try {
+      // Collect final column ids (both display and storage format)
+      const finalIds = new Set<string>();
+      for (const col of config.columns) {
+        if (col.final === true) {
+          finalIds.add(col.id);
+          finalIds.add(col.id.toLowerCase().replaceAll(/\s+/gu, "-"));
+        }
+      }
+
+      // Check tickets in the board's directory
+      const tree = await getTree();
+      // oxlint-disable-next-line id-length
+      const boardDir = tree.find((node) => node.type === "dir" && node.name === name);
+      const ticketFiles =
+        boardDir?.children?.filter(
+          (child) => child.type === "file" && child.path.endsWith(".yaml"),
+        ) ?? [];
+
+      const results = await Promise.all(
+        ticketFiles.map(async (child) => {
+          try {
+            const resp = await getFile(child.path);
+            const { load } = await import("js-yaml");
+            const parsed = load(resp.content);
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            const ticket = parsed as Record<string, unknown> | null;
+            const ticketCol =
+              typeof ticket?.column === "string" ? displayColumnId(ticket.column) : "";
+            return { isOpen: ticketCol !== "" && !finalIds.has(ticketCol), name: child.name };
+          } catch {
+            return { isOpen: false, name: child.name };
+          }
+        }),
+      );
+
+      const openTickets = results.filter((result) => result.isOpen).map((result) => result.name);
+
+      if (openTickets.length > 0) {
+        setDeleteError(
+          `Cannot delete board: ${openTickets.length} ticket(s) not in a final column. Move them to a final column first.`,
+        );
+        setDeleting(false);
+        return;
+      }
+
+      await deleteFile(`${name}.yaml`);
+      toast.success("Board deleted");
+      setDeleteOpen(false);
+      void navigate("/bm");
+    } catch {
+      setDeleteError("Failed to delete board");
+    } finally {
+      setDeleting(false);
+    }
+  }, [config, name, navigate]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
@@ -263,7 +336,7 @@ function BoardDetailPage(): JSX.Element {
                           ref={draggableProvided.innerRef}
                           {...(draggableProvided.draggableProps as React.HTMLAttributes<HTMLDivElement>)}
                           // oxlint-enable typescript/no-unsafe-type-assertion
-                          className="rounded border border-border p-2 space-y-1.5 bg-background"
+                          className="rounded border-3 border-border px-3 py-5 space-y-1.5 bg-background"
                         >
                           {/* Line 1: grip + color + name + remove */}
                           <div className="flex items-center gap-2">
@@ -283,25 +356,18 @@ function BoardDetailPage(): JSX.Element {
                               title="Pick color"
                             />
 
-                            <div className="flex-1 min-w-0">
-                              <Input
-                                value={col.id}
-                                onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                                  const raw = ev.target.value
-                                    .replaceAll(/[^a-zA-Z0-9\s-]/gu, "")
-                                    .replaceAll("-", " ")
-                                    .toUpperCase();
-                                  updateColumn(index, "id", raw);
-                                }}
-                                className="h-8 text-sm w-full"
-                                placeholder="column-id"
-                              />
-                              {col.id && (
-                                <p className="text-[11px] text-muted-foreground mt-0.5 px-1">
-                                  {displayColumnId(col.id)}
-                                </p>
-                              )}
-                            </div>
+                            <Input
+                              value={col.id}
+                              onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+                                const raw = ev.target.value
+                                  .replaceAll(/[^a-zA-Z0-9\s-]/gu, "")
+                                  .replaceAll("-", " ")
+                                  .toUpperCase();
+                                updateColumn(index, "id", raw);
+                              }}
+                              className="h-8 text-sm w-full"
+                              placeholder="column-id"
+                            />
 
                             <button
                               type="button"
@@ -395,13 +461,52 @@ function BoardDetailPage(): JSX.Element {
           )}
         </div>
 
-        {/* Save */}
-        <div className="flex gap-2 pt-2">
+        {/* Save + Delete */}
+        <div className="flex justify-between pt-2">
           <Button onClick={handleSave} disabled={saving} size="sm">
             {saving ? "Saving..." : "Save"}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
+            onClick={() => {
+              setDeleteOpen(true);
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Delete board
+          </Button>
         </div>
       </div>
+
+      {/* Delete confirmation */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete &ldquo;{config.name}&rdquo;?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone in the interface, but all history remains in Git.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError !== "" && <p className="text-xs text-red-500 px-6">{deleteError}</p>}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDeleteOpen(false);
+                setDeleteError("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
