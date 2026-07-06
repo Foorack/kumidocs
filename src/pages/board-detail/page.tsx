@@ -336,7 +336,11 @@ function BoardDetailPage(): JSX.Element {
                           ref={draggableProvided.innerRef}
                           {...(draggableProvided.draggableProps as React.HTMLAttributes<HTMLDivElement>)}
                           // oxlint-enable typescript/no-unsafe-type-assertion
-                          className="rounded border-3 border-border px-3 py-5 space-y-1.5 bg-background"
+                          className="rounded border-3 px-3 py-5 space-y-1.5"
+                          style={{
+                            backgroundColor: `${col.color}33`,
+                            borderColor: col.color,
+                          }}
                         >
                           {/* Line 1: grip + color + name + remove */}
                           <div className="flex items-center gap-2">

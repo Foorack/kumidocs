@@ -125,7 +125,7 @@ function ImageDetailPanel({
 
       {/* Delete error banner */}
       {deleteError !== undefined && deleteError !== "" && (
-        <div className="px-4 py-2 bg-red/10 border-t border-red/20">
+        <div className="px-4 py-2 bg-red/20 border-t border-red/30">
           <p className="text-xs text-red">{deleteError}</p>
         </div>
       )}
@@ -289,7 +289,7 @@ export default function ImageLibraryPage(): JSX.Element {
 
       {/* Error banner */}
       {imageLoadError !== undefined && imageLoadError !== "" && (
-        <div className="bg-red/10 border-b border-red/20 px-4 py-2 flex items-center gap-2 text-sm text-red shrink-0">
+        <div className="bg-red/20 border-b border-red/30 px-4 py-2 flex items-center gap-2 text-sm text-red shrink-0">
           <span className="flex-1">{imageLoadError}</span>
         </div>
       )}

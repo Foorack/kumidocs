@@ -231,8 +231,7 @@ const ALERT_ICONS: Record<string, string> = {
 
 const ALERT_CLASSES: Record<string, string> = {
   CAUTION: "border-red bg-red/10 text-red",
-  IMPORTANT:
-    "border-purple bg-purple/10 text-purple",
+  IMPORTANT: "border-purple bg-purple/10 text-purple",
   NOTE: "border-blue bg-blue/10 text-blue",
   TIP: "border-green bg-green/10 text-green",
   WARNING: "border-amber bg-amber/10 text-amber",

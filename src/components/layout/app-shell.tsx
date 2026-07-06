@@ -259,7 +259,7 @@ export default function AppShell(): JSX.Element {
       message = "Remote sync is degraded: pull from remote failed.";
     }
     return (
-      <div className="bg-amber/10 border-b border-amber/20 px-4 py-1.5 flex items-center gap-2 text-sm text-amber shrink-0">
+      <div className="bg-amber/20 border-b border-amber/30 px-4 py-1.5 flex items-center gap-2 text-sm text-amber shrink-0">
         <span className="flex-1">{message}</span>
       </div>
     );
