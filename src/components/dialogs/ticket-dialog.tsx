@@ -9,6 +9,12 @@ import { Kbd } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Streamdown } from "streamdown";
+import { cjk } from "@streamdown/cjk";
+import { code } from "@streamdown/code";
+import { math } from "@streamdown/math";
+import { mermaid } from "@streamdown/mermaid";
+import { COMPONENTS_DOC, REHYPE_PLUGINS } from "@/components/editor/markdown/streamdown-components";
 
 interface TicketDialogProps {
   open: boolean;
@@ -49,6 +55,7 @@ export default function TicketDialog({
   const [body, setBody] = useState("");
   const [column, setColumn] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   // Reset form when dialog opens
   const prevOpenRef = useRef(false);
@@ -59,11 +66,13 @@ export default function TicketDialog({
       setTitle(ticket.title);
       setBody(ticket.body);
       setColumn(ticket.column);
+      setEditing(false);
     } else {
       setBoardSlug(initialBoardSlug ?? "");
       setTitle("");
       setBody("");
       setColumn("");
+      setEditing(true);
     }
     setSaving(false);
   }
@@ -168,18 +177,66 @@ export default function TicketDialog({
   }, [boardSlug, title, body, column, isEdit, ticket, navigate, onCreated, onClose, onSaved]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
-    if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter" && !saving && title.trim()) {
+    const isSaveKey = (ev.ctrlKey || ev.metaKey) && (ev.key === "Enter" || ev.key === "s");
+    if (ev.key === "e" && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !editing && isEdit) {
+      ev.preventDefault();
+      setEditing(true);
+    } else if (isSaveKey && editing && !saving && title.trim()) {
       ev.preventDefault();
       await handleSave();
     }
   };
 
   const buttonLabel = ((): string => {
+    if (!editing && isEdit) {
+      return "Edit";
+    }
     if (saving) {
       return isEdit ? "Saving..." : "Creating...";
     }
-    return isEdit ? "Save" : "Create ticket";
+    return isEdit ? "Save" : "Create";
   })();
+
+  const titleContent = editing ? (
+    <Input
+      autoFocus
+      value={title}
+      onChange={(ev) => {
+        setTitle(ev.target.value);
+      }}
+      placeholder="Title"
+      className="text-lg font-semibold h-auto py-2 px-3"
+    />
+  ) : (
+    <h1 className="text-lg font-semibold text-foreground px-0.5">{title}</h1>
+  );
+
+  const showSaveButton = editing || !isEdit;
+  const canSave = !saving && title.trim() !== "" && (isEdit || boardSlug.trim() !== "");
+
+  const bodyContent = editing ? (
+    <Textarea
+      value={body}
+      onChange={(ev) => {
+        setBody(ev.target.value);
+      }}
+      placeholder="Add description..."
+      className="min-h-[300px] resize-y"
+    />
+  ) : (
+    <div className="prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent prose-pre:text-foreground dark:prose-invert max-w-none">
+      <Streamdown
+        mode="streaming"
+        plugins={{ cjk, code, math, mermaid }}
+        shikiTheme={["github-light", "github-dark"]}
+        linkSafety={{ enabled: false }}
+        components={COMPONENTS_DOC}
+        rehypePlugins={REHYPE_PLUGINS}
+      >
+        {body || "*No description.*"}
+      </Streamdown>
+    </div>
+  );
 
   return (
     <Dialog
@@ -209,20 +266,28 @@ export default function TicketDialog({
               Cancel
               <Kbd>Esc</Kbd>
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={saving || !title.trim() || (!isEdit && !boardSlug.trim())}
-            >
-              {buttonLabel}
-              <Kbd>Ctrl+Enter</Kbd>
-            </Button>
+            {showSaveButton ? (
+              <Button size="sm" onClick={handleSave} disabled={!canSave}>
+                {buttonLabel}
+                <Kbd>⌘S</Kbd>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(true);
+                }}
+              >
+                {buttonLabel}
+                <Kbd>E</Kbd>
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Body: main content + status sidebar */}
         <div className="flex gap-0">
-          {/* Left: main form */}
+          {/* Left: main content */}
           <div className="flex-1 p-5 space-y-4 min-w-0">
             {/* Board selector (create only) */}
             {!isEdit && (
@@ -246,25 +311,10 @@ export default function TicketDialog({
             )}
 
             {/* Title */}
-            <Input
-              autoFocus
-              value={title}
-              onChange={(ev) => {
-                setTitle(ev.target.value);
-              }}
-              placeholder="Title"
-              className="text-lg font-semibold h-auto py-2 px-3"
-            />
+            {titleContent}
 
             {/* Description */}
-            <Textarea
-              value={body}
-              onChange={(ev) => {
-                setBody(ev.target.value);
-              }}
-              placeholder="Add description..."
-              className="min-h-[300px] resize-y"
-            />
+            {bodyContent}
           </div>
 
           {/* Right: status sidebar */}
@@ -274,9 +324,7 @@ export default function TicketDialog({
             </h3>
             <div className="space-y-1">
               {currentColumns.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {boardSlug ? "No columns configured" : "Select a board first"}
-                </p>
+                <p className="text-xs text-muted-foreground">No columns</p>
               )}
               {currentColumns.map((col) => {
                 const isActive = column === col.id;
