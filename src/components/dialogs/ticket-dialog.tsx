@@ -107,6 +107,11 @@ export default function TicketDialog({
   // Columns for the current board
   const currentColumns = boardColumns.get(boardSlug) ?? [];
   const ticketNumber = isEdit ? `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}` : "";
+  // Show all columns in edit mode, only the active one in view mode
+  const showAllColumns = editing || !isEdit;
+  const displayColumns = showAllColumns
+    ? currentColumns
+    : currentColumns.filter((col) => col.id === column);
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
@@ -177,11 +182,18 @@ export default function TicketDialog({
   }, [boardSlug, title, body, column, isEdit, ticket, navigate, onCreated, onClose, onSaved]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
-    const isSaveKey = (ev.ctrlKey || ev.metaKey) && (ev.key === "Enter" || ev.key === "s");
-    if (ev.key === "e" && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !editing && isEdit) {
+    const wantsEdit = ev.key === "e" && !editing && isEdit;
+    const wantsSave =
+      (ev.ctrlKey || ev.metaKey) &&
+      (ev.key === "Enter" || ev.key === "s") &&
+      editing &&
+      !saving &&
+      title.trim() !== "";
+    if (wantsEdit) {
       ev.preventDefault();
       setEditing(true);
-    } else if (isSaveKey && editing && !saving && title.trim()) {
+    }
+    if (wantsSave) {
       ev.preventDefault();
       await handleSave();
     }
@@ -191,10 +203,16 @@ export default function TicketDialog({
     if (!editing && isEdit) {
       return "Edit";
     }
-    if (saving) {
-      return isEdit ? "Saving..." : "Creating...";
+    if (saving && isEdit) {
+      return "Saving...";
     }
-    return isEdit ? "Save" : "Create";
+    if (saving) {
+      return "Creating...";
+    }
+    if (isEdit) {
+      return "Save";
+    }
+    return "Create";
   })();
 
   const titleContent = editing ? (
@@ -211,8 +229,8 @@ export default function TicketDialog({
     <h1 className="text-lg font-semibold text-foreground px-0.5">{title}</h1>
   );
 
-  const showSaveButton = editing || !isEdit;
-  const canSave = !saving && title.trim() !== "" && (isEdit || boardSlug.trim() !== "");
+  const showSaveButton = showAllColumns;
+  const canSave = !saving && title.trim() !== "";
 
   const bodyContent = editing ? (
     <Textarea
@@ -248,7 +266,7 @@ export default function TicketDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-3xl p-0 gap-0"
+        className="sm:max-w-3xl p-0 gap-0 border-5"
         showCloseButton={false}
         onKeyDown={handleKeyDown}
       >
@@ -326,7 +344,7 @@ export default function TicketDialog({
               {currentColumns.length === 0 && (
                 <p className="text-xs text-muted-foreground">No columns</p>
               )}
-              {currentColumns.map((col) => {
+              {displayColumns.map((col) => {
                 const isActive = column === col.id;
                 return (
                   <button

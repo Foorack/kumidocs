@@ -44,16 +44,14 @@ function TicketCard({
   });
 
   const style = {
+    backgroundColor: `${columnColor}33`,
+    borderColor: columnColor,
     opacity: isDragging ? 0.4 : undefined,
     transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="rounded-lg border border-border bg-card text-sm shadow-xs"
-    >
+    <div ref={setNodeRef} style={style} className="rounded-lg border-3 text-sm shadow-xs">
       {/* Drag handle row */}
       <div
         {...attributes}
