@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
@@ -7,8 +7,17 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
+import ICONS from "@/components/ui/icon/fluent";
+import type { PresenceUser } from "@/lib/types";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { UserAvatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import PageInfoPanel from "@/components/layout/page-info-panel";
+import usePagePresence from "@/hooks/use-page-presence";
+import useInfoPanel from "@/hooks/use-info-panel";
+import { useUser } from "@/store/user";
 import type { JSX } from "react";
 
 interface OutletCtx {
@@ -102,7 +111,7 @@ function BoardColumnView({
           <div className="px-1 py-6 text-xs text-muted-foreground text-center">No tickets</div>
         )}
         <SortableContext
-          items={tickets.map((t) => `${boardSlug}/${t.id}`)}
+          items={tickets.map((tic) => `${boardSlug}/${tic.id}`)}
           strategy={verticalListSortingStrategy}
         >
           {tickets.map((ticket) => (
@@ -141,6 +150,7 @@ function BoardPage(): JSX.Element {
   const { name } = useParams<{ name: string }>();
   const boardSlug = name ?? "";
   const { instanceName: _instanceName } = useOutletContext<OutletCtx>();
+  const { user } = useUser();
 
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [tickets, setTickets] = useState<TicketData[]>([]);
@@ -157,6 +167,24 @@ function BoardPage(): JSX.Element {
     () =>
       config ? new Map<string, string>([[boardSlug, config.name]]) : new Map<string, string>(),
     [config, boardSlug],
+  );
+
+  // Presence
+  const boardFilePath = `${boardSlug}.yaml`;
+  const [infoOpen, setInfoOpen] = useInfoPanel(boardFilePath);
+  // We use the page presence hook with the board config file path for WS rooms.
+  // No edit mode / dirty tracking needed for board views.
+  const editModeRef = useRef(false);
+  const isDirtyRef = useRef(false);
+  const loadDocNoop = useCallback(async (): Promise<void> => {
+    /* noop */
+  }, []);
+  const { viewers } = usePagePresence(
+    boardFilePath,
+    user?.id,
+    editModeRef,
+    isDirtyRef,
+    loadDocNoop,
   );
 
   // Load board config and tickets
@@ -330,13 +358,13 @@ function BoardPage(): JSX.Element {
 
       const activeId = String(active.id);
       const overId = String(over.id);
-      const activeTicket = tickets.find((t) => `${t.boardSlug}/${t.id}` === activeId);
+      const activeTicket = tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === activeId);
       if (!activeTicket) {
         return;
       }
 
       // Determine target column
-      const overTicket = tickets.find((t) => `${t.boardSlug}/${t.id}` === overId);
+      const overTicket = tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === overId);
       const targetColId = overTicket?.column ?? "";
 
       if (!targetColId || targetColId === activeTicket.column) {
@@ -354,8 +382,8 @@ function BoardPage(): JSX.Element {
         const yaml = ticketToYaml({ column: targetColId, title: data.title });
         await putFile(path, yaml);
         setTickets((prev) =>
-          prev.map((t) =>
-            `${t.boardSlug}/${t.id}` === activeId ? { ...t, column: targetColId } : t,
+          prev.map((tic) =>
+            `${tic.boardSlug}/${tic.id}` === activeId ? { ...tic, column: targetColId } : tic,
           ),
         );
       } catch {
@@ -384,36 +412,89 @@ function BoardPage(): JSX.Element {
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       {/* Board header */}
-      <div className="shrink-0 px-5 py-3 border-b border-border flex items-center gap-3">
+      <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
+        <span
+          className="w-6 h-6 shrink-0"
+          dangerouslySetInnerHTML={{ __html: ICONS.Board24Color ?? "" }}
+        />
         <h1 className="text-base font-semibold text-foreground">{config.name}</h1>
         <span className="text-xs text-muted-foreground tabular-nums">
           {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
         </span>
+
+        {/* Right: viewers + info */}
+        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+          <div className="flex -space-x-1">
+            {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
+              .slice(0, 5)
+              .map((viewer: PresenceUser) => (
+                <Tooltip key={viewer.id}>
+                  <TooltipTrigger asChild>
+                    <UserAvatar
+                      name={viewer.name}
+                      email={viewer.email}
+                      size="sm"
+                      className="border border-background ring-1 ring-border"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{viewer.name}</TooltipContent>
+                </Tooltip>
+              ))}
+          </div>
+
+          <Button
+            size="sm"
+            variant={infoOpen ? "secondary" : "ghost"}
+            className="h-7 gap-1 text-xs px-2"
+            onClick={() => {
+              setInfoOpen(!infoOpen);
+            }}
+          >
+            <Info className="w-4 h-4" />
+            Info
+          </Button>
+        </div>
       </div>
 
-      {/* Kanban columns */}
-      <DndContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex h-full">
-            {columns.map((col) => {
-              const colTickets = ticketsByColumn.get(col.id) ?? [];
-              return (
-                <BoardColumnView
-                  key={col.id}
-                  column={col}
-                  tickets={colTickets}
-                  prefix={config.prefix}
-                  boardSlug={boardSlug}
-                  onTicketClick={openEditDialog}
-                  onNewTicket={() => {
-                    openCreateDialog(col.id);
-                  }}
-                />
-              );
-            })}
+      {/* Content area: kanban + optional info panel */}
+      <div className="flex flex-1 overflow-hidden">
+        <DndContext onDragEnd={handleDragEnd}>
+          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex h-full">
+              {columns.map((column) => {
+                const colTickets = ticketsByColumn.get(column.id) ?? [];
+                return (
+                  <BoardColumnView
+                    key={column.id}
+                    column={column}
+                    tickets={colTickets}
+                    prefix={config.prefix}
+                    boardSlug={boardSlug}
+                    onTicketClick={openEditDialog}
+                    onNewTicket={() => {
+                      openCreateDialog(column.id);
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </DndContext>
+        </DndContext>
+
+        {infoOpen && (
+          <div className="w-80 shrink-0 border-l border-border overflow-y-auto">
+            <PageInfoPanel
+              key={`info-${boardFilePath}`}
+              filePath={boardFilePath}
+              title={config.name}
+              onClose={() => {
+                setInfoOpen(false);
+                localStorage.removeItem("kumidocs:info-open");
+              }}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Ticket dialog */}
       <TicketDialog
