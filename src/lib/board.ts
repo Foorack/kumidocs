@@ -12,10 +12,11 @@ interface BoardConfig {
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
-  { color: "#6b7280", default: true, id: "backlog" },
-  { color: "#3b82f6", id: "in-progress" },
-  { color: "#f59e0b", id: "review" },
-  { color: "#22c55e", final: true, id: "done" },
+  { color: "#bfbfbf", id: "not-now" },
+  { color: "#1677ff", default: true, id: "maybe" },
+  { color: "#faad14", id: "in-progress" },
+  { color: "#13c2c2", id: "verify" },
+  { color: "#52c41a", final: true, id: "done" },
 ];
 
 function defaultBoardConfig(name: string, prefix: string): BoardConfig {
@@ -45,10 +46,10 @@ function boardToYaml(config: BoardConfig): string {
         `  - id: ${JSON.stringify(col.id)}`,
         `    color: ${JSON.stringify(col.color)}`,
       ];
-      if (col.final) {
+      if (col.final === true) {
         lines.push("    final: true");
       }
-      if (col.default) {
+      if (col.default === true) {
         lines.push("    default: true");
       }
       return lines;

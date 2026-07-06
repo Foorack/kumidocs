@@ -9,7 +9,19 @@ import { toast } from "@/components/ui/toaster";
 import { getFile, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig } from "@/lib/board";
 import { boardToYaml, displayColumnId, yamlToBoard } from "@/lib/board";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import type { DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ColorPicker,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerFormat,
+  ColorPickerHue,
+  ColorPickerOutput,
+  ColorPickerSelection,
+} from "@/components/ui/color-picker";
+import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
 
 interface OutletCtx {
   instanceName: string;
@@ -25,6 +37,7 @@ function BoardDetailPage(): JSX.Element {
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [colorPickerColumn, setColorPickerColumn] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (name === "") {
@@ -102,6 +115,31 @@ function BoardDetailPage(): JSX.Element {
     });
   }, []);
 
+  const moveColumn = useCallback((from: number, to: number): void => {
+    setConfig((prev) => {
+      if (!prev) {
+        return prev;
+      }
+      const cols = [...prev.columns];
+      const moved = cols.splice(from, 1)[0];
+      if (!moved) {
+        return prev;
+      }
+      cols.splice(to, 0, moved);
+      return { ...prev, columns: cols };
+    });
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (result: DropResult): void => {
+      if (!result.destination || result.source.index === result.destination.index) {
+        return;
+      }
+      moveColumn(result.source.index, result.destination.index);
+    },
+    [moveColumn],
+  );
+
   const removeColumn = useCallback((index: number): void => {
     setConfig((prev) => {
       if (!prev) {
@@ -122,7 +160,7 @@ function BoardDetailPage(): JSX.Element {
         ...config,
         columns: config.columns.map((col) => ({
           ...col,
-          id: col.id.toLowerCase().replace(/\s+/g, "-"),
+          id: col.id.toLowerCase().replaceAll(/\s+/gu, "-"),
         })),
       };
       const yaml = boardToYaml(storageConfig);
@@ -207,80 +245,152 @@ function BoardDetailPage(): JSX.Element {
             </Button>
           </div>
 
-          <div className="space-y-2">
-            {config.columns.map((col, index) => (
-              <div key={index} className="rounded border border-border p-2 space-y-1.5">
-                {/* Line 1: color + name + remove */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={col.color}
-                    onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                      updateColumn(index, "color", ev.target.value);
-                    }}
-                    className="w-8 h-9 cursor-pointer shrink-0"
-                  />
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="columns">
+              {(droppableProvided) => (
+                <div
+                  ref={droppableProvided.innerRef}
+                  {...droppableProvided.droppableProps}
+                  className="space-y-2"
+                >
+                  {config.columns.map((col, index) => (
+                    <Draggable
+                      key={col.id || index}
+                      draggableId={col.id || String(index)}
+                      index={index}
+                    >
+                      {(draggableProvided) => (
+                        // oxlint-disable typescript/no-unsafe-type-assertion
+                        <div
+                          ref={draggableProvided.innerRef}
+                          {...(draggableProvided.draggableProps as React.HTMLAttributes<HTMLDivElement>)}
+                          // oxlint-enable typescript/no-unsafe-type-assertion
+                          className="rounded border border-border p-2 space-y-1.5 bg-background"
+                        >
+                          {/* Line 1: grip + color + name + remove */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              {...draggableProvided.dragHandleProps}
+                              className="shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
+                            >
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+                            <button
+                              type="button"
+                              className="w-8 h-9 shrink-0 rounded border border-border cursor-pointer"
+                              style={{ backgroundColor: col.color }}
+                              onClick={() => {
+                                setColorPickerColumn(index);
+                              }}
+                              title="Pick color"
+                            />
 
-                  <div className="flex-1 min-w-0">
-                    <Input
-                      value={col.id}
-                      onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                        const raw = ev.target.value
-                          .replace(/[^a-zA-Z0-9\s-]/g, "")
-                          .replace(/-/g, " ")
-                          .toUpperCase();
-                        updateColumn(index, "id", raw);
-                      }}
-                      className="h-8 text-sm w-full"
-                      placeholder="column-id"
-                    />
-                    {col.id && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 px-1">
-                        {displayColumnId(col.id)}
-                      </p>
-                    )}
+                            <div className="flex-1 min-w-0">
+                              <Input
+                                value={col.id}
+                                onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+                                  const raw = ev.target.value
+                                    .replaceAll(/[^a-zA-Z0-9\s-]/gu, "")
+                                    .replaceAll("-", " ")
+                                    .toUpperCase();
+                                  updateColumn(index, "id", raw);
+                                }}
+                                className="h-8 text-sm w-full"
+                                placeholder="column-id"
+                              />
+                              {col.id && (
+                                <p className="text-[11px] text-muted-foreground mt-0.5 px-1">
+                                  {displayColumnId(col.id)}
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              className="p-1 rounded text-muted-foreground hover:text-red-500 transition-colors shrink-0"
+                              onClick={() => {
+                                removeColumn(index);
+                              }}
+                              title="Remove column"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Line 2: default radio + final checkbox */}
+                          <div className="flex items-center gap-4 pl-[3.25rem]">
+                            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                              <input
+                                type="radio"
+                                name="default-column"
+                                checked={col.default === true}
+                                onChange={() => {
+                                  setDefaultColumn(index);
+                                }}
+                                className="accent-border"
+                              />
+                              Default
+                            </label>
+
+                            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                              <Checkbox
+                                checked={col.final}
+                                onCheckedChange={(checked) => {
+                                  updateColumn(index, "final", checked === true);
+                                }}
+                              />
+                              Final
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {droppableProvided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          <Dialog
+            open={colorPickerColumn !== undefined}
+            onOpenChange={(open) => {
+              if (!open) {
+                setColorPickerColumn(undefined);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-xs">
+              <DialogHeader>
+                <DialogTitle>Column color</DialogTitle>
+              </DialogHeader>
+              {colorPickerColumn !== undefined && config.columns[colorPickerColumn] && (
+                <ColorPicker
+                  defaultValue={config.columns[colorPickerColumn].color}
+                  className="h-auto"
+                  onChange={(value: unknown) => {
+                    const rgb: number[] = Array.isArray(value)
+                      ? value.filter((val): val is number => typeof val === "number")
+                      : [0, 0, 0];
+                    const [red = 0, green = 0, blue = 0] = rgb;
+                    const hex = `#${[red, green, blue]
+                      .map((val) => Math.round(val).toString(16).padStart(2, "0"))
+                      .join("")}`;
+                    updateColumn(colorPickerColumn, "color", hex);
+                  }}
+                >
+                  <ColorPickerSelection className="h-36 rounded-lg" />
+                  <ColorPickerHue />
+                  <ColorPickerAlpha />
+                  <div className="flex items-center gap-2">
+                    <ColorPickerEyeDropper />
+                    <ColorPickerOutput />
+                    <ColorPickerFormat />
                   </div>
-
-                  <button
-                    type="button"
-                    className="p-1 rounded text-muted-foreground hover:text-red-500 transition-colors shrink-0"
-                    onClick={() => {
-                      removeColumn(index);
-                    }}
-                    title="Remove column"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Line 2: default radio + final checkbox */}
-                <div className="flex items-center gap-4 pl-10">
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                    <input
-                      type="radio"
-                      name="default-column"
-                      checked={col.default === true}
-                      onChange={() => {
-                        setDefaultColumn(index);
-                      }}
-                      className="accent-border"
-                    />
-                    Default
-                  </label>
-
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
-                    <Checkbox
-                      checked={col.final}
-                      onCheckedChange={(checked) => {
-                        updateColumn(index, "final", checked === true);
-                      }}
-                    />
-                    Final
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
+                </ColorPicker>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {config.columns.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-4">

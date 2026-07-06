@@ -203,7 +203,7 @@ function BoardManagerPage(): JSX.Element {
                 id="nb-prefix"
                 value={newPrefix}
                 onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-                  setNewPrefix(ev.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase());
+                  setNewPrefix(ev.target.value.replaceAll(/[^a-zA-Z]/gu, "").toUpperCase());
                 }}
                 placeholder="PROJ"
                 className="h-8 text-sm w-32 font-mono uppercase"
