@@ -395,10 +395,14 @@ function BoardPage(): JSX.Element {
           className="w-6 h-6 shrink-0"
           dangerouslySetInnerHTML={{ __html: ICONS.Board24Color ?? "" }}
         />
-        <h1 className="text-base font-semibold text-foreground">{config.name}</h1>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
-        </span>
+        <div className="flex flex-col min-w-0">
+          <h1 className="font-semibold text-base truncate">{config.name}</h1>
+          <div className="flex items-center gap-1 text-xs -mt-1">
+            <span className="text-muted-foreground tabular-nums">
+              {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
+            </span>
+          </div>
+        </div>
 
         {/* Right: viewers + info */}
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
