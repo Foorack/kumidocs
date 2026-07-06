@@ -91,7 +91,11 @@ export default function TicketDialog({
         const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
         const data = await parseTicketYaml(resp.content, ticket.boardSlug, ticket.ticketId);
         setTitle(data.title);
-        setBody("");
+        // Parse body from raw YAML (TicketData doesn't carry body)
+        const { load } = await import("js-yaml");
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        const parsed = load(resp.content) as Record<string, unknown> | null;
+        setBody(typeof parsed?.body === "string" ? parsed.body : "");
         setColumn(data.column);
       } catch {
         // keep current values
@@ -107,16 +111,11 @@ export default function TicketDialog({
 
   // Columns for the current board
   const currentColumns = boardColumns.get(boardSlug) ?? [];
-  const ticketNumber = isEdit ? `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}` : "";
-  const boardName = boards.get(boardSlug) ?? "";
-  const activeColumn = currentColumns.find((col) => col.id === column);
-  const columnColor = activeColumn?.color;
-  const dialogBorderStyle = columnColor === undefined ? undefined : { borderColor: columnColor };
-  const innerBorderStyle = columnColor === undefined ? undefined : { borderColor: columnColor };
-  const showAllColumns = editing || !isEdit;
-  const displayColumns = showAllColumns
-    ? currentColumns
-    : currentColumns.filter((col) => col.id === column);
+  const columnColor =
+    currentColumns.find((col) => col.id === column)?.color ??
+    currentColumns.find((col) => col.default === true)?.color ??
+    "#6b7280";
+  const showEditControls = editing || !isEdit;
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
@@ -234,7 +233,6 @@ export default function TicketDialog({
     <h1 className="text-lg font-semibold text-foreground px-0.5">{title}</h1>
   );
 
-  const showSaveButton = showAllColumns;
   const canSave = !saving && title.trim() !== "";
 
   const bodyContent = editing ? (
@@ -274,23 +272,21 @@ export default function TicketDialog({
         className="sm:max-w-3xl p-0 gap-0 border-5"
         showCloseButton={false}
         onKeyDown={handleKeyDown}
-        style={dialogBorderStyle}
+        style={{ borderColor: columnColor }}
       >
         {/* Top bar */}
-        <div className="flex items-center gap-3 border-b" style={innerBorderStyle}>
+        <div className="flex items-center gap-3 border-b" style={{ borderColor: columnColor }}>
           <div
-            className="flex items-center px-5"
-            style={
-              columnColor === undefined
-                ? undefined
-                : {
-                    backgroundColor: columnColor,
-                    height: "105%",
-                  }
-            }
+            className="flex items-center px-5 h-full"
+            style={{
+              backgroundColor: columnColor,
+              outline: `1px solid ${columnColor}`,
+            }}
           >
             <span className="font-semibold text-base">
-              {isEdit ? `${boardName} | ${ticketNumber}` : "New ticket"}
+              {isEdit
+                ? `${boards.get(boardSlug) ?? ""} | ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`
+                : "New ticket"}
             </span>
           </div>
           <div className="flex-1" />
@@ -299,7 +295,7 @@ export default function TicketDialog({
               Cancel
               <Kbd>Esc</Kbd>
             </Button>
-            {showSaveButton ? (
+            {showEditControls ? (
               <Button size="sm" onClick={handleSave} disabled={!canSave}>
                 {buttonLabel}
                 <Kbd>⌘S</Kbd>
@@ -351,7 +347,10 @@ export default function TicketDialog({
           </div>
 
           {/* Right: status sidebar */}
-          <div className="w-52 shrink-0 border-l p-4 space-y-3" style={innerBorderStyle}>
+          <div
+            className="w-52 shrink-0 border-l p-4 space-y-3"
+            style={{ borderColor: columnColor }}
+          >
             <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
               Status
             </h3>
@@ -359,7 +358,10 @@ export default function TicketDialog({
               {currentColumns.length === 0 && (
                 <p className="text-xs text-muted-foreground">No columns</p>
               )}
-              {displayColumns.map((col) => {
+              {(showEditControls
+                ? currentColumns
+                : currentColumns.filter((col) => col.id === column)
+              ).map((col) => {
                 const isActive = column === col.id;
                 return (
                   <button
