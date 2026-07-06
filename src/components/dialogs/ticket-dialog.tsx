@@ -1,17 +1,10 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Label from "@/components/ui/label";
 import Textarea from "@/components/ui/textarea";
 import { createFile, getFile, getTree, putFile } from "@/lib/api";
-import { parseTicketYaml, ticketToYaml } from "@/lib/board";
+import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
+import type { BoardColumn } from "@/lib/board";
 import { Kbd } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -22,6 +15,8 @@ interface TicketDialogProps {
   onClose: () => void;
   /** All known boards: slug -> display name. Used in create mode. */
   boards: Map<string, string>;
+  /** Columns for each board: slug -> column definitions. */
+  boardColumns: Map<string, BoardColumn[]>;
   /** Board to preselect in create mode. */
   initialBoardSlug?: string;
   /** When set, dialog opens in edit mode with existing ticket data. */
@@ -40,6 +35,7 @@ export default function TicketDialog({
   open,
   onClose,
   boards,
+  boardColumns,
   initialBoardSlug,
   ticket,
   onCreated,
@@ -75,7 +71,7 @@ export default function TicketDialog({
     prevOpenRef.current = false;
   }
 
-  // Reload ticket content when dialog opens in edit mode (catches external changes)
+  // Reload ticket content when dialog opens in edit mode
   useEffect(() => {
     if (!open || !ticket) {
       return;
@@ -92,7 +88,6 @@ export default function TicketDialog({
       }
     };
     void reload();
-    // Only re-fetch when dialog opens
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -100,13 +95,16 @@ export default function TicketDialog({
     nameA.localeCompare(nameB),
   );
 
+  // Columns for the current board
+  const currentColumns = boardColumns.get(boardSlug) ?? [];
+  const ticketNumber = isEdit ? `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}` : "";
+
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
       return;
     }
 
     if (isEdit) {
-      // --- Edit mode: save to existing file ---
       setSaving(true);
       try {
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
@@ -127,7 +125,6 @@ export default function TicketDialog({
       return;
     }
 
-    // --- Create mode: find next ID and create ---
     const slug = boardSlug.trim();
     if (!slug) {
       return;
@@ -193,91 +190,120 @@ export default function TicketDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-md" onKeyDown={handleKeyDown}>
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit ticket" : "New ticket"}</DialogTitle>
-          <DialogDescription>
-            {isEdit
-              ? `Editing ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`
-              : "Create a new ticket in a board."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="sm:max-w-3xl p-0 gap-0"
+        showCloseButton={false}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Top bar */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
+          <div className="flex-1 min-w-0">
+            {isEdit ? (
+              <span className="font-semibold text-base">{ticketNumber}</span>
+            ) : (
+              <span className="font-semibold text-base">New ticket</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cancel
+              <Kbd>Esc</Kbd>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving || !title.trim() || (!isEdit && !boardSlug.trim())}
+            >
+              {buttonLabel}
+              <Kbd>Ctrl+Enter</Kbd>
+            </Button>
+          </div>
+        </div>
 
-        <div className="grid gap-4 py-1">
-          {/* Board selector (create only) */}
-          {!isEdit && (
-            <div className="grid gap-1.5">
-              <Label htmlFor="td-board">Board</Label>
+        {/* Body: main content + status sidebar */}
+        <div className="flex gap-0">
+          {/* Left: main form */}
+          <div className="flex-1 p-5 space-y-4 min-w-0">
+            {/* Board selector (create only) */}
+            {!isEdit && (
               <select
-                id="td-board"
                 value={boardSlug}
                 onChange={(ev) => {
                   setBoardSlug(ev.target.value);
+                  setColumn("");
                 }}
-                className="h-9 text-sm rounded-md border border-input bg-transparent text-foreground px-3"
+                className="w-full h-9 text-sm rounded-md border border-input bg-transparent text-foreground px-3"
               >
+                <option value="" disabled>
+                  Select a board
+                </option>
                 {boardNames.map(([slug, name]) => (
                   <option key={slug} value={slug}>
                     {name}
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
 
-          {/* Read-only board display (edit mode) */}
-          {isEdit && (
-            <div className="grid gap-1.5">
-              <Label>Board</Label>
-              <p className="h-9 text-sm flex items-center px-3 rounded-md border border-input bg-muted/50 text-muted-foreground">
-                {boards.get(ticket.boardSlug) ?? ticket.boardSlug}
-              </p>
-            </div>
-          )}
-
-          {/* Title */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="td-title">Title</Label>
+            {/* Title */}
             <Input
-              id="td-title"
               autoFocus
               value={title}
               onChange={(ev) => {
                 setTitle(ev.target.value);
               }}
-              placeholder="What needs to be done?"
+              placeholder="Title"
+              className="text-lg font-semibold h-auto py-2 px-3"
             />
-          </div>
 
-          {/* Body / description */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="td-body">Description</Label>
+            {/* Description */}
             <Textarea
-              id="td-body"
               value={body}
               onChange={(ev) => {
                 setBody(ev.target.value);
               }}
-              placeholder="Add details about this ticket..."
-              rows={4}
+              placeholder="Add description..."
+              className="min-h-[300px] resize-y"
             />
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
-            <Kbd>Esc</Kbd>
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || !title.trim() || (!isEdit && !boardSlug.trim())}
-          >
-            {buttonLabel}
-            <Kbd>Ctrl+Enter</Kbd>
-          </Button>
-        </DialogFooter>
+          {/* Right: status sidebar */}
+          <div className="w-52 shrink-0 border-l border-border p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+              Status
+            </h3>
+            <div className="space-y-1">
+              {currentColumns.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {boardSlug ? "No columns configured" : "Select a board first"}
+                </p>
+              )}
+              {currentColumns.map((col) => {
+                const isActive = column === col.id;
+                return (
+                  <button
+                    key={col.id}
+                    type="button"
+                    onClick={() => {
+                      setColumn(col.id);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                      isActive
+                        ? "bg-accent text-accent-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    }`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10"
+                      style={{ backgroundColor: col.color }}
+                    />
+                    <span>{displayColumnId(col.id)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

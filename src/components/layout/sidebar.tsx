@@ -21,7 +21,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import usePageActions from "@/hooks/use-page-actions";
 import { useUser } from "@/store/user";
 import { getFile } from "@/lib/api";
-import type { BoardConfig, TicketData } from "@/lib/board";
+import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 
@@ -296,6 +296,12 @@ export default function Sidebar({
     [boardConfigs],
   );
 
+  // Board columns map for the ticket dialog status picker
+  const boardColumnsMap = useMemo<Map<string, BoardColumn[]>>(
+    () => new Map([...boardConfigs.entries()].map(([slug, config]) => [slug, config.columns])),
+    [boardConfigs],
+  );
+
   // Default board for new ticket dialog: selected > localStorage > first alphabetically
   const defaultNewTicketBoard = useMemo<string | undefined>(() => {
     if (selectedBoardSlug !== undefined) {
@@ -506,6 +512,7 @@ export default function Sidebar({
           setNewTicketOpen(false);
         }}
         boards={boardNameMap}
+        boardColumns={boardColumnsMap}
         initialBoardSlug={defaultNewTicketBoard}
         onCreated={reloadTree}
       />
