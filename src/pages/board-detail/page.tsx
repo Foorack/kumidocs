@@ -384,8 +384,8 @@ function BoardDetailPage(): JSX.Element {
           <div className="flex items-center gap-3">
             <EmojiPickerPopover
               emoji={config.icon}
+              fileType="board"
               size={28}
-              editable={true}
               onSelect={updateIcon}
             />
             <Input

@@ -43,7 +43,13 @@ const EmojiPickerPopover = ({
     [onSelect],
   );
 
-  const icon = <EmojiIcon emoji={emoji} fileType={fileType} size={size} />;
+  const hasEmoji = emoji !== undefined && emoji !== "";
+
+  const icon = hasEmoji ? (
+    <EmojiIcon emoji={emoji} size={size} />
+  ) : (
+    <EmojiIcon fileType={fileType} size={size} />
+  );
 
   if (!editable) {
     return icon;

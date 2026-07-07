@@ -7,6 +7,7 @@ import { Fragment } from "react";
 
 // File type icon names in the ICONS map; the fallback is QuestionCircle24Color.
 const FILE_TYPE_ICONS: Record<string, string> = {
+  board: "Board24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   image: "Image24Color",

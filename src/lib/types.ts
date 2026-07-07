@@ -7,7 +7,7 @@ interface User {
 }
 
 type MarkdownType = "doc" | "slide" | "page" | "sheet";
-type FileType = MarkdownType | "code" | "image" | "other";
+type FileType = MarkdownType | "board" | "code" | "image" | "other";
 
 interface FileEntry {
   path: string;
