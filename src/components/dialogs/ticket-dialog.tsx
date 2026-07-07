@@ -6,7 +6,7 @@ import Textarea from "@/components/ui/textarea";
 import { createFile, getFile, getTree, putFile } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
 import type { BoardColumn } from "@/lib/board";
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -275,11 +275,15 @@ export default function TicketDialog({
         style={{ borderColor: columnColor }}
       >
         {/* Top bar */}
-        <div className="flex items-center gap-3 border-b" style={{ borderColor: columnColor }}>
+        <div
+          className="flex items-center gap-3 border-b"
+          style={{ borderColor: columnColor, marginTop: "-1px" }}
+        >
           <div
             className="flex items-center px-5 h-full"
             style={{
               backgroundColor: columnColor,
+              color: "#ffffff",
               outline: `1px solid ${columnColor}`,
             }}
           >
@@ -290,22 +294,31 @@ export default function TicketDialog({
             </span>
           </div>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>
+          <div className="flex items-center gap-0">
+            <Button variant="ghost" className="rounded-none px-7" onClick={onClose}>
               Cancel
               <Kbd>Esc</Kbd>
             </Button>
             {showEditControls ? (
-              <Button size="sm" onClick={handleSave} disabled={!canSave}>
+              <Button
+                className="rounded-none px-7"
+                onClick={handleSave}
+                disabled={!canSave}
+                style={{ backgroundColor: columnColor, color: "#ffffff" }}
+              >
                 {buttonLabel}
-                <Kbd>⌘S</Kbd>
+                <KbdGroup>
+                  <Kbd>⌘</Kbd>
+                  <Kbd>S</Kbd>
+                </KbdGroup>
               </Button>
             ) : (
               <Button
-                size="sm"
+                className="rounded-none px-7"
                 onClick={() => {
                   setEditing(true);
                 }}
+                style={{ backgroundColor: columnColor, color: "#ffffff" }}
               >
                 {buttonLabel}
                 <Kbd>E</Kbd>
@@ -315,7 +328,7 @@ export default function TicketDialog({
         </div>
 
         {/* Body: main content + status sidebar */}
-        <div className="flex gap-0">
+        <div className="flex gap-0 min-h-120">
           {/* Left: main content */}
           <div className="flex-1 p-5 space-y-4 min-w-0">
             {/* Board selector (create only) */}

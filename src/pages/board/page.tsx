@@ -3,8 +3,8 @@ import { useOutletContext, useParams } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
-import type { DragEndEvent } from "@dnd-kit/core";
-import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import { GripVertical, Info } from "lucide-react";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
@@ -16,7 +16,7 @@ import PageInfoPanel from "@/components/layout/page-info-panel";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
-import type { JSX } from "react";
+import type { CSSProperties, JSX } from "react";
 
 interface OutletCtx {
   instanceName: string;
@@ -39,15 +39,14 @@ function TicketCard({
   onClick,
   columnColor,
 }: TicketCardProps): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `${boardSlug}/${ticket.id}`,
   });
 
-  const style = {
-    backgroundColor: `${columnColor}33`,
+  const style: CSSProperties = {
+    backgroundColor: `${columnColor}66`,
     borderColor: columnColor,
-    opacity: isDragging ? 0.4 : undefined,
-    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
+    opacity: isDragging ? 0 : undefined,
   };
 
   return (
@@ -77,6 +76,38 @@ function TicketCard({
   );
 }
 
+// ── Drag overlay card (rendered in portal) ────────────────────────
+
+interface DragOverlayCardProps {
+  ticket: TicketData;
+  prefix: string;
+  columnColor: string;
+}
+
+function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps): JSX.Element {
+  return (
+    <div
+      className="rounded-lg border-3 text-sm shadow-xl bg-background"
+      style={{
+        backgroundColor: `${columnColor}66`,
+        borderColor: columnColor,
+        width: "var(--dnd-overlay-width, 288px)",
+      }}
+    >
+      <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 text-muted-foreground">
+        <GripVertical className="w-3 h-3 shrink-0" />
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
+        <span className="text-xs font-mono text-muted-foreground">
+          {prefix}-{ticket.id}
+        </span>
+      </div>
+      <div className="w-full text-left px-3 pb-2.5">
+        <p className="text-foreground leading-snug line-clamp-2">{ticket.title}</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Column component ───────────────────────────────────────────────
 
 interface ColumnProps {
@@ -94,14 +125,22 @@ function BoardColumnView({
   boardSlug,
   onTicketClick,
 }: ColumnProps): JSX.Element {
-  const { setNodeRef: dropRef } = useDroppable({
+  const { setNodeRef: dropRef, isOver } = useDroppable({
     id: `${boardSlug}/${column.id}`,
   });
 
   return (
     <div
       ref={dropRef}
-      className="flex flex-col w-72 shrink-0 border-r border-border last:border-r-0"
+      className="flex flex-col w-72 shrink-0 border-r border-border last:border-r-0 transition-all duration-150"
+      style={
+        isOver
+          ? {
+              backgroundColor: `${column.color}33`,
+              boxShadow: `inset 0 2px 0 ${column.color}`,
+            }
+          : undefined
+      }
     >
       {/* Column header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
@@ -134,6 +173,37 @@ function BoardColumnView({
         ))}
       </div>
     </div>
+  );
+}
+
+// ── Drag overlay (extracted for complexity) ───────────────────────
+
+interface BoardOverlayProps {
+  activeId: string | undefined;
+  tickets: TicketData[];
+  columns: BoardColumn[];
+  prefix: string;
+}
+
+function BoardOverlay({ activeId, tickets, columns, prefix }: BoardOverlayProps): JSX.Element {
+  const activeTicket =
+    activeId === undefined
+      ? undefined
+      : tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === activeId);
+
+  const activeTicketColor =
+    activeTicket === undefined || columns.length === 0
+      ? "#888"
+      : (columns.find((col) => col.id === activeTicket.column)?.color ??
+        columns[0]?.color ??
+        "#888");
+
+  return (
+    <DragOverlay dropAnimation={undefined}>
+      {activeTicket === undefined ? undefined : (
+        <DragOverlayCard ticket={activeTicket} prefix={prefix} columnColor={activeTicketColor} />
+      )}
+    </DragOverlay>
   );
 }
 
@@ -335,41 +405,53 @@ function BoardPage(): JSX.Element {
     setDialogOpen(true);
   }, []);
 
+  // Drag overlay state
+  const [activeId, setActiveId] = useState<string | undefined>(undefined);
+
+  const handleDragStart = useCallback((event: DragStartEvent): void => {
+    setActiveId(String(event.active.id));
+  }, []);
+
+  const handleDragCancel = useCallback((): void => {
+    setActiveId(undefined);
+  }, []);
+
   // Handle drag end (move ticket between columns)
   const handleDragEnd = useCallback(
     async (event: DragEndEvent): Promise<void> => {
+      setActiveId(undefined);
       const { active, over } = event;
       if (!over || active.id === over.id) {
         return;
       }
 
-      const activeId = String(active.id);
+      const dragActiveId = String(active.id);
       const overId = String(over.id);
-      const activeTicket = tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === activeId);
-      if (!activeTicket) {
+      const dragActiveTicket = tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === dragActiveId);
+      if (!dragActiveTicket) {
         return;
       }
 
       // Target is a droppable column: "boardSlug/columnId"
       const targetColId = overId.replace(`${boardSlug}/`, "");
 
-      if (!targetColId || targetColId === activeTicket.column) {
+      if (!targetColId || targetColId === dragActiveTicket.column) {
         return;
       }
 
       try {
-        const path = `${activeTicket.boardSlug}/${activeTicket.id}.yaml`;
+        const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
         const fileResp = await getFile(path);
         const data = await parseTicketYaml(
           fileResp.content,
-          activeTicket.boardSlug,
-          activeTicket.id,
+          dragActiveTicket.boardSlug,
+          dragActiveTicket.id,
         );
         const yaml = ticketToYaml({ column: targetColId, title: data.title });
         await putFile(path, yaml);
         setTickets((prev) =>
           prev.map((tic) =>
-            `${tic.boardSlug}/${tic.id}` === activeId ? { ...tic, column: targetColId } : tic,
+            `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: targetColId } : tic,
           ),
         );
       } catch {
@@ -448,7 +530,11 @@ function BoardPage(): JSX.Element {
 
       {/* Content area: kanban + optional info panel */}
       <div className="flex flex-1 overflow-hidden">
-        <DndContext onDragEnd={handleDragEnd}>
+        <DndContext
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
             <div className="flex h-full">
               {columns.map((column) => {
@@ -466,6 +552,13 @@ function BoardPage(): JSX.Element {
               })}
             </div>
           </div>
+
+          <BoardOverlay
+            activeId={activeId}
+            tickets={tickets}
+            columns={columns}
+            prefix={config.prefix}
+          />
         </DndContext>
 
         {infoOpen && (
