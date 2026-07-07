@@ -126,7 +126,7 @@ function ImageDetailPanel({
       {/* Delete error banner */}
       {deleteError !== undefined && deleteError !== "" && (
         <div className="px-4 py-2 bg-red/20 border-t border-red/30">
-          <p className="text-xs text-red">{deleteError}</p>
+          <p className="text-red">{deleteError}</p>
         </div>
       )}
 
@@ -134,7 +134,7 @@ function ImageDetailPanel({
       {user?.canEdit === true && (
         <div className="px-4 py-3 border-t border-border">
           {image.usedIn.length > 0 && (
-            <p className="text-xs text-destructive mb-2">
+            <p className="text-destructive mb-2">
               Cannot delete: referenced by {image.usedIn.length}{" "}
               {image.usedIn.length === 1 ? "page" : "pages"}. Remove all references first.
             </p>
@@ -289,7 +289,7 @@ export default function ImageLibraryPage(): JSX.Element {
 
       {/* Error banner */}
       {imageLoadError !== undefined && imageLoadError !== "" && (
-        <div className="bg-red/20 border-b border-red/30 px-4 py-2 flex items-center gap-2 text-sm text-red shrink-0">
+        <div className="bg-red/20 border-b border-red/30 px-4 py-2 flex items-center gap-2 text-red shrink-0">
           <span className="flex-1">{imageLoadError}</span>
         </div>
       )}

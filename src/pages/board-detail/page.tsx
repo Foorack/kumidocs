@@ -516,7 +516,7 @@ function BoardDetailPage(): JSX.Element {
               This action cannot be undone in the interface, but all history remains in Git.
             </DialogDescription>
           </DialogHeader>
-          {deleteError !== "" && <p className="text-xs text-red px-6">{deleteError}</p>}
+          {deleteError !== "" && <p className="text-red px-6">{deleteError}</p>}
           <DialogFooter>
             <Button
               variant="outline"

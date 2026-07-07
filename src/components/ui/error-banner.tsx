@@ -37,7 +37,7 @@ export default function ErrorBanner({
   const styles = VARIANT_STYLES[variant];
   return (
     <div
-      className={`${styles.bg} ${styles.border} border-b px-4 py-2 flex items-center gap-2 text-sm ${styles.text}`}
+      className={`${styles.bg} ${styles.border} border-b px-4 py-2 flex items-center gap-2 ${styles.text}`}
     >
       <span className="flex-1">{message}</span>
       {actions.map((action, idx) => (

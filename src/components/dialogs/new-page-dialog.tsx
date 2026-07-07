@@ -194,7 +194,7 @@ export default function NewPageDialog({
         </div>
 
         {createError !== undefined && createError !== "" && (
-          <p className="text-xs text-red text-center">{createError}</p>
+          <p className="text-red text-center">{createError}</p>
         )}
 
         <DialogFooter>
