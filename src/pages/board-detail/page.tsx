@@ -111,7 +111,7 @@ function SortableColumn({
 
       {/* Line 2: default radio + final checkbox */}
       <div className="flex items-center gap-4 pl-[3.25rem]">
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+        <label className="flex items-center gap-1.5 cursor-pointer">
           <input
             type="radio"
             name="default-column"
@@ -124,7 +124,7 @@ function SortableColumn({
           Default
         </label>
 
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+        <label className="flex items-center gap-1.5 cursor-pointer">
           <Checkbox
             checked={col.final}
             onCheckedChange={(checked) => {
@@ -351,19 +351,11 @@ function BoardDetailPage(): JSX.Element {
   }, [config, name, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-        Loading...
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center">Loading...</div>;
   }
 
   if (!config) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-        Board not found
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center">Board not found</div>;
   }
 
   return (
@@ -372,7 +364,7 @@ function BoardDetailPage(): JSX.Element {
         {/* Back link */}
         <button
           type="button"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 hover:opacity-70"
           onClick={() => {
             void navigate("/bm");
           }}
@@ -406,7 +398,7 @@ function BoardDetailPage(): JSX.Element {
             placeholder="PROJ"
             maxLength={10}
           />
-          <p className="text-xs text-muted-foreground">
+          <p>
             Tickets will be numbered like {config.prefix || "PROJ"}-1, {config.prefix || "PROJ"}-2,
             etc.
           </p>
@@ -482,9 +474,7 @@ function BoardDetailPage(): JSX.Element {
           </Dialog>
 
           {config.columns.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              No columns yet. Add at least one column.
-            </p>
+            <p className="text-center py-4">No columns yet. Add at least one column.</p>
           )}
         </div>
 

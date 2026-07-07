@@ -88,8 +88,8 @@ const ThemeCard = (allProps: ThemeCardProps): JSX.Element => {
       </div>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{name}</p>
-          <p className="text-xs text-muted-foreground truncate">{description}</p>
+          <p className="font-medium truncate">{name}</p>
+          <p className="truncate">{description}</p>
         </div>
         {custom && (
           <Badge variant="secondary" className="shrink-0 text-xs">
@@ -132,7 +132,7 @@ const ThemeDialog = (allProps: ThemeDialogProps): JSX.Element => {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
           <div className="flex items-center gap-2">
-            {active && <span className="text-sm font-semibold">{active.name}</span>}
+            {active && <span className="font-semibold">{active.name}</span>}
             {active && active.custom && (
               <Badge variant="secondary" className="text-xs">
                 custom

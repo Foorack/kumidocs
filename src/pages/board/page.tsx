@@ -50,16 +50,16 @@ function TicketCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border-3 text-sm shadow-xs">
+    <div ref={setNodeRef} style={style} className="rounded-lg border-3 shadow-xs">
       {/* Drag handle row */}
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 cursor-grab active:cursor-grabbing text-muted-foreground"
+        className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 cursor-grab active:cursor-grabbing"
       >
         <GripVertical className="w-3 h-3 shrink-0" />
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="text-xs font-mono text-muted-foreground">
+        <span className="font-mono">
           {prefix}-{ticket.id}
         </span>
       </div>
@@ -70,7 +70,7 @@ function TicketCard({
         onClick={onClick}
         className="w-full text-left px-3 pb-2.5 hover:bg-accent/50 transition-colors rounded-b-lg"
       >
-        <p className="text-foreground leading-snug line-clamp-2">{ticket.title}</p>
+        <p className="leading-snug line-clamp-2">{ticket.title}</p>
       </button>
     </div>
   );
@@ -87,17 +87,17 @@ interface DragOverlayCardProps {
 function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps): JSX.Element {
   return (
     <div
-      className="rounded-lg border-3 text-sm shadow-xl bg-background"
+      className="rounded-lg border-3 shadow-xl bg-background"
       style={{
         backgroundColor: `${columnColor}66`,
         borderColor: columnColor,
         width: "var(--dnd-overlay-width, 288px)",
       }}
     >
-      <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 text-muted-foreground">
+      <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
         <GripVertical className="w-3 h-3 shrink-0" />
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="text-xs font-mono text-muted-foreground">
+        <span className="font-mono">
           {prefix}-{ticket.id}
         </span>
       </div>
@@ -148,17 +148,13 @@ function BoardColumnView({
           className="w-2.5 h-2.5 rounded-full shrink-0"
           style={{ backgroundColor: column.color }}
         />
-        <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-          {displayColumnId(column.id)}
-        </span>
-        <span className="text-xs text-muted-foreground ml-auto tabular-nums">{tickets.length}</span>
+        <span className="font-semibold uppercase tracking-wider">{displayColumnId(column.id)}</span>
+        <span className="ml-auto tabular-nums">{tickets.length}</span>
       </div>
 
       {/* Ticket list */}
       <div className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2 min-h-[4rem]">
-        {tickets.length === 0 && (
-          <div className="px-1 py-6 text-xs text-muted-foreground text-center">No tickets</div>
-        )}
+        {tickets.length === 0 && <div className="px-1 py-6 text-center">No tickets</div>}
         {tickets.map((ticket) => (
           <TicketCard
             key={`${boardSlug}/${ticket.id}`}
@@ -462,19 +458,11 @@ function BoardPage(): JSX.Element {
   );
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-        Loading...
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center">Loading...</div>;
   }
 
   if (!config) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-        Board not found
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center">Board not found</div>;
   }
 
   return (
@@ -487,8 +475,8 @@ function BoardPage(): JSX.Element {
         />
         <div className="flex flex-col min-w-0">
           <h1 className="font-semibold text-base truncate">{config.name}</h1>
-          <div className="flex items-center gap-1 text-xs -mt-1">
-            <span className="text-muted-foreground tabular-nums">
+          <div className="flex items-center gap-1 -mt-1">
+            <span className="tabular-nums">
               {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
             </span>
           </div>

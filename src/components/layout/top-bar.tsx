@@ -68,21 +68,21 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
               <UserAvatar name={user.displayName} email={user.email} size="lg" />
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">{user.displayName}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+                <p className="mt-0.5">{user.email}</p>
               </div>
               {headSha && (
                 <div className="w-full border-t border-border pt-2 mt-1 text-center">
-                  <p className="text-xs text-muted-foreground">HEAD</p>
-                  <code className="text-xs font-mono text-foreground">{headSha}</code>
+                  <p>HEAD</p>
+                  <code className="font-mono">{headSha}</code>
                 </div>
               )}
               <div className="w-full border-t border-border pt-2 mt-1 text-center">
-                <p className="text-xs text-muted-foreground">VERSION</p>
+                <p>VERSION</p>
                 <a
                   href="https://www.npmjs.com/package/kumidocs"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-mono text-foreground hover:text-primary hover:underline"
+                  className="font-mono hover:text-primary hover:underline"
                 >
                   v{APP_VERSION}
                 </a>
@@ -115,7 +115,7 @@ const TopBar = (allProps: TopBarProps): JSX.Element => {
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-xs font-normal w-full max-w-96 justify-start bg-white hover:bg-white/90"
+          className="h-7 gap-1.5 font-normal w-full max-w-96 justify-start bg-white hover:bg-white/90"
           onClick={onSearchOpen}
         >
           <Search className="w-3.5 h-3.5 shrink-0" />

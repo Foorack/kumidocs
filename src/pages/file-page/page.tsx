@@ -82,11 +82,7 @@ export default function FilePage(): JSX.Element {
   const pageViewerRef = useRef<PageViewerHandle>(null);
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-foreground text-sm">
-        Loading…
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center">Loading…</div>;
   }
 
   if (notFound) {

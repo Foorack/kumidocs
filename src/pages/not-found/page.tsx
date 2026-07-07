@@ -73,9 +73,7 @@ const NotFound = (): JSX.Element => {
           <EmojiIcon emoji="🔍" size="1em" />
         </div>
         <h1 className="text-xl font-semibold">Page not found</h1>
-        <p className="text-foreground text-sm max-w-xs">
-          The path you navigated to doesn't match any known route.
-        </p>
+        <p className="max-w-xs">The path you navigated to doesn't match any known route.</p>
         <Button
           variant="outline"
           onClick={() => {
@@ -88,7 +86,7 @@ const NotFound = (): JSX.Element => {
       </div>
       {subtree.length > 0 && (
         <div className="w-full max-w-lg">
-          <h2 className="text-sm font-semibold text-foreground mb-2">Pages in this section</h2>
+          <h2 className="font-semibold mb-2">Pages in this section</h2>
           <PageTreeView nodes={subtree} />
         </div>
       )}

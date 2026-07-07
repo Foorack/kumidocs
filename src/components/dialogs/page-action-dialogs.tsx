@@ -154,9 +154,7 @@ function PageActionDialogs({
                                   className={`mr-2 h-4 w-4 ${moveParent === pg.dir ? "opacity-100" : "opacity-0"}`}
                                 />
                                 <span className="truncate">{pg.title}</span>
-                                <span className="ml-auto truncate text-xs text-muted-foreground">
-                                  {pg.dir}
-                                </span>
+                                <span className="ml-auto truncate">{pg.dir}</span>
                               </CommandItem>
                             ))}
                         </CommandGroup>
@@ -184,7 +182,7 @@ function PageActionDialogs({
                   }
                 }}
               />
-              <p className="text-xs text-muted-foreground">→ {previewPath}</p>
+              <p>→ {previewPath}</p>
             </div>
           </div>
           {moveError !== undefined && moveError !== "" && (

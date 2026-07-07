@@ -73,7 +73,7 @@ function ImageDetailPanel({
     <div className="w-72 border-l border-border bg-background flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <span className="flex-1 text-sm font-medium truncate" title={image.filename}>
+        <span className="flex-1 font-medium truncate" title={image.filename}>
           {image.filename}
         </span>
         <Link to="/i" replace>
@@ -93,27 +93,24 @@ function ImageDetailPanel({
       </div>
 
       {/* Metadata */}
-      <div className="px-4 py-3 space-y-3 flex-1 overflow-y-auto text-sm">
+      <div className="px-4 py-3 space-y-3 flex-1 overflow-y-auto">
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Size</p>
+          <p className="mb-0.5">Size</p>
           <p>{formatBytes(image.size)}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Direct URL</p>
-          <code className="text-xs break-all bg-muted px-1 py-0.5 rounded">{image.url}</code>
+          <p className="mb-0.5">Direct URL</p>
+          <code className="break-all bg-muted px-1 py-0.5 rounded">{image.url}</code>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Used in</p>
+          <p className="mb-1">Used in</p>
           {image.usedIn.length === 0 ? (
             <p className="text-foreground italic">Not used in any page</p>
           ) : (
             <ul className="space-y-1">
               {image.usedIn.map((pagePath) => (
                 <li key={pagePath}>
-                  <Link
-                    to={`/p/${pagePath}`}
-                    className="text-primary hover:underline text-xs break-all"
-                  >
+                  <Link to={`/p/${pagePath}`} className="text-primary hover:underline break-all">
                     {pagePath}
                   </Link>
                 </li>
@@ -222,10 +219,10 @@ export default function ImageLibraryPage(): JSX.Element {
 
   let imageGridContent: ReactNode;
   if (loading) {
-    imageGridContent = <div className="text-sm text-muted-foreground">Loading…</div>;
+    imageGridContent = <div>Loading…</div>;
   } else if (images.length === 0) {
     imageGridContent = (
-      <div className="text-sm text-muted-foreground">
+      <div>
         No images yet. Drag an image into the editor or use the toolbar button to upload one.
       </div>
     );
@@ -259,11 +256,11 @@ export default function ImageLibraryPage(): JSX.Element {
 
             {/* Footer */}
             <div className="px-2 py-1.5 bg-background">
-              <p className="text-xs font-mono truncate text-foreground" title={img.filename}>
+              <p className="font-mono truncate" title={img.filename}>
                 {img.filename}
               </p>
               <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-xs text-muted-foreground">{formatBytes(img.size)}</span>
+                <span>{formatBytes(img.size)}</span>
                 {img.usedIn.length > 0 && (
                   <Badge variant="secondary" className="text-xs px-1 py-0 h-4">
                     {img.usedIn.length}
@@ -282,7 +279,7 @@ export default function ImageLibraryPage(): JSX.Element {
       {/* Page header */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
         <h1 className="text-xl font-semibold flex-1">Image Library</h1>
-        <span className="text-sm text-muted-foreground">
+        <span>
           {images.length} {images.length === 1 ? "image" : "images"}
         </span>
       </div>

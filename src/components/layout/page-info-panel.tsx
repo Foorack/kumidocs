@@ -99,14 +99,14 @@ export default function PageInfoPanel({
 
   let backlinksContent: ReactNode;
   if (backlinksLoading) {
-    backlinksContent = <p className="text-xs text-foreground py-2">Loading…</p>;
+    backlinksContent = <p className="py-2">Loading…</p>;
   } else if (backlinks.length === 0) {
-    backlinksContent = <p className="text-xs text-foreground py-2">No backlinks yet.</p>;
+    backlinksContent = <p className="py-2">No backlinks yet.</p>;
   } else {
     backlinksContent = (
       <ul className="space-y-0.5 list-disc list-inside">
         {backlinks.map((bl) => (
-          <li key={bl.path} className="text-xs">
+          <li key={bl.path}>
             <Link
               to={`/p/${bl.path.replace(/\.md$/u, "")}`}
               className="hover:text-foreground transition-colors"
@@ -121,9 +121,9 @@ export default function PageInfoPanel({
 
   let commitHistoryContent: ReactNode;
   if (loading) {
-    commitHistoryContent = <p className="text-xs text-foreground py-2">Loading…</p>;
+    commitHistoryContent = <p className="py-2">Loading…</p>;
   } else if (commits.length === 0) {
-    commitHistoryContent = <p className="text-xs text-foreground py-2">No commits yet.</p>;
+    commitHistoryContent = <p className="py-2">No commits yet.</p>;
   } else {
     commitHistoryContent = (
       <div className="space-y-1">
@@ -133,7 +133,7 @@ export default function PageInfoPanel({
             <div key={key}>
               {/* Date group header */}
               <button
-                className="w-full flex items-center gap-1 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
+                className="w-full flex items-center gap-1 py-1 hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
                 onClick={() => {
                   toggleGroup(key);
                 }}
@@ -152,7 +152,7 @@ export default function PageInfoPanel({
                   {groupCommits.map((commit) => (
                     <button
                       key={commit.sha}
-                      className="w-full text-left rounded py-1.5 text-xs hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
+                      className="w-full text-left rounded py-1.5 hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
                       onClick={() => {
                         void openDiff(commit.sha);
                       }}
@@ -210,25 +210,23 @@ export default function PageInfoPanel({
         <div className="p-3 space-y-3">
           {/* Title + path */}
           <div className="space-y-1">
-            <p className="text-xs font-medium text-foreground uppercase tracking-wide">Title</p>
-            <p className="text-sm text-foreground break-words">{title}</p>
+            <p className="font-medium uppercase tracking-wide">Title</p>
+            <p className="break-words">{title}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium text-foreground uppercase tracking-wide">Path</p>
-            <p className="text-sm font-mono text-foreground break-all">{filePath}</p>
+            <p className="font-medium uppercase tracking-wide">Path</p>
+            <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
           <div className="space-y-1">
-            <p className="text-xs font-medium text-foreground uppercase tracking-wide">Backlinks</p>
+            <p className="font-medium uppercase tracking-wide">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="text-xs font-medium text-foreground uppercase tracking-wide">
-              Commit history
-            </p>
+            <p className="font-medium uppercase tracking-wide">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>

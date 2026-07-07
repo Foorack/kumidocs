@@ -24,7 +24,7 @@ const EmailSetupDialog = (): JSX.Element => {
       <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Enter your email</DialogTitle>
-          <p className="text-sm text-foreground">
+          <p className="text-foreground">
             No identity provider was detected. Enter your email to continue; it will be stored as a
             local cookie.
           </p>

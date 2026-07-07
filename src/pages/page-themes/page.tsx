@@ -50,9 +50,9 @@ const TemplateCard = (allProps: TemplateCardProps): JSX.Element => {
       </div>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{name}</p>
+          <p className="font-medium truncate">{name}</p>
           {template.description !== undefined && template.description !== "" && (
-            <p className="text-xs text-muted-foreground truncate">{template.description}</p>
+            <p className="truncate">{template.description}</p>
           )}
         </div>
       </div>
@@ -83,7 +83,7 @@ const TemplateDialog = (allProps: TemplateDialogProps): JSX.Element => {
         className="sm:max-w-5xl max-w-5xl w-full p-0 gap-0 overflow-hidden flex flex-col h-[85vh]"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-          <span className="text-sm font-semibold">{name ?? "Template"}</span>
+          <span className="font-semibold">{name ?? "Template"}</span>
           <button
             type="button"
             onClick={onClose}
@@ -131,14 +131,14 @@ const PageThemesPage = (): JSX.Element => {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
         <h1 className="text-xl font-semibold flex-1">Page Themes</h1>
-        <span className="text-sm text-muted-foreground">
+        <span>
           {total} {label}
         </span>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
         {entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-12">
-            No page templates defined in <code className="text-xs">.kumidocs.json</code>.
+          <p className="text-center py-12">
+            No page templates defined in <code>.kumidocs.json</code>.
           </p>
         ) : (
           <div className="grid gap-6" style={colStyle}>

@@ -24,14 +24,10 @@ function renderContent(
   navigate: (path: string) => void,
 ): JSX.Element {
   if (loading) {
-    return <div className="text-sm text-muted-foreground text-center py-8">Loading...</div>;
+    return <div className="text-center py-8">Loading...</div>;
   }
   if (boards.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground text-center py-8">
-        No boards yet. Create your first board.
-      </div>
-    );
+    return <div className="text-center py-8">No boards yet. Create your first board.</div>;
   }
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -46,8 +42,8 @@ function renderContent(
         >
           <Settings className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{board.config.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="font-medium truncate">{board.config.name}</p>
+            <p className="mt-0.5">
               {board.config.prefix} &middot; {board.config.columns.length} columns
             </p>
             <div className="flex gap-1 mt-2">

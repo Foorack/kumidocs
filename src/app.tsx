@@ -19,7 +19,7 @@ function AppRoutes(): JSX.Element {
 
   if (loading) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-background text-foreground text-sm">
+      <div className="h-full w-full flex items-center justify-center bg-background text-foreground">
         Loading...
       </div>
     );

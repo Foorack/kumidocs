@@ -72,7 +72,7 @@ function PresenceAvatars({
       ))}
       {resolved.length > 3 && (
         <div
-          className={`${circleSize} rounded-full bg-muted flex items-center justify-center ${textSize} font-bold ring-1 ring-sidebar text-muted-foreground cursor-default shrink-0`}
+          className={`${circleSize} rounded-full bg-muted flex items-center justify-center ${textSize} font-bold ring-1 ring-sidebar cursor-default shrink-0`}
         >
           +{resolved.length - 3}
         </div>
@@ -164,8 +164,8 @@ function PageNodeRow({
   const parentDir = getParentDir(node.path);
   const rowVariant = isActive
     ? "bg-accent text-accent-foreground font-medium"
-    : "hover:bg-accent/50 text-muted-foreground hover:text-foreground";
-  const rowClassName = `group flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none min-w-0 ${rowVariant}`;
+    : "hover:bg-accent/50 hover:text-foreground";
+  const rowClassName = `group flex items-center gap-1 px-2 py-[3px] rounded select-none min-w-0 ${rowVariant}`;
   const iconClassName = `flex items-center justify-center ${node.isVirtual ? "opacity-40 shrink-0" : "shrink-0"}`;
   const [sidebarDuplicateError, setSidebarDuplicateError] = useState<string | undefined>();
 

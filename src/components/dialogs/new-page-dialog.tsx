@@ -187,9 +187,7 @@ export default function NewPageDialog({
 
           {/* Path preview */}
           {finalPath && (
-            <p className="text-xs text-muted-foreground font-mono bg-muted rounded px-2 py-1.5 truncate">
-              {finalPath}
-            </p>
+            <p className="font-mono bg-muted rounded px-2 py-1.5 truncate">{finalPath}</p>
           )}
         </div>
 

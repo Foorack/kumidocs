@@ -22,18 +22,18 @@ export default function CommitDiffDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[80vw] max-w-[80vw] sm:w-[80vw] sm:max-w-[80vw] h-[85vh] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
-          <DialogTitle className="text-sm font-semibold">
+          <DialogTitle className="font-semibold">
             {diffData ? (
               <>
-                <span className="font-mono text-muted-foreground mr-2">{diffData.sha}</span>
+                <span className="font-mono mr-2">{diffData.sha}</span>
                 {diffData.message}
               </>
             ) : (
-              "Loading diff\u2026"
+              "Loading diff…"
             )}
           </DialogTitle>
           {diffData && (
-            <p className="text-xs text-muted-foreground">
+            <p>
               {diffData.author} \u00b7{" "}
               {new Date(diffData.date).toLocaleString(undefined, {
                 day: "numeric",
@@ -47,18 +47,12 @@ export default function CommitDiffDialog({
         </DialogHeader>
         <ScrollArea className="flex-1 min-h-0">
           <div className="p-4">
-            {diffLoading && (
-              <p className="text-sm text-foreground py-4 text-center">Loading diff…</p>
-            )}
+            {diffLoading && <p className="py-4 text-center">Loading diff…</p>}
             {!diffLoading &&
               diffData &&
               (() => {
                 if (!diffData.unifiedDiff.trim()) {
-                  return (
-                    <p className="text-sm text-foreground py-4 text-center">
-                      No changes in this commit.
-                    </p>
-                  );
+                  return <p className="py-4 text-center">No changes in this commit.</p>;
                 }
                 let files;
                 try {
@@ -71,11 +65,7 @@ export default function CommitDiffDialog({
                   );
                 }
                 if (files.length === 0) {
-                  return (
-                    <p className="text-sm text-foreground py-4 text-center">
-                      No changes in this commit.
-                    </p>
-                  );
+                  return <p className="py-4 text-center">No changes in this commit.</p>;
                 }
                 return files.map((file) => {
                   // parseDiff may return undefined hunks for binary/empty files
@@ -96,7 +86,7 @@ export default function CommitDiffDialog({
                 });
               })()}
             {!diffLoading && !diffData && (
-              <p className="text-sm text-destructive py-4 text-center">Failed to load diff.</p>
+              <p className="text-destructive py-4 text-center">Failed to load diff.</p>
             )}
           </div>
         </ScrollArea>

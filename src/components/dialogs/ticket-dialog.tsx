@@ -364,13 +364,9 @@ export default function TicketDialog({
             className="w-52 shrink-0 border-l p-4 space-y-3"
             style={{ borderColor: columnColor }}
           >
-            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
-              Status
-            </h3>
+            <h3 className="font-semibold uppercase tracking-wider">Status</h3>
             <div className="space-y-1">
-              {currentColumns.length === 0 && (
-                <p className="text-xs text-muted-foreground">No columns</p>
-              )}
+              {currentColumns.length === 0 && <p>No columns</p>}
               {(showEditControls
                 ? currentColumns
                 : currentColumns.filter((col) => col.id === column)
@@ -386,7 +382,7 @@ export default function TicketDialog({
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
                       isActive
                         ? "bg-accent text-accent-foreground font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        : "hover:text-foreground hover:bg-accent/50"
                     }`}
                   >
                     <span

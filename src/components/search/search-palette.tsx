@@ -35,7 +35,7 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
   }
   return (
     <CommandList>
-      {loading && <div className="py-3 text-center text-sm text-foreground">Searching...</div>}
+      {loading && <div className="py-3 text-center">Searching...</div>}
       {!loading && Boolean(query) && activeResults.length === 0 && (
         <CommandEmpty>No results for &quot;{query}&quot;.</CommandEmpty>
       )}
@@ -59,12 +59,10 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
                   />
                 </span>
                 <div className="flex flex-col min-w-0">
-                  <span className="font-medium text-sm">{result.title}</span>
-                  <span className="text-xs text-muted-foreground truncate">{result.snippet}</span>
+                  <span className="font-medium">{result.title}</span>
+                  <span className="truncate">{result.snippet}</span>
                 </div>
-                <span className="ml-auto text-xs text-muted-foreground shrink-0">
-                  {result.path}
-                </span>
+                <span className="ml-auto shrink-0">{result.path}</span>
               </CommandItem>
             ),
           )}

@@ -49,12 +49,12 @@ function BoardSidebarContent({
 }: BoardSidebarContentProps): JSX.Element {
   let body: JSX.Element;
   if (boardLoading) {
-    body = <div className="px-3 py-4 text-xs text-muted-foreground text-center">Loading...</div>;
+    body = <div className="px-3 py-4 text-center">Loading...</div>;
   } else if (boardEntries.length === 0) {
-    body = <div className="px-3 py-4 text-xs text-foreground text-center">No boards yet.</div>;
+    body = <div className="px-3 py-4 text-center">No boards yet.</div>;
   } else if (sortedTickets.length === 0) {
     body = (
-      <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+      <div className="px-3 py-4 text-center">
         {selectedBoardSlug === undefined ? "No tickets yet." : "No tickets in this board."}
       </div>
     );
@@ -82,10 +82,10 @@ function BoardSidebarContent({
               onClick={() => {
                 navigate(`/b/${ticket.boardSlug}/${ticket.id}`);
               }}
-              className={`w-full text-left px-3 py-1.5 text-xs rounded transition-colors flex items-center gap-2 ${
+              className={`w-full text-left px-3 py-1.5 rounded transition-colors flex items-center gap-2 ${
                 isActive
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  : "hover:text-foreground hover:bg-accent/50"
               }`}
             >
               {columnColor === undefined ? undefined : (
@@ -108,7 +108,7 @@ function BoardSidebarContent({
       {/* Board selector */}
       <div className="px-2 pb-2">
         <select
-          className="w-full h-8 text-xs rounded border border-border bg-transparent text-foreground px-1.5 appearance-none cursor-pointer"
+          className="w-full h-8 rounded border border-border bg-transparent text-foreground px-1.5 appearance-none cursor-pointer"
           value={selectedBoardSlug ?? ""}
           onChange={(ev) => {
             const val = ev.target.value;
@@ -476,7 +476,7 @@ export default function Sidebar({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+              className="w-full justify-start gap-1.5 hover:text-foreground h-7"
               onClick={() => {
                 setNewTicketOpen(true);
               }}
@@ -492,7 +492,7 @@ export default function Sidebar({
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start gap-1.5 text-muted-foreground hover:text-foreground h-7 text-xs"
+              className="w-full justify-start gap-1.5 hover:text-foreground h-7"
               onClick={() => {
                 onNewPage();
               }}
