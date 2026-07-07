@@ -15,6 +15,7 @@ import { toast } from "@/components/ui/toaster";
 import { createFile, getFile, getTree } from "@/lib/api";
 import { defaultBoardConfig, displayColumnId, yamlToBoard } from "@/lib/board";
 import type { BoardConfig } from "@/lib/board";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Plus, Settings } from "lucide-react";
 import type { ChangeEvent, JSX } from "react";
 
@@ -40,7 +41,13 @@ function renderContent(
             navigate(`/bm/${board.slug}`);
           }}
         >
-          <Settings className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+          {board.config.icon !== undefined && board.config.icon !== "" ? (
+            <span className="shrink-0 mt-0.5">
+              <EmojiIcon emoji={board.config.icon} size={20} />
+            </span>
+          ) : (
+            <Settings className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+          )}
           <div className="min-w-0">
             <p className="font-medium truncate">{board.config.name}</p>
             <p className="mt-0.5">

@@ -9,6 +9,7 @@ interface BoardConfig {
   columns: BoardColumn[];
   name: string;
   prefix: string;
+  icon?: string;
 }
 
 interface TicketData {
@@ -47,8 +48,13 @@ function boardToYaml(config: BoardConfig): string {
   const parts: string[] = [
     `name: ${JSON.stringify(config.name)}`,
     `prefix: ${JSON.stringify(config.prefix)}`,
+  ];
+  if (config.icon !== undefined && config.icon !== "") {
+    parts.push(`icon: ${JSON.stringify(config.icon)}`);
+  }
+  // oxlint-disable-next-line id-length
+  parts.push(
     "columns:",
-    // oxlint-disable-next-line id-length
     ...config.columns.flatMap((col) => {
       const lines = [
         `  - id: ${JSON.stringify(col.id)}`,
@@ -63,7 +69,7 @@ function boardToYaml(config: BoardConfig): string {
       return lines;
     }),
     "",
-  ];
+  );
   return parts.join("\n");
 }
 
@@ -111,7 +117,12 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
     });
   }
 
-  return { columns, name: obj.name, prefix: obj.prefix };
+  return {
+    columns,
+    icon: typeof obj.icon === "string" && obj.icon !== "" ? obj.icon : undefined,
+    name: obj.name,
+    prefix: obj.prefix,
+  };
 }
 
 /** Parse a ticket's YAML string into TicketData. */

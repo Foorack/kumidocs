@@ -6,6 +6,7 @@ import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/l
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import { GripVertical, Info } from "lucide-react";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
@@ -469,10 +470,13 @@ function BoardPage(): JSX.Element {
     <div className="flex-1 overflow-hidden flex flex-col">
       {/* Board header */}
       <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
-        <span
-          className="w-6 h-6 shrink-0"
-          dangerouslySetInnerHTML={{ __html: ICONS.Board24Color ?? "" }}
-        />
+        <span className="w-6 h-6 shrink-0 flex items-center justify-center">
+          {config.icon !== undefined && config.icon !== "" ? (
+            <EmojiIcon emoji={config.icon} size={24} />
+          ) : (
+            <span dangerouslySetInnerHTML={{ __html: ICONS.Board24Color ?? "" }} />
+          )}
+        </span>
         <div className="flex flex-col min-w-0">
           <h1 className="font-semibold text-base truncate">{config.name}</h1>
           <div className="flex items-center gap-1 -mt-1">

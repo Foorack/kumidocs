@@ -115,7 +115,7 @@ const TopBar = (allProps: TopBarProps): JSX.Element => {
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 gap-1.5 font-normal w-full max-w-96 justify-start bg-white hover:bg-white/90"
+          className="h-7 gap-1.5 font-normal w-full max-w-96 justify-start bg-white hover:bg-white/90 text-black"
           onClick={onSearchOpen}
         >
           <Search className="w-3.5 h-3.5 shrink-0" />

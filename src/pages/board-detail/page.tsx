@@ -28,6 +28,7 @@ import {
   ColorPickerOutput,
   ColorPickerSelection,
 } from "@/components/ui/color-picker";
+import EmojiPickerPopover from "@/components/ui/emoji-picker-popover";
 import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
 
 interface OutletCtx {
@@ -183,6 +184,10 @@ function BoardDetailPage(): JSX.Element {
 
   const updateName = useCallback((val: string) => {
     setConfig((prev) => (prev ? { ...prev, name: val } : prev));
+  }, []);
+
+  const updateIcon = useCallback((emoji: string) => {
+    setConfig((prev) => (prev ? { ...prev, icon: emoji } : prev));
   }, []);
 
   const updateColumn = useCallback(
@@ -373,18 +378,26 @@ function BoardDetailPage(): JSX.Element {
           Back to boards
         </button>
 
-        {/* Name */}
+        {/* Icon + Name */}
         <div className="space-y-1.5">
           <Label htmlFor="board-name">Board name</Label>
-          <Input
-            id="board-name"
-            value={config.name}
-            onChange={(ev: ChangeEvent<HTMLInputElement>) => {
-              updateName(ev.target.value);
-            }}
-            className={INPUT_CLASS}
-            placeholder="My Board"
-          />
+          <div className="flex items-center gap-3">
+            <EmojiPickerPopover
+              emoji={config.icon}
+              size={28}
+              editable={true}
+              onSelect={updateIcon}
+            />
+            <Input
+              id="board-name"
+              value={config.name}
+              onChange={(ev: ChangeEvent<HTMLInputElement>) => {
+                updateName(ev.target.value);
+              }}
+              className={INPUT_CLASS}
+              placeholder="My Board"
+            />
+          </div>
         </div>
 
         {/* Prefix (locked after creation — matches board ID) */}

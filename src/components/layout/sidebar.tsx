@@ -124,6 +124,9 @@ function BoardSidebarContent({
           <option value="">All boards</option>
           {boardEntries.map((entry) => (
             <option key={entry.slug} value={entry.slug}>
+              {entry.config.icon !== undefined && entry.config.icon !== ""
+                ? `${entry.config.icon} `
+                : ""}
               {entry.config.name}
             </option>
           ))}
