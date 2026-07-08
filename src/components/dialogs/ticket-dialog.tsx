@@ -2,7 +2,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Textarea from "@/components/ui/textarea";
 import { Copy } from "lucide-react";
 import { createFile, getFile, getTree, putFile } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
@@ -11,12 +10,15 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Streamdown } from "streamdown";
-import { cjk } from "@streamdown/cjk";
-import { code } from "@streamdown/code";
-import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
-import { COMPONENTS_DOC, REHYPE_PLUGINS } from "@/components/editor/markdown/streamdown-components";
+import MarkdownToolbar from "@/components/editor/markdown/toolbar";
+import MarkdownViewer from "@/components/editor/markdown/viewer";
+import {
+  insertWrap,
+  setLinePrefix,
+  toggleListPrefix,
+  insertLink,
+  HEADING_OPTIONS,
+} from "@/components/editor/markdown/editor-utils";
 
 interface TicketDialogProps {
   open: boolean;
@@ -59,6 +61,10 @@ export default function TicketDialog({
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  // Columns for the current board
+  const currentColumns = boardColumns.get(boardSlug) ?? [];
+  const defaultColumnId = currentColumns.find((col) => col.default === true)?.id ?? "";
+
   // Reset form when dialog opens
   const prevOpenRef = useRef(false);
   if (open && !prevOpenRef.current) {
@@ -73,7 +79,7 @@ export default function TicketDialog({
       setBoardSlug(initialBoardSlug ?? "");
       setTitle("");
       setBody("");
-      setColumn("");
+      setColumn(defaultColumnId);
       setEditing(true);
     }
     setSaving(false);
@@ -110,12 +116,8 @@ export default function TicketDialog({
     nameA.localeCompare(nameB),
   );
 
-  // Columns for the current board
-  const currentColumns = boardColumns.get(boardSlug) ?? [];
-  const columnColor =
-    currentColumns.find((col) => col.id === column)?.color ??
-    currentColumns.find((col) => col.default === true)?.color ??
-    "#6b7280";
+  const activeColumn = column === "" ? defaultColumnId : column;
+  const columnColor = currentColumns.find((col) => col.id === activeColumn)?.color ?? "#6b7280";
   const showEditControls = editing || !isEdit;
 
   const handleSave = useCallback(async () => {
@@ -170,7 +172,7 @@ export default function TicketDialog({
       const path = `${slug}/${nextId}.yaml`;
       const yaml = ticketToYaml({
         body: body.trim(),
-        column: "",
+        column,
         title: title.trim(),
       });
       await createFile(path, yaml);
@@ -236,27 +238,179 @@ export default function TicketDialog({
 
   const canSave = !saving && title.trim() !== "";
 
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [headingValue, setHeadingValue] = useState("");
+
+  const saveBodySelection = useCallback((): void => {
+    bodyRef.current?.focus();
+  });
+
+  const handleBodyBold = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    insertWrap(ta, "**", "**");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyItalic = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    insertWrap(ta, "*", "*");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyStrikethrough = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    insertWrap(ta, "~~", "~~");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyCode = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    insertWrap(ta, "`", "`");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyHeading = useCallback((val: string): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    setHeadingValue(val);
+    const prefix = HEADING_OPTIONS.find((opt) => opt.value === val)?.prefix ?? "";
+    setLinePrefix(ta, prefix);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyQuote = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    setLinePrefix(ta, "> ");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyUnordered = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    toggleListPrefix(ta, "- ");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyNumbered = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    toggleListPrefix(ta, "1. ");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyTask = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    toggleListPrefix(ta, "- [ ] ");
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyLink = useCallback((): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    insertLink(ta);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
+  const handleBodyEmoji = useCallback((emoji: string): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    ta.setRangeText(emoji, start, end, "preserve");
+    ta.setSelectionRange(start + emoji.length, start + emoji.length);
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    ta.focus();
+  }, []);
+
+  const handleBodyKeyDown = useCallback((ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    const ta = bodyRef.current;
+    if (!ta) {
+      return;
+    }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key === "b") {
+      ev.preventDefault();
+      insertWrap(ta, "**", "**");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      return;
+    }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key === "i") {
+      ev.preventDefault();
+      insertWrap(ta, "*", "*");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }, []);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const bodyContent = editing ? (
-    <Textarea
-      value={body}
-      onChange={(ev) => {
-        setBody(ev.target.value);
-      }}
-      placeholder="Add description..."
-      className="min-h-[300px] resize-y"
-    />
+    <div className="flex flex-col min-h-[300px] border rounded-md overflow-hidden">
+      <MarkdownToolbar
+        disabled={false}
+        headingValue={headingValue}
+        showPreview={false}
+        handleHeading={handleBodyHeading}
+        handleBold={handleBodyBold}
+        handleEmoji={handleBodyEmoji}
+        handleItalic={handleBodyItalic}
+        handleStrikethrough={handleBodyStrikethrough}
+        handleCode={handleBodyCode}
+        handleLink={handleBodyLink}
+        handleQuote={handleBodyQuote}
+        handleUnordered={handleBodyUnordered}
+        handleNumbered={handleBodyNumbered}
+        handleTask={handleBodyTask}
+        fileInputRef={fileInputRef}
+        handlePropsOpen={(_open: boolean): void => {
+          /* no props dialog in ticket editor */
+        }}
+        setShowPreview={(_val: boolean | ((prev: boolean) => boolean)): void => {
+          /* no preview toggle in ticket editor */
+        }}
+      />
+      <textarea
+        ref={bodyRef}
+        value={body}
+        onChange={(ev) => {
+          setBody(ev.target.value);
+        }}
+        onKeyDown={handleBodyKeyDown}
+        onSelect={saveBodySelection}
+        onClick={saveBodySelection}
+        placeholder="Add description..."
+        className="flex-1 p-3 resize-none outline-none font-mono text-sm leading-relaxed min-h-[260px]"
+      />
+    </div>
   ) : (
-    <div className="prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent prose-pre:text-foreground dark:prose-invert max-w-none">
-      <Streamdown
-        mode="streaming"
-        plugins={{ cjk, code, math, mermaid }}
-        shikiTheme={["github-light", "github-dark"]}
-        linkSafety={{ enabled: false }}
-        components={COMPONENTS_DOC}
-        rehypePlugins={REHYPE_PLUGINS}
-      >
-        {body || "*No description.*"}
-      </Streamdown>
+    <div className="border rounded-md overflow-hidden">
+      <MarkdownViewer value={body || "*No description.*"} />
     </div>
   );
 
@@ -388,17 +542,17 @@ export default function TicketDialog({
 
           {/* Right: status sidebar */}
           <div
-            className="w-52 shrink-0 border-l p-4 space-y-3"
+            className="w-52 shrink-0 border-l p-3 space-y-2"
             style={{ borderColor: columnColor }}
           >
-            <h3 className="font-bold uppercase tracking-wider">Status</h3>
-            <div className="space-y-1">
+            <h3 className="text-sm font-semibold uppercase tracking-wide select-none">Status</h3>
+            <div className="space-y-0.5">
               {currentColumns.length === 0 && <p>No columns</p>}
               {(showEditControls
                 ? currentColumns
-                : currentColumns.filter((col) => col.id === column)
+                : currentColumns.filter((col) => col.id === activeColumn)
               ).map((col) => {
-                const isActive = column === col.id;
+                const isActive = activeColumn === col.id;
                 return (
                   <button
                     key={col.id}
@@ -406,7 +560,7 @@ export default function TicketDialog({
                     onClick={() => {
                       setColumn(col.id);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                    className={`w-full flex items-center gap-2 px-2 py-[3px] rounded text-sm transition-colors ${
                       isActive
                         ? "bg-accent text-accent-foreground font-medium"
                         : "hover:text-foreground hover:bg-accent/50"
