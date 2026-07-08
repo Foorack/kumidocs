@@ -10,7 +10,6 @@ import NotFound from "@/pages/not-found/page";
 import PageThemesPage from "@/pages/page-themes/page";
 import Providers from "@/providers";
 import SlideThemesPage from "@/pages/slide-themes/page";
-import TicketPage from "@/pages/ticket/page";
 import WelcomePage from "@/pages/welcome/page";
 import { useUser } from "@/store/user";
 
@@ -37,8 +36,7 @@ function AppRoutes(): JSX.Element {
         <Route path="/b" element={<BoardListPage />} />
         <Route path="/bm" element={<BoardManagerPage />} />
         <Route path="/bm/:name" element={<BoardDetailPage />} />
-        <Route path="/b/:name" element={<BoardPage />} />
-        <Route path="/b/:name/:id" element={<TicketPage />} />
+        <Route path="/b/:name/*" element={<BoardPage />} />
         <Route path="/i" element={<ImageLibraryPage />} />
         <Route path="/i/:filename" element={<ImageLibraryPage />} />
         <Route path="/s" element={<SlideThemesPage />} />

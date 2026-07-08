@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
@@ -22,9 +22,14 @@ import BoardColumnView from "./column";
 import BoardOverlay from "./board-overlay";
 
 function BoardPage(): JSX.Element {
-  const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
+  const { name, "*": star } = useParams<{ name: string; "*": string }>();
   const boardSlug = name ?? "";
+  const ticketIdFromUrl = star ?? "";
   const { instanceName, user } = useUser();
+
+  // Track if we've handled the initial URL id (avoid re-opening on re-renders)
+  const initialIdHandledRef = useRef(false);
 
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [tickets, setTickets] = useState<TicketData[]>([]);
@@ -171,7 +176,11 @@ function BoardPage(): JSX.Element {
     setDialogOpen(false);
     setEditTicket(undefined);
     document.title = config ? `${config.name} | ${instanceName}` : `Board | ${instanceName}`;
-  }, [config, instanceName]);
+    // Navigate back to the board root if on a ticket URL
+    if (ticketIdFromUrl) {
+      void navigate(`/b/${boardSlug}`, { replace: true });
+    }
+  }, [config, instanceName, ticketIdFromUrl, boardSlug, navigate]);
 
   const reloadTickets = useCallback(async (): Promise<void> => {
     if (!boardSlug) {
@@ -250,9 +259,24 @@ function BoardPage(): JSX.Element {
         document.title = `[${config?.prefix ?? "?"}-${ticket.id}] ${ticket.title}`;
       }
       setDialogOpen(true);
+      // Update URL to the ticket without full navigation
+      void navigate(`/b/${ticket.boardSlug}/${ticket.id}`, { replace: true });
     },
-    [boardDefaultColId, config?.prefix],
+    [boardDefaultColId, config?.prefix, navigate],
   );
+
+  // Auto-open dialog when navigating directly to a ticket URL
+  useEffect(() => {
+    if (!ticketIdFromUrl || loading || tickets.length === 0 || initialIdHandledRef.current) {
+      return;
+    }
+    const ticket = tickets.find((tic) => tic.id === ticketIdFromUrl);
+    if (ticket) {
+      initialIdHandledRef.current = true;
+      void openEditDialog(ticket);
+    }
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketIdFromUrl, loading, tickets]);
 
   // Drag overlay state
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
