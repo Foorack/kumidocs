@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Textarea from "@/components/ui/textarea";
+import { Copy } from "lucide-react";
 import { createFile, getFile, getTree, putFile } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
 import type { BoardColumn } from "@/lib/board";
@@ -287,29 +288,52 @@ export default function TicketDialog({
             }}
           >
             <span className="font-semibold text-background">
-              {isEdit
-                ? `${boards.get(boardSlug) ?? ""} | ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`
-                : "New ticket"}
+              {isEdit ? (
+                <>
+                  <span>{boards.get(boardSlug) ?? ""}</span>
+                  <span className="px-3"> | </span>
+                  <span className="inline-flex items-center gap-1">
+                    {ticket.boardSlug.toUpperCase()}-{ticket.ticketId}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(
+                          `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`,
+                        );
+                        toast.success(
+                          `Copied ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`,
+                        );
+                      }}
+                      className="ps-3 opacity-80 hover:opacity-60"
+                      title="Copy ticket number"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </span>
+                </>
+              ) : (
+                <span>New ticket</span>
+              )}
             </span>
           </div>
           <div className="flex-1" />
-          <div className="flex items-center gap-0">
+          <div className="flex items-end gap-0">
             <Button
               variant="ghost"
-              className="rounded-none px-7 hover:bg-transparent"
+              className="rounded-none px-7 hover:bg-transparent items-end"
               onClick={onClose}
             >
-              Cancel
+              <span className="leading-[1.2]">Cancel</span>
               <Kbd>Esc</Kbd>
             </Button>
             {showEditControls ? (
               <Button
-                className="rounded-none px-7 text-background"
+                className="rounded-none px-7 text-background items-end"
                 onClick={handleSave}
                 disabled={!canSave}
                 style={{ backgroundColor: columnColor }}
               >
-                {buttonLabel}
+                <span className="leading-[1.2]">{buttonLabel}</span>
                 <KbdGroup>
                   <Kbd>⌘</Kbd>
                   <Kbd>S</Kbd>
@@ -317,13 +341,13 @@ export default function TicketDialog({
               </Button>
             ) : (
               <Button
-                className="rounded-none px-7 text-background"
+                className="rounded-none px-7 text-background items-end"
                 onClick={() => {
                   setEditing(true);
                 }}
                 style={{ backgroundColor: columnColor }}
               >
-                {buttonLabel}
+                <span className="leading-[1.2]">{buttonLabel}</span>
                 <Kbd>E</Kbd>
               </Button>
             )}
