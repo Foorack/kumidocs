@@ -73,11 +73,10 @@ function ColorPicker({
 
   useEffect(() => {
     if (value !== undefined) {
-      const color = Color.rgb(value).rgb().object();
-
-      setHue(color.r ?? 0);
-      setSaturation(color.g ?? 0);
-      setLightness(color.b ?? 0);
+      const color = Color(value);
+      setHue(color.hue());
+      setSaturation(color.saturationl());
+      setLightness(color.lightness());
     }
   }, [value]);
 

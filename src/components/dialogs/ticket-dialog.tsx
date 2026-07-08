@@ -90,7 +90,7 @@ export default function TicketDialog({
       setTitle("");
       setBody("");
       setColumn(defaultColumnId);
-      setReporter(user?.displayName ?? user?.name ?? user?.email ?? "");
+      setReporter(user?.email ?? user?.name ?? "");
       setAssignee("");
       setEditing(true);
     }
@@ -495,8 +495,9 @@ export default function TicketDialog({
                           `Copied ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`,
                         );
                       }}
-                      className="ps-3 opacity-80 hover:opacity-60"
+                      className="ms-3 opacity-80 hover:opacity-60"
                       title="Copy ticket number"
+                      tabIndex={-1}
                     >
                       <Copy className="w-4 h-4" />
                     </button>
@@ -594,6 +595,15 @@ export default function TicketDialog({
                       placeholder="Unassigned"
                       className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground"
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssignee(user?.email ?? user?.name ?? "");
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                    >
+                      Assign to me
+                    </button>
                   </div>
                 ) : (
                   <span className="flex items-center gap-1.5 text-foreground">
