@@ -15,7 +15,7 @@ function CardContent({
 }): JSX.Element {
   return (
     <>
-      <div className="flex items-center gap-1.5 pb-1">
+      <div className="flex items-center gap-1.5">
         <span
           className="font-mono text-background ps-3 pe-5"
           style={{ backgroundColor: columnColor }}
@@ -23,7 +23,7 @@ function CardContent({
           {prefix}-{ticket.id}
         </span>
       </div>
-      <p className="leading-snug line-clamp-2">{ticket.title}</p>
+      <p className="leading-snug line-clamp-2 font-bold p-1">{ticket.title}</p>
     </>
   );
 }
