@@ -4,7 +4,15 @@ import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
-import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { GripVertical, Info } from "lucide-react";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
@@ -51,26 +59,24 @@ function TicketCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-lg border-3 shadow-xs">
-      {/* Drag handle row */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 cursor-grab active:cursor-grabbing"
-      >
-        <GripVertical className="w-3 h-3 shrink-0" />
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="font-mono">
-          {prefix}-{ticket.id}
-        </span>
-      </div>
-
-      {/* Clickable body */}
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full text-left px-3 pb-2.5 hover:bg-accent/50 transition-colors rounded-b-lg"
-      >
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="rounded-lg border-3 shadow-xs cursor-grab active:cursor-grabbing"
+    >
+      <button type="button" onClick={onClick} className="w-full text-left block px-3 pt-2.5 pb-2.5">
+        <div className="flex items-center gap-1.5 pb-1">
+          <GripVertical className="w-3 h-3 shrink-0" />
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: columnColor }}
+          />
+          <span className="font-mono">
+            {prefix}-{ticket.id}
+          </span>
+        </div>
         <p className="leading-snug line-clamp-2">{ticket.title}</p>
       </button>
     </div>
@@ -413,6 +419,13 @@ function BoardPage(): JSX.Element {
     setActiveId(undefined);
   }, []);
 
+  // Sensors with activation distance so clicks pass through
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+
   // Handle drag end (move ticket between columns)
   const handleDragEnd = useCallback(
     async (event: DragEndEvent): Promise<void> => {
@@ -523,6 +536,7 @@ function BoardPage(): JSX.Element {
       {/* Content area: kanban + optional info panel */}
       <div className="flex flex-1 overflow-hidden">
         <DndContext
+          sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}

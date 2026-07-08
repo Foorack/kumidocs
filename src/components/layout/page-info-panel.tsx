@@ -164,7 +164,9 @@ export default function PageInfoPanel({
                         className="shrink-0 mt-0.5"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="text-sm text-foreground line-clamp-2 block">{commit.message}</span>
+                        <span className="text-sm text-foreground line-clamp-2 block">
+                          {commit.message}
+                        </span>
                         {(commit.added !== undefined || commit.removed !== undefined) && (
                           <span className="flex gap-1 mt-0.5">
                             {(commit.added ?? 0) > 0 && (
