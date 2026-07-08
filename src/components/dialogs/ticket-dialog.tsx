@@ -239,11 +239,11 @@ export default function TicketDialog({
   const canSave = !saving && title.trim() !== "";
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const [headingValue, setHeadingValue] = useState("");
+  const [headingValue, setHeadingValue] = useState("normal");
 
   const saveBodySelection = useCallback((): void => {
     bodyRef.current?.focus();
-  });
+  }, []);
 
   const handleBodyBold = useCallback((): void => {
     const ta = bodyRef.current;
@@ -373,6 +373,7 @@ export default function TicketDialog({
   const bodyContent = editing ? (
     <div className="flex flex-col min-h-[300px] border rounded-md overflow-hidden">
       <MarkdownToolbar
+        editorOnly
         disabled={false}
         headingValue={headingValue}
         showPreview={false}
@@ -424,7 +425,7 @@ export default function TicketDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-3xl p-0 gap-0 border-5"
+        className="sm:max-w-5xl p-0 gap-0 border-5"
         showCloseButton={false}
         onKeyDown={handleKeyDown}
         style={{ borderColor: columnColor }}

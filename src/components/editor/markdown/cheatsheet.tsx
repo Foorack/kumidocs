@@ -13,11 +13,10 @@ function MarkdownCheatsheet(): JSX.Element {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Markdown cheatsheet">
           <span className="text-muted-foreground">
             <FileQuestionMark />
           </span>
-          Cheatsheet
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">

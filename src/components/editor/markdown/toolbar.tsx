@@ -30,6 +30,7 @@ import type React from "react";
 
 interface MarkdownToolbarProps {
   disabled?: boolean;
+  editorOnly?: boolean;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   handleBold: () => void;
   handleCode: () => void;
@@ -50,6 +51,7 @@ interface MarkdownToolbarProps {
 
 function MarkdownToolbar({
   disabled,
+  editorOnly,
   headingValue,
   showPreview,
   handleHeading,
@@ -276,21 +278,23 @@ function MarkdownToolbar({
 
       {/* Right: meta controls */}
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-7 p-0"
-          onClick={() => {
-            setShowPreview((prev) => !prev);
-          }}
-          onMouseDown={(ev) => {
-            ev.preventDefault();
-          }}
-          disabled={disabled}
-          title={showPreview ? "Hide preview" : "Show preview"}
-        >
-          {showPreview ? <Eye /> : <EyeOff />}
-        </Button>
+        {editorOnly !== true && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => {
+              setShowPreview((prev) => !prev);
+            }}
+            onMouseDown={(ev) => {
+              ev.preventDefault();
+            }}
+            disabled={disabled}
+            title={showPreview ? "Hide preview" : "Show preview"}
+          >
+            {showPreview ? <Eye /> : <EyeOff />}
+          </Button>
+        )}
         <div className="w-px h-4 bg-border mx-0.5" />
         <MarkdownCheatsheet />
       </div>
