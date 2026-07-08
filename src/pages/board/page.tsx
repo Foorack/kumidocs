@@ -1,18 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
-import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
+import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Info } from "lucide-react";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
@@ -25,196 +17,12 @@ import PageInfoPanel from "@/components/layout/page-info-panel";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
+import BoardColumnView from "./column";
+import BoardOverlay from "./board-overlay";
 
 interface OutletCtx {
   instanceName: string;
-}
-
-// ── Shared card content ────────────────────────────────────────────
-
-function CardContent({
-  ticket,
-  prefix,
-  columnColor,
-}: {
-  ticket: TicketData;
-  prefix: string;
-  columnColor: string;
-}): JSX.Element {
-  return (
-    <>
-      <div className="flex items-center gap-1.5 pb-1">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="font-mono">
-          {prefix}-{ticket.id}
-        </span>
-      </div>
-      <p className="leading-snug line-clamp-2">{ticket.title}</p>
-    </>
-  );
-}
-
-// ── Ticket card (draggable source) ────────────────────────────────
-
-interface TicketCardProps {
-  ticket: TicketData;
-  prefix: string;
-  boardSlug: string;
-  onClick: () => void;
-  columnColor: string;
-}
-
-function TicketCard({
-  ticket,
-  prefix,
-  boardSlug,
-  onClick,
-  columnColor,
-}: TicketCardProps): JSX.Element {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `${boardSlug}/${ticket.id}`,
-  });
-
-  const style: CSSProperties = {
-    backgroundColor: `${columnColor}66`,
-    borderColor: columnColor,
-    opacity: isDragging ? 0 : undefined,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="rounded-lg border-3 shadow-xs cursor-grab active:cursor-grabbing"
-    >
-      <button type="button" onClick={onClick} className="w-full text-left block px-3 pt-2.5 pb-2.5">
-        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
-      </button>
-    </div>
-  );
-}
-
-// ── Drag overlay card (rendered in portal) ────────────────────────
-
-interface DragOverlayCardProps {
-  ticket: TicketData;
-  prefix: string;
-  columnColor: string;
-}
-
-function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps): JSX.Element {
-  return (
-    <div
-      className="rounded-lg border-3 shadow-xl bg-background"
-      style={{
-        backgroundColor: `${columnColor}66`,
-        borderColor: columnColor,
-        width: "var(--dnd-overlay-width, 288px)",
-      }}
-    >
-      <div className="px-3 pt-2.5 pb-2.5">
-        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
-      </div>
-    </div>
-  );
-}
-
-// ── Column component ───────────────────────────────────────────────
-
-interface ColumnProps {
-  column: BoardColumn;
-  tickets: TicketData[];
-  prefix: string;
-  boardSlug: string;
-  onTicketClick: (ticket: TicketData) => void;
-}
-
-function BoardColumnView({
-  column,
-  tickets,
-  prefix,
-  boardSlug,
-  onTicketClick,
-}: ColumnProps): JSX.Element {
-  const { setNodeRef: dropRef, isOver } = useDroppable({
-    id: `${boardSlug}/${column.id}`,
-  });
-
-  return (
-    <div
-      ref={dropRef}
-      className="flex flex-col w-72 shrink-0 border-r first:border-l border-border transition-all duration-150"
-      style={
-        isOver
-          ? {
-              backgroundColor: `${column.color}33`,
-              boxShadow: `inset 0 2px 0 ${column.color}`,
-            }
-          : undefined
-      }
-    >
-      {/* Column header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
-        <span
-          className="w-2.5 h-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: column.color }}
-        />
-        <span className="font-semibold uppercase tracking-wider">{displayColumnId(column.id)}</span>
-        <span className="ml-auto text-xs tabular-nums">{tickets.length}</span>
-      </div>
-
-      {/* Ticket list */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2 min-h-[4rem]">
-        {tickets.length === 0 && <div className="px-1 py-6 text-center">No tickets</div>}
-        {tickets.map((ticket) => (
-          <TicketCard
-            key={`${boardSlug}/${ticket.id}`}
-            ticket={ticket}
-            prefix={prefix}
-            boardSlug={boardSlug}
-            columnColor={column.color}
-            onClick={() => {
-              onTicketClick(ticket);
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Drag overlay (extracted for complexity) ───────────────────────
-
-interface BoardOverlayProps {
-  activeId: string | undefined;
-  tickets: TicketData[];
-  columns: BoardColumn[];
-  prefix: string;
-}
-
-function BoardOverlay({ activeId, tickets, columns, prefix }: BoardOverlayProps): JSX.Element {
-  const activeTicket =
-    activeId === undefined
-      ? undefined
-      : tickets.find((tic) => `${tic.boardSlug}/${tic.id}` === activeId);
-
-  const activeTicketColor =
-    activeTicket === undefined || columns.length === 0
-      ? "#888"
-      : (columns.find((col) => col.id === activeTicket.column)?.color ??
-        columns[0]?.color ??
-        "#888");
-
-  return (
-    <DragOverlay dropAnimation={undefined}>
-      {activeTicket === undefined ? undefined : (
-        <DragOverlayCard ticket={activeTicket} prefix={prefix} columnColor={activeTicketColor} />
-      )}
-    </DragOverlay>
-  );
 }
 
 // ── Board page ─────────────────────────────────────────────────────
