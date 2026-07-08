@@ -42,7 +42,9 @@ export default function BoardColumnView({
           className="w-2.5 h-2.5 rounded-full shrink-0"
           style={{ backgroundColor: column.color }}
         />
-        <span className="font-semibold uppercase tracking-wider">{displayColumnId(column.id)}</span>
+        <span className="font-bold text-sm uppercase tracking-wider">
+          {displayColumnId(column.id)}
+        </span>
         <span className="ml-auto text-xs tabular-nums">{tickets.length}</span>
       </div>
 

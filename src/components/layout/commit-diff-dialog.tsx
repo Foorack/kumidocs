@@ -22,7 +22,7 @@ export default function CommitDiffDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[80vw] max-w-[80vw] sm:w-[80vw] sm:max-w-[80vw] h-[85vh] max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-3 border-b border-border shrink-0">
-          <DialogTitle className="font-semibold">
+          <DialogTitle className="font-bold">
             {diffData ? (
               <>
                 <span className="font-mono mr-2">{diffData.sha}</span>

@@ -67,7 +67,7 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
             <div className="flex flex-col items-center gap-3">
               <UserAvatar name={user.displayName} email={user.email} size="lg" />
               <div className="text-center">
-                <p className="text-sm font-semibold text-foreground">{user.displayName}</p>
+                <p className="text-sm font-bold text-foreground">{user.displayName}</p>
                 <p className="mt-0.5">{user.email}</p>
               </div>
               {headSha && (

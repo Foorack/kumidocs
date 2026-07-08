@@ -18,7 +18,7 @@ const WelcomePage = (): JSX.Element => {
       <div className="text-5xl">
         <EmojiIcon emoji="🎆" size="1em" />
       </div>
-      <h1 className="text-xl font-semibold">Welcome to KumiDocs</h1>
+      <h1 className="text-xl font-bold">Welcome to KumiDocs</h1>
       <p className="max-w-xs">
         Select a markdown file from the sidebar to get started, or create a new one!
       </p>

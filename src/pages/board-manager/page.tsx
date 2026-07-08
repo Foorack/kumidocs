@@ -152,7 +152,7 @@ function BoardManagerPage(): JSX.Element {
     <div className="flex-1 overflow-auto">
       <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Board Manager</h1>
+          <h1 className="text-lg font-bold">Board Manager</h1>
           <Button
             size="sm"
             className="h-8 text-xs gap-1.5"

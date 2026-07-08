@@ -83,7 +83,7 @@ const TemplateDialog = (allProps: TemplateDialogProps): JSX.Element => {
         className="sm:max-w-5xl max-w-5xl w-full p-0 gap-0 overflow-hidden flex flex-col h-[85vh]"
       >
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-          <span className="font-semibold">{name ?? "Template"}</span>
+          <span className="font-bold">{name ?? "Template"}</span>
           <button
             type="button"
             onClick={onClose}
@@ -130,7 +130,7 @@ const PageThemesPage = (): JSX.Element => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-        <h1 className="text-xl font-semibold flex-1">Page Themes</h1>
+        <h1 className="text-xl font-bold flex-1">Page Themes</h1>
         <span>
           {total} {label}
         </span>

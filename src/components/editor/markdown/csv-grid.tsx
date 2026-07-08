@@ -29,11 +29,11 @@ const CELL_CLASS =
   "focus:outline-none focus:ring-1 focus:ring-primary focus:ring-inset";
 
 const HEADER_CLASS =
-  "sticky top-0 z-10 bg-muted font-semibold text-muted-foreground text-xs " +
+  "sticky top-0 z-10 bg-muted font-bold text-muted-foreground text-xs " +
   "border-r border-b border-border px-2 py-1 text-center";
 
 const ROW_HEADER_CLASS =
-  "sticky left-0 z-10 bg-muted font-semibold text-muted-foreground text-xs " +
+  "sticky left-0 z-10 bg-muted font-bold text-muted-foreground text-xs " +
   "border-r border-b border-border px-2 py-1 text-center min-w-[36px] w-[36px]";
 
 function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): JSX.Element {

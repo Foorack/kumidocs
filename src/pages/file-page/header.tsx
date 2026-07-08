@@ -120,7 +120,7 @@ function FilePageHeader({
           onSelect={handleEmojiChange}
         />
         <div className="flex flex-col min-w-0">
-          <h1 className="font-semibold text-base truncate">{title}</h1>
+          <h1 className="font-bold text-base truncate">{title}</h1>
           {breadcrumb.length > 0 && (
             <div className="flex items-center gap-1 text-xs -mt-1">
               {breadcrumb.map((segment, idx) => {

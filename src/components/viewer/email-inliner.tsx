@@ -40,7 +40,7 @@ function inlineStyles(el: HTMLElement): void {
     "border-green-500": "border-color:#22c55e",
     "border-purple-500": "border-color:#a855f7",
     "border-red-500": "border-color:#ef4444",
-    "font-semibold": "font-weight:700",
+    "font-bold": "font-weight:700",
     "list-disc": "list-style-type:disc",
     "list-inside": "list-style-position:inside",
     "py-1": "padding-top:4px;padding-bottom:4px",

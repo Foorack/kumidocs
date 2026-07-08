@@ -278,7 +278,7 @@ export default function ImageLibraryPage(): JSX.Element {
     <div className="flex flex-col h-full">
       {/* Page header */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-        <h1 className="text-xl font-semibold flex-1">Image Library</h1>
+        <h1 className="text-xl font-bold flex-1">Image Library</h1>
         <span>
           {images.length} {images.length === 1 ? "image" : "images"}
         </span>

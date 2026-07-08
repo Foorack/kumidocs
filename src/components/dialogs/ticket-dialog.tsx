@@ -228,10 +228,10 @@ export default function TicketDialog({
         setTitle(ev.target.value);
       }}
       placeholder="Title"
-      className="text-lg font-semibold h-auto py-2 px-3"
+      className="text-lg font-bold h-auto py-2 px-3"
     />
   ) : (
-    <h1 className="text-lg font-semibold text-foreground px-0.5">{title}</h1>
+    <h1 className="text-lg font-bold text-foreground px-0.5">{title}</h1>
   );
 
   const canSave = !saving && title.trim() !== "";
@@ -287,7 +287,7 @@ export default function TicketDialog({
               outline: `1px solid ${columnColor}`,
             }}
           >
-            <span className="font-semibold text-background">
+            <span className="font-bold text-background">
               {isEdit ? (
                 <>
                   <span>{boards.get(boardSlug) ?? ""}</span>
@@ -391,7 +391,7 @@ export default function TicketDialog({
             className="w-52 shrink-0 border-l p-4 space-y-3"
             style={{ borderColor: columnColor }}
           >
-            <h3 className="font-semibold uppercase tracking-wider">Status</h3>
+            <h3 className="font-bold uppercase tracking-wider">Status</h3>
             <div className="space-y-1">
               {currentColumns.length === 0 && <p>No columns</p>}
               {(showEditControls
