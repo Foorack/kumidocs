@@ -520,9 +520,15 @@ export default function TicketDialog({
             <Button
               variant="ghost"
               className="rounded-none px-7 hover:bg-transparent items-end"
-              onClick={onClose}
+              onClick={
+                editing && isEdit
+                  ? () => {
+                      setEditing(false);
+                    }
+                  : onClose
+              }
             >
-              <span className="leading-[1.2]">Cancel</span>
+              <span className="leading-[1.2]">{editing && isEdit ? "Cancel" : "Close"}</span>
               <Kbd>Esc</Kbd>
             </Button>
             {showEditControls ? (
