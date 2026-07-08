@@ -3,11 +3,7 @@ import path from "node:path";
 /** Maximum accepted request body size (200 KB). Rejected before JSON parsing. */
 const MAX_BODY_SIZE = 200 * 1024;
 
-/**
- * Checks the Content-Length header as a fast pre-filter before the body is
- * read into memory. Returns an error response if too large, or undefined to
- * proceed.
- */
+/** Quick Content-Length check before reading the body. Returns error or undefined. */
 function checkBodySize(req: Request): Response | undefined {
   const rawLen = req.headers.get("content-length");
   if (rawLen !== null && rawLen !== "") {

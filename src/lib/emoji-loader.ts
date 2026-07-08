@@ -1,13 +1,12 @@
 /**
- * emoji-loader.ts -- fetches the emoji data from /api/emojis at startup,
- * caches it in IndexedDB (7-day TTL), and provides an emoji -> SVG text lookup.
+ * Fetches emoji data from /api/emojis, caches in IndexedDB (7-day TTL).
+ * Provides emoji -> SVG text lookup.
  *
- * The server API gzips on-the-fly; the browser auto-decompresses via
- * Content-Encoding: gzip, so no manual decompression needed here.
+ * The server gzips responses; the browser handles decompression.
  *
  * Format: one entry per line:
  *   <emoji_char>;<minified_svg_text>
- * Split on the FIRST semicolon only -- SVG content may contain semicolons.
+ * Split on the first semicolon only - SVG content may contain semicolons.
  */
 
 import { idbGet, idbSet } from "./idb-cache";

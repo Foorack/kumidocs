@@ -25,7 +25,7 @@ interface OutletCtx {
   instanceName: string;
 }
 
-// ── Board page ─────────────────────────────────────────────────────
+// Board page
 
 function BoardPage(): JSX.Element {
   const { name } = useParams<{ name: string }>();

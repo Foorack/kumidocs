@@ -60,10 +60,8 @@ interface DiffData {
   unifiedDiff: string;
 }
 
-// In-flight GET request deduplication.
-// When multiple callers request the same URL concurrently (e.g. due to
-// StrictMode double-mount or redundant mount effects), only one fetch
-// reaches the network; all callers share the same pending promise.
+// Deduplicate in-flight GET requests.
+// If multiple callers hit the same URL concurrently, only one fetch goes out.
 const inflight = new Map<string, Promise<unknown>>();
 
 async function doFetch<TResponse>(url: string, init?: RequestInit): Promise<TResponse> {

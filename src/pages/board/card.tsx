@@ -2,7 +2,7 @@ import type { TicketData } from "@/lib/board";
 import { useDraggable } from "@dnd-kit/core";
 import type { CSSProperties, JSX } from "react";
 
-// ── Shared card content ────────────────────────────────────────────
+// Shared card content
 
 function CardContent({
   ticket,
@@ -26,7 +26,7 @@ function CardContent({
   );
 }
 
-// ── Ticket card (draggable source) ────────────────────────────────
+// Ticket card (draggable source)
 
 interface TicketCardProps {
   ticket: TicketData;
@@ -68,7 +68,7 @@ function TicketCard({
   );
 }
 
-// ── Drag overlay card (rendered in portal) ────────────────────────
+// Drag overlay card (rendered in portal)
 
 interface DragOverlayCardProps {
   ticket: TicketData;

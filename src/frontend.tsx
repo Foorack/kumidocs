@@ -1,11 +1,7 @@
-// Force Bun's dev bundler to resolve khroma's ESM re-export chain before
-// mermaid's internal chunks try to import from it. Without this, the dev
-// HMR bundler creates an empty synthetic module for khroma, causing:
-//   TypeError: import_khroma5.adjust is not a function
+// Import khroma before mermaid so the HMR bundler doesn't give it an empty module.
 // oxlint-disable-next-line import/no-duplicates, import/no-unassigned-import
 import "khroma";
-// Named import variant: some bundler versions need this to trigger proper
-// ESM re-export tracing through khroma's chain (khroma -> methods -> adjust).
+// Named import to force Bun to trace khroma's re-export chain.
 // oxlint-disable-next-line @typescript-eslint/no-unused-vars, import/no-duplicates
 import "./index.css";
 import App from "./app";

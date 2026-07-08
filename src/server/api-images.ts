@@ -140,36 +140,31 @@ async function apiImageDelete(filename: string, user: User, config: Config): Pro
 }
 
 /**
- * Strip executable content from SVG text before serving.
- * Applied at response time so stored files are never modified.
+ * Strip dangerous content from SVGs before serving.
+ * Applied at response time so stored files are untouched.
  *
- * Removes:
- *   - <script> elements (including CDATA content)
- *   - <foreignObject> blocks (can embed arbitrary HTML/JS)
- *   - <use> elements (can reference external SVGs with scripts)
- *   - <animate>, <animateTransform>, <animateMotion>, <set> elements (animation-based XSS)
- *   - on* event handler attributes (onload, onclick, onbegin, onend, etc.)
- *   - javascript: and data: URI values in href / xlink:href / action / src
+ * Removes: script, foreignObject, use, animate*, on* attributes,
+ * javascript: and data: URIs in href/action/src.
  */
 function sanitizeSvg(raw: string): string {
   return (
     raw
-      // <script> blocks (any content, including CDATA)
+      // <script>
       .replaceAll(/<script[\s\S]*?<\/script\s*>/giu, "")
-      // self-closing <script ... />
+      // self-closing <script />
       .replaceAll(/<script[^>]*\/>/giu, "")
-      // <foreignObject> blocks (can embed arbitrary HTML/JS)
+      // <foreignObject>
       .replaceAll(/<foreignObject[\s\S]*?<\/foreignObject\s*>/giu, "")
-      // <use> elements (blocks + self-closing) can reference external SVGs with scripts
+      // <use>
       .replaceAll(/<use[\s\S]*?<\/use\s*>/giu, "")
       .replaceAll(/<use[^>]*\/>/giu, "")
-      // <animate>, <animateTransform>, <animateMotion>, <set> elements target animation-based XSS
+      // <animate*>, <set>
       .replaceAll(
         /<(?:animate(?:Transform|Motion)?|set)[\s\S]*?<\/(?:animate(?:Transform|Motion)?|set)\s*>/giu,
         "",
       )
       .replaceAll(/<(?:animate(?:Transform|Motion)?|set)[^>]*\/>/giu, "")
-      // on* event handler attributes (onload="...", onclick='...', onmouseover=foo, etc.)
+      // on* event handler attributes
       .replaceAll(/(?:^|\s)on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s/>]*)/giu, "")
       // javascript: and data: URIs in URL-type attributes
       .replaceAll(
@@ -183,8 +178,7 @@ function sanitizeSvg(raw: string): string {
 async function serveRepoAsset(assetPath: string, config: Config): Promise<Response> {
   const imagesDir = path.resolve(config.repoPath, "images");
   const fullPath = path.resolve(config.repoPath, assetPath);
-  // Restrict to the images/ subdirectory; isSafePath alone only prevents escaping
-  // repoPath, so a crafted path like 'images/../.env' would otherwise be served.
+  // Only serve from images/; isSafePath alone doesn't stop 'images/../.env'.
   const imagesDirPrefix = `${imagesDir}/`;
   if (!fullPath.startsWith(imagesDirPrefix) || fullPath === imagesDir) {
     return new Response("Forbidden", { status: 403 });
@@ -205,8 +199,8 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
     return new Response("Not found", { status: 404 });
   }
 
-  // SVGs are sanitized in-memory at serve time so stored files are never mutated.
-  // A restrictive CSP provides defence-in-depth in case the sanitizer misses anything.
+  // SVGs are sanitized in-memory on serve so stored files are never modified.
+  // CSP provides defense-in-depth if the sanitizer misses something.
   if (ext === ".svg") {
     const raw = await readTextFile(fullPath);
     const sanitized = sanitizeSvg(raw);

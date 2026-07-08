@@ -96,7 +96,7 @@ function findNodeByPath(nodes: PageNode[], targetPath: string): PageNode | undef
   return undefined;
 }
 
-// ── Shared heading item (used by both inline Toc and TocSidebar) ──
+// Shared heading item (used by both inline Toc and TocSidebar)
 
 interface TocItemProps {
   id: string;
@@ -132,7 +132,7 @@ function TocItem({ id, text, level, minLevel, active, pageHref }: TocItemProps):
   );
 }
 
-// ── Directive components registered in Streamdown ──
+// Directive components registered in Streamdown
 function Pages(): JSX.Element {
   const { pagePath, tree } = usePageContext();
   const pages = useMemo(() => buildPageTree(tree), [tree]);

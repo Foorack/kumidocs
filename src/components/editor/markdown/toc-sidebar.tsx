@@ -55,8 +55,7 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
         setActiveId(found);
       },
       {
-        // Root margin pushes the detection zone to the top 60 % of the viewport
-        // so the active heading updates before it reaches the very top.
+        // Root margin keeps the active heading updated before it scrolls off.
         rootMargin: "-10% 0px -40% 0px",
         threshold: 0,
       },

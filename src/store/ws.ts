@@ -112,8 +112,7 @@ class WsClient {
     }
   }
 
-  /** Remove all event listeners from the current WebSocket to prevent
-   *  stale listener accumulation across reconnects. */
+  /** Remove all event listeners before reconnecting. */
   private removeWsListeners(): void {
     if (!this.ws) {
       return;

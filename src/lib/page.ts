@@ -1,4 +1,4 @@
-/** Page template types -- single-page A4 document templates with branded elements. */
+/** Page template types: single-page A4 document templates with branded elements. */
 
 /** A page template definition, stored in .kumidocs.json under `pageTemplates`. */
 interface PageTemplateDef {

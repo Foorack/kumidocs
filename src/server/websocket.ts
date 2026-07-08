@@ -20,8 +20,7 @@ const pageEditors = new Map<string, string>(); // pageId -> sessionId holding ed
 
 function getWsData(ws: WebSocket): WsData {
   const data = wsDataStore.get(ws);
-  // wsOpen always sets data before any handler runs, so this should never
-  // be undefined in practice. The assertion keeps the call sites clean.
+  // Always set by wsOpen before handlers run, so assertion is safe.
   // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
   return data!;
 }
@@ -34,10 +33,8 @@ function send(ws: WebSocket, msg: WsServerMessage): void {
   }
 }
 
-// Sync status tracking
-// Tracks whether the server can reach and sync with the remote git origin.
-// Broadcasts to all connected clients on state changes so the UI can show
-// a persistent banner when remote sync is degraded.
+// Sync status tracking: reachable? pushing ok?
+// Broadcasts to clients on change so the UI shows a banner on failure.
 
 type SyncState = "ok" | "failing";
 interface SyncStatus {
@@ -307,8 +304,7 @@ function broadcastPageChanged(
     pageId,
     type: "page_changed",
   };
-  // Broadcast to all sessions; the client suppresses echoes of its own saves
-  // via the `if (msg.changedBy === user?.id) return;` check in the WS listener.
+  // Broadcast to all sessions; clients suppress their own save echoes.
   for (const ws of sessions.values()) {
     send(ws, msg);
   }

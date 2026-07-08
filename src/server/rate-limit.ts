@@ -1,7 +1,6 @@
 /** Per-user in-memory sliding-window rate limiter.
  *
- * No timers -- cleanup is lazy: empty buckets are removed inline during
- * check() so there's nothing to leak on hot reload or server shutdown. */
+ * No timers. Empty buckets are cleaned up inline during check(). */
 
 interface Bucket {
   /** Monotonically-increasing timestamps of recent requests (ms). */

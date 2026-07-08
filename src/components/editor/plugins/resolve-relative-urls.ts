@@ -6,23 +6,17 @@ const CONTENT_ROOT = "/p";
 /**
  * Resolve relative URLs against the current page path before harden processes
  * them. Without this, harden resolves relative URLs against the server origin
- * (e.g. `./foo` -> `http://localhost:5864/foo`), which breaks links on pages
- * nested under `/p/some-page/`.
+ * (e.g. `./foo` -> `http://localhost:5864/foo`), breaking links on nested pages.
  *
- * Root-relative links (starting with `/`) are rewritten too: a link written
- * as `/docs/foo.md` means "foo.md relative to the repo root", but the repo
- * root is served at `/p/`, not `/`. Links that already start with the
- * content root (e.g. ones produced by wikilink resolution) are left alone
- * so they don't get prefixed twice.
+ * Root-relative links starting with `/` are rewritten too. `/docs/foo.md`
+ * means "foo.md relative to the repo root", but the root is served at `/p/`,
+ * not `/`. Links already starting with the content root are left alone.
  *
- * The page directory must be read inside the returned transformer, not in the
- * outer factory. Streamdown caches the compiled unified processor in a
- * module-level cache keyed by a serialization of the rehypePlugins array
- * (function name + options). Since that array is a constant, the factory
- * only ever runs once per app session - if it captured `pageDir` in its own
- * closure, every page after the first would reuse whichever directory was
- * current the first time any markdown rendered. Reading it inside the
- * transformer ensures it's recomputed on every actual render.
+ * pageDir is read inside the transformer, not the factory, because
+ * Streamdown caches the compiled processor keyed by the rehypePlugins
+ * array. Since that array is constant, the factory only runs once.
+ * If pageDir were captured in a closure, every page would use the first
+ * page's directory.
  */
 
 const walk = (node: Root | RootContent, pageDir: string): void => {

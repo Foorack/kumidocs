@@ -12,9 +12,7 @@ import {
 import type { CommitEntry } from "@/lib/types";
 import type { Config } from "./config";
 
-// Serial queue
-// All operations that touch .git/index or the working tree run through this
-// queue so concurrent HTTP saves and the background pull loop never race.
+// Serial queue to prevent races between HTTP saves and background pulls.
 let gitTail: Promise<void> = Promise.resolve();
 async function withGitLock<TResult>(fn: () => Promise<TResult>): Promise<TResult> {
   const prev = gitTail;

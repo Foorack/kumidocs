@@ -1,15 +1,11 @@
 /**
- * Mermaid Icon Pack Registration
+ * Registers Iconify icon packs with Mermaid for architecture diagrams.
+ * Supports `logos:*`, `devicon:*`, `flag:*`, `fluent-color:*`, `glyphs-poly:*`.
  *
- * Registers Iconify icon packs with Mermaid so architecture diagrams
- * can use icon prefixes like `logos:*`, `devicon:*`, `flag:*`,
- * `fluent-color:*`, and `glyphs-poly:*`.
+ * Icon data is a gzipped text file from /api/icons.
+ * Loaded on demand, cached in IndexedDB (7-day TTL).
  *
- * Icon data is served as a single gzipped text file from /api/icons.
- * Loaded lazily -- only fetched when a page with Mermaid diagrams needs them.
- * Cached in IndexedDB (7-day TTL) so subsequent visits skip the fetch.
- *
- * Usage: call once at app startup (client-side only):
+ * Call once at app startup:
  *   import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
  *   registerMermaidIcons();
  */

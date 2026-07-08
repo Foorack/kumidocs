@@ -93,8 +93,8 @@ function resolveAnchor(
   editMode: boolean,
 ): { href?: string; target: string } {
   if (href?.startsWith("#") === true) {
-    // Prepend the current page path so fragment links resolve to headings on
-    // the current page instead of root (broken by harden's defaultOrigin).
+    // Prepend current page path so fragment links resolve to headings on
+    // the current page instead of root (harden's defaultOrigin breaks this).
     return { href: window.location.pathname + href, target: "_self" };
   }
   return { href, target: editMode ? "_blank" : "_self" };
