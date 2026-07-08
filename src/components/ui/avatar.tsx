@@ -23,6 +23,8 @@ interface UserAvatarProps extends ComponentProps<typeof AvatarPrimitive.Root> {
   /** User email; Gravatar SHA-256 hash is computed internally. */
   email?: string;
   size?: AvatarSize;
+  /** Whether to show a colored outline ring around the avatar. Default true. */
+  outline?: boolean;
 }
 
 /** Compute a SHA-256 hex digest of a string; works in any context (no secure origin required). */
@@ -42,7 +44,7 @@ const sha256hex = (input: string): string => {
  *   <UserAvatar name={user.displayName} email={user.email} />
  */
 const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
-  const { name, email, size = "md", className } = allProps;
+  const { name, email, size = "md", outline = true, className } = allProps;
   const { circle, text } = sizeMap[size];
   const displayInitials = avatarInitials(name);
   const color = avatarColor(name);
@@ -64,7 +66,7 @@ const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
         circle,
         className,
       )}
-      style={{ outline: `2px solid ${color}`, outlineOffset: "1px" }}
+      style={outline ? { outline: `2px solid ${color}`, outlineOffset: "1px" } : undefined}
     >
       {gravatarHash !== undefined && gravatarHash !== "" && (
         <AvatarPrimitive.Image

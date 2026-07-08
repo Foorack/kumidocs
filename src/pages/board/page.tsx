@@ -85,6 +85,7 @@ function BoardPage(): JSX.Element {
           return;
         }
         setConfig(boardConfig);
+        document.title = `${boardConfig.name} | ${instanceName}`;
 
         const tree = await getTree();
         const boardDir = tree.find((node) => node.type === "dir" && node.name === boardSlug);

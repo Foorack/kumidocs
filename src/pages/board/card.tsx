@@ -1,6 +1,8 @@
 import type { TicketData } from "@/lib/board";
 import { useDraggable } from "@dnd-kit/core";
 import type { CSSProperties, JSX } from "react";
+import { UserAvatar } from "@/components/ui/avatar";
+import { emailToDisplayName } from "@/lib/avatar";
 
 // Shared card content
 
@@ -23,12 +25,24 @@ function CardContent({
           {prefix}-{ticket.id}
         </span>
       </div>
-      <p className="leading-snug line-clamp-2 font-bold p-1">{ticket.title}</p>
+
+      <p className="leading-snug line-clamp-2 font-bold p-1 pb-0">{ticket.title}</p>
+
       {(ticket.assignee ?? ticket.reporter) !== undefined && (
-        <div className="flex items-center gap-2 px-1 pb-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 px-1 py-1.5 text-sm">
           {ticket.assignee !== undefined && ticket.assignee !== "" && (
-            <span className="truncate" title={`Assigned to ${ticket.assignee}`}>
-              {ticket.assignee}
+            <span
+              className="flex items-center gap-1 truncate"
+              title={`Assigned to ${emailToDisplayName(ticket.assignee)}`}
+            >
+              {emailToDisplayName(ticket.assignee)}
+              <span className="text-muted-foreground/50 text-[10px]">→</span>
+              <UserAvatar
+                name={emailToDisplayName(ticket.assignee)}
+                email={ticket.assignee}
+                size="xs"
+                outline={false}
+              />
             </span>
           )}
           {ticket.reporter !== undefined && ticket.reporter !== "" && (

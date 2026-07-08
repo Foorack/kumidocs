@@ -11,6 +11,8 @@ import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
+import { UserAvatar } from "@/components/ui/avatar";
+import { emailToDisplayName } from "@/lib/avatar";
 import MarkdownToolbar from "@/components/editor/markdown/toolbar";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import {
@@ -580,16 +582,34 @@ export default function TicketDialog({
               <div className="flex items-center gap-1.5">
                 <span className="text-muted-foreground shrink-0">Assignee:</span>
                 {showEditControls ? (
-                  <input
-                    value={assignee}
-                    onChange={(ev) => {
-                      setAssignee(ev.target.value);
-                    }}
-                    placeholder="Unassigned"
-                    className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    {assignee !== "" && (
+                      <UserAvatar name={emailToDisplayName(assignee)} email={assignee} size="xs" />
+                    )}
+                    <input
+                      value={assignee}
+                      onChange={(ev) => {
+                        setAssignee(ev.target.value);
+                      }}
+                      placeholder="Unassigned"
+                      className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
                 ) : (
-                  <span className="text-foreground">{assignee || "Unassigned"}</span>
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    {assignee === "" ? (
+                      "Unassigned"
+                    ) : (
+                      <>
+                        <UserAvatar
+                          name={emailToDisplayName(assignee)}
+                          email={assignee}
+                          size="xs"
+                        />
+                        {emailToDisplayName(assignee)}
+                      </>
+                    )}
+                  </span>
                 )}
               </div>
             </div>
