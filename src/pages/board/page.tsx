@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
@@ -21,16 +21,9 @@ import type { JSX } from "react";
 import BoardColumnView from "./column";
 import BoardOverlay from "./board-overlay";
 
-interface OutletCtx {
-  instanceName: string;
-}
-
-// Board page
-
 function BoardPage(): JSX.Element {
   const { name } = useParams<{ name: string }>();
   const boardSlug = name ?? "";
-  const { instanceName: _instanceName } = useOutletContext<OutletCtx>();
   const { user } = useUser();
 
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
@@ -209,33 +202,36 @@ function BoardPage(): JSX.Element {
   const boardDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
 
   // Open edit dialog for a ticket
-  const openEditDialog = useCallback(async (ticket: TicketData): Promise<void> => {
-    try {
-      const resp = await getFile(`${ticket.boardSlug}/${ticket.id}.yaml`);
-      const data = await parseTicketYaml(
-        resp.content,
-        ticket.boardSlug,
-        ticket.id,
-        boardDefaultColId,
-      );
-      setEditTicket({
-        boardSlug: data.boardSlug,
-        body: "",
-        column: data.column,
-        ticketId: data.id,
-        title: data.title,
-      });
-    } catch {
-      setEditTicket({
-        boardSlug: ticket.boardSlug,
-        body: "",
-        column: ticket.column,
-        ticketId: ticket.id,
-        title: ticket.title,
-      });
-    }
-    setDialogOpen(true);
-  }, []);
+  const openEditDialog = useCallback(
+    async (ticket: TicketData): Promise<void> => {
+      try {
+        const resp = await getFile(`${ticket.boardSlug}/${ticket.id}.yaml`);
+        const data = await parseTicketYaml(
+          resp.content,
+          ticket.boardSlug,
+          ticket.id,
+          boardDefaultColId,
+        );
+        setEditTicket({
+          boardSlug: data.boardSlug,
+          body: "",
+          column: data.column,
+          ticketId: data.id,
+          title: data.title,
+        });
+      } catch {
+        setEditTicket({
+          boardSlug: ticket.boardSlug,
+          body: "",
+          column: ticket.column,
+          ticketId: ticket.id,
+          title: ticket.title,
+        });
+      }
+      setDialogOpen(true);
+    },
+    [boardDefaultColId],
+  );
 
   // Drag overlay state
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
@@ -299,7 +295,7 @@ function BoardPage(): JSX.Element {
         // will revert on next reload
       }
     },
-    [tickets, boardSlug],
+    [tickets, boardSlug, columns],
   );
 
   if (loading) {
