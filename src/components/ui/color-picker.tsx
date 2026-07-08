@@ -161,7 +161,8 @@ const ColorPickerSelection: React.MemoExoticComponent<
     return (): void => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
-    }; // eslint-disable-line node/callback-return
+    };
+    // oxlint-disable-next-line node/callback-return
   }, [isDragging, handlePointerMove]);
 
   return (

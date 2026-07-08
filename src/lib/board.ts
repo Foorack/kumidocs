@@ -13,17 +13,17 @@ interface BoardConfig {
 }
 
 interface TicketData {
-  id: string;
-  title: string;
-  column: string;
-  /** The board this ticket belongs to. */
-  boardSlug: string;
-  /** The person who created the ticket (display name or email). */
-  reporter?: string;
   /** The person assigned to the ticket. */
   assignee?: string;
+  /** The board this ticket belongs to. */
+  boardSlug: string;
+  column: string;
   /** ISO 8601 timestamp of creation. Set server-side, never changed. */
   createdAt?: string;
+  id: string;
+  /** The person who created the ticket (display name or email). */
+  reporter?: string;
+  title: string;
   /** ISO 8601 timestamp of last modification. Set server-side. */
   updatedAt?: string;
 }
