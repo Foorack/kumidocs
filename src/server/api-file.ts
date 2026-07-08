@@ -22,6 +22,43 @@ import type { Config } from "./config";
 import type { User } from "@/lib/types";
 
 /**
+ * Check if a file path is a ticket YAML (e.g. "boardName/42.yaml").
+ * Ticket YAMLs live in a subdirectory and have a numeric filename.
+ */
+const TICKET_YAML_RE = /^.+\/\d+\.yaml$/u;
+
+/** Inject or update createdAt / updatedAt timestamps in a ticket YAML string. */
+function injectTicketTimestamps(content: string, filePath: string, now: string): string {
+  if (!TICKET_YAML_RE.test(filePath)) {
+    return content;
+  }
+
+  const hasCreated = /^createdAt: /mu.test(content);
+  // Remove any existing updatedAt line
+  const withoutUpdated = content.replaceAll(/^updatedAt: .*$/gmu, "").replaceAll(/\n{2,}/gu, "\n");
+  // Add createdAt if missing, always add/update updatedAt
+  const tsLine = `updatedAt: ${JSON.stringify(now)}`;
+  if (hasCreated) {
+    // Just add/replace updatedAt; insert before body: or at end
+    const bodyIdx = withoutUpdated.search(/\nbody: /u);
+    if (bodyIdx !== -1) {
+      return `${withoutUpdated.slice(0, bodyIdx + 1)}${tsLine}
+${withoutUpdated.slice(bodyIdx + 1)}`;
+    }
+    return withoutUpdated.replace(/\n$/u, `\n${tsLine}\n`);
+  }
+
+  const createdLine = `createdAt: ${JSON.stringify(now)}`;
+  const bodyIdx = withoutUpdated.search(/\nbody: /u);
+  if (bodyIdx !== -1) {
+    return `${withoutUpdated.slice(0, bodyIdx + 1)}${createdLine}
+${tsLine}
+${withoutUpdated.slice(bodyIdx + 1)}`;
+  }
+  return withoutUpdated.replace(/\n$/u, `\n${createdLine}\n${tsLine}\n`);
+}
+
+/**
  * After a git push result, broadcast the appropriate sync status:
  * - push_failed -> set push to "failing"
  * - push succeeded while previously failing -> recover to "ok"
@@ -97,7 +134,10 @@ async function apiFilePut(url: URL, req: Request, user: User, config: Config): P
   if (content.length > 200 * 1024) {
     return Response.json({ error: "Content too large (max 200 KB)" }, { status: 413 });
   }
-  await writeFileToRepo(filePath, content, config);
+
+  // Inject timestamps into ticket YAML files (server-side time avoids clock skew)
+  const tsContent = injectTicketTimestamps(content, filePath, new Date().toISOString());
+  await writeFileToRepo(filePath, tsContent, config);
   updateInIndex(filePath);
 
   const msg = `docs(${filePath}): save by ${user.displayName}`;
@@ -156,7 +196,9 @@ async function apiFileCreate(req: Request, user: User, config: Config): Promise<
     return Response.json({ error: "File already exists" }, { status: 409 });
   }
 
-  await writeFileToRepo(filePath, content, config);
+  // Inject timestamps into ticket YAML files (server-side time avoids clock skew)
+  const tsContent = injectTicketTimestamps(content, filePath, new Date().toISOString());
+  await writeFileToRepo(filePath, tsContent, config);
   updateInIndex(filePath);
 
   const msg = `docs(${filePath}): create by ${user.displayName}`;

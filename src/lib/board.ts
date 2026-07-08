@@ -22,6 +22,10 @@ interface TicketData {
   reporter?: string;
   /** The person assigned to the ticket. */
   assignee?: string;
+  /** ISO 8601 timestamp of creation. Set server-side, never changed. */
+  createdAt?: string;
+  /** ISO 8601 timestamp of last modification. Set server-side. */
+  updatedAt?: string;
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
@@ -169,9 +173,13 @@ async function parseTicketYaml(
     assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
     boardSlug,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
+    createdAt:
+      typeof obj.createdAt === "string" && obj.createdAt !== "" ? obj.createdAt : undefined,
     id: ticketId,
     reporter: typeof obj.reporter === "string" && obj.reporter !== "" ? obj.reporter : undefined,
     title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
+    updatedAt:
+      typeof obj.updatedAt === "string" && obj.updatedAt !== "" ? obj.updatedAt : undefined,
   };
 }
 
@@ -180,13 +188,21 @@ function ticketToYaml(data: {
   assignee?: string;
   body?: string;
   column: string;
+  createdAt?: string;
   reporter?: string;
   title: string;
+  updatedAt?: string;
 }): string {
   const lines: string[] = [
     `title: ${JSON.stringify(data.title)}`,
     `column: ${JSON.stringify(data.column)}`,
   ];
+  if (data.createdAt !== undefined && data.createdAt !== "") {
+    lines.push(`createdAt: ${JSON.stringify(data.createdAt)}`);
+  }
+  if (data.updatedAt !== undefined && data.updatedAt !== "") {
+    lines.push(`updatedAt: ${JSON.stringify(data.updatedAt)}`);
+  }
   if (data.reporter !== undefined && data.reporter !== "") {
     lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
   }

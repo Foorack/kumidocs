@@ -3,6 +3,7 @@ import { useDraggable } from "@dnd-kit/core";
 import type { CSSProperties, JSX } from "react";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
+import { relativeTime } from "@/lib/utils";
 
 // Shared card content
 
@@ -15,6 +16,9 @@ function CardContent({
   prefix: string;
   columnColor: string;
 }): JSX.Element {
+  const showFooter =
+    (ticket.createdAt ?? ticket.updatedAt ?? ticket.reporter ?? ticket.assignee) !== undefined;
+
   return (
     <>
       <div className="flex items-center gap-1.5">
@@ -28,27 +32,64 @@ function CardContent({
 
       <p className="leading-snug line-clamp-2 font-bold p-1 pb-0">{ticket.title}</p>
 
-      {(ticket.assignee ?? ticket.reporter) !== undefined && (
-        <div className="flex items-center gap-2 px-1 py-1.5 text-sm">
-          {ticket.assignee !== undefined && ticket.assignee !== "" && (
-            <span
-              className="flex items-center gap-1 truncate"
-              title={`Assigned to ${emailToDisplayName(ticket.assignee)}`}
-            >
-              {emailToDisplayName(ticket.assignee)}
-              <span className="text-muted-foreground/50 text-[10px]">→</span>
+      {showFooter && (
+        <div className="flex items-stretch gap-0.5 px-1.5 pt-0.5 pb-1.5">
+          {/* Left avatar outside */}
+          {ticket.reporter !== undefined && ticket.reporter !== "" ? (
+            <div className="flex items-center shrink-0">
+              <UserAvatar
+                name={emailToDisplayName(ticket.reporter)}
+                email={ticket.reporter}
+                size="md"
+                outline={false}
+              />
+            </div>
+          ) : (
+            <div className="w-7 shrink-0" />
+          )}
+
+          {/* Table without outer edges */}
+          <div className="flex-1 min-w-0">
+            {/* Top row: dates */}
+            <div className="grid grid-cols-2 divide-x divide-border">
+              <div className="text-[10px] text-muted-foreground/60 truncate px-1.5 py-0.5 text-left">
+                {relativeTime(ticket.createdAt)}
+              </div>
+              <div className="text-[10px] text-muted-foreground/60 truncate px-1.5 py-0.5 text-right">
+                {relativeTime(ticket.updatedAt)}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border" />
+
+            {/* Bottom row: names */}
+            <div className="grid grid-cols-2 divide-x divide-border">
+              <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-left">
+                {ticket.reporter !== undefined && ticket.reporter !== ""
+                  ? emailToDisplayName(ticket.reporter)
+                  : ""}
+              </div>
+              <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-right">
+                {ticket.assignee !== undefined && ticket.assignee !== ""
+                  ? emailToDisplayName(ticket.assignee)
+                  : ""}
+              </div>
+            </div>
+          </div>
+
+          {/* Right avatar outside */}
+          {ticket.assignee !== undefined && ticket.assignee !== "" ? (
+            <div className="flex items-center shrink-0">
               <UserAvatar
                 name={emailToDisplayName(ticket.assignee)}
                 email={ticket.assignee}
-                size="xs"
+                size="md"
                 outline={false}
               />
-            </span>
-          )}
-          {ticket.reporter !== undefined && ticket.reporter !== "" && (
-            <span className="truncate" title={`Reported by ${ticket.reporter}`}>
-              {ticket.reporter}
-            </span>
+            </div>
+          ) : (
+            <div className="w-7 shrink-0" />
           )}
         </div>
       )}
