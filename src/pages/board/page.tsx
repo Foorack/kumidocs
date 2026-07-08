@@ -31,7 +31,31 @@ interface OutletCtx {
   instanceName: string;
 }
 
-// ── Sortable ticket card ───────────────────────────────────────────
+// ── Shared card content ────────────────────────────────────────────
+
+function CardContent({
+  ticket,
+  prefix,
+  columnColor,
+}: {
+  ticket: TicketData;
+  prefix: string;
+  columnColor: string;
+}): JSX.Element {
+  return (
+    <>
+      <div className="flex items-center gap-1.5 pb-1">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
+        <span className="font-mono">
+          {prefix}-{ticket.id}
+        </span>
+      </div>
+      <p className="leading-snug line-clamp-2">{ticket.title}</p>
+    </>
+  );
+}
+
+// ── Ticket card (draggable source) ────────────────────────────────
 
 interface TicketCardProps {
   ticket: TicketData;
@@ -67,16 +91,7 @@ function TicketCard({
       className="rounded-lg border-3 shadow-xs cursor-grab active:cursor-grabbing"
     >
       <button type="button" onClick={onClick} className="w-full text-left block px-3 pt-2.5 pb-2.5">
-        <div className="flex items-center gap-1.5 pb-1">
-          <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: columnColor }}
-          />
-          <span className="font-mono">
-            {prefix}-{ticket.id}
-          </span>
-        </div>
-        <p className="leading-snug line-clamp-2">{ticket.title}</p>
+        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
       </button>
     </div>
   );
@@ -100,14 +115,8 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
         width: "var(--dnd-overlay-width, 288px)",
       }}
     >
-      <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="font-mono">
-          {prefix}-{ticket.id}
-        </span>
-      </div>
-      <div className="w-full text-left px-3 pb-2.5">
-        <p className="text-foreground leading-snug line-clamp-2">{ticket.title}</p>
+      <div className="px-3 pt-2.5 pb-2.5">
+        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
       </div>
     </div>
   );
