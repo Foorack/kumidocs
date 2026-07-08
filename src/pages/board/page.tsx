@@ -91,14 +91,20 @@ function BoardPage(): JSX.Element {
             (child) => child.type === "file" && child.path.endsWith(".yaml"),
           ) ?? [];
 
+        const boardDefaultColId = boardConfig.columns.find((col) => col.default === true)?.id ?? "";
         const loaded = await Promise.all(
           ticketNodes.map(async (node) => {
             const ticketId = node.name.replace(/\.yaml$/u, "");
             try {
               const fileResp = await getFile(node.path);
-              return await parseTicketYaml(fileResp.content, boardSlug, ticketId);
+              return await parseTicketYaml(
+                fileResp.content,
+                boardSlug,
+                ticketId,
+                boardDefaultColId,
+              );
             } catch {
-              return { boardSlug, column: "", id: ticketId, title: ticketId };
+              return { boardSlug, column: boardDefaultColId, id: ticketId, title: ticketId };
             }
           }),
         );
@@ -174,14 +180,15 @@ function BoardPage(): JSX.Element {
         boardDir?.children?.filter(
           (child) => child.type === "file" && child.path.endsWith(".yaml"),
         ) ?? [];
+      const boardDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
       const loaded = await Promise.all(
         ticketNodes.map(async (node) => {
           const ticketId = node.name.replace(/\.yaml$/u, "");
           try {
             const fileResp = await getFile(node.path);
-            return await parseTicketYaml(fileResp.content, boardSlug, ticketId);
+            return await parseTicketYaml(fileResp.content, boardSlug, ticketId, boardDefaultColId);
           } catch {
-            return { boardSlug, column: "", id: ticketId, title: ticketId };
+            return { boardSlug, column: boardDefaultColId, id: ticketId, title: ticketId };
           }
         }),
       );
@@ -189,7 +196,7 @@ function BoardPage(): JSX.Element {
     } catch {
       // ignore
     }
-  }, [boardSlug]);
+  }, [boardSlug, columns]);
 
   const handleDialogSaved = useCallback((): void => {
     void reloadTickets();
@@ -199,11 +206,18 @@ function BoardPage(): JSX.Element {
     void reloadTickets();
   }, [reloadTickets]);
 
+  const boardDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
+
   // Open edit dialog for a ticket
   const openEditDialog = useCallback(async (ticket: TicketData): Promise<void> => {
     try {
       const resp = await getFile(`${ticket.boardSlug}/${ticket.id}.yaml`);
-      const data = await parseTicketYaml(resp.content, ticket.boardSlug, ticket.id);
+      const data = await parseTicketYaml(
+        resp.content,
+        ticket.boardSlug,
+        ticket.id,
+        boardDefaultColId,
+      );
       setEditTicket({
         boardSlug: data.boardSlug,
         body: "",
@@ -267,10 +281,12 @@ function BoardPage(): JSX.Element {
       try {
         const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
         const fileResp = await getFile(path);
+        const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
         const data = await parseTicketYaml(
           fileResp.content,
           dragActiveTicket.boardSlug,
           dragActiveTicket.id,
+          dragDefaultColId,
         );
         const yaml = ticketToYaml({ column: targetColId, title: data.title });
         await putFile(path, yaml);

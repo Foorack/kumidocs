@@ -96,7 +96,12 @@ export default function TicketDialog({
     const reload = async (): Promise<void> => {
       try {
         const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
-        const data = await parseTicketYaml(resp.content, ticket.boardSlug, ticket.ticketId);
+        const data = await parseTicketYaml(
+          resp.content,
+          ticket.boardSlug,
+          ticket.ticketId,
+          defaultColumnId,
+        );
         setTitle(data.title);
         // Parse body from raw YAML (TicketData doesn't carry body)
         const { load } = await import("js-yaml");

@@ -130,8 +130,15 @@ async function parseTicketYaml(
   raw: string,
   boardSlug: string,
   ticketId: string,
+  defaultColumn = "",
 ): Promise<TicketData> {
-  const defaultData: TicketData = { boardSlug, column: "", id: ticketId, title: ticketId };
+  const fallbackColumn = defaultColumn;
+  const defaultData: TicketData = {
+    boardSlug,
+    column: fallbackColumn,
+    id: ticketId,
+    title: ticketId,
+  };
 
   let yaml = raw;
   const fmMatch = YAML_HEAD_RE.exec(yaml);
@@ -153,9 +160,10 @@ async function parseTicketYaml(
 
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const obj = parsed as Record<string, unknown>;
+  const rawColumn = typeof obj.column === "string" ? obj.column : "";
   return {
     boardSlug,
-    column: typeof obj.column === "string" ? obj.column : "",
+    column: rawColumn === "" ? fallbackColumn : rawColumn,
     id: ticketId,
     title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
   };

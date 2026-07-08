@@ -195,9 +195,11 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
       const ticketResults = await Promise.all(
         boardDirs.flatMap((dir) => {
           const boardSlug = dir.name;
-          if (!configs.has(boardSlug)) {
+          const boardCfg = configs.get(boardSlug);
+          if (!boardCfg) {
             return [];
           }
+          const defaultColId = boardCfg.columns.find((col) => col.default === true)?.id ?? "";
           const ticketNodes =
             dir.children?.filter(
               (child) => child.type === "file" && child.path.endsWith(".yaml"),
@@ -206,10 +208,10 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
             const ticketId = ticketNode.name.replace(/\.yaml$/u, "");
             try {
               const resp = await getFile(ticketNode.path);
-              const data = await parseTicketYaml(resp.content, boardSlug, ticketId);
+              const data = await parseTicketYaml(resp.content, boardSlug, ticketId, defaultColId);
               return data;
             } catch {
-              return { boardSlug, column: "", id: ticketId, title: ticketId };
+              return { boardSlug, column: defaultColId, id: ticketId, title: ticketId };
             }
           });
         }),
