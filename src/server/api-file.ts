@@ -45,7 +45,7 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
       return `${withoutUpdated.slice(0, bodyIdx + 1)}${tsLine}
 ${withoutUpdated.slice(bodyIdx + 1)}`;
     }
-    return withoutUpdated.replace(/\n$/u, `\n${tsLine}\n`);
+    return `${withoutUpdated}\n${tsLine}\n`;
   }
 
   const createdLine = `createdAt: ${JSON.stringify(now)}`;
@@ -55,7 +55,7 @@ ${withoutUpdated.slice(bodyIdx + 1)}`;
 ${tsLine}
 ${withoutUpdated.slice(bodyIdx + 1)}`;
   }
-  return withoutUpdated.replace(/\n$/u, `\n${createdLine}\n${tsLine}\n`);
+  return `${withoutUpdated}\n${createdLine}\n${tsLine}\n`;
 }
 
 /**

@@ -44,7 +44,7 @@ const sha256hex = (input: string): string => {
  *   <UserAvatar name={user.displayName} email={user.email} />
  */
 const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
-  const { name, email, size = "md", outline = true, className } = allProps;
+  const { name, email, size = "md", outline = true, className, ...rest } = allProps;
   const { circle, text } = sizeMap[size];
   const displayInitials = avatarInitials(name);
   const color = avatarColor(name);
@@ -60,7 +60,7 @@ const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
 
   return (
     <AvatarPrimitive.Root
-      {...allProps}
+      {...rest}
       className={cn(
         "relative flex shrink-0 overflow-hidden rounded-full select-none",
         circle,
