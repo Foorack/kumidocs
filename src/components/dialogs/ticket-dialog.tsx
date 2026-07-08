@@ -280,14 +280,13 @@ export default function TicketDialog({
           style={{ borderColor: columnColor, marginTop: "-1px" }}
         >
           <div
-            className="flex items-center px-5 h-full"
+            className="flex items-center ps-3 pe-5 h-full"
             style={{
               backgroundColor: columnColor,
-              color: "#ffffff",
               outline: `1px solid ${columnColor}`,
             }}
           >
-            <span className="font-semibold text-base">
+            <span className="font-semibold text-background">
               {isEdit
                 ? `${boards.get(boardSlug) ?? ""} | ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`
                 : "New ticket"}
@@ -295,16 +294,20 @@ export default function TicketDialog({
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-0">
-            <Button variant="ghost" className="rounded-none px-7" onClick={onClose}>
+            <Button
+              variant="ghost"
+              className="rounded-none px-7 hover:bg-transparent"
+              onClick={onClose}
+            >
               Cancel
               <Kbd>Esc</Kbd>
             </Button>
             {showEditControls ? (
               <Button
-                className="rounded-none px-7"
+                className="rounded-none px-7 text-background"
                 onClick={handleSave}
                 disabled={!canSave}
-                style={{ backgroundColor: columnColor, color: "#ffffff" }}
+                style={{ backgroundColor: columnColor }}
               >
                 {buttonLabel}
                 <KbdGroup>
@@ -314,11 +317,11 @@ export default function TicketDialog({
               </Button>
             ) : (
               <Button
-                className="rounded-none px-7"
+                className="rounded-none px-7 text-background"
                 onClick={() => {
                   setEditing(true);
                 }}
-                style={{ backgroundColor: columnColor, color: "#ffffff" }}
+                style={{ backgroundColor: columnColor }}
               >
                 {buttonLabel}
                 <Kbd>E</Kbd>

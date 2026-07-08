@@ -16,8 +16,10 @@ function CardContent({
   return (
     <>
       <div className="flex items-center gap-1.5 pb-1">
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
-        <span className="font-mono">
+        <span
+          className="font-mono text-background ps-3 pe-5"
+          style={{ backgroundColor: columnColor }}
+        >
           {prefix}-{ticket.id}
         </span>
       </div>
@@ -48,7 +50,6 @@ function TicketCard({
   });
 
   const style: CSSProperties = {
-    backgroundColor: `${columnColor}66`,
     borderColor: columnColor,
     opacity: isDragging ? 0 : undefined,
   };
@@ -61,7 +62,7 @@ function TicketCard({
       {...listeners}
       className="rounded-lg border-3 shadow-xs cursor-grab active:cursor-grabbing"
     >
-      <button type="button" onClick={onClick} className="w-full text-left block px-3 pt-2.5 pb-2.5">
+      <button type="button" onClick={onClick} className="w-full text-left block">
         <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
       </button>
     </div>
@@ -81,12 +82,11 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
     <div
       className="rounded-lg border-3 shadow-xl bg-background"
       style={{
-        backgroundColor: `${columnColor}66`,
         borderColor: columnColor,
         width: "var(--dnd-overlay-width, 288px)",
       }}
     >
-      <div className="px-3 pt-2.5 pb-2.5">
+      <div className="">
         <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
       </div>
     </div>
