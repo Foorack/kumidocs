@@ -253,15 +253,17 @@ export default function FilePage(): JSX.Element {
             />
           )}
           {infoOpen && !editMode && (
-            <PageInfoPanel
-              key={`info-${filePath}`}
-              filePath={filePath}
-              title={title}
-              onClose={() => {
-                setInfoOpen(false);
-                localStorage.removeItem("kumidocs:info-open");
-              }}
-            />
+            <div className="w-80 shrink-0 border-l border-border overflow-y-auto">
+              <PageInfoPanel
+                key={`info-${filePath}`}
+                filePath={filePath}
+                title={title}
+                onClose={() => {
+                  setInfoOpen(false);
+                  localStorage.removeItem("kumidocs:info-open");
+                }}
+              />
+            </div>
           )}
         </div>
 

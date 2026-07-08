@@ -144,7 +144,7 @@ export default function PageInfoPanel({
                   <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
                 <span className="font-medium">{label}</span>
-                <span className="ml-auto tabular-nums">{groupCommits.length}</span>
+                <span className="ml-auto text-xs tabular-nums">{groupCommits.length}</span>
               </button>
               {/* Commits */}
               {!isCollapsed && (
@@ -164,7 +164,7 @@ export default function PageInfoPanel({
                         className="shrink-0 mt-0.5"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="text-foreground line-clamp-2 block">{commit.message}</span>
+                        <span className="text-sm text-foreground line-clamp-2 block">{commit.message}</span>
                         {(commit.added !== undefined || commit.removed !== undefined) && (
                           <span className="flex gap-1 mt-0.5">
                             {(commit.added ?? 0) > 0 && (
@@ -189,7 +189,7 @@ export default function PageInfoPanel({
   }
 
   return (
-    <div className="w-72 shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
+    <div className="shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
       <div className="px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <File className="w-4 h-4 shrink-0" />
@@ -210,23 +210,23 @@ export default function PageInfoPanel({
         <div className="p-3 space-y-3">
           {/* Title + path */}
           <div className="space-y-1">
-            <p className="font-medium uppercase tracking-wide">Title</p>
+            <p className="text-xs font-medium uppercase tracking-wide">Title</p>
             <p className="break-words">{title}</p>
           </div>
           <div className="space-y-1">
-            <p className="font-medium uppercase tracking-wide">Path</p>
+            <p className="text-xs font-medium uppercase tracking-wide">Path</p>
             <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
           <div className="space-y-1">
-            <p className="font-medium uppercase tracking-wide">Backlinks</p>
+            <p className="text-xs font-medium uppercase tracking-wide">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="font-medium uppercase tracking-wide">Commit history</p>
+            <p className="text-xs font-medium uppercase tracking-wide">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>

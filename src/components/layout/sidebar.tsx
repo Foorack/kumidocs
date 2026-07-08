@@ -15,6 +15,13 @@ import { Kbd } from "@/components/ui/kbd";
 import type { PresenceUser, TreeNode } from "@/lib/types";
 import buildPageTree from "@/lib/page-tree";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import PageNodeRow from "./sidebar-page-node";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -107,11 +114,9 @@ function BoardSidebarContent({
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2 space-y-0.5">
       {/* Board selector */}
       <div className="px-2 pb-2">
-        <select
-          className="w-full h-8 rounded border border-border bg-transparent text-foreground px-1.5 appearance-none cursor-pointer"
+        <Select
           value={selectedBoardSlug ?? ""}
-          onChange={(ev) => {
-            const val = ev.target.value;
+          onValueChange={(val: string) => {
             if (val === "") {
               setSelectedBoardSlug(undefined);
               navigate("/b/");
@@ -121,16 +126,21 @@ function BoardSidebarContent({
             }
           }}
         >
-          <option value="">All boards</option>
-          {boardEntries.map((entry) => (
-            <option key={entry.slug} value={entry.slug}>
-              {entry.config.icon !== undefined && entry.config.icon !== ""
-                ? `${entry.config.icon} `
-                : ""}
-              {entry.config.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-8 w-full">
+            <SelectValue placeholder="All boards" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All boards</SelectItem>
+            {boardEntries.map((entry) => (
+              <SelectItem key={entry.slug} value={entry.slug}>
+                {entry.config.icon !== undefined && entry.config.icon !== ""
+                  ? `${entry.config.icon} `
+                  : ""}
+                {entry.config.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {body}

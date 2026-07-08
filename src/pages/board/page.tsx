@@ -150,7 +150,7 @@ function BoardColumnView({
           style={{ backgroundColor: column.color }}
         />
         <span className="font-semibold uppercase tracking-wider">{displayColumnId(column.id)}</span>
-        <span className="ml-auto tabular-nums">{tickets.length}</span>
+        <span className="ml-auto text-xs tabular-nums">{tickets.length}</span>
       </div>
 
       {/* Ticket list */}
@@ -480,7 +480,7 @@ function BoardPage(): JSX.Element {
         <div className="flex flex-col min-w-0">
           <h1 className="font-semibold text-base truncate">{config.name}</h1>
           <div className="flex items-center gap-1 -mt-1">
-            <span className="tabular-nums">
+            <span className="text-xs tabular-nums">
               {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
             </span>
           </div>
