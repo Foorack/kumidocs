@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import useMountEffect from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toaster";
-import { createFile, getFile, getTree } from "@/lib/api";
-import { defaultBoardConfig, displayColumnId, yamlToBoard } from "@/lib/board";
+import { getFile, getTree, putFile } from "@/lib/api";
+import { boardToYaml, defaultBoardConfig, displayColumnId, yamlToBoard } from "@/lib/board";
 import type { BoardConfig } from "@/lib/board";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Plus, Settings } from "lucide-react";
@@ -122,9 +122,9 @@ function BoardManagerPage(): JSX.Element {
     }
   }, []);
 
-  useEffect(() => {
+  useMountEffect(() => {
     void loadBoards();
-  }, [loadBoards]);
+  });
 
   const handleCreate = useCallback(async () => {
     const slug = newPrefix.toLowerCase().trim();
@@ -134,13 +134,6 @@ function BoardManagerPage(): JSX.Element {
     setCreating(true);
     try {
       const config = defaultBoardConfig(newName.trim(), newPrefix.trim().toUpperCase());
-      const yaml = `# ${config.name}\n---\n`;
-      await createFile(`${slug}.yaml`, yaml);
-
-      // Now overwrite with the actual config
-      // Use putFile via the API directly
-      const { putFile } = await import("@/lib/api");
-      const { boardToYaml } = await import("@/lib/board");
       await putFile(`${slug}.yaml`, boardToYaml(config));
 
       toast.success("Board created");

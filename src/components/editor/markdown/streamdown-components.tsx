@@ -119,25 +119,6 @@ const AnchorComponent = (allProps: AnchorProps): JSX.Element => {
   );
 };
 
-/** Anchor for slide markdown - same as AnchorComponent but without text-primary. */
-const SlideAnchorComponent = (allProps: AnchorProps): JSX.Element => {
-  const { href, children } = allProps;
-  const { editMode } = usePageContext();
-  const resolved = resolveAnchor(href, editMode);
-  return (
-    <a
-      className="wrap-anywhere font-medium text-primary underline"
-      data-incomplete="false"
-      data-streamdown="link"
-      href={resolved.href}
-      rel="noopener noreferrer"
-      target={resolved.target}
-    >
-      {children}
-    </a>
-  );
-};
-
 // Image component
 
 interface ImgComponentProps {
@@ -299,7 +280,7 @@ const COMPONENTS_DOC: Record<string, (props: Record<string, unknown>) => JSX.Ele
 // oxlint-disable-next-line id-length
 const COMPONENTS_SLIDE: Record<string, (props: Record<string, unknown>) => JSX.Element> = {
   // oxlint-disable-next-line id-length
-  a: SlideAnchorComponent,
+  a: AnchorComponent,
   img: ImgComponent,
   "kumi-alert": KumiAlert,
   "kumi-emoji": KumiEmojiComponent,
@@ -325,7 +306,6 @@ export {
   KumiEmojiComponent,
   Pages,
   REHYPE_PLUGINS,
-  SlideAnchorComponent,
   Toc,
   Tree,
 };

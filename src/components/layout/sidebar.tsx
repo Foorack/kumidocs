@@ -23,8 +23,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageNodeRow from "./sidebar-page-node";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import useMountEffect from "@/hooks/use-mount-effect";
 import usePageActions from "@/hooks/use-page-actions";
 import { useUser } from "@/store/user";
 import { getFile } from "@/lib/api";
@@ -123,6 +124,11 @@ function BoardSidebarContent({
             } else {
               setSelectedBoardSlug(val);
               navigate(`/b/${val}`);
+              try {
+                localStorage.setItem("kumidocs:last-ticket-board", val);
+              } catch {
+                // localStorage may be unavailable
+              }
             }
           }}
         >
@@ -196,12 +202,10 @@ export default function Sidebar({
   }, [location.pathname]);
 
   // Selected board in the sidebar dropdown
-  const [selectedBoardSlug, setSelectedBoardSlug] = useState<string | undefined>(undefined);
+  const [selectedBoardSlug, setSelectedBoardSlug] = useState<string | undefined>(currentBoardSlug);
 
-  // Sync dropdown selection with URL navigation
-  useEffect(() => {
-    setSelectedBoardSlug(currentBoardSlug);
-  }, [currentBoardSlug]);
+  // When no explicit dropdown selection is made, follow the URL
+  const effectiveBoardSlug = selectedBoardSlug ?? currentBoardSlug;
 
   // Load boards and tickets from tree whenever it changes (board mode only)
   useEffect(() => {
@@ -272,13 +276,13 @@ export default function Sidebar({
     void loadData();
   }, [tree, mode]);
 
-  // Filter tickets based on selected board
+  // Filter tickets based on effective board selection (dropdown or URL)
   const visibleTickets = useMemo<TicketData[]>(() => {
-    if (selectedBoardSlug === undefined) {
+    if (effectiveBoardSlug === undefined) {
       return tickets;
     }
-    return tickets.filter((ticket) => ticket.boardSlug === selectedBoardSlug);
-  }, [tickets, selectedBoardSlug]);
+    return tickets.filter((ticket) => ticket.boardSlug === effectiveBoardSlug);
+  }, [tickets, effectiveBoardSlug]);
 
   // Sort tickets by id (numeric)
   const sortedTickets = useMemo<TicketData[]>(
@@ -315,10 +319,10 @@ export default function Sidebar({
     [boardConfigs],
   );
 
-  // Default board for new ticket dialog: selected > localStorage > first alphabetically
+  // Default board for new ticket dialog: effective > localStorage > first alphabetically
   const defaultNewTicketBoard = useMemo<string | undefined>(() => {
-    if (selectedBoardSlug !== undefined) {
-      return selectedBoardSlug;
+    if (effectiveBoardSlug !== undefined) {
+      return effectiveBoardSlug;
     }
     const stored = ((): string | undefined => {
       try {
@@ -339,25 +343,18 @@ export default function Sidebar({
       return undefined;
     }
     return undefined;
-  }, [selectedBoardSlug, boardConfigs, boardEntries]);
+  }, [effectiveBoardSlug, boardConfigs, boardEntries]);
 
-  // Persist selected board to localStorage when it changes
-  useEffect(() => {
-    if (selectedBoardSlug !== undefined) {
-      try {
-        localStorage.setItem("kumidocs:last-ticket-board", selectedBoardSlug);
-      } catch {
-        // localStorage may be unavailable
-      }
-    }
-  }, [selectedBoardSlug]);
+  // Track whether keyboard handler should be active for board ticket creation
+  const boardModeActive = mode === "board" && boardEntries.length > 0;
+  const boardModeRef = useRef(boardModeActive);
+  boardModeRef.current = boardModeActive;
 
-  // n key opens new ticket dialog (board mode only, not when typing in an input)
-  useEffect(() => {
-    if (mode !== "board" || boardEntries.length === 0) {
-      return undefined;
-    }
+  useMountEffect(() => {
     const handler = (ev: KeyboardEvent): void => {
+      if (!boardModeRef.current) {
+        return;
+      }
       if (ev.key === "n" && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
         const target = ev.target;
         const tag = target instanceof Element ? target.tagName : "";
@@ -372,7 +369,7 @@ export default function Sidebar({
     return (): void => {
       window.removeEventListener("keydown", handler);
     };
-  }, [mode, boardEntries.length]);
+  });
 
   return (
     <>

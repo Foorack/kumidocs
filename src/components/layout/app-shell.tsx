@@ -47,7 +47,7 @@ export default function AppShell(): JSX.Element {
   });
   const [isDragging, setIsDragging] = useState(false);
   // Keep a ref so the stable mousemove closure always reads the live drag-start values
-  const dragStartRef = useRef(undefined as { startX: number; width: number } | undefined);
+  const dragStartRef = useRef<{ startX: number; width: number } | undefined>(undefined);
 
   // oxlint-disable-next-line unicorn/no-useless-undefined
   const treeReloadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

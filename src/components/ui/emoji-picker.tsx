@@ -5,8 +5,9 @@
  * Every emoji cell is rendered by <EmojiIcon> for visual consistency with the rest
  * of the app. SVGs are baked into the JS bundle; zero HTTP requests.
  */
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { EMOJI_SVGS, isEmojiDataLoaded, waitForEmojiData } from "@/lib/emoji-loader";
+import useMountEffect from "@/hooks/use-mount-effect";
 import { EmojiIcon } from "./emoji-icon";
 import Input from "./input";
 import { ScrollArea } from "./scroll-area";
@@ -217,7 +218,7 @@ const EmojiPickerInner = (allProps: EmojiPickerProps): JSX.Element => {
   const [activeCategory, setActiveCategory] = useState(getInitialCategory);
   const [ready, setReady] = useState(isEmojiDataLoaded);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (ready) {
       return;
     }
@@ -226,7 +227,7 @@ const EmojiPickerInner = (allProps: EmojiPickerProps): JSX.Element => {
       setReady(true);
     };
     void load();
-  }, [ready]);
+  });
 
   const { categoryEmojis, searchIndex } = useMemo(
     () => (ready ? buildIndexes() : { categoryEmojis: {}, searchIndex: [] }),

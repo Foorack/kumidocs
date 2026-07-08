@@ -11,8 +11,8 @@ import { useUser } from "@/store/user";
 
 // oxlint-disable-next-line no-underscore-dangle
 declare const __VERSION__: string | undefined;
-// oxlint-disable-next-line no-underscore-dangle, unicorn/no-typeof-undefined, unicorn/no-negated-condition
-const APP_VERSION = typeof __VERSION__ === "undefined" ? "dev" : __VERSION__;
+// oxlint-disable-next-line no-underscore-dangle
+const APP_VERSION = __VERSION__ ?? "dev";
 
 interface TopBarProps {
   instanceName: string;
