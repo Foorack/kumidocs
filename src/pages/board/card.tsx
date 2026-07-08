@@ -24,6 +24,20 @@ function CardContent({
         </span>
       </div>
       <p className="leading-snug line-clamp-2 font-bold p-1">{ticket.title}</p>
+      {(ticket.assignee ?? ticket.reporter) !== undefined && (
+        <div className="flex items-center gap-2 px-1 pb-1.5 text-xs text-muted-foreground">
+          {ticket.assignee !== undefined && ticket.assignee !== "" && (
+            <span className="truncate" title={`Assigned to ${ticket.assignee}`}>
+              {ticket.assignee}
+            </span>
+          )}
+          {ticket.reporter !== undefined && ticket.reporter !== "" && (
+            <span className="truncate" title={`Reported by ${ticket.reporter}`}>
+              {ticket.reporter}
+            </span>
+          )}
+        </div>
+      )}
     </>
   );
 }

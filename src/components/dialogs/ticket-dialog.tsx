@@ -10,6 +10,7 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/store/user";
 import MarkdownToolbar from "@/components/editor/markdown/toolbar";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import {
@@ -31,11 +32,13 @@ interface TicketDialogProps {
   initialBoardSlug?: string;
   /** When set, dialog opens in edit mode with existing ticket data. */
   ticket?: {
+    assignee?: string;
     boardSlug: string;
-    ticketId: string;
-    title: string;
     body: string;
     column: string;
+    reporter?: string;
+    ticketId: string;
+    title: string;
   };
   onCreated?: () => void;
   onSaved?: () => void;
@@ -52,12 +55,15 @@ export default function TicketDialog({
   onSaved,
 }: TicketDialogProps): JSX.Element {
   const navigate = useNavigate();
+  const { user } = useUser();
   const isEdit = ticket !== undefined;
 
   const [boardSlug, setBoardSlug] = useState(initialBoardSlug ?? "");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [column, setColumn] = useState("");
+  const [reporter, setReporter] = useState("");
+  const [assignee, setAssignee] = useState("");
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -74,12 +80,16 @@ export default function TicketDialog({
       setTitle(ticket.title);
       setBody(ticket.body);
       setColumn(ticket.column);
+      setReporter(ticket.reporter ?? "");
+      setAssignee(ticket.assignee ?? "");
       setEditing(false);
     } else {
       setBoardSlug(initialBoardSlug ?? "");
       setTitle("");
       setBody("");
       setColumn(defaultColumnId);
+      setReporter(user?.displayName ?? user?.name ?? user?.email ?? "");
+      setAssignee("");
       setEditing(true);
     }
     setSaving(false);
@@ -103,11 +113,13 @@ export default function TicketDialog({
           defaultColumnId,
         );
         setTitle(data.title);
+        setReporter(data.reporter ?? "");
+        setAssignee(data.assignee ?? "");
         // Parse body from raw YAML (TicketData doesn't carry body)
         const { load } = await import("js-yaml");
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = load(resp.content) as Record<string, unknown> | null;
-        setBody(typeof parsed?.body === "string" ? parsed.body : "");
+        const parsed = load(resp.content) as Record<string, unknown>;
+        setBody(typeof parsed.body === "string" ? parsed.body : "");
         setColumn(data.column);
       } catch {
         // keep current values
@@ -135,8 +147,10 @@ export default function TicketDialog({
       try {
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
         const yaml = ticketToYaml({
+          assignee: assignee.trim() || undefined,
           body: body.trim(),
           column,
+          reporter: reporter.trim() || undefined,
           title: title.trim(),
         });
         await putFile(path, yaml);
@@ -176,8 +190,10 @@ export default function TicketDialog({
 
       const path = `${slug}/${nextId}.yaml`;
       const yaml = ticketToYaml({
+        assignee: assignee.trim() || undefined,
         body: body.trim(),
         column,
+        reporter: reporter.trim() || undefined,
         title: title.trim(),
       });
       await createFile(path, yaml);
@@ -191,7 +207,20 @@ export default function TicketDialog({
     } finally {
       setSaving(false);
     }
-  }, [boardSlug, title, body, column, isEdit, ticket, navigate, onCreated, onClose, onSaved]);
+  }, [
+    assignee,
+    boardSlug,
+    title,
+    body,
+    column,
+    isEdit,
+    ticket,
+    navigate,
+    onCreated,
+    onClose,
+    onSaved,
+    reporter,
+  ]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
     const wantsEdit = ev.key === "e" && !editing && isEdit;
@@ -541,6 +570,29 @@ export default function TicketDialog({
 
             {/* Title */}
             {titleContent}
+
+            {/* Reporter + Assignee row */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground shrink-0">Reporter:</span>
+                <span className="text-foreground">{reporter || "Unknown"}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground shrink-0">Assignee:</span>
+                {showEditControls ? (
+                  <input
+                    value={assignee}
+                    onChange={(ev) => {
+                      setAssignee(ev.target.value);
+                    }}
+                    placeholder="Unassigned"
+                    className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground"
+                  />
+                ) : (
+                  <span className="text-foreground">{assignee || "Unassigned"}</span>
+                )}
+              </div>
+            </div>
 
             {/* Description */}
             {bodyContent}

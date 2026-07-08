@@ -24,7 +24,7 @@ import BoardOverlay from "./board-overlay";
 function BoardPage(): JSX.Element {
   const { name } = useParams<{ name: string }>();
   const boardSlug = name ?? "";
-  const { user } = useUser();
+  const { instanceName, user } = useUser();
 
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [tickets, setTickets] = useState<TicketData[]>([]);
@@ -33,7 +33,16 @@ function BoardPage(): JSX.Element {
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTicket, setEditTicket] = useState<
-    { boardSlug: string; ticketId: string; title: string; body: string; column: string } | undefined
+    | {
+        assignee?: string;
+        boardSlug: string;
+        body: string;
+        column: string;
+        reporter?: string;
+        ticketId: string;
+        title: string;
+      }
+    | undefined
   >(undefined);
 
   // Board name map for the dialog
@@ -160,7 +169,8 @@ function BoardPage(): JSX.Element {
   const handleDialogClose = useCallback((): void => {
     setDialogOpen(false);
     setEditTicket(undefined);
-  }, []);
+    document.title = config ? `${config.name} | ${instanceName}` : `Board | ${instanceName}`;
+  }, [config, instanceName]);
 
   const reloadTickets = useCallback(async (): Promise<void> => {
     if (!boardSlug) {
@@ -212,25 +222,35 @@ function BoardPage(): JSX.Element {
           ticket.id,
           boardDefaultColId,
         );
+        // Parse body from raw YAML
+        const { load } = await import("js-yaml");
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        const parsed = load(resp.content) as Record<string, unknown>;
         setEditTicket({
+          assignee: data.assignee,
           boardSlug: data.boardSlug,
-          body: "",
+          body: typeof parsed.body === "string" ? parsed.body : "",
           column: data.column,
+          reporter: data.reporter,
           ticketId: data.id,
           title: data.title,
         });
+        document.title = `[${config?.prefix ?? "?"}-${data.id}] ${data.title}`;
       } catch {
         setEditTicket({
+          assignee: ticket.assignee,
           boardSlug: ticket.boardSlug,
           body: "",
           column: ticket.column,
+          reporter: ticket.reporter,
           ticketId: ticket.id,
           title: ticket.title,
         });
+        document.title = `[${config?.prefix ?? "?"}-${ticket.id}] ${ticket.title}`;
       }
       setDialogOpen(true);
     },
-    [boardDefaultColId],
+    [boardDefaultColId, config?.prefix],
   );
 
   // Drag overlay state
@@ -284,7 +304,17 @@ function BoardPage(): JSX.Element {
           dragActiveTicket.id,
           dragDefaultColId,
         );
-        const yaml = ticketToYaml({ column: targetColId, title: data.title });
+        // Preserve body, reporter, and assignee from raw YAML
+        const { load } = await import("js-yaml");
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        const parsed = load(fileResp.content) as Record<string, unknown>;
+        const yaml = ticketToYaml({
+          assignee: data.assignee,
+          body: typeof parsed.body === "string" ? parsed.body : undefined,
+          column: targetColId,
+          reporter: data.reporter,
+          title: data.title,
+        });
         await putFile(path, yaml);
         setTickets((prev) =>
           prev.map((tic) =>

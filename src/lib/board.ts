@@ -18,6 +18,10 @@ interface TicketData {
   column: string;
   /** The board this ticket belongs to. */
   boardSlug: string;
+  /** The person who created the ticket (display name or email). */
+  reporter?: string;
+  /** The person assigned to the ticket. */
+  assignee?: string;
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
@@ -162,19 +166,33 @@ async function parseTicketYaml(
   const obj = parsed as Record<string, unknown>;
   const rawColumn = typeof obj.column === "string" ? obj.column : "";
   return {
+    assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
     boardSlug,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
     id: ticketId,
+    reporter: typeof obj.reporter === "string" && obj.reporter !== "" ? obj.reporter : undefined,
     title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
   };
 }
 
 /** Serialize a ticket to a YAML string (without frontmatter). */
-function ticketToYaml(data: { column: string; title: string; body?: string }): string {
+function ticketToYaml(data: {
+  assignee?: string;
+  body?: string;
+  column: string;
+  reporter?: string;
+  title: string;
+}): string {
   const lines: string[] = [
     `title: ${JSON.stringify(data.title)}`,
     `column: ${JSON.stringify(data.column)}`,
   ];
+  if (data.reporter !== undefined && data.reporter !== "") {
+    lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
+  }
+  if (data.assignee !== undefined && data.assignee !== "") {
+    lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
+  }
   if (data.body !== undefined && data.body !== "") {
     // Use literal block scalar for multi-line body
     if (data.body.includes("\n")) {
