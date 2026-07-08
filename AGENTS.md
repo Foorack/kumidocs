@@ -187,9 +187,8 @@ For most cases, prefer these alternatives in order:
 
 ### Component Structure
 
-- Prefer standard shadcn components (`Card`, `Badge`, `Separator`, etc.) over custom divs with excessive Tailwind classes.
-- Text should be readable at default size with full contrast. No grey text or small text for content (`text-muted-foreground`, `text-xs`, `text-sm`).
-- Version/status indicators can use color (amber/green) but at normal font weight and size.
+- Prefer standard **shadcn** components (`Card`, `Badge`, `Separator`, etc.) over excessive Tailwind class usage.
+- Text should be readable at default size with full contrast. Avoid grey text or small text for content (`text-muted-foreground`, `text-xs`, `text-sm`) unless strictly necessary for good UI design.
 
 ### SPEC and TASKS Workflow
 

@@ -164,8 +164,8 @@ function PageNodeRow({
   const parentDir = getParentDir(node.path);
   const rowVariant = isActive
     ? "bg-accent text-accent-foreground font-medium"
-    : "hover:bg-accent/50 hover:text-foreground";
-  const rowClassName = `group flex items-center gap-1 px-2 py-[3px] rounded select-none min-w-0 ${rowVariant}`;
+    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground";
+  const rowClassName = `group flex items-center gap-1 px-2 py-[3px] rounded text-sm select-none min-w-0 ${rowVariant}`;
   const iconClassName = `flex items-center justify-center ${node.isVirtual ? "opacity-40 shrink-0" : "shrink-0"}`;
   const [sidebarDuplicateError, setSidebarDuplicateError] = useState<string | undefined>();
 
