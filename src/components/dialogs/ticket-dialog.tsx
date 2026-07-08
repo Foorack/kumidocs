@@ -269,7 +269,7 @@ export default function TicketDialog({
       className="text-lg font-bold h-auto py-2 px-3"
     />
   ) : (
-    <h1 className="text-lg font-bold text-foreground px-0.5">{title}</h1>
+    <h1 className="text-lg font-bold text-foreground mb-2">{title}</h1>
   );
 
   const canSave =
@@ -585,58 +585,47 @@ export default function TicketDialog({
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-3">
                 <span className="text-muted-foreground shrink-0">Reporter:</span>
-                <span className="flex items-center gap-3 text-foreground">
-                  {reporter === "" ? (
-                    "Unknown"
-                  ) : (
-                    <>
-                      <UserAvatar name={emailToDisplayName(reporter)} email={reporter} size="xs" />
-                      {emailToDisplayName(reporter)}
-                    </>
-                  )}
+                <span className="flex items-center gap-2 text-foreground">
+                  <UserAvatar
+                    name={emailToDisplayName(reporter || "Unknown")}
+                    email={reporter || "Unknown"}
+                    size="xs"
+                  />
+                  {emailToDisplayName(reporter || "Unknown")}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-muted-foreground shrink-0">Assignee:</span>
-                {showEditControls ? (
-                  <div className="flex items-center gap-3">
-                    {assignee !== "" && (
-                      <UserAvatar name={emailToDisplayName(assignee)} email={assignee} size="xs" />
-                    )}
-                    <input
-                      value={assignee}
-                      onChange={(ev) => {
-                        setAssignee(ev.target.value);
-                      }}
-                      placeholder="Unassigned"
-                      className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAssignee(user?.email ?? user?.name ?? "");
-                      }}
-                      className="ms-3 text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
-                    >
-                      Assign to me
-                    </button>
-                  </div>
-                ) : (
-                  <span className="flex items-center gap-3 text-foreground">
-                    {assignee === "" ? (
-                      "Unassigned"
-                    ) : (
-                      <>
-                        <UserAvatar
-                          name={emailToDisplayName(assignee)}
-                          email={assignee}
-                          size="xs"
-                        />
-                        {emailToDisplayName(assignee)}
-                      </>
-                    )}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 text-foreground">
+                  <UserAvatar
+                    name={emailToDisplayName(assignee || "Unassigned")}
+                    email={assignee || "Unassigned"}
+                    size="xs"
+                  />
+                  {showEditControls ? (
+                    <>
+                      <input
+                        value={assignee}
+                        onChange={(ev) => {
+                          setAssignee(ev.target.value);
+                        }}
+                        placeholder="Unassigned"
+                        className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm placeholder:text-muted-foreground"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAssignee(user?.email ?? user?.name ?? "");
+                        }}
+                        className="ms-3 text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                      >
+                        Assign to me
+                      </button>
+                    </>
+                  ) : (
+                    emailToDisplayName(assignee || "Unassigned")
+                  )}
+                </div>
               </div>
             </div>
 
