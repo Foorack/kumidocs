@@ -7,9 +7,9 @@ interface BoardColumn {
 
 interface BoardConfig {
   columns: BoardColumn[];
+  icon?: string;
   name: string;
   prefix: string;
-  icon?: string;
 }
 
 interface TicketData {
