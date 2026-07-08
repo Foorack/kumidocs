@@ -272,7 +272,14 @@ export default function TicketDialog({
     <h1 className="text-lg font-bold text-foreground px-0.5">{title}</h1>
   );
 
-  const canSave = !saving && title.trim() !== "";
+  const canSave =
+    !saving &&
+    title.trim() !== "" &&
+    (!isEdit ||
+      title !== ticket.title ||
+      body !== ticket.body ||
+      column !== ticket.column ||
+      assignee !== (ticket.assignee ?? ""));
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [headingValue, setHeadingValue] = useState("normal");
@@ -576,14 +583,23 @@ export default function TicketDialog({
 
             {/* Reporter + Assignee row */}
             <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3">
                 <span className="text-muted-foreground shrink-0">Reporter:</span>
-                <span className="text-foreground">{reporter || "Unknown"}</span>
+                <span className="flex items-center gap-3 text-foreground">
+                  {reporter === "" ? (
+                    "Unknown"
+                  ) : (
+                    <>
+                      <UserAvatar name={emailToDisplayName(reporter)} email={reporter} size="xs" />
+                      {emailToDisplayName(reporter)}
+                    </>
+                  )}
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3">
                 <span className="text-muted-foreground shrink-0">Assignee:</span>
                 {showEditControls ? (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-3">
                     {assignee !== "" && (
                       <UserAvatar name={emailToDisplayName(assignee)} email={assignee} size="xs" />
                     )}
@@ -600,13 +616,13 @@ export default function TicketDialog({
                       onClick={() => {
                         setAssignee(user?.email ?? user?.name ?? "");
                       }}
-                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                      className="ms-3 text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
                     >
                       Assign to me
                     </button>
                   </div>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-foreground">
+                  <span className="flex items-center gap-3 text-foreground">
                     {assignee === "" ? (
                       "Unassigned"
                     ) : (
