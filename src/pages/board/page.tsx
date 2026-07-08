@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
@@ -23,13 +23,11 @@ import BoardOverlay from "./board-overlay";
 
 function BoardPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { name, "*": star } = useParams<{ name: string; "*": string }>();
   const boardSlug = name ?? "";
   const ticketIdFromUrl = star ?? "";
   const { instanceName, user } = useUser();
-
-  // Track if we've handled the initial URL id (avoid re-opening on re-renders)
-  const initialIdHandledRef = useRef(false);
 
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [tickets, setTickets] = useState<TicketData[]>([]);
@@ -267,16 +265,15 @@ function BoardPage(): JSX.Element {
 
   // Auto-open dialog when navigating directly to a ticket URL
   useEffect(() => {
-    if (!ticketIdFromUrl || loading || tickets.length === 0 || initialIdHandledRef.current) {
+    if (!ticketIdFromUrl || loading || tickets.length === 0) {
       return;
     }
     const ticket = tickets.find((tic) => tic.id === ticketIdFromUrl);
     if (ticket) {
-      initialIdHandledRef.current = true;
       void openEditDialog(ticket);
     }
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketIdFromUrl, loading, tickets]);
+  }, [ticketIdFromUrl, loading, tickets, location.pathname]);
 
   // Drag overlay state
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
