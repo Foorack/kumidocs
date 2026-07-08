@@ -13,7 +13,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { GripVertical, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/components/dialogs/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
@@ -68,7 +68,6 @@ function TicketCard({
     >
       <button type="button" onClick={onClick} className="w-full text-left block px-3 pt-2.5 pb-2.5">
         <div className="flex items-center gap-1.5 pb-1">
-          <GripVertical className="w-3 h-3 shrink-0" />
           <span
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: columnColor }}
@@ -102,7 +101,6 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
       }}
     >
       <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1">
-        <GripVertical className="w-3 h-3 shrink-0" />
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: columnColor }} />
         <span className="font-mono">
           {prefix}-{ticket.id}
@@ -139,7 +137,7 @@ function BoardColumnView({
   return (
     <div
       ref={dropRef}
-      className="flex flex-col w-72 shrink-0 border-r border-border last:border-r-0 transition-all duration-150"
+      className="flex flex-col w-72 shrink-0 border-r first:border-l border-border transition-all duration-150"
       style={
         isOver
           ? {
