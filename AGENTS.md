@@ -169,6 +169,10 @@ Markdown documentation may use raw emoji freely.
 
 Do not call `useEffect` directly in components. For the rare case of syncing with an external system on mount, use `useMountEffect` from `src/hooks/use-mount-effect.ts`:
 
+### Font Weight
+
+Never use `font-semibold`. For bold text, always use `font-bold`. This keeps visual hierarchy consistent across the UI.
+
 ```ts
 import useMountEffect from "@/hooks/use-mount-effect";
 

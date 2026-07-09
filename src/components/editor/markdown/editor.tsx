@@ -38,6 +38,7 @@ interface MarkdownEditorProps {
   slideThemeVars?: Record<string, string>;
   onMetaChange?: (meta: PageMeta) => void;
   pageTemplates?: PageTemplateMap;
+  border?: boolean;
 }
 
 export default function MarkdownEditor({
@@ -52,6 +53,7 @@ export default function MarkdownEditor({
   slideThemeVars,
   onMetaChange,
   pageTemplates,
+  border: showBorder = true,
 }: MarkdownEditorProps): JSX.Element {
   const templateOptions = useMemo(() => {
     if (!pageTemplates) {
@@ -102,7 +104,11 @@ export default function MarkdownEditor({
   } = useMarkdownEditor({ onChange, onMetaChange, onSave, slideThemes, value });
 
   return (
-    <div className="flex flex-col h-full" onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div
+      className={`flex flex-col h-full${showBorder ? " rounded-md border" : ""}`}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <MarkdownToolbar
         disabled={disabled}
         headingValue={headingValue}

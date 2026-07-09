@@ -199,6 +199,15 @@ function TicketDialog({
     if (isEdit) {
       setSaving(true);
       try {
+        const now = new Date().toISOString();
+        const userEmail = user?.email ?? user?.name ?? "unknown";
+        const updatedStatusHistory =
+          column === ticket.column
+            ? statusHistory
+            : [
+                ...statusHistory,
+                { from: ticket.column, timestamp: now, to: column, user: userEmail },
+              ];
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
         const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
@@ -207,7 +216,7 @@ function TicketDialog({
           column,
           comments: comments.length > 0 ? comments : undefined,
           reporter: reporter.trim() || undefined,
-          statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+          statusHistory: updatedStatusHistory.length > 0 ? updatedStatusHistory : undefined,
           title: title.trim(),
         });
         await putFile(path, yaml);
@@ -646,6 +655,7 @@ function TicketDialog({
                       comments={comments}
                       approvals={approvals}
                       statusHistory={statusHistory}
+                      columns={currentColumns}
                       showAddComment={!showEditControls}
                       commentBody={commentBody}
                       onCommentChange={setCommentBody}
@@ -675,7 +685,7 @@ function TicketDialog({
               className="w-52 shrink-0 border-l p-3 space-y-2"
               style={{ borderColor: columnColor }}
             >
-              <h3 className="text-sm font-semibold uppercase tracking-wide select-none">Status</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide select-none">Status</h3>
               <div className="space-y-0.5">
                 {currentColumns.length === 0 && <p>No columns</p>}
                 {(showEditControls

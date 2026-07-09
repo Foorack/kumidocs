@@ -25,6 +25,7 @@ interface InlineEditorProps {
   headingValue?: string;
   /** Optional: override heading handler. */
   onHeadingChange?: (val: string) => void;
+  border?: boolean;
 }
 
 /**
@@ -43,6 +44,7 @@ export default function InlineEditor({
   onClick,
   headingValue: externalHeading,
   onHeadingChange,
+  border: showBorder = true,
 }: InlineEditorProps): JSX.Element {
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaRef = externalRef ?? internalRef;
@@ -190,7 +192,7 @@ export default function InlineEditor({
   );
 
   return (
-    <div className="flex flex-col border rounded-md overflow-hidden">
+    <div className={`flex flex-col${showBorder ? " border rounded-md overflow-hidden" : ""}`}>
       <MarkdownToolbar
         editorOnly
         disabled={false}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
 import { displayColumnId } from "@/lib/board";
-import type { TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
+import type { TicketComment, TicketApproval, StatusEntry, BoardColumn } from "@/lib/board";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
 
@@ -17,6 +17,7 @@ interface TimelineProps {
   onCommentKeyDown: (ev: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onCommentSubmit: () => void;
   onCommentClear: () => void;
+  columns: BoardColumn[];
 }
 
 interface TimelineItem {
@@ -25,7 +26,7 @@ interface TimelineItem {
   data: TicketComment | TicketApproval | StatusEntry;
 }
 
-function renderTimelineItem(item: TimelineItem): JSX.Element {
+function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => string): JSX.Element {
   switch (item.type) {
     case "comment": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -47,19 +48,24 @@ function renderTimelineItem(item: TimelineItem): JSX.Element {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const entry = item.data as StatusEntry;
       return (
-        <div className="flex items-center gap-2 text-xs py-1">
-          <UserAvatar
-            name={emailToDisplayName(entry.user)}
-            email={entry.user}
-            size="xxs"
-            outline={false}
-          />
-          <span className="text-muted-foreground">
-            <span className="text-foreground font-medium">{emailToDisplayName(entry.user)}</span>
+        <div className="flex items-center gap-2 py-1">
+          <UserAvatar name={emailToDisplayName(entry.user)} email={entry.user} outline={false} />
+          <span className="text-foreground">
+            <span className="font-medium">{emailToDisplayName(entry.user)}</span>
             {" moved from "}
-            <span className="font-mono">{displayColumnId(entry.from)}</span>
+            <span
+              className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold text-background"
+              style={{ backgroundColor: columnColor(entry.from) }}
+            >
+              {displayColumnId(entry.from)}
+            </span>
             {" to "}
-            <span className="font-mono">{displayColumnId(entry.to)}</span>
+            <span
+              className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold text-background"
+              style={{ backgroundColor: columnColor(entry.to) }}
+            >
+              {displayColumnId(entry.to)}
+            </span>
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">
             {relativeTime(item.timestamp)}
@@ -104,6 +110,7 @@ export default function Timeline({
   onCommentKeyDown,
   onCommentSubmit,
   onCommentClear,
+  columns,
 }: TimelineProps): JSX.Element {
   const items: TimelineItem[] = [
     ...comments.map((cmt) => ({ data: cmt, timestamp: cmt.timestamp, type: "comment" as const })),
@@ -125,21 +132,25 @@ export default function Timeline({
     return <p className="text-muted-foreground py-4 text-center">No activity yet.</p>;
   }
 
+  const columnColor = (id: string): string =>
+    columns.find((col) => col.id === id)?.color ?? "#6b7280";
+
   return (
     <div className="space-y-0">
       {items.length > 0 && (
         <div className="space-y-4">
           {items.map((item, idx) => (
-            <div key={idx}>{renderTimelineItem(item)}</div>
+            <div key={idx}>{renderTimelineItem(item, columnColor)}</div>
           ))}
         </div>
       )}
 
       {showAddComment && (
         <div className="mt-4">
-          <h4 className="font-semibold text-muted-foreground mb-2">Add Comment</h4>
+          <h4 className="font-bold text-foreground mb-2">Add Comment</h4>
           <div className="border rounded-md overflow-hidden">
             <InlineEditor
+              border={false}
               value={commentBody}
               onChange={onCommentChange}
               onKeyDown={onCommentKeyDown}

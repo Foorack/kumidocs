@@ -313,6 +313,8 @@ function BoardPage(): JSX.Element {
       }
 
       try {
+        const now = new Date().toISOString();
+        const userEmail = user?.email ?? user?.name ?? "unknown";
         const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
         const fileResp = await getFile(path);
         const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
@@ -320,7 +322,13 @@ function BoardPage(): JSX.Element {
           fileResp.content,
           dragActiveTicket.boardSlug,
           dragActiveTicket.id,
-          { column: targetColId },
+          {
+            column: targetColId,
+            statusHistory: [
+              ...(dragActiveTicket.statusHistory ?? []),
+              { from: dragActiveTicket.column, timestamp: now, to: targetColId, user: userEmail },
+            ],
+          },
           dragDefaultColId,
         );
         await putFile(path, yaml);
