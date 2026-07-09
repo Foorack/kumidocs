@@ -43,6 +43,7 @@ interface TicketApproval {
   timestamp: string;
   /** SHA-256 of lower(email)+ticketId+title+body at time of approval. */
   hash: string;
+  status?: "approved" | "rejected" | "outdated";
 }
 
 interface StatusEntry {
@@ -215,18 +216,27 @@ async function parseTicketYaml(
   // Parse approvals
   const rawApprovals = obj.approvals;
   const approvals: TicketApproval[] | undefined = Array.isArray(rawApprovals)
-    ? rawApprovals.filter(
-        // oxlint-disable-next-line id-length
-        (approval): approval is TicketApproval =>
-          typeof approval === "object" &&
-          approval !== null &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (approval as Record<string, unknown>).user === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (approval as Record<string, unknown>).timestamp === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (approval as Record<string, unknown>).hash === "string",
-      )
+    ? rawApprovals
+        .filter(
+          // oxlint-disable-next-line id-length
+          (approval): approval is TicketApproval =>
+            typeof approval === "object" &&
+            approval !== null &&
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            typeof (approval as Record<string, unknown>).user === "string" &&
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            typeof (approval as Record<string, unknown>).timestamp === "string" &&
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            typeof (approval as Record<string, unknown>).hash === "string",
+        )
+        .map((appr) => {
+          const a = appr as Record<string, unknown>;
+          const s = a.status;
+          return {
+            ...(appr as TicketApproval),
+            status: s === "approved" || s === "rejected" || s === "outdated" ? s : undefined,
+          };
+        })
     : undefined;
 
   // Parse status history
@@ -326,6 +336,9 @@ function ticketToYaml(data: {
         `    timestamp: ${JSON.stringify(approval.timestamp)}`,
         `    hash: ${JSON.stringify(approval.hash)}`,
       );
+      if (approval.status !== undefined) {
+        lines.push(`    status: ${approval.status}`);
+      }
     }
   }
 

@@ -1,10 +1,12 @@
 import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
 import { displayColumnId } from "@/lib/board";
 import type { TicketComment, TicketApproval, StatusEntry, BoardColumn } from "@/lib/board";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
 
 interface TimelineProps {
@@ -35,8 +37,8 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
         <div className="border rounded-md p-3">
           <div className="flex items-center gap-2 mb-2">
             <UserAvatar name={emailToDisplayName(cmt.user)} email={cmt.user} size="xs" />
-            <span className="font-medium">{cmt.user}</span>
-            <span className="text-muted-foreground/60 text-xs ml-auto">
+            <span className="font-bold">{cmt.user}</span>
+            <span className="text-muted-foreground text-xs ml-auto">
               {relativeTime(item.timestamp)}
             </span>
           </div>
@@ -49,23 +51,29 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
       const entry = item.data as StatusEntry;
       return (
         <div className="flex items-center gap-2 py-1">
-          <UserAvatar name={emailToDisplayName(entry.user)} email={entry.user} outline={false} />
-          <span className="text-foreground">
-            <span className="font-medium">{entry.user}</span>
+          <EmojiIcon fileType="status" size={24} />
+          <UserAvatar
+            name={emailToDisplayName(entry.user)}
+            email={entry.user}
+            outline={false}
+            size="sm"
+          />
+          <span className="text-sm text-foreground flex items-center gap-2">
+            <span className="font-bold">{entry.user}</span>
             {" moved from "}
-            <span
-              className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold text-background"
+            <Badge
+              className="font-bold text-background"
               style={{ backgroundColor: columnColor(entry.from) }}
             >
               {displayColumnId(entry.from)}
-            </span>
+            </Badge>
             {" to "}
-            <span
-              className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold text-background"
+            <Badge
+              className="font-bold text-background"
               style={{ backgroundColor: columnColor(entry.to) }}
             >
               {displayColumnId(entry.to)}
-            </span>
+            </Badge>
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">
             {relativeTime(item.timestamp)}
@@ -76,17 +84,23 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
     case "approval": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const appr = item.data as TicketApproval;
+      const apprType = appr.status ?? "approved";
       return (
-        <div className="flex items-center gap-2 text-xs py-1">
+        <div className="flex items-center gap-2 py-1">
+          <EmojiIcon fileType={apprType as "approve" | "reject" | "outdated"} size={24} />
           <UserAvatar
             name={emailToDisplayName(appr.user)}
             email={appr.user}
-            size="xxs"
             outline={false}
+            size="sm"
           />
-          <span className="text-muted-foreground">
-            <span className="text-foreground font-medium">{appr.user}</span>
-            {" approved"}
+          <span className="text-sm text-foreground flex items-center gap-2">
+            <span className="font-bold">{appr.user}</span>
+            {apprType === "approved"
+              ? " approved"
+              : apprType === "rejected"
+                ? " rejected"
+                : " marked outdated"}
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">
             {relativeTime(item.timestamp)}

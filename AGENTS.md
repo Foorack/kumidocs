@@ -171,7 +171,7 @@ Do not call `useEffect` directly in components. For the rare case of syncing wit
 
 ### Font Weight
 
-Never use `font-semibold`. For bold text, always use `font-bold`. This keeps visual hierarchy consistent across the UI.
+Never use `font-semibold` or `font-medium`. For bold text, always use `font-bold`. This keeps visual hierarchy consistent across the UI.
 
 ```ts
 import useMountEffect from "@/hooks/use-mount-effect";

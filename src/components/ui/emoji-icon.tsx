@@ -5,14 +5,18 @@ import { EMOJI_SVGS } from "@/lib/emoji-loader";
 import type { FileType } from "@/lib/types";
 import { Fragment } from "react";
 
-// File type icon names in the ICONS map; the fallback is QuestionCircle24Color.
-const FILE_TYPE_ICONS: Record<string, string> = {
+// Fluent icon names keyed by file/type; the fallback is QuestionCircle24Color.
+const FLUENT_TYPE_ICONS: Record<string, string> = {
   board: "Board24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   image: "Image24Color",
   sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
+  approve: "CheckmarkCircle24Color",
+  reject: "DismissCircle24Color",
+  outdated: "ErrorCircle24Color",
+  status: "Diversity24Color",
 };
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";
@@ -93,7 +97,7 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
 
   // File-type path: resolve icon from central map, fall back to QuestionCircle24Color.
   if (fileType) {
-    const iconName = FILE_TYPE_ICONS[fileType] ?? FILE_TYPE_FALLBACK;
+    const iconName = FLUENT_TYPE_ICONS[fileType] ?? FILE_TYPE_FALLBACK;
     const svg = ICONS[iconName];
     const isMuted = fileType === "code" || fileType === "image";
     return (

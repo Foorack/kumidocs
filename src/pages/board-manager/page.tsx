@@ -43,7 +43,7 @@ function renderContent(
         >
           {board.config.icon !== undefined && board.config.icon !== "" ? (
             <span className="shrink-0 mt-0.5">
-              <EmojiIcon emoji={board.config.icon} size={20} />
+              <EmojiIcon emoji={board.config.icon} size={24} />
             </span>
           ) : (
             <Settings className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
