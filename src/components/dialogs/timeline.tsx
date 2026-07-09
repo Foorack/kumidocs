@@ -35,7 +35,7 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
         <div className="border rounded-md p-3">
           <div className="flex items-center gap-2 mb-2">
             <UserAvatar name={emailToDisplayName(cmt.user)} email={cmt.user} size="xs" />
-            <span className="font-medium">{emailToDisplayName(cmt.user)}</span>
+            <span className="font-medium">{cmt.user}</span>
             <span className="text-muted-foreground/60 text-xs ml-auto">
               {relativeTime(item.timestamp)}
             </span>
@@ -51,7 +51,7 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
         <div className="flex items-center gap-2 py-1">
           <UserAvatar name={emailToDisplayName(entry.user)} email={entry.user} outline={false} />
           <span className="text-foreground">
-            <span className="font-medium">{emailToDisplayName(entry.user)}</span>
+            <span className="font-medium">{entry.user}</span>
             {" moved from "}
             <span
               className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-bold text-background"
@@ -85,7 +85,7 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
             outline={false}
           />
           <span className="text-muted-foreground">
-            <span className="text-foreground font-medium">{emailToDisplayName(appr.user)}</span>
+            <span className="text-foreground font-medium">{appr.user}</span>
             {" approved"}
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">

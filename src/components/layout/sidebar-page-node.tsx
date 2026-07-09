@@ -9,7 +9,7 @@ import {
 import { EmojiIcon, TitleWithEmoji } from "@/components/ui/emoji-icon";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { PageNode, PresenceUser, User } from "@/lib/types";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { PageMenuItems } from "@/components/ui/page-menu-items";
 import { UserAvatar } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/toaster";
@@ -58,17 +58,14 @@ function PresenceAvatars({
   return (
     <div className={`flex items-center shrink-0 ${isCompact ? "-space-x-[3px]" : "-space-x-1"}`}>
       {slice.map((user) => (
-        <Tooltip key={user.id}>
-          <TooltipTrigger asChild>
-            <UserAvatar
-              name={user.name}
-              email={user.email}
-              size={size}
-              className="ring-1 ring-sidebar cursor-default shrink-0"
-            />
-          </TooltipTrigger>
-          <TooltipContent>{user.id === currentUser?.id ? "You" : user.name}</TooltipContent>
-        </Tooltip>
+        <UserAvatar
+          key={user.id}
+          isCurrentUser={user.id === currentUser?.id}
+          name={user.name}
+          email={user.email}
+          size={size}
+          className="ring-1 ring-sidebar cursor-default shrink-0"
+        />
       ))}
       {resolved.length > 3 && (
         <div

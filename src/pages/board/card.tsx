@@ -69,14 +69,10 @@ function CardContent({
             {/* Bottom row: names */}
             <div className="grid grid-cols-2 divide-x divide-border">
               <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-left">
-                {ticket.reporter !== undefined && ticket.reporter !== ""
-                  ? emailToDisplayName(ticket.reporter)
-                  : ""}
+                {ticket.reporter !== undefined && ticket.reporter !== "" ? ticket.reporter : ""}
               </div>
               <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-right">
-                {ticket.assignee !== undefined && ticket.assignee !== ""
-                  ? emailToDisplayName(ticket.assignee)
-                  : ""}
+                {ticket.assignee !== undefined && ticket.assignee !== "" ? ticket.assignee : ""}
               </div>
             </div>
           </div>

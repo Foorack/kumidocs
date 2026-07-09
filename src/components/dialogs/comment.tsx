@@ -13,7 +13,7 @@ export default function Comment({ comment }: CommentProps): JSX.Element {
     <div className="border rounded-md p-3">
       <div className="flex items-center gap-2 mb-2">
         <UserAvatar name={emailToDisplayName(comment.user)} email={comment.user} size="xs" />
-        <span className="font-medium">{emailToDisplayName(comment.user)}</span>
+        <span className="font-medium">{comment.user}</span>
         <span className="text-muted-foreground/60 text-xs">{relativeTime(comment.timestamp)}</span>
       </div>
       <MarkdownViewer value={comment.message} className="px-3 py-2" />

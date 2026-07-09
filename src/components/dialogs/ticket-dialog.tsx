@@ -573,7 +573,7 @@ function TicketDialog({
                       email={reporter || "Unknown"}
                       size="xs"
                     />
-                    {emailToDisplayName(reporter || "Unknown")}
+                    {reporter || "Unknown"}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -605,7 +605,7 @@ function TicketDialog({
                         </button>
                       </>
                     ) : (
-                      emailToDisplayName(assignee || "Unassigned")
+                      assignee || "Unassigned"
                     )}
                   </div>
                 </div>

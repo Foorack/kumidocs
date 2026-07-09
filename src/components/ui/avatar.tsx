@@ -4,6 +4,7 @@ import type { ComponentProps } from "react";
 import cn from "@/lib/utils";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { useMemo } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type AvatarSize = "xxs" | "xs" | "sm" | "md" | "lg";
 
@@ -18,13 +19,15 @@ const sizeMap: Record<AvatarSize, { circle: string; text: string }> = {
 const HEX_RADIX = 16;
 
 interface UserAvatarProps extends ComponentProps<typeof AvatarPrimitive.Root> {
-  /** Display name used for initials fallback and background color. */
+  /** Display name used for initials fallback, background color, and hover tooltip. */
   name: string;
   /** User email; Gravatar SHA-256 hash is computed internally. */
   email?: string;
   size?: AvatarSize;
   /** Whether to show a colored outline ring around the avatar. Default true. */
   outline?: boolean;
+  /** When true, the hover tooltip shows "You" instead of the name. */
+  isCurrentUser?: boolean;
 }
 
 /** Compute a SHA-256 hex digest of a string; works in any context (no secure origin required). */
@@ -44,7 +47,15 @@ const sha256hex = (input: string): string => {
  *   <UserAvatar name={user.displayName} email={user.email} />
  */
 const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
-  const { name, email, size = "md", outline = true, className, ...rest } = allProps;
+  const {
+    name,
+    email,
+    size = "md",
+    outline = true,
+    isCurrentUser = false,
+    className,
+    ...rest
+  } = allProps;
   const { circle, text } = sizeMap[size];
   const displayInitials = avatarInitials(name);
   const color = avatarColor(name);
@@ -59,32 +70,37 @@ const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
   }, [email]);
 
   return (
-    <AvatarPrimitive.Root
-      {...rest}
-      className={cn(
-        "relative flex shrink-0 overflow-hidden rounded-full select-none",
-        circle,
-        className,
-      )}
-      style={outline ? { outline: `2px solid ${color}`, outlineOffset: "1px" } : undefined}
-    >
-      {gravatarHash !== undefined && gravatarHash !== "" && (
-        <AvatarPrimitive.Image
-          className="aspect-square size-full"
-          src={`/api/avatar/${gravatarHash}`}
-          alt={name}
-        />
-      )}
-      <AvatarPrimitive.Fallback
-        className={cn(
-          "flex size-full items-center justify-center rounded-full font-bold text-white",
-          text,
-        )}
-        style={{ backgroundColor: color }}
-      >
-        {displayInitials}
-      </AvatarPrimitive.Fallback>
-    </AvatarPrimitive.Root>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <AvatarPrimitive.Root
+          {...rest}
+          className={cn(
+            "relative flex shrink-0 overflow-hidden rounded-full select-none",
+            circle,
+            className,
+          )}
+          style={outline ? { outline: `2px solid ${color}`, outlineOffset: "1px" } : undefined}
+        >
+          {gravatarHash !== undefined && gravatarHash !== "" && (
+            <AvatarPrimitive.Image
+              className="aspect-square size-full"
+              src={`/api/avatar/${gravatarHash}`}
+              alt={name}
+            />
+          )}
+          <AvatarPrimitive.Fallback
+            className={cn(
+              "flex size-full items-center justify-center rounded-full font-bold text-white",
+              text,
+            )}
+            style={{ backgroundColor: color }}
+          >
+            {displayInitials}
+          </AvatarPrimitive.Fallback>
+        </AvatarPrimitive.Root>
+      </TooltipTrigger>
+      <TooltipContent>{isCurrentUser ? "You" : name}</TooltipContent>
+    </Tooltip>
   );
 };
 
