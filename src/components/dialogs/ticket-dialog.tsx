@@ -434,7 +434,7 @@ function TicketDialog({
         }}
       >
         <DialogContent
-          className="sm:max-w-5xl p-0 gap-0 border-5"
+          className="sm:max-w-5xl p-0 gap-0 border-5 grid-rows-[auto_minmax(0,1fr)]"
           showCloseButton={false}
           onKeyDown={handleKeyDown}
           style={{ borderColor: columnColor }}
@@ -526,7 +526,7 @@ function TicketDialog({
           </div>
 
           {/* Body: main content + status sidebar */}
-          <div className="flex gap-0 min-h-120">
+          <div className="flex gap-0 min-h-0 overflow-y-auto">
             {/* Left: main content */}
             <div className="flex-1 p-5 space-y-4 min-w-0">
               {/* Board selector (create only) */}
