@@ -14,18 +14,12 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
-import { relativeTime } from "@/lib/utils";
 import type { CommitEntry } from "@/lib/types";
 import CommitDiffDialog from "@/components/layout/commit-diff-dialog";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
-import {
-  insertWrap,
-  setLinePrefix,
-  toggleListPrefix,
-  insertLink,
-  HEADING_OPTIONS,
-} from "@/components/editor/markdown/editor-utils";
+import VersionControlTab from "./version-control-tab";
+import Timeline from "./timeline";
 
 interface TicketDialogProps {
   open: boolean;
@@ -48,59 +42,6 @@ interface TicketDialogProps {
   };
   onCreated?: () => void;
   onSaved?: () => void;
-}
-
-function VersionControlTab({
-  commits,
-  commitsLoading,
-  onCommitClick,
-}: {
-  commits: CommitEntry[];
-  commitsLoading: boolean;
-  onCommitClick: (sha: string) => void;
-}): JSX.Element {
-  if (commitsLoading) {
-    return <p className="text-muted-foreground py-4 text-center">Loading...</p>;
-  }
-  if (commits.length === 0) {
-    return <p className="text-muted-foreground py-4 text-center">No commits yet.</p>;
-  }
-  return (
-    <div className="space-y-2">
-      {commits.map((commit) => (
-        <button
-          key={commit.sha}
-          type="button"
-          onClick={() => {
-            onCommitClick(commit.sha);
-          }}
-          className="w-full text-left flex items-start gap-2 py-1.5 border-b border-border last:border-0 hover:bg-accent/40 group transition-colors rounded"
-        >
-          <UserAvatar
-            name={emailToDisplayName(commit.author)}
-            email={commit.authorEmail}
-            size="xs"
-            className="shrink-0 mt-0.5"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="text-foreground line-clamp-2 group-hover:underline">{commit.message}</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-muted-foreground">
-                {emailToDisplayName(commit.author)}
-              </span>
-              <span className="text-xs text-muted-foreground/60">{relativeTime(commit.date)}</span>
-              {(commit.added ?? 0) > 0 && (
-                <span className="text-xs text-green font-mono">+{commit.added}</span>
-              )}
-              {(commit.removed ?? 0) > 0 && (
-                <span className="text-xs text-red font-mono">-{commit.removed}</span>
-              )}
-            </div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function TicketDialog({
@@ -410,148 +351,7 @@ function TicketDialog({
       column !== ticket.column ||
       assignee !== (ticket.assignee ?? ""));
 
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const commentBodyRef = useRef<HTMLTextAreaElement>(null);
   const [commentBody, setCommentBody] = useState("");
-  const [headingValue, setHeadingValue] = useState("normal");
-
-  // Track which textarea is focused so toolbar buttons target the right one
-  const activeEditorRef = useRef<HTMLTextAreaElement | null>(null);
-  const focusBody = useCallback((): void => {
-    activeEditorRef.current = bodyRef.current;
-  }, []);
-  const focusComment = useCallback((): void => {
-    activeEditorRef.current = commentBodyRef.current;
-  }, []);
-
-  const getActiveEditor = (): HTMLTextAreaElement | null => activeEditorRef.current;
-
-  const saveBodySelection = useCallback((): void => {
-    getActiveEditor()?.focus();
-  }, []);
-
-  const handleBodyBold = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    insertWrap(ta, "**", "**");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyItalic = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    insertWrap(ta, "*", "*");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyStrikethrough = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    insertWrap(ta, "~~", "~~");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyCode = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    insertWrap(ta, "`", "`");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyHeading = useCallback((val: string): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    setHeadingValue(val);
-    const prefix = HEADING_OPTIONS.find((opt) => opt.value === val)?.prefix ?? "";
-    setLinePrefix(ta, prefix);
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyQuote = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    setLinePrefix(ta, "> ");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyUnordered = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    toggleListPrefix(ta, "- ");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyNumbered = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    toggleListPrefix(ta, "1. ");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyTask = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    toggleListPrefix(ta, "- [ ] ");
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyLink = useCallback((): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    insertLink(ta);
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-  }, []);
-
-  const handleBodyEmoji = useCallback((emoji: string): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    ta.setRangeText(emoji, start, end, "preserve");
-    ta.setSelectionRange(start + emoji.length, start + emoji.length);
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    ta.focus();
-  }, []);
-
-  const handleBodyKeyDown = useCallback((ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    const ta = getActiveEditor();
-    if (!ta) {
-      return;
-    }
-    if ((ev.ctrlKey || ev.metaKey) && ev.key === "b") {
-      ev.preventDefault();
-      insertWrap(ta, "**", "**");
-      ta.dispatchEvent(new Event("input", { bubbles: true }));
-      return;
-    }
-    if ((ev.ctrlKey || ev.metaKey) && ev.key === "i") {
-      ev.preventDefault();
-      insertWrap(ta, "*", "*");
-      ta.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  }, []);
 
   const handleCommentSubmit = useCallback(async (): Promise<void> => {
     const trimmed = commentBody.trim();
@@ -605,40 +405,17 @@ function TicketDialog({
       if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
         ev.preventDefault();
         void handleCommentSubmit();
-        return;
       }
-      // Let the shared keydown handler handle formatting shortcuts
-      handleBodyKeyDown(ev);
     },
-    [handleBodyKeyDown, handleCommentSubmit],
+    [handleCommentSubmit],
   );
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const bodyContent = editing ? (
     <InlineEditor
       value={body}
       onChange={setBody}
-      textareaRef={bodyRef}
-      onFocus={focusBody}
-      onKeyDown={handleBodyKeyDown}
-      onSelect={saveBodySelection}
-      onClick={saveBodySelection}
       placeholder="Add description..."
       minHeight="min-h-[260px]"
-      headingValue={headingValue}
-      handleHeading={handleBodyHeading}
-      handleBold={handleBodyBold}
-      handleItalic={handleBodyItalic}
-      handleStrikethrough={handleBodyStrikethrough}
-      handleCode={handleBodyCode}
-      handleLink={handleBodyLink}
-      handleQuote={handleBodyQuote}
-      handleUnordered={handleBodyUnordered}
-      handleNumbered={handleBodyNumbered}
-      handleTask={handleBodyTask}
-      handleEmoji={handleBodyEmoji}
-      fileInputRef={fileInputRef}
     />
   ) : (
     <div className="border rounded-md overflow-hidden">
@@ -780,7 +557,7 @@ function TicketDialog({
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-3">
                   <span className="text-muted-foreground shrink-0">Reporter:</span>
-                  <span className="flex items-center gap-2 text-foreground">
+                  <span className="flex items-center gap-3 text-foreground">
                     <UserAvatar
                       name={emailToDisplayName(reporter || "Unknown")}
                       email={reporter || "Unknown"}
@@ -791,7 +568,7 @@ function TicketDialog({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-muted-foreground shrink-0">Assignee:</span>
-                  <div className="flex items-center gap-2 text-foreground">
+                  <div className="flex items-center gap-3 text-foreground">
                     <UserAvatar
                       name={emailToDisplayName(assignee || "Unassigned")}
                       email={assignee || "Unassigned"}
@@ -864,154 +641,21 @@ function TicketDialog({
 
                   {/* Tab content */}
                   {activeTab === "activity" && (
-                    <div className="space-y-4 text-sm">
-                      {/* Status history */}
-                      {statusHistory.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground mb-2">
-                            Status Changes
-                          </h4>
-                          <div className="space-y-1.5">
-                            {[...statusHistory].toReversed().map((entry, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs">
-                                <UserAvatar
-                                  name={emailToDisplayName(entry.user)}
-                                  email={entry.user}
-                                  size="xxs"
-                                  outline={false}
-                                />
-                                <span className="text-muted-foreground">
-                                  <span className="text-foreground font-medium">
-                                    {emailToDisplayName(entry.user)}
-                                  </span>
-                                  {" moved from "}
-                                  <span className="font-mono">{displayColumnId(entry.from)}</span>
-                                  {" to "}
-                                  <span className="font-mono">{displayColumnId(entry.to)}</span>
-                                </span>
-                                <span className="text-muted-foreground/60 ml-auto shrink-0">
-                                  {relativeTime(entry.timestamp)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Comments */}
-                      {comments.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground mb-2">Comments</h4>
-                          <div className="space-y-3">
-                            {/* oxlint-disable id-length */}
-                            {comments.map((cmt, idx) => (
-                              <div key={idx} className="border rounded-md p-3">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <UserAvatar
-                                    name={emailToDisplayName(cmt.user)}
-                                    email={cmt.user}
-                                    size="xs"
-                                  />
-                                  <span className="font-medium">
-                                    {emailToDisplayName(cmt.user)}
-                                  </span>
-                                  <span className="text-muted-foreground/60 text-xs">
-                                    {relativeTime(cmt.timestamp)}
-                                  </span>
-                                </div>
-                                <MarkdownViewer value={cmt.message} className="px-3 py-2" />
-                              </div>
-                            ))}
-                            {/* oxlint-enable id-length */}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Approvals */}
-                      {approvals.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground mb-2">Approvals</h4>
-                          <div className="space-y-1.5">
-                            {/* oxlint-disable id-length */}
-                            {approvals.map((appr, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs">
-                                <UserAvatar
-                                  name={emailToDisplayName(appr.user)}
-                                  email={appr.user}
-                                  size="xxs"
-                                  outline={false}
-                                />
-                                <span className="text-muted-foreground">
-                                  <span className="text-foreground font-medium">
-                                    {emailToDisplayName(appr.user)}
-                                  </span>
-                                </span>
-                                <span className="text-muted-foreground/60 ml-auto shrink-0">
-                                  {relativeTime(appr.timestamp)}
-                                </span>
-                              </div>
-                            ))}
-                            {/* oxlint-enable id-length */}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Add comment (view mode only) */}
-                      {!showEditControls && (
-                        <div>
-                          <h4 className="font-semibold text-muted-foreground mb-2">Add Comment</h4>
-                          <div className="border rounded-md overflow-hidden">
-                            <InlineEditor
-                              value={commentBody}
-                              onChange={setCommentBody}
-                              textareaRef={commentBodyRef}
-                              onFocus={focusComment}
-                              onKeyDown={handleCommentKeyDown}
-                              placeholder="Write a comment... (Ctrl+Enter to submit)"
-                              minHeight="min-h-[100px]"
-                              headingValue={headingValue}
-                              handleHeading={handleBodyHeading}
-                              handleBold={handleBodyBold}
-                              handleItalic={handleBodyItalic}
-                              handleStrikethrough={handleBodyStrikethrough}
-                              handleCode={handleBodyCode}
-                              handleLink={handleBodyLink}
-                              handleQuote={handleBodyQuote}
-                              handleUnordered={handleBodyUnordered}
-                              handleNumbered={handleBodyNumbered}
-                              handleTask={handleBodyTask}
-                              handleEmoji={handleBodyEmoji}
-                              fileInputRef={fileInputRef}
-                            />
-                            <div className="flex justify-end gap-2 px-3 py-2 border-t border-border">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setCommentBody("");
-                                }}
-                                disabled={commentBody.trim() === ""}
-                              >
-                                Clear
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={handleCommentSubmit}
-                                disabled={commentBody.trim() === ""}
-                              >
-                                Add comment
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {comments.length === 0 &&
-                        statusHistory.length === 0 &&
-                        approvals.length === 0 && (
-                          <p className="text-muted-foreground py-4 text-center">No activity yet.</p>
-                        )}
-                    </div>
+                    <Timeline
+                      comments={comments}
+                      approvals={approvals}
+                      statusHistory={statusHistory}
+                      showAddComment={!showEditControls}
+                      commentBody={commentBody}
+                      onCommentChange={setCommentBody}
+                      onCommentKeyDown={handleCommentKeyDown}
+                      onCommentSubmit={() => {
+                        void handleCommentSubmit();
+                      }}
+                      onCommentClear={() => {
+                        setCommentBody("");
+                      }}
+                    />
                   )}
 
                   {activeTab === "vc" && (
