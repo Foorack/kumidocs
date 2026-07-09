@@ -77,18 +77,14 @@ await Bun.write(
 );
 
 // Step 3: Server (bun target)
-// __BUNDLED__ is injected so the server switches from Bun's HTML-import HMR
-// route (dev) to the static file handler that reads from import.meta.dir/public/.
 console.log("  [3/3] Server…");
 const result = await Bun.build({
   define: {
-    __BUNDLED__: JSON.stringify("true"),
     __VERSION__: JSON.stringify(appVersion),
   },
   entrypoints: [join(root, "src/index.ts")],
   minify: true,
   outdir: distDir,
-  plugins: [tailwindPlugin],
   target: "bun",
 });
 
