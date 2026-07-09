@@ -579,6 +579,7 @@ function TicketDialog({
   );
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
@@ -940,6 +941,7 @@ function TicketDialog({
           </div>
         </div>
       </DialogContent>
+    </Dialog>
 
       <CommitDiffDialog
         open={diffOpen}
@@ -952,7 +954,7 @@ function TicketDialog({
         diffData={diffData}
         diffLoading={diffLoading}
       />
-    </Dialog>
+    </>
   );
 }
 
