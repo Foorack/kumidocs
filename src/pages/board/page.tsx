@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
+import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Info } from "lucide-react";
@@ -78,7 +79,7 @@ function BoardPage(): JSX.Element {
     if (!boardSlug) {
       return;
     }
-    const load = async (): Promise<void> => {
+    const loadBoardData = async (): Promise<void> => {
       setLoading(true);
       try {
         const resp = await getFile(`${boardSlug}.yaml`);
@@ -121,7 +122,7 @@ function BoardPage(): JSX.Element {
         setLoading(false);
       }
     };
-    void load();
+    void loadBoardData();
   }, [boardSlug]);
 
   // Columns from config
@@ -209,11 +210,7 @@ function BoardPage(): JSX.Element {
     }
   }, [boardSlug, columns]);
 
-  const handleDialogSaved = useCallback((): void => {
-    void reloadTickets();
-  }, [reloadTickets]);
-
-  const handleDialogCreated = useCallback((): void => {
+  const handleDialogChange = useCallback((): void => {
     void reloadTickets();
   }, [reloadTickets]);
 
@@ -231,9 +228,8 @@ function BoardPage(): JSX.Element {
           boardDefaultColId,
         );
         // Parse body from raw YAML
-        const { load } = await import("js-yaml");
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = load(resp.content) as Record<string, unknown>;
+        const parsed = parseYaml(resp.content) as Record<string, unknown>;
         setEditTicket({
           assignee: data.assignee,
           boardSlug: data.boardSlug,
@@ -327,9 +323,8 @@ function BoardPage(): JSX.Element {
           dragDefaultColId,
         );
         // Preserve body, reporter, and assignee from raw YAML
-        const { load } = await import("js-yaml");
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = load(fileResp.content) as Record<string, unknown>;
+        const parsed = parseYaml(fileResp.content) as Record<string, unknown>;
         const yaml = ticketToYaml({
           assignee: data.assignee,
           body: typeof parsed.body === "string" ? parsed.body : undefined,
@@ -469,8 +464,8 @@ function BoardPage(): JSX.Element {
         boardColumns={new Map([[boardSlug, columns]])}
         initialBoardSlug={boardSlug}
         ticket={editTicket}
-        onCreated={handleDialogCreated}
-        onSaved={handleDialogSaved}
+        onCreated={handleDialogChange}
+        onSaved={handleDialogChange}
       />
     </div>
   );

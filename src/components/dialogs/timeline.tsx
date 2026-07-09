@@ -25,21 +25,7 @@ interface TimelineItem {
   data: TicketComment | TicketApproval | StatusEntry;
 }
 
-function dotColor(type: string): string {
-  switch (type) {
-    case "status": {
-      return "bg-amber-400";
-    }
-    case "approval": {
-      return "bg-green-500";
-    }
-    default: {
-      return "bg-sky-500";
-    }
-  }
-}
-
-function renderTimelineItem(item: TimelineItem, _idx: number): JSX.Element {
+function renderTimelineItem(item: TimelineItem): JSX.Element {
   switch (item.type) {
     case "comment": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -142,20 +128,10 @@ export default function Timeline({
   return (
     <div className="space-y-0">
       {items.length > 0 && (
-        <div className="relative pl-7">
-          <div className="absolute left-[9px] top-2 bottom-0 w-px bg-border" />
-          <div className="space-y-4">
-            {items.map((item, idx) => (
-              <div key={idx} className="relative">
-                <div className="absolute -left-[22px] top-1.5 w-[18px] flex justify-center">
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full border-2 border-background ${dotColor(item.type)}`}
-                  />
-                </div>
-                {renderTimelineItem(item, idx)}
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4">
+          {items.map((item, idx) => (
+            <div key={idx}>{renderTimelineItem(item)}</div>
+          ))}
         </div>
       )}
 

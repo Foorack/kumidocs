@@ -17,7 +17,10 @@ function CardContent({
   columnColor: string;
 }): JSX.Element {
   const showFooter =
-    (ticket.createdAt ?? ticket.updatedAt ?? ticket.reporter ?? ticket.assignee) !== undefined;
+    ticket.createdAt !== undefined ||
+    ticket.updatedAt !== undefined ||
+    ticket.reporter !== undefined ||
+    ticket.assignee !== undefined;
 
   return (
     <>
@@ -129,11 +132,18 @@ function TicketCard({
       style={style}
       {...attributes}
       {...listeners}
-      className="rounded-lg border-3 shadow-xs cursor-grab active:cursor-grabbing"
+      onClick={onClick}
+      onKeyDown={(ev) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          onClick();
+        }
+      }}
+      className="rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing"
+      role="button"
+      tabIndex={0}
     >
-      <button type="button" onClick={onClick} className="w-full text-left block">
-        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
-      </button>
+      <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
     </div>
   );
 }
@@ -155,9 +165,7 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
         width: "var(--dnd-overlay-width, 288px)",
       }}
     >
-      <div className="">
-        <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
-      </div>
+      <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
     </div>
   );
 }

@@ -29,6 +29,7 @@ export default function VersionControlTab({
           onClick={() => {
             onCommitClick(commit.sha);
           }}
+          aria-label={`View diff for commit ${commit.sha.slice(0, 7)}`}
           className="w-full text-left flex items-start gap-3 py-1.5 border-b border-border last:border-0 hover:bg-accent/40 group transition-colors rounded"
         >
           <UserAvatar

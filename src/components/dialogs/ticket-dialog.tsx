@@ -6,6 +6,7 @@ import { Copy, History, MessageSquare } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
+import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
@@ -159,7 +160,6 @@ function TicketDialog({
         setApprovals(data.approvals ?? []);
         setStatusHistory(data.statusHistory ?? []);
         // Parse body from raw YAML (TicketData doesn't carry body)
-        const { load } = await import("js-yaml");
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const parsed = load(resp.content) as Record<string, unknown>;
         setBody(typeof parsed.body === "string" ? parsed.body : "");
@@ -526,12 +526,13 @@ function TicketDialog({
           </div>
 
           {/* Body: main content + status sidebar */}
-          <div className="flex gap-0 min-h-0 overflow-y-auto">
+          <div className="grid grid-cols-[1fr_auto] min-h-0 overflow-hidden">
             {/* Left: main content */}
-            <div className="flex-1 p-5 space-y-4 min-w-0">
+            <div className="overflow-y-auto p-5 space-y-4 min-w-0">
               {/* Board selector (create only) */}
               {!isEdit && (
                 <select
+                  aria-label="Select a board"
                   value={boardSlug}
                   onChange={(ev) => {
                     setBoardSlug(ev.target.value);
