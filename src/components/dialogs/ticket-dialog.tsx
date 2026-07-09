@@ -17,8 +17,8 @@ import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
 import type { CommitEntry } from "@/lib/types";
 import CommitDiffDialog from "@/components/layout/commit-diff-dialog";
-import MarkdownToolbar from "@/components/editor/markdown/toolbar";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
+import InlineEditor from "@/components/editor/markdown/inline-editor";
 import {
   insertWrap,
   setLinePrefix,
@@ -345,6 +345,15 @@ function TicketDialog({
   ]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
+    // Don't capture keyboard shortcuts when typing in an input/textarea
+    const target = ev.target;
+    if (target instanceof HTMLElement) {
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+        return;
+      }
+    }
+
     const wantsEdit = ev.key === "e" && !editing && isEdit;
     const wantsSave =
       (ev.ctrlKey || ev.metaKey) &&
@@ -402,14 +411,27 @@ function TicketDialog({
       assignee !== (ticket.assignee ?? ""));
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const commentBodyRef = useRef<HTMLTextAreaElement>(null);
+  const [commentBody, setCommentBody] = useState("");
   const [headingValue, setHeadingValue] = useState("normal");
 
+  // Track which textarea is focused so toolbar buttons target the right one
+  const activeEditorRef = useRef<HTMLTextAreaElement | null>(null);
+  const focusBody = useCallback((): void => {
+    activeEditorRef.current = bodyRef.current;
+  }, []);
+  const focusComment = useCallback((): void => {
+    activeEditorRef.current = commentBodyRef.current;
+  }, []);
+
+  const getActiveEditor = (): HTMLTextAreaElement | null => activeEditorRef.current;
+
   const saveBodySelection = useCallback((): void => {
-    bodyRef.current?.focus();
+    getActiveEditor()?.focus();
   }, []);
 
   const handleBodyBold = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -418,7 +440,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyItalic = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -427,7 +449,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyStrikethrough = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -436,7 +458,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyCode = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -445,7 +467,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyHeading = useCallback((val: string): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -456,7 +478,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyQuote = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -465,7 +487,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyUnordered = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -474,7 +496,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyNumbered = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -483,7 +505,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyTask = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -492,7 +514,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyLink = useCallback((): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -501,7 +523,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyEmoji = useCallback((emoji: string): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -514,7 +536,7 @@ function TicketDialog({
   }, []);
 
   const handleBodyKeyDown = useCallback((ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    const ta = bodyRef.current;
+    const ta = getActiveEditor();
     if (!ta) {
       return;
     }
@@ -531,50 +553,96 @@ function TicketDialog({
     }
   }, []);
 
+  const handleCommentSubmit = useCallback(async (): Promise<void> => {
+    const trimmed = commentBody.trim();
+    if (!trimmed || !ticket) {
+      return;
+    }
+    const comment: TicketComment = {
+      message: trimmed,
+      timestamp: new Date().toISOString(),
+      user: user?.email ?? user?.name ?? "unknown",
+    };
+    const updatedComments = [...comments, comment];
+    setComments(updatedComments);
+    setCommentBody("");
+
+    try {
+      const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
+      const yaml = ticketToYaml({
+        approvals: approvals.length > 0 ? approvals : undefined,
+        assignee: assignee.trim() || undefined,
+        body: body.trim(),
+        column,
+        comments: updatedComments,
+        reporter: reporter.trim() || undefined,
+        statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+        title: title.trim(),
+      });
+      await putFile(path, yaml);
+      toast.success("Comment added");
+    } catch {
+      toast.error("Failed to add comment");
+      // Roll back on failure
+      setComments(comments);
+    }
+  }, [
+    commentBody,
+    ticket,
+    user,
+    comments,
+    approvals,
+    assignee,
+    body,
+    column,
+    reporter,
+    statusHistory,
+    title,
+  ]);
+
+  const handleCommentKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
+        ev.preventDefault();
+        void handleCommentSubmit();
+        return;
+      }
+      // Let the shared keydown handler handle formatting shortcuts
+      handleBodyKeyDown(ev);
+    },
+    [handleBodyKeyDown, handleCommentSubmit],
+  );
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const bodyContent = editing ? (
-    <div className="flex flex-col min-h-[300px] border rounded-md overflow-hidden">
-      <MarkdownToolbar
-        editorOnly
-        disabled={false}
-        headingValue={headingValue}
-        showPreview={false}
-        handleHeading={handleBodyHeading}
-        handleBold={handleBodyBold}
-        handleEmoji={handleBodyEmoji}
-        handleItalic={handleBodyItalic}
-        handleStrikethrough={handleBodyStrikethrough}
-        handleCode={handleBodyCode}
-        handleLink={handleBodyLink}
-        handleQuote={handleBodyQuote}
-        handleUnordered={handleBodyUnordered}
-        handleNumbered={handleBodyNumbered}
-        handleTask={handleBodyTask}
-        fileInputRef={fileInputRef}
-        handlePropsOpen={(_open: boolean): void => {
-          /* no props dialog in ticket editor */
-        }}
-        setShowPreview={(_val: boolean | ((prev: boolean) => boolean)): void => {
-          /* no preview toggle in ticket editor */
-        }}
-      />
-      <textarea
-        ref={bodyRef}
-        value={body}
-        onChange={(ev) => {
-          setBody(ev.target.value);
-        }}
-        onKeyDown={handleBodyKeyDown}
-        onSelect={saveBodySelection}
-        onClick={saveBodySelection}
-        placeholder="Add description..."
-        className="flex-1 p-3 resize-none outline-none font-mono text-sm leading-relaxed min-h-[260px]"
-      />
-    </div>
+    <InlineEditor
+      value={body}
+      onChange={setBody}
+      textareaRef={bodyRef}
+      onFocus={focusBody}
+      onKeyDown={handleBodyKeyDown}
+      onSelect={saveBodySelection}
+      onClick={saveBodySelection}
+      placeholder="Add description..."
+      minHeight="min-h-[260px]"
+      headingValue={headingValue}
+      handleHeading={handleBodyHeading}
+      handleBold={handleBodyBold}
+      handleItalic={handleBodyItalic}
+      handleStrikethrough={handleBodyStrikethrough}
+      handleCode={handleBodyCode}
+      handleLink={handleBodyLink}
+      handleQuote={handleBodyQuote}
+      handleUnordered={handleBodyUnordered}
+      handleNumbered={handleBodyNumbered}
+      handleTask={handleBodyTask}
+      handleEmoji={handleBodyEmoji}
+      fileInputRef={fileInputRef}
+    />
   ) : (
     <div className="border rounded-md overflow-hidden">
-      <MarkdownViewer value={body || "*No description.*"} />
+      <MarkdownViewer value={body || "*No description.*"} className="px-5 py-4" />
     </div>
   );
 
@@ -851,7 +919,7 @@ function TicketDialog({
                                     {relativeTime(cmt.timestamp)}
                                   </span>
                                 </div>
-                                <MarkdownViewer value={cmt.message} />
+                                <MarkdownViewer value={cmt.message} className="px-3 py-2" />
                               </div>
                             ))}
                             {/* oxlint-enable id-length */}
@@ -889,45 +957,32 @@ function TicketDialog({
                       )}
 
                       {/* Add comment (view mode only) */}
-                      {!showEditControls && isEdit && (
+                      {!showEditControls && (
                         <div>
                           <h4 className="font-semibold text-muted-foreground mb-2">Add Comment</h4>
                           <div className="border rounded-md overflow-hidden">
-                            <div className="flex flex-col">
-                              <MarkdownToolbar
-                                editorOnly
-                                disabled={false}
-                                headingValue={headingValue}
-                                showPreview={false}
-                                handleHeading={handleBodyHeading}
-                                handleBold={handleBodyBold}
-                                handleEmoji={handleBodyEmoji}
-                                handleItalic={handleBodyItalic}
-                                handleStrikethrough={handleBodyStrikethrough}
-                                handleCode={handleBodyCode}
-                                handleLink={handleBodyLink}
-                                handleQuote={handleBodyQuote}
-                                handleUnordered={handleBodyUnordered}
-                                handleNumbered={handleBodyNumbered}
-                                handleTask={handleBodyTask}
-                                fileInputRef={fileInputRef}
-                                handlePropsOpen={(_open: boolean): void => {
-                                  /* no props dialog */
-                                }}
-                                setShowPreview={(_val: boolean | ((prev: boolean) => boolean)): void => {
-                                  /* no preview toggle */
-                                }}
-                              />
-                              <textarea
-                                value={commentBody}
-                                onChange={(ev) => {
-                                  setCommentBody(ev.target.value);
-                                }}
-                                onKeyDown={handleCommentKeyDown}
-                                placeholder="Write a comment... (Ctrl+Enter to submit)"
-                                className="w-full p-3 resize-none outline-none font-mono text-sm leading-relaxed min-h-[100px]"
-                              />
-                            </div>
+                            <InlineEditor
+                              value={commentBody}
+                              onChange={setCommentBody}
+                              textareaRef={commentBodyRef}
+                              onFocus={focusComment}
+                              onKeyDown={handleCommentKeyDown}
+                              placeholder="Write a comment... (Ctrl+Enter to submit)"
+                              minHeight="min-h-[100px]"
+                              headingValue={headingValue}
+                              handleHeading={handleBodyHeading}
+                              handleBold={handleBodyBold}
+                              handleItalic={handleBodyItalic}
+                              handleStrikethrough={handleBodyStrikethrough}
+                              handleCode={handleBodyCode}
+                              handleLink={handleBodyLink}
+                              handleQuote={handleBodyQuote}
+                              handleUnordered={handleBodyUnordered}
+                              handleNumbered={handleBodyNumbered}
+                              handleTask={handleBodyTask}
+                              handleEmoji={handleBodyEmoji}
+                              fileInputRef={fileInputRef}
+                            />
                             <div className="flex justify-end gap-2 px-3 py-2 border-t border-border">
                               <Button
                                 size="sm"

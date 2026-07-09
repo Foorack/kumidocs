@@ -5,16 +5,23 @@ import { math } from "@streamdown/math";
 import { memo } from "react";
 import { mermaid } from "@streamdown/mermaid";
 import { COMPONENTS_DOC, REHYPE_PLUGINS } from "./streamdown-components";
+import cn from "@/lib/utils";
 
 interface MarkdownViewerProps {
+  className?: string;
   value: string;
 }
 
 const MarkdownViewerInner = (allProps: MarkdownViewerProps): JSX.Element => {
-  const { value } = allProps;
+  const { className, value } = allProps;
 
   return (
-    <div className="prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent prose-pre:text-foreground dark:prose-invert max-w-none px-8 py-6">
+    <div
+      className={cn(
+        "prose prose-table:my-0 prose-img:my-0 prose-pre:my-0 prose-pre:bg-transparent prose-pre:text-foreground dark:prose-invert max-w-none",
+        className,
+      )}
+    >
       <Streamdown
         mode="streaming"
         plugins={{ cjk, code, math, mermaid }}

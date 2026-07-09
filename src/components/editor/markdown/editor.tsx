@@ -356,7 +356,7 @@ export default function MarkdownEditor({
               />
             ) : (
               <div ref={previewRef} className="h-full overflow-y-auto">
-                <MarkdownViewer key={previewValue} value={previewValue} />
+                <MarkdownViewer key={previewValue} value={previewValue} className="px-8 py-6" />
               </div>
             )}
           </div>

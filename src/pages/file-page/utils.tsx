@@ -198,6 +198,7 @@ function buildEditorContent({
     <ScrollArea className="h-full">
       <MarkdownViewer
         value={isContentEmpty(content) ? `${viewContent}\n\n[!PAGES]` : viewContent}
+        className="px-8 py-6"
       />
     </ScrollArea>
   );
