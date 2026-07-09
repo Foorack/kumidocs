@@ -229,13 +229,23 @@ async function parseTicketYaml(
             // oxlint-disable-next-line typescript/no-unsafe-type-assertion
             typeof (approval as Record<string, unknown>).hash === "string",
         )
-        .map((appr) => {
-          const a = appr as Record<string, unknown>;
-          const s = a.status;
-          return {
-            ...(appr as TicketApproval),
-            status: s === "approved" || s === "rejected" || s === "outdated" ? s : undefined,
+        .map((appr): TicketApproval => {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          const apprRaw = appr as Record<string, unknown>;
+          // oxlint-disable-next-line id-length
+          const st = apprRaw.status;
+          const result: TicketApproval = {
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            hash: apprRaw.hash as string,
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            timestamp: apprRaw.timestamp as string,
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            user: apprRaw.user as string,
           };
+          if (st === "approved" || st === "rejected" || st === "outdated") {
+            result.status = st;
+          }
+          return result;
         })
     : undefined;
 

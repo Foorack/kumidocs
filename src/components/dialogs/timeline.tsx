@@ -85,8 +85,16 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const appr = item.data as TicketApproval;
       const apprType = appr.status ?? "approved";
+      // oxlint-disable-next-line unicorn/no-nested-ternary
+      const apprLabel =
+        apprType === "approved"
+          ? " approved"
+          : apprType === "rejected"
+            ? " rejected"
+            : " marked outdated";
       return (
         <div className="flex items-center gap-2 py-1">
+          {/* oxlint-disable-next-line typescript/no-unsafe-type-assertion */}
           <EmojiIcon fileType={apprType as "approve" | "reject" | "outdated"} size={24} />
           <UserAvatar
             name={emailToDisplayName(appr.user)}
@@ -96,11 +104,7 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
           />
           <span className="text-sm text-foreground flex items-center gap-2">
             <span className="font-bold">{appr.user}</span>
-            {apprType === "approved"
-              ? " approved"
-              : apprType === "rejected"
-                ? " rejected"
-                : " marked outdated"}
+            {apprLabel}
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">
             {relativeTime(item.timestamp)}

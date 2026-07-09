@@ -7,15 +7,15 @@ import { Fragment } from "react";
 
 // Fluent icon names keyed by file/type; the fallback is QuestionCircle24Color.
 const FLUENT_TYPE_ICONS: Record<string, string> = {
+  approve: "CheckmarkCircle24Color",
   board: "Board24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   image: "Image24Color",
+  outdated: "ErrorCircle24Color",
+  reject: "DismissCircle24Color",
   sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
-  approve: "CheckmarkCircle24Color",
-  reject: "DismissCircle24Color",
-  outdated: "ErrorCircle24Color",
   status: "Diversity24Color",
 };
 

@@ -2,12 +2,13 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { Copy, History, MessageSquare } from "lucide-react";
+import { Copy, History, MessageSquare, ThumbsUp } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
+import { relativeTime } from "@/lib/utils";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -70,7 +71,7 @@ function TicketDialog({
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [statusHistory, setStatusHistory] = useState<StatusEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<"activity" | "vc">("activity");
+  const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
   const [commitsLoading, setCommitsLoading] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -408,7 +409,43 @@ function TicketDialog({
     statusHistory,
     title,
   ]);
+  const handleApproval = useCallback(
+    async (status: "approved" | "rejected"): Promise<void> => {
+      if (!ticket) {
+        return;
+      }
+      const now = new Date().toISOString();
+      const userEmail = user?.email ?? user?.name ?? "unknown";
+      const entry: TicketApproval = {
+        hash: "",
+        status,
+        timestamp: now,
+        user: userEmail,
+      };
+      const updatedApprovals = [...approvals, entry];
+      setApprovals(updatedApprovals);
 
+      try {
+        const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
+        const yaml = serializeTicket({
+          approvals: updatedApprovals,
+          assignee: assignee.trim() || undefined,
+          body: body.trim(),
+          column,
+          comments: comments.length > 0 ? comments : undefined,
+          reporter: reporter.trim() || undefined,
+          statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+          title: title.trim(),
+        });
+        await putFile(path, yaml);
+        toast.success(status === "approved" ? "Approved" : "Rejected");
+      } catch {
+        toast.error("Failed to record approval");
+        setApprovals(approvals);
+      }
+    },
+    [ticket, user, approvals, assignee, body, column, comments, reporter, statusHistory, title],
+  );
   const handleCommentKeyDown = useCallback(
     (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
       if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
@@ -636,6 +673,20 @@ function TicketDialog({
                     <button
                       type="button"
                       onClick={() => {
+                        setActiveTab("approval");
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 transition-colors ${
+                        activeTab === "approval"
+                          ? "border-primary text-foreground font-medium"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      Approval
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
                         setActiveTab("vc");
                       }}
                       className={`flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 transition-colors ${
@@ -667,6 +718,58 @@ function TicketDialog({
                         setCommentBody("");
                       }}
                     />
+                  )}
+
+                  {activeTab === "approval" && (
+                    <div className="space-y-3">
+                      {approvals.length > 0 && (
+                        <div className="space-y-2">
+                          {approvals.map((appr, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm">
+                              <UserAvatar
+                                name={emailToDisplayName(appr.user)}
+                                email={appr.user}
+                                size="xs"
+                                outline={false}
+                              />
+                              <span className="font-bold">{appr.user}</span>
+                              <span
+                                className={
+                                  appr.status === "rejected" ? "text-destructive" : "text-green"
+                                }
+                              >
+                                {appr.status === "rejected" ? "rejected" : "approved"}
+                              </span>
+                              <span className="text-muted-foreground text-xs">
+                                {relativeTime(appr.timestamp)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2 pt-2 border-t border-border">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            void handleApproval("approved");
+                          }}
+                          disabled={!showEditControls}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            void handleApproval("rejected");
+                          }}
+                          disabled={!showEditControls}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
                   )}
 
                   {activeTab === "vc" && (
