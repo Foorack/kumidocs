@@ -26,6 +26,30 @@ interface TicketData {
   title: string;
   /** ISO 8601 timestamp of last modification. Set server-side. */
   updatedAt?: string;
+  comments?: TicketComment[];
+  approvals?: TicketApproval[];
+  statusHistory?: StatusEntry[];
+}
+
+interface TicketComment {
+  user: string;
+  timestamp: string;
+  /** Markdown message body. */
+  message: string;
+}
+
+interface TicketApproval {
+  user: string;
+  timestamp: string;
+  /** SHA-256 of lower(email)+ticketId+title+body at time of approval. */
+  hash: string;
+}
+
+interface StatusEntry {
+  from: string;
+  to: string;
+  timestamp: string;
+  user: string;
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
@@ -134,6 +158,7 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
 }
 
 /** Parse a ticket's YAML string into TicketData. */
+// oxlint-disable-next-line complexity
 async function parseTicketYaml(
   raw: string,
   boardSlug: string,
@@ -169,14 +194,72 @@ async function parseTicketYaml(
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const obj = parsed as Record<string, unknown>;
   const rawColumn = typeof obj.column === "string" ? obj.column : "";
+
+  // Parse comments
+  const rawComments = obj.comments;
+  const comments: TicketComment[] | undefined = Array.isArray(rawComments)
+    ? rawComments.filter(
+        // oxlint-disable-next-line id-length
+        (comment): comment is TicketComment =>
+          typeof comment === "object" &&
+          comment !== null &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (comment as Record<string, unknown>).user === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (comment as Record<string, unknown>).timestamp === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (comment as Record<string, unknown>).message === "string",
+      )
+    : undefined;
+
+  // Parse approvals
+  const rawApprovals = obj.approvals;
+  const approvals: TicketApproval[] | undefined = Array.isArray(rawApprovals)
+    ? rawApprovals.filter(
+        // oxlint-disable-next-line id-length
+        (approval): approval is TicketApproval =>
+          typeof approval === "object" &&
+          approval !== null &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (approval as Record<string, unknown>).user === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (approval as Record<string, unknown>).timestamp === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (approval as Record<string, unknown>).hash === "string",
+      )
+    : undefined;
+
+  // Parse status history
+  const rawHistory = obj.statusHistory;
+  const statusHistory: StatusEntry[] | undefined = Array.isArray(rawHistory)
+    ? rawHistory.filter(
+        // oxlint-disable-next-line id-length
+        (entry): entry is StatusEntry =>
+          typeof entry === "object" &&
+          entry !== null &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (entry as Record<string, unknown>).from === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (entry as Record<string, unknown>).to === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (entry as Record<string, unknown>).timestamp === "string" &&
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          typeof (entry as Record<string, unknown>).user === "string",
+      )
+    : undefined;
+
   return {
+    approvals: approvals !== undefined && approvals.length > 0 ? approvals : undefined,
     assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
     boardSlug,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
+    comments: comments !== undefined && comments.length > 0 ? comments : undefined,
     createdAt:
       typeof obj.createdAt === "string" && obj.createdAt !== "" ? obj.createdAt : undefined,
     id: ticketId,
     reporter: typeof obj.reporter === "string" && obj.reporter !== "" ? obj.reporter : undefined,
+    statusHistory:
+      statusHistory !== undefined && statusHistory.length > 0 ? statusHistory : undefined,
     title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
     updatedAt:
       typeof obj.updatedAt === "string" && obj.updatedAt !== "" ? obj.updatedAt : undefined,
@@ -184,12 +267,16 @@ async function parseTicketYaml(
 }
 
 /** Serialize a ticket to a YAML string (without frontmatter). */
+// oxlint-disable-next-line complexity
 function ticketToYaml(data: {
+  approvals?: TicketApproval[];
   assignee?: string;
   body?: string;
   column: string;
+  comments?: TicketComment[];
   createdAt?: string;
   reporter?: string;
+  statusHistory?: StatusEntry[];
   title: string;
   updatedAt?: string;
 }): string {
@@ -209,6 +296,52 @@ function ticketToYaml(data: {
   if (data.assignee !== undefined && data.assignee !== "") {
     lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
   }
+
+  // Serialize structured arrays as YAML
+  if (data.comments !== undefined && data.comments.length > 0) {
+    lines.push("comments:");
+    // oxlint-disable-next-line id-length
+    for (const comment of data.comments) {
+      lines.push(
+        `  - user: ${JSON.stringify(comment.user)}`,
+        `    timestamp: ${JSON.stringify(comment.timestamp)}`,
+      );
+      if (comment.message.includes("\n")) {
+        lines.push(`    message: |`);
+        for (const ml of comment.message.split("\n")) {
+          lines.push(`      ${ml}`);
+        }
+      } else {
+        lines.push(`    message: ${JSON.stringify(comment.message)}`);
+      }
+    }
+  }
+
+  if (data.approvals !== undefined && data.approvals.length > 0) {
+    lines.push("approvals:");
+    // oxlint-disable-next-line id-length
+    for (const approval of data.approvals) {
+      lines.push(
+        `  - user: ${JSON.stringify(approval.user)}`,
+        `    timestamp: ${JSON.stringify(approval.timestamp)}`,
+        `    hash: ${JSON.stringify(approval.hash)}`,
+      );
+    }
+  }
+
+  if (data.statusHistory !== undefined && data.statusHistory.length > 0) {
+    lines.push("statusHistory:");
+    // oxlint-disable-next-line id-length
+    for (const entry of data.statusHistory) {
+      lines.push(
+        `  - from: ${JSON.stringify(entry.from)}`,
+        `    to: ${JSON.stringify(entry.to)}`,
+        `    timestamp: ${JSON.stringify(entry.timestamp)}`,
+        `    user: ${JSON.stringify(entry.user)}`,
+      );
+    }
+  }
+
   if (data.body !== undefined && data.body !== "") {
     // Use literal block scalar for multi-line body
     if (data.body.includes("\n")) {
@@ -224,7 +357,7 @@ function ticketToYaml(data: {
   return lines.join("\n");
 }
 
-export type { BoardColumn, BoardConfig, TicketData };
+export type { BoardColumn, BoardConfig, TicketData, TicketComment, TicketApproval, StatusEntry };
 export {
   boardToYaml,
   defaultBoardConfig,
