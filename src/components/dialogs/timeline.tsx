@@ -85,13 +85,14 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const appr = item.data as TicketApproval;
       const apprType = appr.status ?? "approved";
-      // oxlint-disable-next-line unicorn/no-nested-ternary
+      // oxlint-disable eslint/no-nested-ternary, unicorn/no-nested-ternary
       const apprLabel =
         apprType === "approved"
           ? " approved"
           : apprType === "rejected"
             ? " rejected"
             : " marked outdated";
+      // oxlint-enable eslint/no-nested-ternary, unicorn/no-nested-ternary
       return (
         <div className="flex items-center gap-2 py-1">
           {/* oxlint-disable-next-line typescript/no-unsafe-type-assertion */}

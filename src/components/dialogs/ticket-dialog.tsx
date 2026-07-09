@@ -8,7 +8,6 @@ import type { DiffData } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
-import { relativeTime } from "@/lib/utils";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -22,6 +21,7 @@ import MarkdownViewer from "@/components/editor/markdown/viewer";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
 import VersionControlTab from "./version-control-tab";
 import Timeline from "./timeline";
+import ApprovalTab from "./approval-tab";
 
 interface TicketDialogProps {
   open: boolean;
@@ -721,55 +721,16 @@ function TicketDialog({
                   )}
 
                   {activeTab === "approval" && (
-                    <div className="space-y-3">
-                      {approvals.length > 0 && (
-                        <div className="space-y-2">
-                          {approvals.map((appr, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm">
-                              <UserAvatar
-                                name={emailToDisplayName(appr.user)}
-                                email={appr.user}
-                                size="xs"
-                                outline={false}
-                              />
-                              <span className="font-bold">{appr.user}</span>
-                              <span
-                                className={
-                                  appr.status === "rejected" ? "text-destructive" : "text-green"
-                                }
-                              >
-                                {appr.status === "rejected" ? "rejected" : "approved"}
-                              </span>
-                              <span className="text-muted-foreground text-xs">
-                                {relativeTime(appr.timestamp)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-2 border-t border-border">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            void handleApproval("approved");
-                          }}
-                          disabled={!showEditControls}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            void handleApproval("rejected");
-                          }}
-                          disabled={!showEditControls}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
+                    <ApprovalTab
+                      approvals={approvals}
+                      showEditControls={showEditControls}
+                      onApprove={() => {
+                        void handleApproval("approved");
+                      }}
+                      onReject={() => {
+                        void handleApproval("rejected");
+                      }}
+                    />
                   )}
 
                   {activeTab === "vc" && (
