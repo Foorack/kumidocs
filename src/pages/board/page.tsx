@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
-import { displayColumnId, parseTicketYaml, ticketToYaml, yamlToBoard } from "@/lib/board";
+import { displayColumnId, parseTicketYaml, patchTicketYaml, yamlToBoard } from "@/lib/board";
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -316,22 +316,13 @@ function BoardPage(): JSX.Element {
         const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
         const fileResp = await getFile(path);
         const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
-        const data = await parseTicketYaml(
+        const yaml = await patchTicketYaml(
           fileResp.content,
           dragActiveTicket.boardSlug,
           dragActiveTicket.id,
+          { column: targetColId },
           dragDefaultColId,
         );
-        // Preserve body, reporter, and assignee from raw YAML
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = parseYaml(fileResp.content) as Record<string, unknown>;
-        const yaml = ticketToYaml({
-          assignee: data.assignee,
-          body: typeof parsed.body === "string" ? parsed.body : undefined,
-          column: targetColId,
-          reporter: data.reporter,
-          title: data.title,
-        });
         await putFile(path, yaml);
         setTickets((prev) =>
           prev.map((tic) =>

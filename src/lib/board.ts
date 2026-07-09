@@ -357,13 +357,79 @@ function ticketToYaml(data: {
   return lines.join("\n");
 }
 
-export type { BoardColumn, BoardConfig, TicketData, TicketComment, TicketApproval, StatusEntry };
+interface TicketYamlData {
+  approvals?: TicketApproval[];
+  assignee?: string;
+  body?: string;
+  column: string;
+  comments?: TicketComment[];
+  createdAt?: string;
+  reporter?: string;
+  statusHistory?: StatusEntry[];
+  title: string;
+  updatedAt?: string;
+}
+
+/**
+ * Centralized function for building ticket YAML.
+ * Every code path that updates a ticket must call this instead of
+ * constructing ticketToYaml() args manually. If a field is added to
+ * TicketYamlData, TypeScript will flag every call site, preventing
+ * future bugs like data loss on drag / save / comment submission.
+ */
+function serializeTicket(data: TicketYamlData): string {
+  return ticketToYaml(data);
+}
+
+/**
+ * Read existing YAML, apply only the specified updates, serialize back.
+ * Every other field is preserved automatically. Use this for partial
+ * updates (e.g. dragging a ticket to a new column) -- instead of
+ * listing every field, just say what changed.
+ */
+async function patchTicketYaml(
+  raw: string,
+  boardSlug: string,
+  ticketId: string,
+  updates: Partial<TicketYamlData>,
+  defaultColumn?: string,
+): Promise<string> {
+  const { load } = await import("js-yaml");
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const parsed = load(raw) as Record<string, unknown>;
+  const existing = await parseTicketYaml(raw, boardSlug, ticketId, defaultColumn);
+
+  return serializeTicket({
+    approvals: updates.approvals ?? existing.approvals,
+    assignee: updates.assignee ?? existing.assignee,
+    body: updates.body ?? (typeof parsed.body === "string" ? parsed.body : undefined),
+    column: updates.column ?? existing.column,
+    comments: updates.comments ?? existing.comments,
+    createdAt: existing.createdAt,
+    reporter: updates.reporter ?? existing.reporter,
+    statusHistory: updates.statusHistory ?? existing.statusHistory,
+    title: updates.title ?? existing.title,
+    updatedAt: existing.updatedAt,
+  });
+}
+
+export type {
+  BoardColumn,
+  BoardConfig,
+  TicketData,
+  TicketComment,
+  TicketApproval,
+  StatusEntry,
+  TicketYamlData,
+};
 export {
   boardToYaml,
   defaultBoardConfig,
   DEFAULT_COLUMNS,
   displayColumnId,
   parseTicketYaml,
+  patchTicketYaml,
+  serializeTicket,
   ticketToYaml,
   yamlToBoard,
 };

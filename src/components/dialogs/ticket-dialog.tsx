@@ -5,7 +5,7 @@ import Input from "@/components/ui/input";
 import { Copy, History, MessageSquare } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
-import { displayColumnId, parseTicketYaml, ticketToYaml } from "@/lib/board";
+import { displayColumnId, parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -200,7 +200,7 @@ function TicketDialog({
       setSaving(true);
       try {
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
-        const yaml = ticketToYaml({
+        const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
@@ -246,7 +246,7 @@ function TicketDialog({
       const nextId = existingIds.length > 0 ? String(Math.max(...existingIds) + 1) : "1";
 
       const path = `${slug}/${nextId}.yaml`;
-      const yaml = ticketToYaml({
+      const yaml = serializeTicket({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
@@ -369,7 +369,7 @@ function TicketDialog({
 
     try {
       const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
-      const yaml = ticketToYaml({
+      const yaml = serializeTicket({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
