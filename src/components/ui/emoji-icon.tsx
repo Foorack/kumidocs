@@ -11,6 +11,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   board: "Board24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
+  golden: "RibbonStar24Color",
   image: "Image24Color",
   outdated: "ErrorCircle24Color",
   reject: "DismissCircle24Color",
@@ -56,9 +57,6 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
     justifyContent: "center",
     width: size,
   };
-  // Force the inner SVG/img to fill the wrapper exactly,
-  // overriding any hardcoded width/height attributes.
-  const innerStyle: CSSProperties = { height: "100%", width: "100%" };
 
   // Emoji path: check for overrides first
   if (emoji !== undefined && emoji !== "") {
@@ -98,16 +96,18 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
   // File-type path: resolve icon from central map, fall back to QuestionCircle24Color.
   if (fileType) {
     const iconName = FLUENT_TYPE_ICONS[fileType] ?? FILE_TYPE_FALLBACK;
-    const svg = ICONS[iconName];
+    let svg = ICONS[iconName];
     const isMuted = fileType === "code" || fileType === "image";
+    if (svg !== undefined) {
+      // Inject width/height so the SVG fills the wrapper span.
+      svg = svg.replace("<svg", `<svg style="width: ${size}px; height: ${size}px"`);
+    }
     return (
-      <span style={wrapStyle} className={isMuted ? "text-muted-foreground" : className}>
-        {svg === undefined ? (
-          <span style={innerStyle} />
-        ) : (
-          <span dangerouslySetInnerHTML={{ __html: svg }} style={innerStyle} />
-        )}
-      </span>
+      <span
+        style={wrapStyle}
+        className={isMuted ? "text-muted-foreground" : className}
+        {...(svg === undefined ? {} : { dangerouslySetInnerHTML: { __html: svg } })}
+      />
     );
   }
 

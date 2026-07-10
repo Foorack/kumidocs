@@ -20,6 +20,8 @@ interface TicketData {
   column: string;
   /** ISO 8601 timestamp of creation. Set server-side, never changed. */
   createdAt?: string;
+  /** When true, this ticket is a "golden ticket" -- always sorted to the top. */
+  golden?: boolean;
   id: string;
   /** The person who created the ticket (display name or email). */
   reporter?: string;
@@ -233,7 +235,7 @@ async function parseTicketYaml(
         )
         .map((appr): TicketApproval => {
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const apprRaw = appr as Record<string, unknown>;
+          const apprRaw = appr as unknown as Record<string, unknown>;
           // oxlint-disable-next-line id-length
           const st = apprRaw.status;
           const result: TicketApproval = {
@@ -282,6 +284,7 @@ async function parseTicketYaml(
     comments: comments !== undefined && comments.length > 0 ? comments : undefined,
     createdAt:
       typeof obj.createdAt === "string" && obj.createdAt !== "" ? obj.createdAt : undefined,
+    golden: obj.golden === true,
     id: ticketId,
     reporter: typeof obj.reporter === "string" && obj.reporter !== "" ? obj.reporter : undefined,
     statusHistory:
@@ -301,6 +304,7 @@ function ticketToYaml(data: {
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
+  golden?: boolean;
   reporter?: string;
   statusHistory?: StatusEntry[];
   title: string;
@@ -321,6 +325,9 @@ function ticketToYaml(data: {
   }
   if (data.assignee !== undefined && data.assignee !== "") {
     lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
+  }
+  if (data.golden === true) {
+    lines.push("golden: true");
   }
 
   // Serialize structured arrays as YAML
@@ -396,6 +403,7 @@ interface TicketYamlData {
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
+  golden?: boolean;
   reporter?: string;
   statusHistory?: StatusEntry[];
   title: string;
@@ -447,6 +455,7 @@ async function patchTicketYaml(
     column: updates.column ?? existing.column,
     comments: updates.comments ?? existing.comments,
     createdAt: existing.createdAt,
+    golden: updates.golden ?? existing.golden,
     reporter: updates.reporter ?? existing.reporter,
     statusHistory: updates.statusHistory ?? existing.statusHistory,
     title: updates.title ?? existing.title,

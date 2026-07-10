@@ -5,7 +5,7 @@ import Input from "@/components/ui/input";
 import { Copy, History, MessageSquare, ThumbsUp } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
-import { displayColumnId, parseTicketYaml, serializeTicket } from "@/lib/board";
+import { parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
 import { sha256 } from "@noble/hashes/sha2.js";
@@ -23,6 +23,7 @@ import InlineEditor from "@/components/editor/markdown/inline-editor";
 import VersionControlTab from "./version-control-tab";
 import Timeline from "./timeline";
 import ApprovalTab from "./approval-tab";
+import TicketSidebar from "./ticket-sidebar";
 
 interface TicketDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ interface TicketDialogProps {
     boardSlug: string;
     body: string;
     column: string;
+    golden?: boolean;
     reporter?: string;
     ticketId: string;
     title: string;
@@ -71,6 +73,7 @@ function TicketDialog({
   const [editing, setEditing] = useState(false);
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
+  const [golden, setGolden] = useState(false);
   const [statusHistory, setStatusHistory] = useState<StatusEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
@@ -119,6 +122,7 @@ function TicketDialog({
       setAssignee(ticket.assignee ?? "");
       setComments([]);
       setApprovals([]);
+      setGolden(ticket.golden ?? false);
       setStatusHistory([]);
       setCommits([]);
       setEditing(false);
@@ -131,6 +135,7 @@ function TicketDialog({
       setAssignee("");
       setComments([]);
       setApprovals([]);
+      setGolden(false);
       setStatusHistory([]);
       setCommits([]);
       setEditing(true);
@@ -236,6 +241,7 @@ function TicketDialog({
           body: body.trim(),
           column,
           comments: comments.length > 0 ? comments : undefined,
+          golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           statusHistory: updatedStatusHistory.length > 0 ? updatedStatusHistory : undefined,
           title: title.trim(),
@@ -282,6 +288,7 @@ function TicketDialog({
         body: body.trim(),
         column,
         comments: comments.length > 0 ? comments : undefined,
+        golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
         title: title.trim(),
@@ -305,6 +312,7 @@ function TicketDialog({
     body,
     column,
     comments,
+    golden,
     isEdit,
     ticket,
     navigate,
@@ -379,6 +387,7 @@ function TicketDialog({
       title !== ticket.title ||
       body !== ticket.body ||
       column !== ticket.column ||
+      golden !== (ticket.golden ?? false) ||
       assignee !== (ticket.assignee ?? ""));
 
   const [commentBody, setCommentBody] = useState("");
@@ -405,6 +414,7 @@ function TicketDialog({
         body: body.trim(),
         column,
         comments: updatedComments,
+        golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
         title: title.trim(),
@@ -425,6 +435,7 @@ function TicketDialog({
     assignee,
     body,
     column,
+    golden,
     reporter,
     statusHistory,
     title,
@@ -457,6 +468,7 @@ function TicketDialog({
           body: body.trim(),
           column,
           comments: comments.length > 0 ? comments : undefined,
+          golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
           title: title.trim(),
@@ -468,7 +480,19 @@ function TicketDialog({
         setApprovals(approvals);
       }
     },
-    [ticket, user, approvals, assignee, body, column, comments, reporter, statusHistory, title],
+    [
+      ticket,
+      user,
+      approvals,
+      assignee,
+      body,
+      column,
+      comments,
+      golden,
+      reporter,
+      statusHistory,
+      title,
+    ],
   );
   const handleCommentKeyDown = useCallback(
     (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -769,42 +793,17 @@ function TicketDialog({
               )}
             </div>
 
-            {/* Right: status sidebar */}
-            <div
-              className="w-52 shrink-0 border-l p-3 space-y-2"
-              style={{ borderColor: columnColor }}
-            >
-              <h3 className="text-sm font-bold uppercase tracking-wide select-none">Status</h3>
-              <div className="space-y-0.5">
-                {currentColumns.length === 0 && <p>No columns</p>}
-                {(showEditControls
-                  ? currentColumns
-                  : currentColumns.filter((col) => col.id === activeColumn)
-                ).map((col) => {
-                  const isActive = activeColumn === col.id;
-                  return (
-                    <button
-                      key={col.id}
-                      type="button"
-                      onClick={() => {
-                        setColumn(col.id);
-                      }}
-                      className={`w-full flex items-center gap-2 px-2 py-[3px] rounded text-sm transition-colors ${
-                        isActive
-                          ? "bg-accent text-accent-foreground font-medium"
-                          : "hover:text-foreground hover:bg-accent/50"
-                      }`}
-                    >
-                      <span
-                        className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10"
-                        style={{ backgroundColor: col.color }}
-                      />
-                      <span>{displayColumnId(col.id)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <TicketSidebar
+              columns={currentColumns}
+              activeColumn={activeColumn}
+              showEditControls={showEditControls}
+              onColumnChange={setColumn}
+              columnColor={columnColor}
+              golden={golden}
+              onGoldenToggle={() => {
+                setGolden(!golden);
+              }}
+            />
           </div>
         </DialogContent>
       </Dialog>

@@ -43,6 +43,7 @@ function BoardPage(): JSX.Element {
         boardSlug: string;
         body: string;
         column: string;
+        golden?: boolean;
         reporter?: string;
         ticketId: string;
         title: string;
@@ -160,6 +161,14 @@ function BoardPage(): JSX.Element {
     }
     for (const [, colTicketList] of map) {
       colTicketList.sort((left, right) => {
+        // Golden tickets always at the top
+        if (left.golden === true && right.golden !== true) {
+          return -1;
+        }
+        if (left.golden !== true && right.golden === true) {
+          return 1;
+        }
+        // Within same golden group, sort by numeric ID
         const ln = Number(left.id);
         const rn = Number(right.id);
         if (!Number.isNaN(ln) && !Number.isNaN(rn)) {
@@ -253,6 +262,7 @@ function BoardPage(): JSX.Element {
           boardSlug: data.boardSlug,
           body: typeof parsed.body === "string" ? parsed.body : "",
           column: data.column,
+          golden: data.golden,
           reporter: data.reporter,
           ticketId: data.id,
           title: data.title,
@@ -264,6 +274,7 @@ function BoardPage(): JSX.Element {
           boardSlug: ticket.boardSlug,
           body: "",
           column: ticket.column,
+          golden: ticket.golden,
           reporter: ticket.reporter,
           ticketId: ticket.id,
           title: ticket.title,

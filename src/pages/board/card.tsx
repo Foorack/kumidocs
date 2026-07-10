@@ -120,6 +120,9 @@ function TicketCard({
   const style: CSSProperties = {
     borderColor: columnColor,
     opacity: isDragging ? 0 : undefined,
+    ...(ticket.golden === true
+      ? { backgroundImage: "radial-gradient(transparent, oklch(79.5% 0.184 86.047))" }
+      : {}),
   };
 
   return (
@@ -153,14 +156,16 @@ interface DragOverlayCardProps {
 }
 
 function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps): JSX.Element {
+  const style: CSSProperties = {
+    borderColor: columnColor,
+    width: "var(--dnd-overlay-width, 288px)",
+    ...(ticket.golden === true
+      ? { backgroundImage: "radial-gradient(transparent, oklch(79.5% 0.184 86.047))" }
+      : {}),
+  };
+
   return (
-    <div
-      className="rounded-lg border-3 shadow-xl bg-background"
-      style={{
-        borderColor: columnColor,
-        width: "var(--dnd-overlay-width, 288px)",
-      }}
-    >
+    <div className="rounded-lg border-3 shadow-xl" style={style}>
       <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
     </div>
   );
