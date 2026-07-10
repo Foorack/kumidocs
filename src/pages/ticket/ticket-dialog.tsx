@@ -263,6 +263,7 @@ function TicketDialog({
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
         });
+        setTimeline(updatedTimeline);
         await putFile(path, yaml);
         toast.success("Ticket saved");
         onSaved?.();
