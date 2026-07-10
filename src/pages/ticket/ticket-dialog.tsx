@@ -227,19 +227,30 @@ function TicketDialog({
       try {
         const now = new Date().toISOString();
         const userEmail = user?.email ?? user?.name ?? "unknown";
-        const updatedTimeline =
-          column === ticket.column
-            ? timeline
-            : [
-                ...timeline,
-                {
-                  from: ticket.column,
-                  timestamp: now,
-                  to: column,
-                  type: "status" as const,
-                  user: userEmail,
-                },
-              ];
+        let updatedTimeline = timeline;
+        if (column !== ticket.column) {
+          updatedTimeline = [
+            ...updatedTimeline,
+            {
+              from: ticket.column,
+              timestamp: now,
+              to: column,
+              type: "status" as const,
+              user: userEmail,
+            },
+          ];
+        }
+        if (golden !== (ticket.golden ?? false)) {
+          updatedTimeline = [
+            ...updatedTimeline,
+            {
+              timestamp: now,
+              type: "golden" as const,
+              user: userEmail,
+              golden,
+            },
+          ];
+        }
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
         const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
@@ -255,7 +266,7 @@ function TicketDialog({
         await putFile(path, yaml);
         toast.success("Ticket saved");
         onSaved?.();
-        onClose();
+        setEditing(false);
       } catch {
         toast.error("Failed to save ticket");
       } finally {

@@ -27,7 +27,7 @@ interface TimelineProps {
 }
 
 interface TimelineItem {
-  type: "comment" | "approval" | "status";
+  type: "comment" | "approval" | "status" | "golden";
   timestamp: string;
   data: TicketComment | TicketApproval | TimelineEntry;
   dataIndex: number;
@@ -161,6 +161,37 @@ function renderTimelineItem(
         </div>
       );
     }
+    case "golden": {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const entry = item.data as TimelineEntry;
+      const isNowGolden = entry.golden === true;
+      return (
+        <div className="flex items-center gap-2 py-1">
+          <EmojiIcon fileType="golden" size={24} />
+          <UserAvatar
+            name={emailToDisplayName(entry.user)}
+            email={entry.user}
+            outline={false}
+            size="sm"
+          />
+          <span className="text-sm text-foreground flex items-center gap-2">
+            <span className="font-bold">{entry.user}</span>
+            {isNowGolden ? (
+              <>
+                {" marked as "}
+                <span className="font-bold">Golden</span>
+              </>
+            ) : (
+              <>
+                {" changed to "}
+                <span>Regular</span>
+              </>
+            )}
+          </span>
+          <span className="ml-auto shrink-0">{relativeTime(item.timestamp)}</span>
+        </div>
+      );
+    }
     case "approval": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const appr = item.data as TicketApproval;
@@ -227,12 +258,12 @@ export default function Timeline({
       type: "approval" as const,
     })),
     ...timeline
-      .filter((tl) => tl.type === "status")
+      .filter((tl) => tl.type === "status" || tl.type === "golden")
       .map((entry) => ({
         data: entry,
         dataIndex: -1,
         timestamp: entry.timestamp,
-        type: "status" as const,
+        type: entry.type as "status" | "golden",
       })),
   ].toSorted(
     (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
