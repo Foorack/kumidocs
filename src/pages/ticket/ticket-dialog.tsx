@@ -39,6 +39,7 @@ interface TicketDialogProps {
     assignee?: string;
     boardSlug: string;
     body: string;
+    bookmarks?: string[];
     column: string;
     golden?: boolean;
     reporter?: string;
@@ -74,6 +75,7 @@ function TicketDialog({
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [golden, setGolden] = useState(false);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
@@ -123,6 +125,7 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(ticket.golden ?? false);
+      setBookmarks(ticket.bookmarks ?? []);
       setTimeline([]);
       setCommits([]);
       setEditing(false);
@@ -136,6 +139,7 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(false);
+      setBookmarks([]);
       setTimeline([]);
       setCommits([]);
       setEditing(true);
@@ -164,6 +168,7 @@ function TicketDialog({
         setReporter(data.reporter ?? "");
         setAssignee(data.assignee ?? "");
         setComments(data.comments ?? []);
+        setBookmarks(data.bookmarks ?? []);
         setTimeline(data.timeline ?? []);
         // Parse body from raw YAML (TicketData doesn't carry body)
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -256,6 +261,7 @@ function TicketDialog({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
           golden: golden || undefined,
@@ -304,6 +310,7 @@ function TicketDialog({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
+        bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: comments.length > 0 ? comments : undefined,
         golden: golden || undefined,
@@ -398,6 +405,11 @@ function TicketDialog({
     <h1 className="text-lg font-bold text-foreground mb-2">{title}</h1>
   );
 
+  const bookmarksChanged =
+    isEdit &&
+    (bookmarks.length !== (ticket.bookmarks ?? []).length ||
+      !bookmarks.every((bm) => (ticket.bookmarks ?? []).includes(bm)));
+
   const canSave =
     !saving &&
     title.trim() !== "" &&
@@ -406,7 +418,8 @@ function TicketDialog({
       body !== ticket.body ||
       column !== ticket.column ||
       golden !== (ticket.golden ?? false) ||
-      assignee !== (ticket.assignee ?? ""));
+      assignee !== (ticket.assignee ?? "") ||
+      bookmarksChanged);
 
   const [commentBody, setCommentBody] = useState("");
 
@@ -430,6 +443,7 @@ function TicketDialog({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
+        bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: updatedComments,
         golden: golden || undefined,
@@ -452,6 +466,7 @@ function TicketDialog({
     approvals,
     assignee,
     body,
+    bookmarks,
     column,
     golden,
     reporter,
@@ -475,6 +490,7 @@ function TicketDialog({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: updatedComments,
           golden: golden || undefined,
@@ -489,7 +505,19 @@ function TicketDialog({
         setComments(comments);
       }
     },
-    [ticket, comments, approvals, assignee, body, column, golden, reporter, timeline, title],
+    [
+      ticket,
+      comments,
+      approvals,
+      assignee,
+      body,
+      bookmarks,
+      column,
+      golden,
+      reporter,
+      timeline,
+      title,
+    ],
   );
 
   const handleApproval = useCallback(
@@ -518,6 +546,7 @@ function TicketDialog({
           approvals: updatedApprovals,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
           golden: golden || undefined,
@@ -532,7 +561,20 @@ function TicketDialog({
         setApprovals(approvals);
       }
     },
-    [ticket, user, approvals, assignee, body, column, comments, golden, reporter, timeline, title],
+    [
+      ticket,
+      user,
+      approvals,
+      assignee,
+      body,
+      bookmarks,
+      column,
+      comments,
+      golden,
+      reporter,
+      timeline,
+      title,
+    ],
   );
   const handleCommentKeyDown = useCallback(
     (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -850,6 +892,13 @@ function TicketDialog({
               golden={golden}
               onGoldenToggle={() => {
                 setGolden(!golden);
+              }}
+              bookmarked={bookmarks.includes(user?.email ?? user?.name ?? "")}
+              onBookmarkToggle={() => {
+                const email = user?.email ?? user?.name ?? "";
+                setBookmarks((prev) =>
+                  prev.includes(email) ? prev.filter((entry) => entry !== email) : [...prev, email],
+                );
               }}
             />
           </div>
