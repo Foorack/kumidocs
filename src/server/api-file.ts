@@ -33,17 +33,29 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     return content;
   }
 
-  const hasCreated = /^createdAt: /mu.test(content);
-  // Remove any existing updatedAt line
+  // If updatedAt already exists in the client-provided content, preserve it
+  // (e.g. bookmark-only saves should not bump the timestamp).
+  if (/^updatedAt: /mu.test(content)) {
+    // Still ensure createdAt exists
+    if (!/^createdAt: /mu.test(content)) {
+      const createdLine = `createdAt: ${JSON.stringify(now)}`;
+      const bodyIdx = content.search(/\nbody: /u);
+      if (bodyIdx !== -1) {
+        return `${content.slice(0, bodyIdx + 1)}${createdLine}\n${content.slice(bodyIdx + 1)}`;
+      }
+      return `${content}\n${createdLine}\n`;
+    }
+    return content;
+  }
+
   const withoutUpdated = content.replaceAll(/^updatedAt: .*$/gmu, "").replaceAll(/\n{2,}/gu, "\n");
-  // Add createdAt if missing, always add/update updatedAt
+  const hasCreated = /^createdAt: /mu.test(content);
   const tsLine = `updatedAt: ${JSON.stringify(now)}`;
+
   if (hasCreated) {
-    // Just add/replace updatedAt; insert before body: or at end
     const bodyIdx = withoutUpdated.search(/\nbody: /u);
     if (bodyIdx !== -1) {
-      return `${withoutUpdated.slice(0, bodyIdx + 1)}${tsLine}
-${withoutUpdated.slice(bodyIdx + 1)}`;
+      return `${withoutUpdated.slice(0, bodyIdx + 1)}${tsLine}\n${withoutUpdated.slice(bodyIdx + 1)}`;
     }
     return `${withoutUpdated}\n${tsLine}\n`;
   }
@@ -51,9 +63,7 @@ ${withoutUpdated.slice(bodyIdx + 1)}`;
   const createdLine = `createdAt: ${JSON.stringify(now)}`;
   const bodyIdx = withoutUpdated.search(/\nbody: /u);
   if (bodyIdx !== -1) {
-    return `${withoutUpdated.slice(0, bodyIdx + 1)}${createdLine}
-${tsLine}
-${withoutUpdated.slice(bodyIdx + 1)}`;
+    return `${withoutUpdated.slice(0, bodyIdx + 1)}${createdLine}\n${tsLine}\n${withoutUpdated.slice(bodyIdx + 1)}`;
   }
   return `${withoutUpdated}\n${createdLine}\n${tsLine}\n`;
 }

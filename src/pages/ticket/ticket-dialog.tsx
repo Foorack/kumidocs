@@ -268,6 +268,15 @@ function TicketDialog({
           ];
         }
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
+        // Only preserve updatedAt when bookmarks are the sole change
+        const onlyBookmarksChanged =
+          (bookmarks.length !== (ticket.bookmarks ?? []).length ||
+            !bookmarks.every((bm) => (ticket.bookmarks ?? []).includes(bm))) &&
+          title === ticket.title &&
+          body === ticket.body &&
+          column === ticket.column &&
+          golden === (ticket.golden ?? false) &&
+          assignee === (ticket.assignee ?? "");
         const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
@@ -280,7 +289,7 @@ function TicketDialog({
           reporter: reporter.trim() || undefined,
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
-          updatedAt,
+          updatedAt: onlyBookmarksChanged ? updatedAt : undefined,
         });
         setTimeline(updatedTimeline);
         await putFile(path, yaml);
@@ -332,7 +341,6 @@ function TicketDialog({
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
-        updatedAt,
       });
       await createFile(path, yaml);
 
@@ -471,7 +479,6 @@ function TicketDialog({
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
-        updatedAt,
       });
       await putFile(path, yaml);
       toast.success("Comment added");
@@ -522,7 +529,6 @@ function TicketDialog({
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
-          updatedAt,
         });
         await putFile(path, yaml);
         toast.success("Comment updated");
@@ -582,7 +588,6 @@ function TicketDialog({
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
-          updatedAt,
         });
         await putFile(path, yaml);
         toast.success(status === "approved" ? "Approved" : "Rejected");
