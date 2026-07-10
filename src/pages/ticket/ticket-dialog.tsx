@@ -11,7 +11,7 @@ import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "
 import { sha256 } from "@noble/hashes/sha2.js";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -233,6 +233,22 @@ function TicketDialog({
   const columnColor = currentColumns.find((col) => col.id === activeColumn)?.color ?? "#6b7280";
   const showEditControls = editing || !isEdit;
 
+  const bookmarkDiff = useMemo(() => {
+    const ticketBookmarks = ticket?.bookmarks ?? [];
+    const changed =
+      isEdit &&
+      (bookmarks.length !== ticketBookmarks.length ||
+        !bookmarks.every((bm) => ticketBookmarks.includes(bm)));
+    const contentChanged =
+      isEdit &&
+      (title !== ticket?.title ||
+        body !== ticket?.body ||
+        column !== ticket?.column ||
+        golden !== (ticket?.golden ?? false) ||
+        assignee !== (ticket?.assignee ?? ""));
+    return { bookmarksChanged: changed, onlyBookmarksChanged: changed && !contentChanged };
+  }, [isEdit, bookmarks, ticket, title, body, column, golden, assignee]);
+
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
       return;
@@ -268,15 +284,6 @@ function TicketDialog({
           ];
         }
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
-        // Only preserve updatedAt when bookmarks are the sole change
-        const onlyBookmarksChanged =
-          (bookmarks.length !== (ticket.bookmarks ?? []).length ||
-            !bookmarks.every((bm) => (ticket.bookmarks ?? []).includes(bm))) &&
-          title === ticket.title &&
-          body === ticket.body &&
-          column === ticket.column &&
-          golden === (ticket.golden ?? false) &&
-          assignee === (ticket.assignee ?? "");
         const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
@@ -289,7 +296,7 @@ function TicketDialog({
           reporter: reporter.trim() || undefined,
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
-          updatedAt: onlyBookmarksChanged ? updatedAt : undefined,
+          updatedAt: bookmarkDiff.onlyBookmarksChanged ? updatedAt : undefined,
         });
         setTimeline(updatedTimeline);
         await putFile(path, yaml);
@@ -361,6 +368,7 @@ function TicketDialog({
     createdAt,
     title,
     body,
+    bookmarkDiff,
     column,
     comments,
     golden,
@@ -433,11 +441,6 @@ function TicketDialog({
     <h1 className="text-lg font-bold text-foreground mb-2">{title}</h1>
   );
 
-  const bookmarksChanged =
-    isEdit &&
-    (bookmarks.length !== (ticket.bookmarks ?? []).length ||
-      !bookmarks.every((bm) => (ticket.bookmarks ?? []).includes(bm)));
-
   const canSave =
     !saving &&
     title.trim() !== "" &&
@@ -447,7 +450,7 @@ function TicketDialog({
       column !== ticket.column ||
       golden !== (ticket.golden ?? false) ||
       assignee !== (ticket.assignee ?? "") ||
-      bookmarksChanged);
+      bookmarkDiff.bookmarksChanged);
 
   const [commentBody, setCommentBody] = useState("");
 
