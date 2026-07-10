@@ -80,6 +80,7 @@ function TicketSidebar({
       <div className="space-y-0.5">
         <TicketSidebarButton
           active={golden}
+          disabled={!showEditControls}
           onClick={onGoldenToggle}
           className={golden ? "font-bold" : ""}
         >
