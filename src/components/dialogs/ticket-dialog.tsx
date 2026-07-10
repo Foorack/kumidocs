@@ -8,6 +8,7 @@ import type { DiffData } from "@/lib/api";
 import { displayColumnId, parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
+import { sha256 } from "@noble/hashes/sha2.js";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -158,12 +159,31 @@ function TicketDialog({
         setReporter(data.reporter ?? "");
         setAssignee(data.assignee ?? "");
         setComments(data.comments ?? []);
-        setApprovals(data.approvals ?? []);
         setStatusHistory(data.statusHistory ?? []);
         // Parse body from raw YAML (TicketData doesn't carry body)
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const parsed = load(resp.content) as Record<string, unknown>;
-        setBody(typeof parsed.body === "string" ? parsed.body : "");
+        const parsedBody = typeof parsed.body === "string" ? parsed.body : "";
+        setBody(parsedBody);
+
+        // Mark approvals as outdated if their hash doesn't match current content
+        const updatedApprovals = (data.approvals ?? []).map((appr) => {
+          const expectedHash = sha256(
+            new TextEncoder().encode(
+              `${appr.user.toLowerCase()}${data.id}${data.title}${parsedBody}`,
+            ),
+          );
+          const expectedHex = [...expectedHash]
+            // oxlint-disable-next-line id-length
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+          if (appr.hash !== expectedHex) {
+            appr.outdated = true;
+            return appr;
+          }
+          return appr;
+        });
+        setApprovals(updatedApprovals);
         setColumn(data.column);
 
         // Fetch git history for Version Control tab
@@ -416,8 +436,12 @@ function TicketDialog({
       }
       const now = new Date().toISOString();
       const userEmail = user?.email ?? user?.name ?? "unknown";
+      const hashInput = `${userEmail.toLowerCase()}${ticket.ticketId}${title}${body}`;
+      const hashBytes = sha256(new TextEncoder().encode(hashInput));
+      // oxlint-disable-next-line id-length
+      const hashHex = [...hashBytes].map((b) => b.toString(16).padStart(2, "0")).join("");
       const entry: TicketApproval = {
-        hash: "",
+        hash: hashHex,
         status,
         timestamp: now,
         user: userEmail,
@@ -636,7 +660,7 @@ function TicketDialog({
                           onClick={() => {
                             setAssignee(user?.email ?? user?.name ?? "");
                           }}
-                          className="ms-3 text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
                         >
                           Assign to me
                         </button>
@@ -723,7 +747,8 @@ function TicketDialog({
                   {activeTab === "approval" && (
                     <ApprovalTab
                       approvals={approvals}
-                      showEditControls={showEditControls}
+                      showActions={!editing && isEdit}
+                      currentUser={user?.email}
                       onApprove={() => {
                         void handleApproval("approved");
                       }}

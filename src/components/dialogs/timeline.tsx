@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
-import { displayColumnId } from "@/lib/board";
+import { displayColumnId, approvalFileType } from "@/lib/board";
 import type { TicketComment, TicketApproval, StatusEntry, BoardColumn } from "@/lib/board";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
@@ -84,19 +84,12 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
     case "approval": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const appr = item.data as TicketApproval;
-      const apprType = appr.status ?? "approved";
-      // oxlint-disable eslint/no-nested-ternary, unicorn/no-nested-ternary
-      const apprLabel =
-        apprType === "approved"
-          ? " approved"
-          : apprType === "rejected"
-            ? " rejected"
-            : " marked outdated";
-      // oxlint-enable eslint/no-nested-ternary, unicorn/no-nested-ternary
+      const isRejected = appr.status === "rejected";
+      // oxlint-disable-next-line typescript/strict-boolean-expressions
+      const outdated = appr.outdated;
       return (
         <div className="flex items-center gap-2 py-1">
-          {/* oxlint-disable-next-line typescript/no-unsafe-type-assertion */}
-          <EmojiIcon fileType={apprType as "approve" | "reject" | "outdated"} size={24} />
+          <EmojiIcon fileType={approvalFileType(appr)} size={24} />
           <UserAvatar
             name={emailToDisplayName(appr.user)}
             email={appr.user}
@@ -105,7 +98,14 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
           />
           <span className="text-sm text-foreground flex items-center gap-2">
             <span className="font-bold">{appr.user}</span>
-            {apprLabel}
+            {isRejected ? (
+              <span className="font-bold text-destructive">rejected</span>
+            ) : (
+              <span className={outdated === true ? "font-bold text-amber" : "font-bold text-green"}>
+                approved
+              </span>
+            )}
+            {outdated === true && <span>(outdated)</span>}
           </span>
           <span className="text-muted-foreground/60 ml-auto shrink-0">
             {relativeTime(item.timestamp)}

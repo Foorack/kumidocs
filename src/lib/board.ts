@@ -43,7 +43,9 @@ interface TicketApproval {
   timestamp: string;
   /** SHA-256 of lower(email)+ticketId+title+body at time of approval. */
   hash: string;
-  status?: "approved" | "rejected" | "outdated";
+  status?: "approved" | "rejected";
+  /** True when the content the approval was based on no longer matches the current ticket. */
+  outdated?: boolean;
 }
 
 interface StatusEntry {
@@ -242,8 +244,12 @@ async function parseTicketYaml(
             // oxlint-disable-next-line typescript/no-unsafe-type-assertion
             user: apprRaw.user as string,
           };
-          if (st === "approved" || st === "rejected" || st === "outdated") {
+          const od = apprRaw.outdated;
+          if (st === "approved" || st === "rejected") {
             result.status = st;
+          }
+          if (od === true) {
+            result.outdated = true;
           }
           return result;
         })
@@ -349,6 +355,9 @@ function ticketToYaml(data: {
       if (approval.status !== undefined) {
         lines.push(`    status: ${approval.status}`);
       }
+      if (approval.outdated === true) {
+        lines.push(`    outdated: true`);
+      }
     }
   }
 
@@ -403,7 +412,16 @@ interface TicketYamlData {
 function serializeTicket(data: TicketYamlData): string {
   return ticketToYaml(data);
 }
-
+/** Map an approval to the EmojiIcon fileType for the correct icon. */
+function approvalFileType(appr: TicketApproval): "approve" | "reject" | "outdated" {
+  if (appr.outdated === true) {
+    return "outdated";
+  }
+  if (appr.status === "rejected") {
+    return "reject";
+  }
+  return "approve";
+}
 /**
  * Read existing YAML, apply only the specified updates, serialize back.
  * Every other field is preserved automatically. Use this for partial
@@ -449,6 +467,7 @@ export {
   boardToYaml,
   defaultBoardConfig,
   DEFAULT_COLUMNS,
+  approvalFileType,
   displayColumnId,
   parseTicketYaml,
   patchTicketYaml,
