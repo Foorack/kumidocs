@@ -42,6 +42,7 @@ function BoardPage(): JSX.Element {
         assignee?: string;
         boardSlug: string;
         body: string;
+        bookmarks?: string[];
         column: string;
         golden?: boolean;
         reporter?: string;
@@ -258,6 +259,7 @@ function BoardPage(): JSX.Element {
           assignee: data.assignee,
           boardSlug: data.boardSlug,
           body: typeof parsed.body === "string" ? parsed.body : "",
+          bookmarks: data.bookmarks,
           column: data.column,
           golden: data.golden,
           reporter: data.reporter,
@@ -270,6 +272,7 @@ function BoardPage(): JSX.Element {
           assignee: ticket.assignee,
           boardSlug: ticket.boardSlug,
           body: "",
+          bookmarks: ticket.bookmarks,
           column: ticket.column,
           golden: ticket.golden,
           reporter: ticket.reporter,

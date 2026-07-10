@@ -76,6 +76,8 @@ function TicketDialog({
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [golden, setGolden] = useState(false);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [createdAt, setCreatedAt] = useState<string | undefined>();
+  const [updatedAt, setUpdatedAt] = useState<string | undefined>();
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
@@ -126,6 +128,8 @@ function TicketDialog({
       setApprovals([]);
       setGolden(ticket.golden ?? false);
       setBookmarks(ticket.bookmarks ?? []);
+      setCreatedAt(undefined);
+      setUpdatedAt(undefined);
       setTimeline([]);
       setCommits([]);
       setEditing(false);
@@ -140,6 +144,8 @@ function TicketDialog({
       setApprovals([]);
       setGolden(false);
       setBookmarks([]);
+      setCreatedAt(undefined);
+      setUpdatedAt(undefined);
       setTimeline([]);
       setCommits([]);
       setEditing(true);
@@ -169,6 +175,8 @@ function TicketDialog({
         setAssignee(data.assignee ?? "");
         setComments(data.comments ?? []);
         setBookmarks(data.bookmarks ?? []);
+        setCreatedAt(data.createdAt);
+        setUpdatedAt(data.updatedAt);
         setTimeline(data.timeline ?? []);
         // Parse body from raw YAML (TicketData doesn't carry body)
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -264,10 +272,12 @@ function TicketDialog({
           bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
+          updatedAt,
         });
         setTimeline(updatedTimeline);
         await putFile(path, yaml);
@@ -313,10 +323,12 @@ function TicketDialog({
         bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: comments.length > 0 ? comments : undefined,
+        createdAt,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
+        updatedAt,
       });
       await createFile(path, yaml);
 
@@ -446,10 +458,12 @@ function TicketDialog({
         bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: updatedComments,
+        createdAt,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
+        updatedAt,
       });
       await putFile(path, yaml);
       toast.success("Comment added");
@@ -493,10 +507,12 @@ function TicketDialog({
           bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: updatedComments,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
+          updatedAt,
         });
         await putFile(path, yaml);
         toast.success("Comment updated");
@@ -549,10 +565,12 @@ function TicketDialog({
           bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
+          updatedAt,
         });
         await putFile(path, yaml);
         toast.success(status === "approved" ? "Approved" : "Rejected");
