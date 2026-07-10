@@ -1,3 +1,6 @@
+import { dump } from "js-yaml";
+import { sortedObject } from "./utils";
+
 interface BoardColumn {
   color: string;
   default?: boolean;
@@ -318,119 +321,74 @@ function ticketToYaml(data: {
   title: string;
   updatedAt?: string;
 }): string {
-  const lines: string[] = [];
+  const obj: Record<string, unknown> = {};
 
-  // approvals
   if (data.approvals !== undefined && data.approvals.length > 0) {
-    lines.push("approvals:");
-    // oxlint-disable-next-line id-length
-    for (const approval of data.approvals) {
-      lines.push(
-        `  - user: ${JSON.stringify(approval.user)}`,
-        `    timestamp: ${JSON.stringify(approval.timestamp)}`,
-        `    hash: ${JSON.stringify(approval.hash)}`,
-      );
-      if (approval.status !== undefined) {
-        lines.push(`    status: ${approval.status}`);
-      }
-    }
+    obj.approvals = data.approvals.map((appr) => ({
+      hash: appr.hash,
+      status: appr.status,
+      timestamp: appr.timestamp,
+      user: appr.user,
+    }));
   }
 
-  // assignee
   if (data.assignee !== undefined && data.assignee !== "") {
-    lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
+    obj.assignee = data.assignee;
   }
 
-  // body
   if (data.body !== undefined && data.body !== "") {
-    if (data.body.includes("\n")) {
-      lines.push(`body: |`);
-      for (const line of data.body.split("\n")) {
-        lines.push(`  ${line}`);
-      }
-    } else {
-      lines.push(`body: ${JSON.stringify(data.body)}`);
-    }
+    obj.body = data.body;
   }
 
-  // bookmarks
   if (data.bookmarks !== undefined && data.bookmarks.length > 0) {
-    lines.push("bookmarks:");
-    for (const email of data.bookmarks) {
-      lines.push(`  - ${JSON.stringify(email)}`);
-    }
+    obj.bookmarks = data.bookmarks;
   }
 
-  // column
-  lines.push(`column: ${JSON.stringify(data.column)}`);
+  obj.column = data.column;
 
-  // comments
   if (data.comments !== undefined && data.comments.length > 0) {
-    lines.push("comments:");
-    // oxlint-disable-next-line id-length
-    for (const comment of data.comments) {
-      lines.push(
-        `  - user: ${JSON.stringify(comment.user)}`,
-        `    timestamp: ${JSON.stringify(comment.timestamp)}`,
-      );
-      if (comment.message.includes("\n")) {
-        lines.push(`    message: |`);
-        for (const ml of comment.message.split("\n")) {
-          lines.push(`      ${ml}`);
-        }
-      } else {
-        lines.push(`    message: ${JSON.stringify(comment.message)}`);
-      }
-    }
+    obj.comments = data.comments.map((cmt) => ({
+      message: cmt.message,
+      timestamp: cmt.timestamp,
+      user: cmt.user,
+    }));
   }
 
-  // createdAt
   if (data.createdAt !== undefined && data.createdAt !== "") {
-    lines.push(`createdAt: ${JSON.stringify(data.createdAt)}`);
+    obj.createdAt = data.createdAt;
   }
 
-  // golden
   if (data.golden === true) {
-    lines.push("golden: true");
+    obj.golden = true;
   }
 
-  // reporter
   if (data.reporter !== undefined && data.reporter !== "") {
-    lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
+    obj.reporter = data.reporter;
   }
 
-  // timeline
   if (data.timeline !== undefined && data.timeline.length > 0) {
-    lines.push("timeline:");
-    // oxlint-disable-next-line id-length
-    for (const entry of data.timeline) {
-      lines.push(
-        `  - type: ${entry.type}`,
-        `    timestamp: ${JSON.stringify(entry.timestamp)}`,
-        `    user: ${JSON.stringify(entry.user)}`,
-      );
-      if (entry.from !== undefined) {
-        lines.push(`    from: ${JSON.stringify(entry.from)}`);
-      }
-      if (entry.to !== undefined) {
-        lines.push(`    to: ${JSON.stringify(entry.to)}`);
-      }
-      if (entry.golden !== undefined) {
-        lines.push(`    golden: ${entry.golden ? "true" : "false"}`);
-      }
-    }
+    obj.timeline = data.timeline.map((entry) => ({
+      from: entry.from,
+      golden: entry.golden,
+      timestamp: entry.timestamp,
+      to: entry.to,
+      type: entry.type,
+      user: entry.user,
+    }));
   }
 
-  // title
-  lines.push(`title: ${JSON.stringify(data.title)}`);
+  obj.title = data.title;
 
-  // updatedAt
   if (data.updatedAt !== undefined && data.updatedAt !== "") {
-    lines.push(`updatedAt: ${JSON.stringify(data.updatedAt)}`);
+    obj.updatedAt = data.updatedAt;
   }
 
-  lines.push("");
-  return lines.join("\n");
+  return dump(sortedObject(obj), {
+    forceQuotes: false,
+    lineWidth: -1,
+    noRefs: true,
+    sortKeys: false, // sortedObject handles key ordering
+  });
 }
 
 interface TicketYamlData {
