@@ -35,10 +35,17 @@ function apiTree(): Response {
   return Response.json(buildFileTree());
 }
 
-// GET /api/search?q=<query>
+// GET /api/search?q=<query>&mode=<docs|board>
 function apiSearch(url: URL): Response {
   const query = url.searchParams.get("q") ?? "";
-  return Response.json(searchDocs(query));
+  const mode = url.searchParams.get("mode");
+  if (mode !== "docs" && mode !== "board") {
+    return Response.json(
+      { error: "Missing or invalid mode parameter (must be 'docs' or 'board')" },
+      { status: 400 },
+    );
+  }
+  return Response.json(searchDocs(query, 20, mode));
 }
 
 // Helper: eagerly read + gzip a text file at module init, serve from cache.

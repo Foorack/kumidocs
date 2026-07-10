@@ -11,6 +11,7 @@ import { EmojiIcon } from "@/components/ui/emoji-icon";
 import type { SearchResult } from "@/lib/types";
 import { searchPages } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@/store/user";
 
 const SEARCH_DELAY_MS = 150;
 const EMOJI_SIZE = 20;
@@ -33,15 +34,17 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
   if (!query.trim()) {
     activeResults = [];
   }
+  const pages = activeResults.filter((result) => result.type !== "ticket");
+  const tickets = activeResults.filter((result) => result.type === "ticket");
   return (
     <CommandList>
       {loading && <div className="py-3 text-center">Searching...</div>}
       {!loading && Boolean(query) && activeResults.length === 0 && (
         <CommandEmpty>No results for &quot;{query}&quot;.</CommandEmpty>
       )}
-      {activeResults.length > 0 && (
+      {pages.length > 0 && (
         <CommandGroup heading="Pages">
-          {activeResults.map(
+          {pages.map(
             (result): JSX.Element => (
               <CommandItem
                 key={result.path}
@@ -68,12 +71,42 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
           )}
         </CommandGroup>
       )}
+      {tickets.length > 0 && (
+        <CommandGroup heading="Tickets">
+          {tickets.map(
+            (result): JSX.Element => (
+              <CommandItem
+                key={result.path}
+                value={result.path}
+                onSelect={(): void => {
+                  onSelect(result.path);
+                }}
+                className="gap-2"
+              >
+                <span className="shrink-0">
+                  <EmojiIcon fileType="ticket" size={EMOJI_SIZE} />
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-medium">{result.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    #{result.ticketId} &middot; {result.boardSlug}
+                  </span>
+                </div>
+                <span className="ml-auto shrink-0">
+                  {result.boardSlug}/{result.ticketId}
+                </span>
+              </CommandItem>
+            ),
+          )}
+        </CommandGroup>
+      )}
     </CommandList>
   );
 };
 
 const SearchPalette = (allProps: SearchPaletteProps): JSX.Element => {
   const { open, onClose } = allProps;
+  const { mode } = useUser();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,7 +121,7 @@ const SearchPalette = (allProps: SearchPaletteProps): JSX.Element => {
       void (async (): Promise<void> => {
         setLoading(true);
         try {
-          const data = await searchPages(query);
+          const data = await searchPages(query, mode);
           setResults(data);
           setLoading(false);
         } catch (error: unknown) {
@@ -104,6 +137,16 @@ const SearchPalette = (allProps: SearchPaletteProps): JSX.Element => {
 
   const handleSelect = (path: string): void => {
     onClose();
+    // Find the full result object to check if it's a ticket
+    const result = results.find((entry) => entry.path === path);
+    if (
+      result?.boardSlug !== undefined &&
+      result.ticketId !== undefined &&
+      result.ticketId !== ""
+    ) {
+      void navigate(`/b/${result.boardSlug}/${result.ticketId}`);
+      return;
+    }
     const ext = path.split(".").pop();
     let navPath = `/code/${path}`;
     if (ext === "md") {

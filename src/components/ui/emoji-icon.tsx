@@ -9,6 +9,7 @@ import { Fragment } from "react";
 const FLUENT_TYPE_ICONS: Record<string, string> = {
   approve: "CheckmarkCircle24Color",
   board: "Board24Color",
+  bookmark: "Bookmark24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   edit: "Edit24Color",
@@ -19,6 +20,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
   status: "Diversity24Color",
+  ticket: "Board24Color",
 };
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";

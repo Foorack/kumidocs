@@ -42,6 +42,7 @@ function BoardPage(): JSX.Element {
         assignee?: string;
         boardSlug: string;
         body: string;
+        bookmarks?: string[];
         column: string;
         golden?: boolean;
         reporter?: string;
@@ -168,13 +169,10 @@ function BoardPage(): JSX.Element {
         if (left.golden !== true && right.golden === true) {
           return 1;
         }
-        // Within same golden group, sort by numeric ID
-        const ln = Number(left.id);
-        const rn = Number(right.id);
-        if (!Number.isNaN(ln) && !Number.isNaN(rn)) {
-          return ln - rn;
-        }
-        return left.id.localeCompare(right.id);
+        // Within same golden group, sort by latest activity (updatedAt), newest first
+        const la = left.updatedAt ?? left.createdAt ?? "";
+        const ra = right.updatedAt ?? right.createdAt ?? "";
+        return ra.localeCompare(la);
       });
     }
     return map;
@@ -261,6 +259,7 @@ function BoardPage(): JSX.Element {
           assignee: data.assignee,
           boardSlug: data.boardSlug,
           body: typeof parsed.body === "string" ? parsed.body : "",
+          bookmarks: data.bookmarks,
           column: data.column,
           golden: data.golden,
           reporter: data.reporter,
@@ -273,6 +272,7 @@ function BoardPage(): JSX.Element {
           assignee: ticket.assignee,
           boardSlug: ticket.boardSlug,
           body: "",
+          bookmarks: ticket.bookmarks,
           column: ticket.column,
           golden: ticket.golden,
           reporter: ticket.reporter,

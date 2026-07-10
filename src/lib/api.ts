@@ -113,8 +113,10 @@ const getMe = async (): Promise<MeResponse> => request<MeResponse>("/api/me");
 
 const getTree = async (): Promise<TreeNode[]> => request<TreeNode[]>("/api/tree");
 
-const searchPages = async (query: string): Promise<SearchResult[]> =>
-  request<SearchResult[]>(`/api/search?q=${encodeURIComponent(query)}`);
+const searchPages = async (query: string, mode: string): Promise<SearchResult[]> =>
+  request<SearchResult[]>(
+    `/api/search?q=${encodeURIComponent(query)}&mode=${encodeURIComponent(mode)}`,
+  );
 
 const getFile = async (path: string): Promise<FileGetResponse> =>
   request<FileGetResponse>(`/api/file?path=${encodeURIComponent(path)}`);

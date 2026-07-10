@@ -36,6 +36,8 @@ interface TicketSidebarProps {
   columnColor: string;
   golden: boolean;
   onGoldenToggle: () => void;
+  bookmarked: boolean;
+  onBookmarkToggle: () => void;
 }
 
 function TicketSidebar({
@@ -46,8 +48,11 @@ function TicketSidebar({
   columnColor,
   golden,
   onGoldenToggle,
+  bookmarked,
+  onBookmarkToggle,
 }: TicketSidebarProps): JSX.Element {
   const goldenIconStyle: CSSProperties = golden ? {} : { filter: "grayscale(1)" };
+  const bookmarkIconStyle: CSSProperties = bookmarked ? {} : { filter: "grayscale(1)" };
 
   return (
     <div className="w-52 shrink-0 border-l p-3 space-y-2" style={{ borderColor: columnColor }}>
@@ -86,6 +91,15 @@ function TicketSidebar({
         >
           <EmojiIcon fileType="golden" size={20} style={goldenIconStyle} />
           <span>{golden ? "Golden" : "Regular"}</span>
+        </TicketSidebarButton>
+        <TicketSidebarButton
+          active={bookmarked}
+          disabled={!showEditControls}
+          onClick={onBookmarkToggle}
+          className={bookmarked ? "font-bold" : ""}
+        >
+          <EmojiIcon fileType="bookmark" size={20} style={bookmarkIconStyle} />
+          <span>{bookmarked ? "Bookmarked" : "Bookmark"}</span>
         </TicketSidebarButton>
       </div>
     </div>

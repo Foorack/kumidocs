@@ -2,6 +2,7 @@ import type { FileType, SearchResult } from "@/lib/types";
 import { getAllPaths, getFile, parseFileEntry } from "./filestore";
 import MiniSearch from "minisearch";
 import matter from "gray-matter";
+import { load as parseYaml } from "js-yaml";
 
 interface DocEntry {
   id: string;
@@ -12,7 +13,16 @@ interface DocEntry {
   content: string;
 }
 
-let index: MiniSearch<DocEntry> | undefined;
+interface TicketEntry {
+  id: string;
+  boardSlug: string;
+  ticketId: string;
+  title: string;
+  content: string;
+}
+
+let docIndex: MiniSearch<DocEntry> | undefined;
+let ticketIndex: MiniSearch<TicketEntry> | undefined;
 
 function buildDocs(paths: string[]): DocEntry[] {
   return paths
@@ -41,20 +51,71 @@ function buildDocs(paths: string[]): DocEntry[] {
     });
 }
 
+function buildTickets(paths: string[]): TicketEntry[] {
+  const tickets: TicketEntry[] = [];
+  for (const filePath of paths) {
+    if (!filePath.endsWith(".yaml") || filePath.startsWith(".")) {
+      continue;
+    }
+    // Board YAML files are in a board directory: e.g. "my-board/1.yaml"
+    const parts = filePath.split("/");
+    if (parts.length < 2) {
+      continue;
+    }
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
+    const boardSlug = parts[0] as string;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
+    const basename = parts.at(-1) as string;
+    const ticketId = basename.replace(/\.yaml$/u, "");
+    if (!/^\d+$/u.test(ticketId)) {
+      continue; // Only numeric IDs are tickets; board config files are e.g. board.yaml
+    }
+
+    const raw = getFile(filePath);
+    if (raw === undefined || raw === "") {
+      continue;
+    }
+    try {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const parsed = parseYaml(raw) as Record<string, unknown>;
+      const title = typeof parsed.title === "string" ? parsed.title : ticketId;
+      const body = typeof parsed.body === "string" ? parsed.body : "";
+      const content = `${ticketId} ${title} ${body}`
+        .replaceAll(/```[\s\S]*?```/gu, " ")
+        .replaceAll(/`[^`]+`/gu, " ")
+        .replaceAll(/[*_~>|]/gu, "")
+        .replaceAll(/\s+/gu, " ")
+        .trim();
+      tickets.push({ boardSlug, content, id: filePath, ticketId, title });
+    } catch {
+      // Invalid YAML, skip
+    }
+  }
+  return tickets;
+}
+
 function rebuildIndex(): void {
-  if (!index) {
+  if (!docIndex || !ticketIndex) {
     return;
   }
-  index.removeAll();
-  const docs = buildDocs(getAllPaths());
+  docIndex.removeAll();
+  ticketIndex.removeAll();
+  const allPaths = getAllPaths();
+  const docs = buildDocs(allPaths);
   if (docs.length > 0) {
-    index.addAll(docs);
+    docIndex.addAll(docs);
   }
-  console.log(`Search: indexed ${String(docs.length)} documents`);
+  const tickets = buildTickets(allPaths);
+  if (tickets.length > 0) {
+    ticketIndex.addAll(tickets);
+  }
+  console.log(
+    `Search: indexed ${String(docs.length)} documents, ${String(tickets.length)} tickets`,
+  );
 }
 
 function initSearch(): void {
-  index = new MiniSearch<DocEntry>({
+  docIndex = new MiniSearch<DocEntry>({
     fields: ["title", "content", "path"],
     searchOptions: {
       boost: { title: 3 },
@@ -63,39 +124,75 @@ function initSearch(): void {
     },
     storeFields: ["title", "path", "emoji", "type"],
   });
+  ticketIndex = new MiniSearch<TicketEntry>({
+    fields: ["title", "content", "id"],
+    searchOptions: {
+      boost: { id: 5, title: 3 },
+      fuzzy: 0.2,
+      prefix: true,
+    },
+    storeFields: ["boardSlug", "ticketId", "title"],
+  });
   rebuildIndex();
 }
 
 function updateInIndex(path: string): void {
-  if (!index || !path.endsWith(".md")) {
+  if (!docIndex || !ticketIndex) {
     return;
   }
-  try {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    index.remove({ id: path } as DocEntry);
-  } catch {
-    // Document was not in the index yet (e.g. brand-new file); nothing to remove
-  }
-  const docs = buildDocs([path]);
-  const doc = docs[0];
-  if (doc) {
+  if (path.endsWith(".md")) {
     try {
-      index.add(doc);
-    } catch (error: unknown) {
-      console.warn("Failed to add to index:", error);
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      docIndex.remove({ id: path } as DocEntry);
+    } catch {
+      // not in index
+    }
+    const docs = buildDocs([path]);
+    const doc = docs[0];
+    if (doc) {
+      try {
+        docIndex.add(doc);
+      } catch (error: unknown) {
+        console.warn("Failed to add doc to index:", error);
+      }
+    }
+  } else if (path.endsWith(".yaml")) {
+    try {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      ticketIndex.remove({ id: path } as TicketEntry);
+    } catch {
+      // not in index
+    }
+    const tickets = buildTickets([path]);
+    const ticket = tickets[0];
+    if (ticket) {
+      try {
+        ticketIndex.add(ticket);
+      } catch (error: unknown) {
+        console.warn("Failed to add ticket to index:", error);
+      }
     }
   }
 }
 
 function removeFromIndex(path: string): void {
-  if (!index || !path.endsWith(".md")) {
+  if (!docIndex || !ticketIndex) {
     return;
   }
-  try {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    index.remove({ id: path } as DocEntry);
-  } catch {
-    // Document was not in the index; nothing to remove
+  if (path.endsWith(".md")) {
+    try {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      docIndex.remove({ id: path } as DocEntry);
+    } catch {
+      // not in index
+    }
+  } else if (path.endsWith(".yaml")) {
+    try {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      ticketIndex.remove({ id: path } as TicketEntry);
+    } catch {
+      // not in index
+    }
   }
 }
 
@@ -119,28 +216,57 @@ function buildSnippet(path: string, query: string): string {
   );
 }
 
-function searchDocs(query: string, limit = 20): SearchResult[] {
-  if (!index || !query.trim()) {
+function searchDocs(query: string, limit: number, mode: "docs" | "board"): SearchResult[] {
+  if (!docIndex || !ticketIndex || !query.trim()) {
     return [];
   }
-  const results = // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    (index.search(query) as unknown as (Record<string, unknown> & { score: number })[]).slice(
-      0,
-      limit,
-    );
-  return results.map((result) => ({
+  const result: SearchResult[] = [];
+  if (mode === "docs") {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    emoji: result.emoji as string | undefined,
+    const docResults = docIndex.search(query) as unknown as (Record<string, unknown> & {
+      score: number;
+    })[];
+    const limitedDocs = docResults.slice(0, limit);
+    for (const entry of limitedDocs) {
+      result.push({
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        emoji: entry.emoji as string | undefined,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        path: entry.path as string,
+        score: entry.score,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        snippet: buildSnippet(entry.path as string, query),
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        title: entry.title as string,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        type: (entry.type as FileType | undefined) ?? "doc",
+      });
+    }
+  } else {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    path: result.path as string,
-    score: result.score,
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    snippet: buildSnippet(result.path as string, query),
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    title: result.title as string,
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    type: (result.type as FileType | undefined) ?? "doc",
-  }));
+    const ticketResults = ticketIndex.search(query) as unknown as (Record<string, unknown> & {
+      score: number;
+    })[];
+    const limitedTickets = ticketResults.slice(0, limit);
+    for (const entry of limitedTickets) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const boardSlug = entry.boardSlug as string | undefined;
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const ticketId = entry.ticketId as string | undefined;
+      result.push({
+        boardSlug,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        path: entry.path as string,
+        score: entry.score,
+        snippet: "",
+        ticketId,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        title: entry.title as string,
+        type: "ticket" as const,
+      });
+    }
+  }
+  return result.toSorted((left, right) => right.score - left.score).slice(0, limit);
 }
 
 export { initSearch, rebuildIndex, updateInIndex, removeFromIndex, searchDocs };

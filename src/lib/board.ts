@@ -1,3 +1,6 @@
+import { dump } from "js-yaml";
+import { sortedObject } from "./utils";
+
 interface BoardColumn {
   color: string;
   default?: boolean;
@@ -17,6 +20,8 @@ interface TicketData {
   assignee?: string;
   /** The board this ticket belongs to. */
   boardSlug: string;
+  /** Emails of users who have bookmarked this ticket. */
+  bookmarks?: string[];
   column: string;
   /** ISO 8601 timestamp of creation. Set server-side, never changed. */
   createdAt?: string;
@@ -276,10 +281,16 @@ async function parseTicketYaml(
       )
     : undefined;
 
+  const rawBookmarks = obj.bookmarks;
+  const bookmarks: string[] | undefined = Array.isArray(rawBookmarks)
+    ? rawBookmarks.filter((bm): bm is string => typeof bm === "string" && bm !== "")
+    : undefined;
+
   return {
     approvals: approvals !== undefined && approvals.length > 0 ? approvals : undefined,
     assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
     boardSlug,
+    bookmarks: bookmarks !== undefined && bookmarks.length > 0 ? bookmarks : undefined,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
     comments: comments !== undefined && comments.length > 0 ? comments : undefined,
     createdAt:
@@ -300,6 +311,7 @@ function ticketToYaml(data: {
   approvals?: TicketApproval[];
   assignee?: string;
   body?: string;
+  bookmarks?: string[];
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
@@ -309,101 +321,81 @@ function ticketToYaml(data: {
   title: string;
   updatedAt?: string;
 }): string {
-  const lines: string[] = [
-    `title: ${JSON.stringify(data.title)}`,
-    `column: ${JSON.stringify(data.column)}`,
-  ];
-  if (data.createdAt !== undefined && data.createdAt !== "") {
-    lines.push(`createdAt: ${JSON.stringify(data.createdAt)}`);
-  }
-  if (data.updatedAt !== undefined && data.updatedAt !== "") {
-    lines.push(`updatedAt: ${JSON.stringify(data.updatedAt)}`);
-  }
-  if (data.reporter !== undefined && data.reporter !== "") {
-    lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
-  }
-  if (data.assignee !== undefined && data.assignee !== "") {
-    lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
-  }
-  if (data.golden === true) {
-    lines.push("golden: true");
-  }
-
-  // Serialize structured arrays as YAML
-  if (data.comments !== undefined && data.comments.length > 0) {
-    lines.push("comments:");
-    // oxlint-disable-next-line id-length
-    for (const comment of data.comments) {
-      lines.push(
-        `  - user: ${JSON.stringify(comment.user)}`,
-        `    timestamp: ${JSON.stringify(comment.timestamp)}`,
-      );
-      if (comment.message.includes("\n")) {
-        lines.push(`    message: |`);
-        for (const ml of comment.message.split("\n")) {
-          lines.push(`      ${ml}`);
-        }
-      } else {
-        lines.push(`    message: ${JSON.stringify(comment.message)}`);
-      }
-    }
-  }
+  const obj: Record<string, unknown> = {};
 
   if (data.approvals !== undefined && data.approvals.length > 0) {
-    lines.push("approvals:");
-    // oxlint-disable-next-line id-length
-    for (const approval of data.approvals) {
-      lines.push(
-        `  - user: ${JSON.stringify(approval.user)}`,
-        `    timestamp: ${JSON.stringify(approval.timestamp)}`,
-        `    hash: ${JSON.stringify(approval.hash)}`,
-      );
-      if (approval.status !== undefined) {
-        lines.push(`    status: ${approval.status}`);
-      }
-    }
+    obj.approvals = data.approvals.map((appr) => ({
+      hash: appr.hash,
+      status: appr.status,
+      timestamp: appr.timestamp,
+      user: appr.user,
+    }));
   }
 
-  if (data.timeline !== undefined && data.timeline.length > 0) {
-    lines.push("timeline:");
-    // oxlint-disable-next-line id-length
-    for (const entry of data.timeline) {
-      lines.push(
-        `  - type: ${entry.type}`,
-        `    timestamp: ${JSON.stringify(entry.timestamp)}`,
-        `    user: ${JSON.stringify(entry.user)}`,
-      );
-      if (entry.from !== undefined) {
-        lines.push(`    from: ${JSON.stringify(entry.from)}`);
-      }
-      if (entry.to !== undefined) {
-        lines.push(`    to: ${JSON.stringify(entry.to)}`);
-      }
-      if (entry.golden !== undefined) {
-        lines.push(`    golden: ${entry.golden ? "true" : "false"}`);
-      }
-    }
+  if (data.assignee !== undefined && data.assignee !== "") {
+    obj.assignee = data.assignee;
   }
 
   if (data.body !== undefined && data.body !== "") {
-    // Use literal block scalar for multi-line body
-    if (data.body.includes("\n")) {
-      lines.push(`body: |`);
-      for (const line of data.body.split("\n")) {
-        lines.push(`  ${line}`);
-      }
-    } else {
-      lines.push(`body: ${JSON.stringify(data.body)}`);
-    }
+    obj.body = data.body;
   }
-  lines.push("");
-  return lines.join("\n");
+
+  if (data.bookmarks !== undefined && data.bookmarks.length > 0) {
+    obj.bookmarks = data.bookmarks;
+  }
+
+  obj.column = data.column;
+
+  if (data.comments !== undefined && data.comments.length > 0) {
+    obj.comments = data.comments.map((cmt) => ({
+      message: cmt.message,
+      timestamp: cmt.timestamp,
+      user: cmt.user,
+    }));
+  }
+
+  if (data.createdAt !== undefined && data.createdAt !== "") {
+    obj.createdAt = data.createdAt;
+  }
+
+  if (data.golden === true) {
+    obj.golden = true;
+  }
+
+  if (data.reporter !== undefined && data.reporter !== "") {
+    obj.reporter = data.reporter;
+  }
+
+  if (data.timeline !== undefined && data.timeline.length > 0) {
+    obj.timeline = data.timeline.map((entry) => ({
+      from: entry.from,
+      golden: entry.golden,
+      timestamp: entry.timestamp,
+      to: entry.to,
+      type: entry.type,
+      user: entry.user,
+    }));
+  }
+
+  obj.title = data.title;
+
+  if (data.updatedAt !== undefined && data.updatedAt !== "") {
+    obj.updatedAt = data.updatedAt;
+  }
+
+  return dump(sortedObject(obj), {
+    forceQuotes: false,
+    lineWidth: -1,
+    noRefs: true,
+    sortKeys: false, // sortedObject handles key ordering
+  });
 }
 
 interface TicketYamlData {
   approvals?: TicketApproval[];
   assignee?: string;
   body?: string;
+  bookmarks?: string[];
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
@@ -456,6 +448,7 @@ async function patchTicketYaml(
     approvals: updates.approvals ?? existing.approvals,
     assignee: updates.assignee ?? existing.assignee,
     body: updates.body ?? (typeof parsed.body === "string" ? parsed.body : undefined),
+    bookmarks: updates.bookmarks ?? existing.bookmarks,
     column: updates.column ?? existing.column,
     comments: updates.comments ?? existing.comments,
     createdAt: existing.createdAt,

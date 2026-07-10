@@ -11,7 +11,7 @@ import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "
 import { sha256 } from "@noble/hashes/sha2.js";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -39,6 +39,7 @@ interface TicketDialogProps {
     assignee?: string;
     boardSlug: string;
     body: string;
+    bookmarks?: string[];
     column: string;
     golden?: boolean;
     reporter?: string;
@@ -74,6 +75,9 @@ function TicketDialog({
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [golden, setGolden] = useState(false);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [createdAt, setCreatedAt] = useState<string | undefined>();
+  const [updatedAt, setUpdatedAt] = useState<string | undefined>();
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
@@ -123,6 +127,9 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(ticket.golden ?? false);
+      setBookmarks(ticket.bookmarks ?? []);
+      setCreatedAt(undefined);
+      setUpdatedAt(undefined);
       setTimeline([]);
       setCommits([]);
       setEditing(false);
@@ -136,6 +143,9 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(false);
+      setBookmarks([]);
+      setCreatedAt(undefined);
+      setUpdatedAt(undefined);
       setTimeline([]);
       setCommits([]);
       setEditing(true);
@@ -146,68 +156,74 @@ function TicketDialog({
     prevOpenRef.current = false;
   }
 
-  // Reload ticket content when dialog opens in edit mode
-  useEffect(() => {
-    if (!open || !ticket) {
+  // Reload ticket content from server (used on open and after every save)
+  const loadTicketData = useCallback(async (): Promise<void> => {
+    if (!ticket) {
       return;
     }
-    const reload = async (): Promise<void> => {
-      try {
-        const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
-        const data = await parseTicketYaml(
-          resp.content,
-          ticket.boardSlug,
-          ticket.ticketId,
-          defaultColumnId,
+    try {
+      const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
+      const data = await parseTicketYaml(
+        resp.content,
+        ticket.boardSlug,
+        ticket.ticketId,
+        defaultColumnId,
+      );
+      setTitle(data.title);
+      setReporter(data.reporter ?? "");
+      setAssignee(data.assignee ?? "");
+      setComments(data.comments ?? []);
+      setBookmarks(data.bookmarks ?? []);
+      setCreatedAt(data.createdAt);
+      setUpdatedAt(data.updatedAt);
+      setTimeline(data.timeline ?? []);
+      // Parse body from raw YAML (TicketData doesn't carry body)
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const parsed = load(resp.content) as Record<string, unknown>;
+      const parsedBody = typeof parsed.body === "string" ? parsed.body : "";
+      setBody(parsedBody);
+
+      // Mark approvals as outdated if their hash doesn't match current content
+      const updatedApprovals = (data.approvals ?? []).map((appr) => {
+        const expectedHash = sha256(
+          new TextEncoder().encode(
+            `${appr.user.toLowerCase()}${data.id}${data.title}${parsedBody}`,
+          ),
         );
-        setTitle(data.title);
-        setReporter(data.reporter ?? "");
-        setAssignee(data.assignee ?? "");
-        setComments(data.comments ?? []);
-        setTimeline(data.timeline ?? []);
-        // Parse body from raw YAML (TicketData doesn't carry body)
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = load(resp.content) as Record<string, unknown>;
-        const parsedBody = typeof parsed.body === "string" ? parsed.body : "";
-        setBody(parsedBody);
-
-        // Mark approvals as outdated if their hash doesn't match current content
-        const updatedApprovals = (data.approvals ?? []).map((appr) => {
-          const expectedHash = sha256(
-            new TextEncoder().encode(
-              `${appr.user.toLowerCase()}${data.id}${data.title}${parsedBody}`,
-            ),
-          );
-          const expectedHex = [...expectedHash]
-            // oxlint-disable-next-line id-length
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-          if (appr.hash !== expectedHex) {
-            appr.outdated = true;
-            return appr;
-          }
+        const expectedHex = [...expectedHash]
+          // oxlint-disable-next-line id-length
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (appr.hash !== expectedHex) {
+          appr.outdated = true;
           return appr;
-        });
-        setApprovals(updatedApprovals);
-        setColumn(data.column);
-
-        // Fetch git history for Version Control tab
-        setCommitsLoading(true);
-        try {
-          const history = await getFileHistory(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
-          setCommits(history);
-        } catch {
-          setCommits([]);
-        } finally {
-          setCommitsLoading(false);
         }
+        return appr;
+      });
+      setApprovals(updatedApprovals);
+      setColumn(data.column);
+
+      // Fetch git history for Version Control tab
+      setCommitsLoading(true);
+      try {
+        const history = await getFileHistory(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
+        setCommits(history);
       } catch {
-        // keep current values
+        setCommits([]);
+      } finally {
+        setCommitsLoading(false);
       }
-    };
-    void reload();
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    } catch {
+      // keep current values
+    }
+  }, [ticket, defaultColumnId]);
+
+  // Reload on open
+  useEffect(() => {
+    if (open && ticket) {
+      void loadTicketData();
+    }
+  }, [open, ticket, loadTicketData]);
 
   const boardNames = [...boards.entries()].toSorted(([, nameA], [, nameB]) =>
     nameA.localeCompare(nameB),
@@ -216,6 +232,22 @@ function TicketDialog({
   const activeColumn = column === "" ? defaultColumnId : column;
   const columnColor = currentColumns.find((col) => col.id === activeColumn)?.color ?? "#6b7280";
   const showEditControls = editing || !isEdit;
+
+  const bookmarkDiff = useMemo(() => {
+    const ticketBookmarks = ticket?.bookmarks ?? [];
+    const changed =
+      isEdit &&
+      (bookmarks.length !== ticketBookmarks.length ||
+        !bookmarks.every((bm) => ticketBookmarks.includes(bm)));
+    const contentChanged =
+      isEdit &&
+      (title !== ticket?.title ||
+        body !== ticket?.body ||
+        column !== ticket?.column ||
+        golden !== (ticket?.golden ?? false) ||
+        assignee !== (ticket?.assignee ?? ""));
+    return { bookmarksChanged: changed, onlyBookmarksChanged: changed && !contentChanged };
+  }, [isEdit, bookmarks, ticket, title, body, column, golden, assignee]);
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
@@ -256,17 +288,21 @@ function TicketDialog({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
+          updatedAt: bookmarkDiff.onlyBookmarksChanged ? updatedAt : undefined,
         });
         setTimeline(updatedTimeline);
         await putFile(path, yaml);
         toast.success("Ticket saved");
         onSaved?.();
+        void loadTicketData();
         setEditing(false);
       } catch {
         toast.error("Failed to save ticket");
@@ -304,8 +340,10 @@ function TicketDialog({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
+        bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: comments.length > 0 ? comments : undefined,
+        createdAt,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
@@ -326,12 +364,16 @@ function TicketDialog({
     approvals,
     assignee,
     boardSlug,
+    bookmarks,
+    createdAt,
     title,
     body,
+    bookmarkDiff,
     column,
     comments,
     golden,
     isEdit,
+    loadTicketData,
     ticket,
     navigate,
     onCreated,
@@ -339,6 +381,7 @@ function TicketDialog({
     onSaved,
     reporter,
     timeline,
+    updatedAt,
   ]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
@@ -406,7 +449,8 @@ function TicketDialog({
       body !== ticket.body ||
       column !== ticket.column ||
       golden !== (ticket.golden ?? false) ||
-      assignee !== (ticket.assignee ?? ""));
+      assignee !== (ticket.assignee ?? "") ||
+      bookmarkDiff.bookmarksChanged);
 
   const [commentBody, setCommentBody] = useState("");
 
@@ -430,8 +474,10 @@ function TicketDialog({
         approvals: approvals.length > 0 ? approvals : undefined,
         assignee: assignee.trim() || undefined,
         body: body.trim(),
+        bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
         column,
         comments: updatedComments,
+        createdAt,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
         timeline: timeline.length > 0 ? timeline : undefined,
@@ -439,6 +485,7 @@ function TicketDialog({
       });
       await putFile(path, yaml);
       toast.success("Comment added");
+      void loadTicketData();
     } catch {
       toast.error("Failed to add comment");
       // Roll back on failure
@@ -452,11 +499,13 @@ function TicketDialog({
     approvals,
     assignee,
     body,
+    bookmarks,
     column,
     golden,
     reporter,
     timeline,
     title,
+    loadTicketData,
   ]);
 
   const handleCommentEdit = useCallback(
@@ -475,8 +524,10 @@ function TicketDialog({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: updatedComments,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
@@ -484,12 +535,26 @@ function TicketDialog({
         });
         await putFile(path, yaml);
         toast.success("Comment updated");
+        void loadTicketData();
       } catch {
         toast.error("Failed to update comment");
         setComments(comments);
       }
     },
-    [ticket, comments, approvals, assignee, body, column, golden, reporter, timeline, title],
+    [
+      ticket,
+      comments,
+      approvals,
+      assignee,
+      body,
+      bookmarks,
+      column,
+      golden,
+      loadTicketData,
+      reporter,
+      timeline,
+      title,
+    ],
   );
 
   const handleApproval = useCallback(
@@ -518,8 +583,10 @@ function TicketDialog({
           approvals: updatedApprovals,
           assignee: assignee.trim() || undefined,
           body: body.trim(),
+          bookmarks: bookmarks.length > 0 ? bookmarks : undefined,
           column,
           comments: comments.length > 0 ? comments : undefined,
+          createdAt,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
           timeline: timeline.length > 0 ? timeline : undefined,
@@ -527,12 +594,27 @@ function TicketDialog({
         });
         await putFile(path, yaml);
         toast.success(status === "approved" ? "Approved" : "Rejected");
+        void loadTicketData();
       } catch {
         toast.error("Failed to record approval");
         setApprovals(approvals);
       }
     },
-    [ticket, user, approvals, assignee, body, column, comments, golden, reporter, timeline, title],
+    [
+      ticket,
+      user,
+      approvals,
+      assignee,
+      body,
+      bookmarks,
+      column,
+      comments,
+      golden,
+      loadTicketData,
+      reporter,
+      timeline,
+      title,
+    ],
   );
   const handleCommentKeyDown = useCallback(
     (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -850,6 +932,13 @@ function TicketDialog({
               golden={golden}
               onGoldenToggle={() => {
                 setGolden(!golden);
+              }}
+              bookmarked={bookmarks.includes(user?.email ?? user?.name ?? "")}
+              onBookmarkToggle={() => {
+                const email = user?.email ?? user?.name ?? "";
+                setBookmarks((prev) =>
+                  prev.includes(email) ? prev.filter((entry) => entry !== email) : [...prev, email],
+                );
               }}
             />
           </div>

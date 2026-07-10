@@ -42,5 +42,29 @@ function relativeTime(iso?: string): string {
 
 /** Merge classes with Tailwind conflict resolution via clsx + twMerge. */
 const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
-export { relativeTime };
+
+/**
+ * Proxy that intercepts `ownKeys` so JSON.stringify / js-yaml dump / etc.
+ * always emit object keys in alphabetical order, without mutating the original.
+ * Recursively wraps nested plain objects too.
+ */
+function sortedObject<TType extends object | null | undefined>(value: TType): TType {
+  // oxlint-disable-next-line typescript/no-unnecessary-condition
+  if (value === undefined || value === null || Array.isArray(value)) {
+    return value;
+  }
+  return new Proxy(value, {
+    get: (target, prop) => {
+      const val = Reflect.get(target, prop) as unknown;
+      if (typeof val === "object" && val !== null && !Array.isArray(val)) {
+        return sortedObject(val);
+      }
+      return val;
+    },
+    ownKeys: (target) =>
+      Reflect.ownKeys(target).toSorted((left, right) => String(left).localeCompare(String(right))),
+  }) as TType;
+}
+
+export { relativeTime, sortedObject };
 export default cn;

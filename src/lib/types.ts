@@ -10,12 +10,14 @@ type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType =
   | MarkdownType
   | "board"
+  | "bookmark"
   | "code"
   | "edit"
   | "golden"
   | "image"
   | "other"
   | "status"
+  | "ticket"
   | "approve"
   | "reject"
   | "outdated";
@@ -42,6 +44,9 @@ interface SearchResult {
   type?: FileType;
   snippet: string;
   score: number;
+  /** Set for ticket results -- navigates to /b/:slug/:ticketId instead of /p/path. */
+  boardSlug?: string;
+  ticketId?: string;
 }
 
 interface PresenceUser {
