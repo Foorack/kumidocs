@@ -119,8 +119,9 @@ function renderTimelineItem(
                   onStartEdit?.(item.dataIndex);
                 }}
                 title="Edit comment"
+                style={{ lineHeight: 0 }}
               >
-                <EmojiIcon fileType="edit" size={16} />
+                <EmojiIcon fileType="edit" size={24} />
               </button>
             )}
           </div>
