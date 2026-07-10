@@ -44,7 +44,6 @@ function CardContent({
                 name={emailToDisplayName(ticket.reporter)}
                 email={ticket.reporter}
                 size="md"
-                outline={false}
               />
             </div>
           ) : (
@@ -84,7 +83,6 @@ function CardContent({
                 name={emailToDisplayName(ticket.assignee)}
                 email={ticket.assignee}
                 size="md"
-                outline={false}
               />
             </div>
           ) : (

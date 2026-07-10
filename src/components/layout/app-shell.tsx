@@ -1,7 +1,8 @@
 import type { PresenceUser, SyncStatus, TreeNode } from "@/lib/types";
 import { getTree } from "@/lib/api";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWsConnectionState, useWsListener, wsClient } from "@/store/ws";
+import { setActiveUsers } from "@/store/active-users";
 import { Button } from "@/components/ui/button";
 import NewPageDialog from "@/components/dialogs/new-page-dialog";
 import { Outlet } from "react-router-dom";
@@ -127,6 +128,17 @@ export default function AppShell(): JSX.Element {
       void refreshUser();
     }
   });
+
+  // Derive the global set of active user emails from per-page presence
+  useEffect(() => {
+    const allEmails = new Set<string>();
+    for (const users of presenceByPage.values()) {
+      for (const u of users) {
+        allEmails.add(u.email);
+      }
+    }
+    setActiveUsers(allEmails);
+  }, [presenceByPage]);
 
   // Ctrl+K shortcut
   useMountEffect(() => {

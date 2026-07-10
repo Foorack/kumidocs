@@ -135,12 +135,7 @@ function renderTimelineItem(
       return (
         <div className="flex items-center gap-2 py-1">
           <EmojiIcon fileType="status" size={24} />
-          <UserAvatar
-            name={emailToDisplayName(entry.user)}
-            email={entry.user}
-            outline={false}
-            size="sm"
-          />
+          <UserAvatar name={emailToDisplayName(entry.user)} email={entry.user} size="sm" />
           <span className="text-sm text-foreground flex items-center gap-2">
             <span className="font-bold">{entry.user}</span>
             {" moved from "}
@@ -169,12 +164,7 @@ function renderTimelineItem(
       return (
         <div className="flex items-center gap-2 py-1">
           <EmojiIcon fileType="golden" size={24} />
-          <UserAvatar
-            name={emailToDisplayName(entry.user)}
-            email={entry.user}
-            outline={false}
-            size="sm"
-          />
+          <UserAvatar name={emailToDisplayName(entry.user)} email={entry.user} size="sm" />
           <span className="text-sm text-foreground flex items-center gap-2">
             <span className="font-bold">{entry.user}</span>
             {isNowGolden ? (
@@ -202,12 +192,7 @@ function renderTimelineItem(
       return (
         <div className="flex items-center gap-2 py-1">
           <EmojiIcon fileType={approvalFileType(appr)} size={24} />
-          <UserAvatar
-            name={emailToDisplayName(appr.user)}
-            email={appr.user}
-            outline={false}
-            size="sm"
-          />
+          <UserAvatar name={emailToDisplayName(appr.user)} email={appr.user} size="sm" />
           <span className="text-sm text-foreground flex items-center gap-2">
             <span className="font-bold">{appr.user}</span>
             {isRejected ? (

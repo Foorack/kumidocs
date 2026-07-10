@@ -5,6 +5,7 @@ import cn from "@/lib/utils";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useActiveUsers } from "@/store/active-users";
 
 type AvatarSize = "xxs" | "xs" | "sm" | "md" | "lg";
 
@@ -24,8 +25,6 @@ interface UserAvatarProps extends ComponentProps<typeof AvatarPrimitive.Root> {
   /** User email; Gravatar SHA-256 hash is computed internally. */
   email?: string;
   size?: AvatarSize;
-  /** Whether to show a colored outline ring around the avatar. Default true. */
-  outline?: boolean;
   /** When true, the hover tooltip shows "You" instead of the name. */
   isCurrentUser?: boolean;
 }
@@ -47,15 +46,8 @@ const sha256hex = (input: string): string => {
  *   <UserAvatar name={user.displayName} email={user.email} />
  */
 const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
-  const {
-    name,
-    email,
-    size = "md",
-    outline = true,
-    isCurrentUser = false,
-    className,
-    ...rest
-  } = allProps;
+  const { name, email, size = "md", isCurrentUser = false, className, ...rest } = allProps;
+  const activeUsers = useActiveUsers();
   const { circle, text } = sizeMap[size];
   const displayInitials = avatarInitials(name);
   const color = avatarColor(name);
@@ -69,6 +61,8 @@ const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
     return sha256hex(email);
   }, [email]);
 
+  const isActive = email !== undefined && email !== "" && activeUsers.has(email);
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -79,7 +73,7 @@ const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
             circle,
             className,
           )}
-          style={outline ? { outline: `2px solid ${color}`, outlineOffset: "1px" } : undefined}
+          style={isActive ? { outline: `2px solid ${color}`, outlineOffset: "1px" } : undefined}
         >
           {gravatarHash !== undefined && gravatarHash !== "" && (
             <AvatarPrimitive.Image

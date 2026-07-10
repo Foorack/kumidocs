@@ -46,12 +46,7 @@ export default function ApprovalTab({
             return (
               <div key={idx} className="flex items-center gap-2 py-1">
                 <EmojiIcon fileType={ft} size={24} />
-                <UserAvatar
-                  name={emailToDisplayName(appr.user)}
-                  email={appr.user}
-                  size="xs"
-                  outline={false}
-                />
+                <UserAvatar name={emailToDisplayName(appr.user)} email={appr.user} size="xs" />
                 <span className="font-bold text-sm">{appr.user}</span>
                 {isRejected ? (
                   <span className="text-destructive text-sm font-bold">rejected</span>
