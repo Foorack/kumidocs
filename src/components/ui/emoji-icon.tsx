@@ -19,6 +19,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
   status: "Diversity24Color",
+  ticket: "Board24Color",
 };
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";

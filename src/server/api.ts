@@ -35,10 +35,11 @@ function apiTree(): Response {
   return Response.json(buildFileTree());
 }
 
-// GET /api/search?q=<query>
+// GET /api/search?q=<query>&mode=<docs|board>
 function apiSearch(url: URL): Response {
   const query = url.searchParams.get("q") ?? "";
-  return Response.json(searchDocs(query));
+  const mode = url.searchParams.get("mode") ?? undefined;
+  return Response.json(searchDocs(query, 20, mode));
 }
 
 // Helper: eagerly read + gzip a text file at module init, serve from cache.
