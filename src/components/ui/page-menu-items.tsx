@@ -19,6 +19,7 @@ interface PageMenuItemsProps {
   onExportPdf?: () => void;
   onMove?: (path: string) => void;
   onDelete?: (path: string, title: string) => void;
+  canEdit?: boolean;
 }
 
 interface CreateSectionProps {
@@ -134,6 +135,7 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
     onExportPdf,
     onMove,
     onDelete,
+    canEdit = true,
   } = allProps;
   let Item: typeof DropdownMenuItem = DropdownMenuItem;
   if (variant !== "dropdown") {
@@ -171,7 +173,7 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
 
   return (
     <>
-      {showCreateGroup && (
+      {canEdit && showCreateGroup && (
         <CreateSection
           variant={variant}
           path={path}
@@ -214,7 +216,7 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
           Export as PDF
         </Item>
       )}
-      {showDangerousGroup && (
+      {canEdit && showDangerousGroup && (
         <DangerousSection
           variant={variant}
           path={path}

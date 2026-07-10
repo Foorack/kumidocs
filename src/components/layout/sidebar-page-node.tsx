@@ -267,6 +267,7 @@ function PageNodeRow({
                   displayTitle={node.displayTitle}
                   isVirtual={node.isVirtual}
                   parentDir={parentDir}
+                  canEdit={currentUser?.canEdit ?? false}
                   onNewSubPage={onNewSubPage}
                   onNewPage={onNewSubPage}
                   onDuplicate={() => {
@@ -288,6 +289,7 @@ function PageNodeRow({
             displayTitle={node.displayTitle}
             isVirtual={node.isVirtual}
             parentDir={parentDir}
+            canEdit={currentUser?.canEdit ?? false}
             onNewSubPage={onNewSubPage}
             onNewPage={onNewSubPage}
             onDuplicate={() => {

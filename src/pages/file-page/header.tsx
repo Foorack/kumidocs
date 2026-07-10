@@ -274,6 +274,7 @@ function FilePageHeader({
                 href={`/p/${rawPath}`}
                 path={filePath}
                 displayTitle={title}
+                canEdit={user?.canEdit ?? false}
                 onDuplicate={handlePageDuplicate}
                 onCopyHtml={onCopyHtml}
                 onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
