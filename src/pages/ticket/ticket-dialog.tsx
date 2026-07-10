@@ -156,71 +156,74 @@ function TicketDialog({
     prevOpenRef.current = false;
   }
 
-  // Reload ticket content when dialog opens in edit mode
-  useEffect(() => {
-    if (!open || !ticket) {
+  // Reload ticket content from server (used on open and after every save)
+  const loadTicketData = useCallback(async (): Promise<void> => {
+    if (!ticket) {
       return;
     }
-    const reload = async (): Promise<void> => {
-      try {
-        const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
-        const data = await parseTicketYaml(
-          resp.content,
-          ticket.boardSlug,
-          ticket.ticketId,
-          defaultColumnId,
+    try {
+      const resp = await getFile(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
+      const data = await parseTicketYaml(
+        resp.content,
+        ticket.boardSlug,
+        ticket.ticketId,
+        defaultColumnId,
+      );
+      setTitle(data.title);
+      setReporter(data.reporter ?? "");
+      setAssignee(data.assignee ?? "");
+      setComments(data.comments ?? []);
+      setBookmarks(data.bookmarks ?? []);
+      setCreatedAt(data.createdAt);
+      setUpdatedAt(data.updatedAt);
+      setTimeline(data.timeline ?? []);
+      // Parse body from raw YAML (TicketData doesn't carry body)
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      const parsed = load(resp.content) as Record<string, unknown>;
+      const parsedBody = typeof parsed.body === "string" ? parsed.body : "";
+      setBody(parsedBody);
+
+      // Mark approvals as outdated if their hash doesn't match current content
+      const updatedApprovals = (data.approvals ?? []).map((appr) => {
+        const expectedHash = sha256(
+          new TextEncoder().encode(
+            `${appr.user.toLowerCase()}${data.id}${data.title}${parsedBody}`,
+          ),
         );
-        setTitle(data.title);
-        setReporter(data.reporter ?? "");
-        setAssignee(data.assignee ?? "");
-        setComments(data.comments ?? []);
-        setBookmarks(data.bookmarks ?? []);
-        setCreatedAt(data.createdAt);
-        setUpdatedAt(data.updatedAt);
-        setTimeline(data.timeline ?? []);
-        // Parse body from raw YAML (TicketData doesn't carry body)
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const parsed = load(resp.content) as Record<string, unknown>;
-        const parsedBody = typeof parsed.body === "string" ? parsed.body : "";
-        setBody(parsedBody);
-
-        // Mark approvals as outdated if their hash doesn't match current content
-        const updatedApprovals = (data.approvals ?? []).map((appr) => {
-          const expectedHash = sha256(
-            new TextEncoder().encode(
-              `${appr.user.toLowerCase()}${data.id}${data.title}${parsedBody}`,
-            ),
-          );
-          const expectedHex = [...expectedHash]
-            // oxlint-disable-next-line id-length
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-          if (appr.hash !== expectedHex) {
-            appr.outdated = true;
-            return appr;
-          }
+        const expectedHex = [...expectedHash]
+          // oxlint-disable-next-line id-length
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (appr.hash !== expectedHex) {
+          appr.outdated = true;
           return appr;
-        });
-        setApprovals(updatedApprovals);
-        setColumn(data.column);
-
-        // Fetch git history for Version Control tab
-        setCommitsLoading(true);
-        try {
-          const history = await getFileHistory(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
-          setCommits(history);
-        } catch {
-          setCommits([]);
-        } finally {
-          setCommitsLoading(false);
         }
+        return appr;
+      });
+      setApprovals(updatedApprovals);
+      setColumn(data.column);
+
+      // Fetch git history for Version Control tab
+      setCommitsLoading(true);
+      try {
+        const history = await getFileHistory(`${ticket.boardSlug}/${ticket.ticketId}.yaml`);
+        setCommits(history);
       } catch {
-        // keep current values
+        setCommits([]);
+      } finally {
+        setCommitsLoading(false);
       }
-    };
-    void reload();
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    } catch {
+      // keep current values
+    }
+  }, [ticket, defaultColumnId]);
+
+  // Reload on open
+  useEffect(() => {
+    if (open && ticket) {
+      void loadTicketData();
+    }
+  }, [open, ticket, loadTicketData]);
 
   const boardNames = [...boards.entries()].toSorted(([, nameA], [, nameB]) =>
     nameA.localeCompare(nameB),
@@ -283,6 +286,7 @@ function TicketDialog({
         await putFile(path, yaml);
         toast.success("Ticket saved");
         onSaved?.();
+        void loadTicketData();
         setEditing(false);
       } catch {
         toast.error("Failed to save ticket");
@@ -353,6 +357,7 @@ function TicketDialog({
     comments,
     golden,
     isEdit,
+    loadTicketData,
     ticket,
     navigate,
     onCreated,
@@ -470,6 +475,7 @@ function TicketDialog({
       });
       await putFile(path, yaml);
       toast.success("Comment added");
+      void loadTicketData();
     } catch {
       toast.error("Failed to add comment");
       // Roll back on failure
@@ -489,6 +495,7 @@ function TicketDialog({
     reporter,
     timeline,
     title,
+    loadTicketData,
   ]);
 
   const handleCommentEdit = useCallback(
@@ -519,6 +526,7 @@ function TicketDialog({
         });
         await putFile(path, yaml);
         toast.success("Comment updated");
+        void loadTicketData();
       } catch {
         toast.error("Failed to update comment");
         setComments(comments);
@@ -533,6 +541,7 @@ function TicketDialog({
       bookmarks,
       column,
       golden,
+      loadTicketData,
       reporter,
       timeline,
       title,
@@ -577,6 +586,7 @@ function TicketDialog({
         });
         await putFile(path, yaml);
         toast.success(status === "approved" ? "Approved" : "Rejected");
+        void loadTicketData();
       } catch {
         toast.error("Failed to record approval");
         setApprovals(approvals);
@@ -592,6 +602,7 @@ function TicketDialog({
       column,
       comments,
       golden,
+      loadTicketData,
       reporter,
       timeline,
       title,

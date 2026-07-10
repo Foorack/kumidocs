@@ -318,26 +318,42 @@ function ticketToYaml(data: {
   title: string;
   updatedAt?: string;
 }): string {
-  const lines: string[] = [
-    `title: ${JSON.stringify(data.title)}`,
-    `column: ${JSON.stringify(data.column)}`,
-  ];
-  if (data.createdAt !== undefined && data.createdAt !== "") {
-    lines.push(`createdAt: ${JSON.stringify(data.createdAt)}`);
+  const lines: string[] = [];
+
+  // approvals
+  if (data.approvals !== undefined && data.approvals.length > 0) {
+    lines.push("approvals:");
+    // oxlint-disable-next-line id-length
+    for (const approval of data.approvals) {
+      lines.push(
+        `  - user: ${JSON.stringify(approval.user)}`,
+        `    timestamp: ${JSON.stringify(approval.timestamp)}`,
+        `    hash: ${JSON.stringify(approval.hash)}`,
+      );
+      if (approval.status !== undefined) {
+        lines.push(`    status: ${approval.status}`);
+      }
+    }
   }
-  if (data.updatedAt !== undefined && data.updatedAt !== "") {
-    lines.push(`updatedAt: ${JSON.stringify(data.updatedAt)}`);
-  }
-  if (data.reporter !== undefined && data.reporter !== "") {
-    lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
-  }
+
+  // assignee
   if (data.assignee !== undefined && data.assignee !== "") {
     lines.push(`assignee: ${JSON.stringify(data.assignee)}`);
   }
-  if (data.golden === true) {
-    lines.push("golden: true");
+
+  // body
+  if (data.body !== undefined && data.body !== "") {
+    if (data.body.includes("\n")) {
+      lines.push(`body: |`);
+      for (const line of data.body.split("\n")) {
+        lines.push(`  ${line}`);
+      }
+    } else {
+      lines.push(`body: ${JSON.stringify(data.body)}`);
+    }
   }
 
+  // bookmarks
   if (data.bookmarks !== undefined && data.bookmarks.length > 0) {
     lines.push("bookmarks:");
     for (const email of data.bookmarks) {
@@ -345,7 +361,10 @@ function ticketToYaml(data: {
     }
   }
 
-  // Serialize structured arrays as YAML
+  // column
+  lines.push(`column: ${JSON.stringify(data.column)}`);
+
+  // comments
   if (data.comments !== undefined && data.comments.length > 0) {
     lines.push("comments:");
     // oxlint-disable-next-line id-length
@@ -365,21 +384,22 @@ function ticketToYaml(data: {
     }
   }
 
-  if (data.approvals !== undefined && data.approvals.length > 0) {
-    lines.push("approvals:");
-    // oxlint-disable-next-line id-length
-    for (const approval of data.approvals) {
-      lines.push(
-        `  - user: ${JSON.stringify(approval.user)}`,
-        `    timestamp: ${JSON.stringify(approval.timestamp)}`,
-        `    hash: ${JSON.stringify(approval.hash)}`,
-      );
-      if (approval.status !== undefined) {
-        lines.push(`    status: ${approval.status}`);
-      }
-    }
+  // createdAt
+  if (data.createdAt !== undefined && data.createdAt !== "") {
+    lines.push(`createdAt: ${JSON.stringify(data.createdAt)}`);
   }
 
+  // golden
+  if (data.golden === true) {
+    lines.push("golden: true");
+  }
+
+  // reporter
+  if (data.reporter !== undefined && data.reporter !== "") {
+    lines.push(`reporter: ${JSON.stringify(data.reporter)}`);
+  }
+
+  // timeline
   if (data.timeline !== undefined && data.timeline.length > 0) {
     lines.push("timeline:");
     // oxlint-disable-next-line id-length
@@ -401,17 +421,14 @@ function ticketToYaml(data: {
     }
   }
 
-  if (data.body !== undefined && data.body !== "") {
-    // Use literal block scalar for multi-line body
-    if (data.body.includes("\n")) {
-      lines.push(`body: |`);
-      for (const line of data.body.split("\n")) {
-        lines.push(`  ${line}`);
-      }
-    } else {
-      lines.push(`body: ${JSON.stringify(data.body)}`);
-    }
+  // title
+  lines.push(`title: ${JSON.stringify(data.title)}`);
+
+  // updatedAt
+  if (data.updatedAt !== undefined && data.updatedAt !== "") {
+    lines.push(`updatedAt: ${JSON.stringify(data.updatedAt)}`);
   }
+
   lines.push("");
   return lines.join("\n");
 }
