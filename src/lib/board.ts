@@ -280,16 +280,14 @@ async function parseTicketYaml(
 
   const rawBookmarks = obj.bookmarks;
   const bookmarks: string[] | undefined = Array.isArray(rawBookmarks)
-    ? rawBookmarks.filter(
-        (bm): bm is string => typeof bm === "string" && bm !== "",
-      )
+    ? rawBookmarks.filter((bm): bm is string => typeof bm === "string" && bm !== "")
     : undefined;
 
   return {
     approvals: approvals !== undefined && approvals.length > 0 ? approvals : undefined,
     assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
-    bookmarks: bookmarks !== undefined && bookmarks.length > 0 ? bookmarks : undefined,
     boardSlug,
+    bookmarks: bookmarks !== undefined && bookmarks.length > 0 ? bookmarks : undefined,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
     comments: comments !== undefined && comments.length > 0 ? comments : undefined,
     createdAt:
