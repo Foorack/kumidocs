@@ -18,6 +18,7 @@ import PageInfoPanel from "@/components/layout/page-info-panel";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
+import { useWsListener } from "@/store/ws";
 import type { JSX } from "react";
 import BoardColumnView from "./column";
 import BoardOverlay from "./board-overlay";
@@ -213,6 +214,23 @@ function BoardPage(): JSX.Element {
   const handleDialogChange = useCallback((): void => {
     void reloadTickets();
   }, [reloadTickets]);
+
+  // Reload tickets when another user saves a ticket file in this board
+  useWsListener(
+    useCallback(
+      (msg) => {
+        if (
+          msg.type === "page_changed" &&
+          msg.changedBy !== user?.id &&
+          msg.pageId.startsWith(`${boardSlug}/`) &&
+          msg.pageId.endsWith(".yaml")
+        ) {
+          void reloadTickets();
+        }
+      },
+      [boardSlug, user?.id, reloadTickets],
+    ),
+  );
 
   const boardDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
 
