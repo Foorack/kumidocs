@@ -353,21 +353,152 @@ All headings/body: `color: inherit`. Prose forced to `var(--slide-fg)` on canvas
 
 ---
 
-## 12. Search
+## 12. Boards & Tickets
+
+Kanban-style project boards. Zero database: each board is a YAML config file, each ticket is a numbered YAML file in a subdirectory. Uses the same git-based storage as wiki pages.
+
+### 12.1 Board Config
+
+Each board is defined by a `{slug}.yaml` file in the repo root:
+
+```yaml
+name: Party Planning
+prefix: PARTY
+icon: "🎉"
+columns:
+  - id: backlog
+    color: "#6b7280"
+  - id: in-progress
+    color: "#3b82f6"
+    default: true
+  - id: review
+    color: "#f59e0b"
+  - id: done
+    color: "#22c55e"
+    final: true
+```
+
+- **slug**: filename without `.yaml`, used in routes (`/b/{slug}`)
+- **prefix**: short code prepended to ticket IDs (e.g. `PARTY-42`)
+- **columns**: ordered status columns; one must be `default: true`; `final` columns prevent drag-out
+- Tickets are stored as `{slug}/{id}.yaml` where `id` is an auto-incremented number
+
+### 12.2 Ticket Format
+
+```yaml
+title: "Fix login bug"
+column: in-progress
+reporter: "alice@example.com"
+assignee: "bob@example.com"
+createdAt: "2026-07-10T12:00:00.000Z"
+updatedAt: "2026-07-10T14:30:00.000Z"
+comments:
+  - user: "bob@example.com"
+    timestamp: "2026-07-10T13:00:00.000Z"
+    message: "Looking into this"
+approvals:
+  - user: "carol@example.com"
+    timestamp: "2026-07-10T14:00:00.000Z"
+    hash: "abc123..."
+    status: approved
+statusHistory:
+  - from: maybe
+    to: in-progress
+    timestamp: "2026-07-10T12:30:00.000Z"
+    user: "alice@example.com"
+body: |
+  ## Steps to reproduce
+  1. Open settings
+  2. Click save
+  3. Crash
+```
+
+- `reporter`: auto-set to the creator's email on ticket creation
+- `assignee`: free-text email field, editable inline
+- `createdAt`/`updatedAt`: ISO 8601 timestamps, injected server-side via `injectTicketTimestamps()` to avoid client clock skew
+- `comments`: threaded Markdown comments, chronologically ordered
+- `approvals`: signed approvals with SHA-256 content hash for staleness detection
+- `statusHistory`: automatic entries on every column move (drag or dialog save)
+- `body`: Markdown description, edited via MarkdownToolbar + textarea
+
+### 12.3 Routes
+
+| Path                 | Component          | Purpose                            |
+| -------------------- | ------------------ | ---------------------------------- |
+| `/b`                 | `BoardListPage`    | List all boards from the repo      |
+| `/bm`                | `BoardManagerPage` | Create / manage board configs      |
+| `/bm/:name`          | `BoardDetailPage`  | Edit a specific board's YAML       |
+| `/b/:name`           | `BoardPage`        | Kanban board view                  |
+| `/b/:name/:ticketId` | `BoardPage`        | Board view with ticket dialog open |
+
+### 12.4 Kanban Board View (`BoardPage`)
+
+- **Columns**: horizontal scrollable kanban, one droppable zone per column
+- **Cards** (`TicketCard`): draggable via `@dnd-kit/core`. Show prefix-ID badge, title, reporter/assignee avatars, relative timestamps
+- **Drag**: move between columns with 5px activation distance (prevents accidental drag on click). Adds `StatusEntry` to `statusHistory` automatically
+- **Deep linking**: navigating to `/b/{slug}/{id}` opens the ticket dialog directly. Card clicks update the URL via SPA navigation; closing the dialog navigates back to the board root
+- **Presence**: board page uses the same WebSocket presence system as wiki pages, showing viewer avatars in the header
+
+### 12.5 Ticket Dialog (`TicketDialog`)
+
+Opens as a full-size dialog with three tabs:
+
+#### 12.5.1 Header
+
+Colored bar matching the ticket's current column color. Shows board name, ticket number (with copy button), Close/Edit/Save buttons. Edit mode enables title, body, assignee editing and shows the approval/activity tabs.
+
+#### 12.5.2 Activity Tab
+
+Chronological timeline mixing three event types:
+
+- **Comments**: bordered card with avatar, email, relative timestamp, Markdown body
+- **Status changes**: inline "moved from X to Y" with colored column badges and a left-bar indent
+- **Approvals**: icon (Checkmark / Dismiss / Error) + email + status label + relative timestamp. Shows "(outdated)" suffix when the content hash no longer matches
+
+#### 12.5.3 Approval Tab
+
+Shows the latest approval per user (deduplicated). Approve/Reject buttons are only visible in view mode (hidden in edit mode). Buttons are disabled if the current user's latest approval already matches that action, unless it's marked outdated. Approval actions do not require entering edit mode.
+
+#### 12.5.4 Version Control Tab
+
+Git commit history for the ticket file with author, message, added/removed line counts. Click any commit to open a diff dialog.
+
+#### 12.5.5 Status Sidebar
+
+Right-side column picker showing all available statuses with colored dots. In view mode only the active column is shown; in edit mode all columns are selectable.
+
+### 12.6 Approval System
+
+- **Hash**: `SHA-256(lower(userEmail) + ticketId + title + body)` computed client-side at approval time
+- **Staleness**: when the dialog opens, each approval's hash is compared against the current content hash. Mismatches mark the approval as `outdated: true`
+- **Old approvals**: approvals saved before hash support (empty hash) are also detected as outdated
+- **Outdated display**: amber "approved (outdated)" for approvals, red "rejected (outdated)" for rejections. Both buttons are re-enabled for outdated entries
+
+### 12.7 Architecture
+
+- **Board YAML** (`{slug}.yaml`): parsed by `yamlToBoard()`, serialized by `boardToYaml()`
+- **Ticket YAML** (`{slug}/{id}.yaml`): parsed by `parseTicketYaml()`, serialized by `ticketToYaml()`
+- **Central update functions**: `serializeTicket()` for full-state writes, `patchTicketYaml()` for partial updates (e.g. drag). Both in `src/lib/board.ts`
+- **Server timestamp injection**: `injectTicketTimestamps()` in `src/server/api-file.ts` guards on `{board}/{id}.yaml` pattern, manages `createdAt`/`updatedAt` without client input
+- **All operations** go through the generic `/api/file` endpoints (GET/PUT/POST) — no board-specific API routes
+
+---
+
+## 13. Search
 
 MiniSearch, server-side index. Fields: `title`, `path`, `content` (md stripped). Updated after every commit. `GET /api/search?q=` → `[{path, title, emoji, snippet, score}]`. Ctrl+K palette.
 
 ---
 
-## 13. UI
+## 14. UI
 
-### 13.1 Emoji Rendering Rule
+### 14.1 Emoji Rendering Rule
 
 > **NEVER render emoji as raw text/`<span>`. ALWAYS use `<EmojiIcon emoji="..." size={N} />`.**
 
-`EmojiIcon` (`src/components/ui/EmojiIcon.tsx`): `emoji` prop → `@lobehub/fluent-emoji`; `fileType` prop → Fluent Color system icon; `icon` prop → raw Fluent icon.
+`EmojiIcon` (`src/components/ui/emoji-icon.tsx`): `emoji` prop → `@lobehub/fluent-emoji`; `fileType` prop → Fluent Color system icon; `icon` prop → raw Fluent icon.
 
-### 13.2 Layout
+### 14.2 Layout
 
 Slim top bar (Logo, Search Ctrl+K, User avatar) + left sidebar + main content. Page header: emoji + title, Edit/Done button, `···` overflow menu, viewer `AvatarGroup`. Page footer: `Last saved: <N>s ago · <SHA>`.
 
@@ -376,11 +507,11 @@ Slim top bar (Logo, Search Ctrl+K, User avatar) + left sidebar + main content. P
 - Open in new tab / Copy link / Export as PDF (doc view mode only) / Move / Delete
 - New subpage, New alongside, Duplicate: shown only in sidebar menus (not FilePage header)
 
-### 13.3 Dark Mode
+### 14.3 Dark Mode
 
 Browser `prefers-color-scheme` default. Toggle in top bar; preference in `localStorage`. Tailwind `dark:` for app shell. Slide canvases use `.dark`/`.light` stamping (independent of site mode). Global CSS: `button { cursor: pointer }` in `@layer base`.
 
-### 13.4 Other UI
+### 14.4 Other UI
 
 - Breadcrumbs: derived from file path, above title.
 - Not found → "Create this page?" prompt pre-filled from URL.
@@ -389,7 +520,7 @@ Browser `prefers-color-scheme` default. Toggle in top bar; preference in `localS
 
 ---
 
-## 14. API Surface
+## 15. API Surface
 
 All routes require valid auth header.
 
@@ -407,12 +538,14 @@ DELETE /api/images/:filename     → delete (editors; 409 if referenced)
 GET    /images/:filename         → serve image (Cache-Control: immutable)
 GET    /api/avatar/:sha256hash   → proxy Gravatar
 GET    /api/search?q=            → search results
+GET    /api/file/history?path=   → git log for a file
+GET    /api/file/diff?path=&sha= → unified diff for a specific commit
 WS     /ws                       → WebSocket
 ```
 
 ---
 
-## 15. Source Structure
+## 16. Source Structure
 
 ```
 src/
@@ -422,7 +555,13 @@ src/
 ├── server/
 │   ├── api.ts / auth.ts / config.ts / filestore.ts / git.ts / search.ts / websocket.ts
 ├── components/
-│   ├── dialogs/NewPageDialog.tsx
+│   ├── dialogs/
+│   │   ├── NewPageDialog.tsx / PageActionDialogs.tsx
+│   │   ├── TicketDialog.tsx        ← Create/edit ticket (activity/approval/vc tabs)
+│   │   ├── ApprovalTab.tsx         ← Approve/reject with dedup + outdated detection
+│   │   ├── Timeline.tsx            ← Mixed comment/status/approval timeline
+│   │   ├── Comment.tsx             ← Single comment bubble
+│   │   └── VersionControlTab.tsx   ← Git log for ticket files
 │   ├── editor/
 │   │   ├── MarkdownEditor.tsx / MarkdownViewer.tsx
 │   │   ├── SlideViewer.tsx          ← exports ScaledSlide, SLIDE_W, SLIDE_H, SlideViewer
@@ -433,12 +572,14 @@ src/
 │   └── ui/ (EmojiIcon, EmojiPicker, EmojiPickerPopover, PageMenuItems, shadcn primitives)
 ├── hooks/usePageActions.tsx
 ├── lib/
-│   ├── avatar.ts / filetypes.ts / frontmatter.ts / types.ts / utils.ts
+│   ├── avatar.ts / board.ts / filetypes.ts / frontmatter.ts / types.ts / utils.ts
 │   └── slide.ts   ← parseSlideDirectives(), resolveCustomTheme(), isBgDark(), SlideThemeDef/Map
 ├── pages/
 │   ├── FilePage.tsx / WelcomePage.tsx / NotFound.tsx
-│   ├── ImageLibraryPage.tsx
-│   └── SlideThemesPage.tsx   ← /s route, ScaledSlide thumbnails + demo dialog
+│   ├── board/BoardPage.tsx / BoardColumnView.tsx / TicketCard.tsx / BoardOverlay.tsx
+│   ├── board-list/BoardListPage.tsx   ← /b route, lists all boards
+│   ├── board-manager/Page.tsx         ← /bm route, create/manage board configs
+│   └── board-detail/Page.tsx          ← /bm/:name, edit single board config
 └── store/theme.tsx / user.tsx / ws.ts
 styles/globals.css
 ```
