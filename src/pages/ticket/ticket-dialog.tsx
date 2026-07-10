@@ -345,6 +345,8 @@ function TicketDialog({
     approvals,
     assignee,
     boardSlug,
+    bookmarks,
+    createdAt,
     title,
     body,
     column,
@@ -358,6 +360,7 @@ function TicketDialog({
     onSaved,
     reporter,
     timeline,
+    updatedAt,
   ]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
