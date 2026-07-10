@@ -9,6 +9,7 @@ import { Fragment } from "react";
 const FLUENT_TYPE_ICONS: Record<string, string> = {
   approve: "CheckmarkCircle24Color",
   board: "Board24Color",
+  bookmark: "Bookmark24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
   edit: "Edit24Color",

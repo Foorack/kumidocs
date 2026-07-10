@@ -10,6 +10,7 @@ type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType =
   | MarkdownType
   | "board"
+  | "bookmark"
   | "code"
   | "edit"
   | "golden"
