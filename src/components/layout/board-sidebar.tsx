@@ -15,7 +15,7 @@ import useMountEffect from "@/hooks/use-mount-effect";
 import { getFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
-import TicketDialog from "@/components/dialogs/ticket-dialog";
+import TicketDialog from "@/pages/ticket/ticket-dialog";
 
 interface BoardSidebarContentProps {
   boardConfigs: Map<string, BoardConfig>;

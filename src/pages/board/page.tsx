@@ -8,7 +8,7 @@ import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Info } from "lucide-react";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
-import TicketDialog from "@/components/dialogs/ticket-dialog";
+import TicketDialog from "@/pages/ticket/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
