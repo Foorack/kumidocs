@@ -11,6 +11,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   board: "Board24Color",
   code: "Code24Color",
   doc: "TextBulletListSquare24Color",
+  edit: "Edit24Color",
   golden: "RibbonStar24Color",
   image: "Image24Color",
   outdated: "ErrorCircle24Color",

@@ -440,6 +440,51 @@ function TicketDialog({
     statusHistory,
     title,
   ]);
+
+  const handleCommentEdit = useCallback(
+    async (commentIndex: number, newMessage: string): Promise<void> => {
+      if (!ticket) {
+        return;
+      }
+      const updatedComments: TicketComment[] = comments.map((cmt, idx) =>
+        idx === commentIndex ? { ...cmt, message: newMessage } : cmt,
+      );
+      setComments(updatedComments);
+
+      try {
+        const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
+        const yaml = serializeTicket({
+          approvals: approvals.length > 0 ? approvals : undefined,
+          assignee: assignee.trim() || undefined,
+          body: body.trim(),
+          column,
+          comments: updatedComments,
+          golden: golden || undefined,
+          reporter: reporter.trim() || undefined,
+          statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+          title: title.trim(),
+        });
+        await putFile(path, yaml);
+        toast.success("Comment updated");
+      } catch {
+        toast.error("Failed to update comment");
+        setComments(comments);
+      }
+    },
+    [
+      ticket,
+      comments,
+      approvals,
+      assignee,
+      body,
+      column,
+      golden,
+      reporter,
+      statusHistory,
+      title,
+    ],
+  );
+
   const handleApproval = useCallback(
     async (status: "approved" | "rejected"): Promise<void> => {
       if (!ticket) {
@@ -768,6 +813,10 @@ function TicketDialog({
                       }}
                       onCommentClear={() => {
                         setCommentBody("");
+                      }}
+                      currentUser={user?.email}
+                      onCommentEdit={(index, newMessage) => {
+                        void handleCommentEdit(index, newMessage);
                       }}
                     />
                   )}

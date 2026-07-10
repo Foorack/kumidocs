@@ -11,6 +11,7 @@ type FileType =
   | MarkdownType
   | "board"
   | "code"
+  | "edit"
   | "golden"
   | "image"
   | "other"
