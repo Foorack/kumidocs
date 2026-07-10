@@ -168,13 +168,10 @@ function BoardPage(): JSX.Element {
         if (left.golden !== true && right.golden === true) {
           return 1;
         }
-        // Within same golden group, sort by numeric ID
-        const ln = Number(left.id);
-        const rn = Number(right.id);
-        if (!Number.isNaN(ln) && !Number.isNaN(rn)) {
-          return ln - rn;
-        }
-        return left.id.localeCompare(right.id);
+        // Within same golden group, sort by latest activity (updatedAt), newest first
+        const la = left.updatedAt ?? left.createdAt ?? "";
+        const ra = right.updatedAt ?? right.createdAt ?? "";
+        return ra.localeCompare(la);
       });
     }
     return map;
