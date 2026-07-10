@@ -244,10 +244,10 @@ function TicketDialog({
           updatedTimeline = [
             ...updatedTimeline,
             {
+              golden,
               timestamp: now,
               type: "golden" as const,
               user: userEmail,
-              golden,
             },
           ];
         }

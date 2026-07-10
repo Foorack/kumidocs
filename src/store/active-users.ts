@@ -18,16 +18,16 @@ const setActiveUsers = (emails: Set<string>): void => {
 };
 
 /** React hook: returns the set of currently active user emails. */
-const useActiveUsers = (): Set<string> => {
-  return useSyncExternalStore(
+const useActiveUsers = (): Set<string> =>
+  useSyncExternalStore(
+    // oxlint-disable-next-line promise/prefer-await-to-callbacks
     (cb) => {
       subscribers.add(cb);
-      return () => {
+      return (): void => {
         subscribers.delete(cb);
       };
     },
     () => activeEmails,
   );
-};
 
 export { setActiveUsers, useActiveUsers };

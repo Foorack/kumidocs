@@ -243,14 +243,12 @@ export default function Timeline({
       timestamp: appr.timestamp,
       type: "approval" as const,
     })),
-    ...timeline
-      .filter((tl) => tl.type === "status" || tl.type === "golden")
-      .map((entry) => ({
-        data: entry,
-        dataIndex: -1,
-        timestamp: entry.timestamp,
-        type: entry.type as "status" | "golden",
-      })),
+    ...timeline.map((entry) => ({
+      data: entry,
+      dataIndex: -1,
+      timestamp: entry.timestamp,
+      type: entry.type,
+    })),
   ].toSorted(
     (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
   );
