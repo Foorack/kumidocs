@@ -34,7 +34,7 @@ function renderTimelineItem(item: TimelineItem, columnColor: (id: string) => str
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const cmt = item.data as TicketComment;
       return (
-        <div className="border rounded-md p-3">
+        <div className="border rounded-md p-3 bg-background">
           <div className="flex items-center gap-2 mb-2">
             <UserAvatar name={emailToDisplayName(cmt.user)} email={cmt.user} size="xs" />
             <span className="font-bold">{cmt.user}</span>
@@ -148,7 +148,11 @@ export default function Timeline({
   );
 
   if (items.length === 0 && !showAddComment) {
-    return <p className="text-muted-foreground py-4 text-center">No activity yet.</p>;
+    return (
+      <p className="text-muted-foreground py-4 text-center bg-background rounded-md border">
+        No activity yet.
+      </p>
+    );
   }
 
   const columnColor = (id: string): string =>
@@ -167,7 +171,7 @@ export default function Timeline({
       {showAddComment && (
         <div className="mt-4">
           <h4 className="font-bold text-foreground mb-2">Add Comment</h4>
-          <div className="border rounded-md overflow-hidden">
+          <div className="border rounded-md overflow-hidden bg-background">
             <InlineEditor
               border={false}
               value={commentBody}

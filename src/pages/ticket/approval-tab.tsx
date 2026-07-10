@@ -35,7 +35,7 @@ export default function ApprovalTab({
     currentUser === undefined ? undefined : latest.find((appr) => appr.user === currentUser);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 bg-background rounded-md p-3 border">
       {latest.length > 0 && (
         <div className="space-y-2">
           {latest.map((appr, idx) => {

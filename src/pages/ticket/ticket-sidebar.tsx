@@ -85,7 +85,7 @@ function TicketSidebar({
           className={golden ? "font-bold" : ""}
         >
           <EmojiIcon fileType="golden" size={20} style={goldenIconStyle} />
-          <span>{golden ? "Golden" : "Starred"}</span>
+          <span>{golden ? "Golden" : "Regular"}</span>
         </TicketSidebarButton>
       </div>
     </div>

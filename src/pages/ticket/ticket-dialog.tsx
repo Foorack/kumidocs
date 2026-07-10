@@ -505,14 +505,16 @@ function TicketDialog({
   );
 
   const bodyContent = editing ? (
-    <InlineEditor
-      value={body}
-      onChange={setBody}
-      placeholder="Add description..."
-      minHeight="min-h-[260px]"
-    />
+    <div className="bg-background rounded-md border">
+      <InlineEditor
+        value={body}
+        onChange={setBody}
+        placeholder="Add description..."
+        minHeight="min-h-[260px]"
+      />
+    </div>
   ) : (
-    <div className="border rounded-md overflow-hidden">
+    <div className="border rounded-md overflow-hidden bg-background">
       <MarkdownViewer value={body || "*No description.*"} className="px-5 py-4" />
     </div>
   );
@@ -622,7 +624,9 @@ function TicketDialog({
           {/* Body: main content + status sidebar */}
           <div className="grid grid-cols-[1fr_auto] min-h-0 overflow-hidden">
             {/* Left: main content */}
-            <div className="overflow-y-auto p-5 space-y-4 min-w-0">
+            <div
+              className={`overflow-y-auto p-5 space-y-4 min-w-0 ${golden ? "ticket-golden-body" : ""}`}
+            >
               {/* Board selector (create only) */}
               {!isEdit && (
                 <select
@@ -703,7 +707,7 @@ function TicketDialog({
               {isEdit && (
                 <div>
                   {/* Tab headers */}
-                  <div className="flex border-b border-border mb-3">
+                  <div className="flex border-b border-border mb-3 bg-background rounded-t-md">
                     <button
                       type="button"
                       onClick={() => {

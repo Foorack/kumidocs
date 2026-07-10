@@ -21,7 +21,7 @@ export default function VersionControlTab({
     return <p className="text-muted-foreground py-4 text-center">No commits yet.</p>;
   }
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 bg-background rounded-md p-3 border">
       {commits.map((commit) => (
         <button
           key={commit.sha}

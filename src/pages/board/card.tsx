@@ -55,10 +55,10 @@ function CardContent({
           <div className="flex-1 min-w-0">
             {/* Top row: dates */}
             <div className="grid grid-cols-2 divide-x divide-border">
-              <div className="text-[10px] text-muted-foreground/60 truncate px-1.5 py-0.5 text-left">
+              <div className="text-[10px] truncate px-1.5 py-0.5 text-left">
                 {relativeTime(ticket.createdAt)}
               </div>
-              <div className="text-[10px] text-muted-foreground/60 truncate px-1.5 py-0.5 text-right">
+              <div className="text-[10px] truncate px-1.5 py-0.5 text-right">
                 {relativeTime(ticket.updatedAt)}
               </div>
             </div>
@@ -68,10 +68,10 @@ function CardContent({
 
             {/* Bottom row: names */}
             <div className="grid grid-cols-2 divide-x divide-border">
-              <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-left">
+              <div className="text-[11px] truncate px-1.5 py-0.5 text-left">
                 {ticket.reporter !== undefined && ticket.reporter !== "" ? ticket.reporter : ""}
               </div>
-              <div className="text-[11px] text-muted-foreground truncate px-1.5 py-0.5 text-right">
+              <div className="text-[11px] truncate px-1.5 py-0.5 text-right">
                 {ticket.assignee !== undefined && ticket.assignee !== "" ? ticket.assignee : ""}
               </div>
             </div>
@@ -120,9 +120,6 @@ function TicketCard({
   const style: CSSProperties = {
     borderColor: columnColor,
     opacity: isDragging ? 0 : undefined,
-    ...(ticket.golden === true
-      ? { backgroundImage: "radial-gradient(transparent, oklch(79.5% 0.184 86.047))" }
-      : {}),
   };
 
   return (
@@ -138,7 +135,7 @@ function TicketCard({
           onClick();
         }
       }}
-      className="rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing"
+      className={`rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing ${ticket.golden === true ? "ticket-golden" : ""}`}
       role="button"
       tabIndex={0}
     >
@@ -159,13 +156,13 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
   const style: CSSProperties = {
     borderColor: columnColor,
     width: "var(--dnd-overlay-width, 288px)",
-    ...(ticket.golden === true
-      ? { backgroundImage: "radial-gradient(transparent, oklch(79.5% 0.184 86.047))" }
-      : {}),
   };
 
   return (
-    <div className="rounded-lg border-3 shadow-xl" style={style}>
+    <div
+      className={`rounded-lg border-3 shadow-xl ${ticket.golden === true ? "ticket-golden" : ""}`}
+      style={style}
+    >
       <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
     </div>
   );
