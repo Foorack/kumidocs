@@ -25,12 +25,13 @@ interface TicketData {
   id: string;
   /** The person who created the ticket (display name or email). */
   reporter?: string;
+  /** Ordered list of all non-comment, non-approval events. */
+  timeline?: TimelineEntry[];
   title: string;
   /** ISO 8601 timestamp of last modification. Set server-side. */
   updatedAt?: string;
   comments?: TicketComment[];
   approvals?: TicketApproval[];
-  statusHistory?: StatusEntry[];
 }
 
 interface TicketComment {
@@ -50,11 +51,13 @@ interface TicketApproval {
   outdated?: boolean;
 }
 
-interface StatusEntry {
-  from: string;
-  to: string;
+interface TimelineEntry {
+  type: "status" | "golden";
   timestamp: string;
   user: string;
+  from?: string;
+  to?: string;
+  golden?: boolean;
 }
 
 const DEFAULT_COLUMNS: BoardColumn[] = [
@@ -257,18 +260,15 @@ async function parseTicketYaml(
         })
     : undefined;
 
-  // Parse status history
-  const rawHistory = obj.statusHistory;
-  const statusHistory: StatusEntry[] | undefined = Array.isArray(rawHistory)
-    ? rawHistory.filter(
-        // oxlint-disable-next-line id-length
-        (entry): entry is StatusEntry =>
+  // Parse timeline entries
+  const rawTimeline = obj.timeline;
+  const timeline: TimelineEntry[] | undefined = Array.isArray(rawTimeline)
+    ? rawTimeline.filter(
+        (entry): entry is TimelineEntry =>
           typeof entry === "object" &&
           entry !== null &&
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (entry as Record<string, unknown>).from === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (entry as Record<string, unknown>).to === "string" &&
+          typeof (entry as Record<string, unknown>).type === "string" &&
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           typeof (entry as Record<string, unknown>).timestamp === "string" &&
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -287,8 +287,7 @@ async function parseTicketYaml(
     golden: obj.golden === true,
     id: ticketId,
     reporter: typeof obj.reporter === "string" && obj.reporter !== "" ? obj.reporter : undefined,
-    statusHistory:
-      statusHistory !== undefined && statusHistory.length > 0 ? statusHistory : undefined,
+    timeline: timeline !== undefined && timeline.length > 0 ? timeline : undefined,
     title: typeof obj.title === "string" && obj.title !== "" ? obj.title : ticketId,
     updatedAt:
       typeof obj.updatedAt === "string" && obj.updatedAt !== "" ? obj.updatedAt : undefined,
@@ -306,7 +305,7 @@ function ticketToYaml(data: {
   createdAt?: string;
   golden?: boolean;
   reporter?: string;
-  statusHistory?: StatusEntry[];
+  timeline?: TimelineEntry[];
   title: string;
   updatedAt?: string;
 }): string {
@@ -362,22 +361,27 @@ function ticketToYaml(data: {
       if (approval.status !== undefined) {
         lines.push(`    status: ${approval.status}`);
       }
-      if (approval.outdated === true) {
-        lines.push(`    outdated: true`);
-      }
     }
   }
 
-  if (data.statusHistory !== undefined && data.statusHistory.length > 0) {
-    lines.push("statusHistory:");
+  if (data.timeline !== undefined && data.timeline.length > 0) {
+    lines.push("timeline:");
     // oxlint-disable-next-line id-length
-    for (const entry of data.statusHistory) {
+    for (const entry of data.timeline) {
       lines.push(
-        `  - from: ${JSON.stringify(entry.from)}`,
-        `    to: ${JSON.stringify(entry.to)}`,
+        `  - type: ${entry.type}`,
         `    timestamp: ${JSON.stringify(entry.timestamp)}`,
         `    user: ${JSON.stringify(entry.user)}`,
       );
+      if (entry.from !== undefined) {
+        lines.push(`    from: ${JSON.stringify(entry.from)}`);
+      }
+      if (entry.to !== undefined) {
+        lines.push(`    to: ${JSON.stringify(entry.to)}`);
+      }
+      if (entry.golden !== undefined) {
+        lines.push(`    golden: ${entry.golden ? "true" : "false"}`);
+      }
     }
   }
 
@@ -405,7 +409,7 @@ interface TicketYamlData {
   createdAt?: string;
   golden?: boolean;
   reporter?: string;
-  statusHistory?: StatusEntry[];
+  timeline?: TimelineEntry[];
   title: string;
   updatedAt?: string;
 }
@@ -457,7 +461,7 @@ async function patchTicketYaml(
     createdAt: existing.createdAt,
     golden: updates.golden ?? existing.golden,
     reporter: updates.reporter ?? existing.reporter,
-    statusHistory: updates.statusHistory ?? existing.statusHistory,
+    timeline: updates.timeline ?? existing.timeline,
     title: updates.title ?? existing.title,
     updatedAt: existing.updatedAt,
   });
@@ -469,7 +473,7 @@ export type {
   TicketData,
   TicketComment,
   TicketApproval,
-  StatusEntry,
+  TimelineEntry,
   TicketYamlData,
 };
 export {

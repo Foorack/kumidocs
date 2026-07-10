@@ -7,7 +7,7 @@ import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } fr
 import type { DiffData } from "@/lib/api";
 import { parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
-import type { BoardColumn, TicketComment, TicketApproval, StatusEntry } from "@/lib/board";
+import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "@/lib/board";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { toast } from "@/components/ui/toaster";
@@ -74,7 +74,7 @@ function TicketDialog({
   const [comments, setComments] = useState<TicketComment[]>([]);
   const [approvals, setApprovals] = useState<TicketApproval[]>([]);
   const [golden, setGolden] = useState(false);
-  const [statusHistory, setStatusHistory] = useState<StatusEntry[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"activity" | "vc" | "approval">("activity");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
   const [commitsLoading, setCommitsLoading] = useState(false);
@@ -123,7 +123,7 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(ticket.golden ?? false);
-      setStatusHistory([]);
+      setTimeline([]);
       setCommits([]);
       setEditing(false);
     } else {
@@ -136,7 +136,7 @@ function TicketDialog({
       setComments([]);
       setApprovals([]);
       setGolden(false);
-      setStatusHistory([]);
+      setTimeline([]);
       setCommits([]);
       setEditing(true);
     }
@@ -164,7 +164,7 @@ function TicketDialog({
         setReporter(data.reporter ?? "");
         setAssignee(data.assignee ?? "");
         setComments(data.comments ?? []);
-        setStatusHistory(data.statusHistory ?? []);
+        setTimeline(data.timeline ?? []);
         // Parse body from raw YAML (TicketData doesn't carry body)
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const parsed = load(resp.content) as Record<string, unknown>;
@@ -227,12 +227,18 @@ function TicketDialog({
       try {
         const now = new Date().toISOString();
         const userEmail = user?.email ?? user?.name ?? "unknown";
-        const updatedStatusHistory =
+        const updatedTimeline =
           column === ticket.column
-            ? statusHistory
+            ? timeline
             : [
-                ...statusHistory,
-                { from: ticket.column, timestamp: now, to: column, user: userEmail },
+                ...timeline,
+                {
+                  from: ticket.column,
+                  timestamp: now,
+                  to: column,
+                  type: "status" as const,
+                  user: userEmail,
+                },
               ];
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
         const yaml = serializeTicket({
@@ -243,7 +249,7 @@ function TicketDialog({
           comments: comments.length > 0 ? comments : undefined,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
-          statusHistory: updatedStatusHistory.length > 0 ? updatedStatusHistory : undefined,
+          timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
         });
         await putFile(path, yaml);
@@ -290,7 +296,7 @@ function TicketDialog({
         comments: comments.length > 0 ? comments : undefined,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
-        statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+        timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
       });
       await createFile(path, yaml);
@@ -320,7 +326,7 @@ function TicketDialog({
     onClose,
     onSaved,
     reporter,
-    statusHistory,
+    timeline,
   ]);
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
@@ -416,7 +422,7 @@ function TicketDialog({
         comments: updatedComments,
         golden: golden || undefined,
         reporter: reporter.trim() || undefined,
-        statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+        timeline: timeline.length > 0 ? timeline : undefined,
         title: title.trim(),
       });
       await putFile(path, yaml);
@@ -437,7 +443,7 @@ function TicketDialog({
     column,
     golden,
     reporter,
-    statusHistory,
+    timeline,
     title,
   ]);
 
@@ -461,7 +467,7 @@ function TicketDialog({
           comments: updatedComments,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
-          statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+          timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
         });
         await putFile(path, yaml);
@@ -471,18 +477,7 @@ function TicketDialog({
         setComments(comments);
       }
     },
-    [
-      ticket,
-      comments,
-      approvals,
-      assignee,
-      body,
-      column,
-      golden,
-      reporter,
-      statusHistory,
-      title,
-    ],
+    [ticket, comments, approvals, assignee, body, column, golden, reporter, timeline, title],
   );
 
   const handleApproval = useCallback(
@@ -515,7 +510,7 @@ function TicketDialog({
           comments: comments.length > 0 ? comments : undefined,
           golden: golden || undefined,
           reporter: reporter.trim() || undefined,
-          statusHistory: statusHistory.length > 0 ? statusHistory : undefined,
+          timeline: timeline.length > 0 ? timeline : undefined,
           title: title.trim(),
         });
         await putFile(path, yaml);
@@ -525,19 +520,7 @@ function TicketDialog({
         setApprovals(approvals);
       }
     },
-    [
-      ticket,
-      user,
-      approvals,
-      assignee,
-      body,
-      column,
-      comments,
-      golden,
-      reporter,
-      statusHistory,
-      title,
-    ],
+    [ticket, user, approvals, assignee, body, column, comments, golden, reporter, timeline, title],
   );
   const handleCommentKeyDown = useCallback(
     (ev: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -802,7 +785,7 @@ function TicketDialog({
                     <Timeline
                       comments={comments}
                       approvals={approvals}
-                      statusHistory={statusHistory}
+                      timeline={timeline}
                       columns={currentColumns}
                       showAddComment={!showEditControls}
                       commentBody={commentBody}

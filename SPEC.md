@@ -401,8 +401,9 @@ approvals:
     timestamp: "2026-07-10T14:00:00.000Z"
     hash: "abc123..."
     status: approved
-statusHistory:
-  - from: maybe
+timeline:
+  - type: status
+    from: maybe
     to: in-progress
     timestamp: "2026-07-10T12:30:00.000Z"
     user: "alice@example.com"
@@ -418,7 +419,7 @@ body: |
 - `createdAt`/`updatedAt`: ISO 8601 timestamps, injected server-side via `injectTicketTimestamps()` to avoid client clock skew
 - `comments`: threaded Markdown comments, chronologically ordered
 - `approvals`: signed approvals with SHA-256 content hash for staleness detection
-- `statusHistory`: automatic entries on every column move (drag or dialog save)
+- `timeline`: ordered list of all non-comment, non-approval events. `type: "status"` entries are created on every column move (drag or dialog save)
 - `body`: Markdown description, edited via MarkdownToolbar + textarea
 
 ### 12.3 Routes
@@ -435,7 +436,7 @@ body: |
 
 - **Columns**: horizontal scrollable kanban, one droppable zone per column
 - **Cards** (`TicketCard`): draggable via `@dnd-kit/core`. Show prefix-ID badge, title, reporter/assignee avatars, relative timestamps
-- **Drag**: move between columns with 5px activation distance (prevents accidental drag on click). Adds `StatusEntry` to `statusHistory` automatically
+- **Drag**: move between columns with 5px activation distance (prevents accidental drag on click). Adds a `timeline` entry with `type: "status"` automatically
 - **Deep linking**: navigating to `/b/{slug}/{id}` opens the ticket dialog directly. Card clicks update the URL via SPA navigation; closing the dialog navigates back to the board root
 - **Presence**: board page uses the same WebSocket presence system as wiki pages, showing viewer avatars in the header
 

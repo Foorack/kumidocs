@@ -353,9 +353,15 @@ function BoardPage(): JSX.Element {
           dragActiveTicket.id,
           {
             column: targetColId,
-            statusHistory: [
-              ...(dragActiveTicket.statusHistory ?? []),
-              { from: dragActiveTicket.column, timestamp: now, to: targetColId, user: userEmail },
+            timeline: [
+              ...(dragActiveTicket.timeline ?? []),
+              {
+                from: dragActiveTicket.column,
+                timestamp: now,
+                to: targetColId,
+                type: "status" as const,
+                user: userEmail,
+              },
             ],
           },
           dragDefaultColId,

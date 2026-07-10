@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
 import { displayColumnId, approvalFileType } from "@/lib/board";
-import type { TicketComment, TicketApproval, StatusEntry, BoardColumn } from "@/lib/board";
+import type { TicketComment, TicketApproval, TimelineEntry, BoardColumn } from "@/lib/board";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
@@ -14,7 +14,7 @@ import type { JSX } from "react";
 interface TimelineProps {
   comments: TicketComment[];
   approvals: TicketApproval[];
-  statusHistory: StatusEntry[];
+  timeline: TimelineEntry[];
   showAddComment: boolean;
   commentBody: string;
   onCommentChange: (value: string) => void;
@@ -29,7 +29,7 @@ interface TimelineProps {
 interface TimelineItem {
   type: "comment" | "approval" | "status";
   timestamp: string;
-  data: TicketComment | TicketApproval | StatusEntry;
+  data: TicketComment | TicketApproval | TimelineEntry;
   dataIndex: number;
 }
 
@@ -131,7 +131,7 @@ function renderTimelineItem(
     }
     case "status": {
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const entry = item.data as StatusEntry;
+      const entry = item.data as TimelineEntry;
       return (
         <div className="flex items-center gap-2 py-1">
           <EmojiIcon fileType="status" size={24} />
@@ -146,16 +146,16 @@ function renderTimelineItem(
             {" moved from "}
             <Badge
               className="font-bold text-background"
-              style={{ backgroundColor: columnColor(entry.from) }}
+              style={{ backgroundColor: columnColor(entry.from ?? "") }}
             >
-              {displayColumnId(entry.from)}
+              {displayColumnId(entry.from ?? "")}
             </Badge>
             {" to "}
             <Badge
               className="font-bold text-background"
-              style={{ backgroundColor: columnColor(entry.to) }}
+              style={{ backgroundColor: columnColor(entry.to ?? "") }}
             >
-              {displayColumnId(entry.to)}
+              {displayColumnId(entry.to ?? "")}
             </Badge>
           </span>
           <span className="ml-auto shrink-0">{relativeTime(item.timestamp)}</span>
@@ -201,7 +201,7 @@ function renderTimelineItem(
 export default function Timeline({
   comments,
   approvals,
-  statusHistory,
+  timeline,
   showAddComment,
   commentBody,
   onCommentChange,
@@ -227,12 +227,14 @@ export default function Timeline({
       timestamp: appr.timestamp,
       type: "approval" as const,
     })),
-    ...statusHistory.map((entry) => ({
-      data: entry,
-      dataIndex: -1,
-      timestamp: entry.timestamp,
-      type: "status" as const,
-    })),
+    ...timeline
+      .filter((tl) => tl.type === "status")
+      .map((entry) => ({
+        data: entry,
+        dataIndex: -1,
+        timestamp: entry.timestamp,
+        type: "status" as const,
+      })),
   ].toSorted(
     (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
   );
