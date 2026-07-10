@@ -735,7 +735,7 @@ function TicketDialog({
               {isEdit && (
                 <div>
                   {/* Tab headers */}
-                  <div className="flex border-b border-border mb-3 bg-background rounded-t-md">
+                  <div className="flex border border-border mb-3 bg-background rounded-t-md">
                     <button
                       type="button"
                       onClick={() => {

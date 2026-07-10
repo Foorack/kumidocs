@@ -107,23 +107,22 @@ function renderTimelineItem(
       }
 
       return (
-        <div className="border rounded-md p-3 bg-background relative group">
-          {isOwn && (
-            <button
-              type="button"
-              onClick={() => {
-                onStartEdit?.(item.dataIndex);
-              }}
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Edit comment"
-            >
-              <EmojiIcon fileType="edit" size={16} />
-            </button>
-          )}
+        <div className="border rounded-md p-3 bg-background">
           <div className="flex items-center gap-2 mb-2">
             <UserAvatar name={emailToDisplayName(cmt.user)} email={cmt.user} size="xs" />
             <span className="font-bold">{cmt.user}</span>
             <span className="text-xs ml-auto">{relativeTime(item.timestamp)}</span>
+            {isOwn && (
+              <button
+                type="button"
+                onClick={() => {
+                  onStartEdit?.(item.dataIndex);
+                }}
+                title="Edit comment"
+              >
+                <EmojiIcon fileType="edit" size={16} />
+              </button>
+            )}
           </div>
           <MarkdownViewer value={cmt.message} className="px-3 py-2" />
         </div>
