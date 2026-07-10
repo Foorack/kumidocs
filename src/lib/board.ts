@@ -17,6 +17,8 @@ interface TicketData {
   assignee?: string;
   /** The board this ticket belongs to. */
   boardSlug: string;
+  /** Emails of users who have bookmarked this ticket. */
+  bookmarks?: string[];
   column: string;
   /** ISO 8601 timestamp of creation. Set server-side, never changed. */
   createdAt?: string;
@@ -276,9 +278,17 @@ async function parseTicketYaml(
       )
     : undefined;
 
+  const rawBookmarks = obj.bookmarks;
+  const bookmarks: string[] | undefined = Array.isArray(rawBookmarks)
+    ? rawBookmarks.filter(
+        (bm): bm is string => typeof bm === "string" && bm !== "",
+      )
+    : undefined;
+
   return {
     approvals: approvals !== undefined && approvals.length > 0 ? approvals : undefined,
     assignee: typeof obj.assignee === "string" && obj.assignee !== "" ? obj.assignee : undefined,
+    bookmarks: bookmarks !== undefined && bookmarks.length > 0 ? bookmarks : undefined,
     boardSlug,
     column: rawColumn === "" ? fallbackColumn : rawColumn,
     comments: comments !== undefined && comments.length > 0 ? comments : undefined,
@@ -300,6 +310,7 @@ function ticketToYaml(data: {
   approvals?: TicketApproval[];
   assignee?: string;
   body?: string;
+  bookmarks?: string[];
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
@@ -327,6 +338,13 @@ function ticketToYaml(data: {
   }
   if (data.golden === true) {
     lines.push("golden: true");
+  }
+
+  if (data.bookmarks !== undefined && data.bookmarks.length > 0) {
+    lines.push("bookmarks:");
+    for (const email of data.bookmarks) {
+      lines.push(`  - ${JSON.stringify(email)}`);
+    }
   }
 
   // Serialize structured arrays as YAML
@@ -404,6 +422,7 @@ interface TicketYamlData {
   approvals?: TicketApproval[];
   assignee?: string;
   body?: string;
+  bookmarks?: string[];
   column: string;
   comments?: TicketComment[];
   createdAt?: string;
@@ -456,6 +475,7 @@ async function patchTicketYaml(
     approvals: updates.approvals ?? existing.approvals,
     assignee: updates.assignee ?? existing.assignee,
     body: updates.body ?? (typeof parsed.body === "string" ? parsed.body : undefined),
+    bookmarks: updates.bookmarks ?? existing.bookmarks,
     column: updates.column ?? existing.column,
     comments: updates.comments ?? existing.comments,
     createdAt: existing.createdAt,
