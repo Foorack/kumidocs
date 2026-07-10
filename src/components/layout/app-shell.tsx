@@ -133,8 +133,8 @@ export default function AppShell(): JSX.Element {
   useEffect(() => {
     const allEmails = new Set<string>();
     for (const users of presenceByPage.values()) {
-      for (const u of users) {
-        allEmails.add(u.email);
+      for (const usr of users) {
+        allEmails.add(usr.email);
       }
     }
     setActiveUsers(allEmails);

@@ -77,6 +77,42 @@ function SaveBadge({
   );
 }
 
+function ToggleButton({
+  label,
+  icon,
+  isOpen,
+  storageKey,
+  onToggle,
+}: {
+  label: string;
+  icon: JSX.Element;
+  isOpen: boolean;
+  storageKey: string;
+  onToggle: Dispatch<SetStateAction<boolean>>;
+}): JSX.Element {
+  return (
+    <Button
+      size="sm"
+      variant={isOpen ? "secondary" : "ghost"}
+      className="h-7 gap-1 text-xs px-2"
+      onClick={() => {
+        onToggle((prev) => {
+          const next = !prev;
+          if (next) {
+            localStorage.setItem(storageKey, "true");
+          } else {
+            localStorage.removeItem(storageKey);
+          }
+          return next;
+        });
+      }}
+    >
+      {icon}
+      {label}
+    </Button>
+  );
+}
+
 function FilePageHeader({
   meta,
   fileType,
@@ -216,48 +252,24 @@ function FilePageHeader({
 
         {/* TOC toggle: only for doc pages in view mode */}
         {!editMode && fileType === "doc" && (
-          <Button
-            size="sm"
-            variant={tocOpen ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs px-2"
-            onClick={() => {
-              setTocOpen((prev) => {
-                const next = !prev;
-                if (next) {
-                  localStorage.setItem("kumidocs:toc-open", "true");
-                } else {
-                  localStorage.removeItem("kumidocs:toc-open");
-                }
-                return next;
-              });
-            }}
-          >
-            <List className="w-4 h-4" />
-            TOC
-          </Button>
+          <ToggleButton
+            label="TOC"
+            icon={<List className="w-4 h-4" />}
+            isOpen={tocOpen}
+            storageKey="kumidocs:toc-open"
+            onToggle={setTocOpen}
+          />
         )}
 
         {/* Dedicated info button */}
         {!editMode && (
-          <Button
-            size="sm"
-            variant={infoOpen ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs px-2"
-            onClick={() => {
-              setInfoOpen((prev) => {
-                const next = !prev;
-                if (next) {
-                  localStorage.setItem("kumidocs:info-open", "true");
-                } else {
-                  localStorage.removeItem("kumidocs:info-open");
-                }
-                return next;
-              });
-            }}
-          >
-            <Info className="w-4 h-4" />
-            Info
-          </Button>
+          <ToggleButton
+            label="Info"
+            icon={<Info className="w-4 h-4" />}
+            isOpen={infoOpen}
+            storageKey="kumidocs:info-open"
+            onToggle={setInfoOpen}
+          />
         )}
 
         {/* Advanced / dangerous actions only */}
@@ -274,7 +286,7 @@ function FilePageHeader({
                 href={`/p/${rawPath}`}
                 path={filePath}
                 displayTitle={title}
-                canEdit={user?.canEdit ?? false}
+                canEdit={user.canEdit}
                 onDuplicate={handlePageDuplicate}
                 onCopyHtml={onCopyHtml}
                 onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
