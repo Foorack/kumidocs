@@ -2,25 +2,7 @@
 
 ---
 
-### 1. Bookmark Tickets
-
-A user can bookmark a ticket (like starring / watching). Bookmarking is a per-user toggle: each user who bookmarks adds their email to a Set on the ticket. Unlike golden, bookmarking does NOT create timeline entries. Users must enter Edit mode and Save for the bookmark to persist.
-
-**Approach**:
-
-- Add `bookmarks?: string[]` field to `TicketData` / `TicketYamlData` in `src/lib/board.ts`
-- Update serialization (`ticketToYaml`) to write `bookmarks:` as a YAML array
-- In `TicketSidebar` (`src/pages/ticket/ticket-sidebar.tsx`), add a "Bookmark" toggle button below golden (styled like golden, using a bookmark icon from `@fluentui/react-icons`)
-- The toggle adds/removes the current user's email from the local bookmarks array
-- `canSave` must detect bookmark changes
-- On save, serialize the updated bookmarks array
-- On reload, parse bookmarks from the saved YAML
-
-**Files to touch**:
-
-- `src/lib/board.ts` -- add `bookmarks` to types + serialization
-- `src/pages/ticket/ticket-sidebar.tsx` -- add bookmark toggle
-- `src/pages/ticket/ticket-dialog.tsx` -- wire bookmark state, canSave check, save logic, reload logic
+### 1. Bookmark Tickets (DONE)
 
 ---
 
