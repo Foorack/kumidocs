@@ -38,7 +38,13 @@ function apiTree(): Response {
 // GET /api/search?q=<query>&mode=<docs|board>
 function apiSearch(url: URL): Response {
   const query = url.searchParams.get("q") ?? "";
-  const mode = url.searchParams.get("mode") ?? undefined;
+  const mode = url.searchParams.get("mode");
+  if (mode !== "docs" && mode !== "board") {
+    return Response.json(
+      { error: "Missing or invalid mode parameter (must be 'docs' or 'board')" },
+      { status: 400 },
+    );
+  }
   return Response.json(searchDocs(query, 20, mode));
 }
 

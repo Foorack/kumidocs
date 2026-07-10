@@ -216,13 +216,12 @@ function buildSnippet(path: string, query: string): string {
   );
 }
 
-function searchDocs(query: string, limit = 20, mode?: string): SearchResult[] {
+function searchDocs(query: string, limit: number, mode: "docs" | "board"): SearchResult[] {
   if (!docIndex || !ticketIndex || !query.trim()) {
     return [];
   }
   const result: SearchResult[] = [];
-  // In docs mode only search pages; in board mode only search tickets; default both
-  if (mode !== "board") {
+  if (mode === "docs") {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const docResults = docIndex.search(query) as unknown as (Record<string, unknown> & {
       score: number;
@@ -243,8 +242,7 @@ function searchDocs(query: string, limit = 20, mode?: string): SearchResult[] {
         type: (entry.type as FileType | undefined) ?? "doc",
       });
     }
-  }
-  if (mode !== "docs") {
+  } else {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const ticketResults = ticketIndex.search(query) as unknown as (Record<string, unknown> & {
       score: number;
