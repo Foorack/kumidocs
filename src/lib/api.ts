@@ -126,8 +126,10 @@ interface BoardTicketData {
   tickets: Record<string, unknown>[];
 }
 
-const getAllTickets = async (): Promise<BoardTicketData[]> =>
-  request<BoardTicketData[]>("/api/boards/tickets");
+const getAllTickets = async (boardSlug?: string): Promise<BoardTicketData[]> =>
+  request<BoardTicketData[]>(
+    `/api/boards/tickets${boardSlug === undefined ? "" : `?board=${encodeURIComponent(boardSlug)}`}`,
+  );
 
 const getFile = async (path: string): Promise<FileGetResponse> =>
   request<FileGetResponse>(`/api/file?path=${encodeURIComponent(path)}`);

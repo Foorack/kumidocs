@@ -89,11 +89,19 @@ function apiSidebar(): Response {
   return Response.json({ content });
 }
 
-// GET /api/boards/tickets
+// GET /api/boards/tickets[?board=slug]
 // oxlint-disable-next-line complexity
-function apiAllTickets(): Response {
+function apiAllTickets(url?: URL): Response {
   const tree = buildFileTree();
-  const result: unknown[] = [];
+  const result: {
+    boardName: string;
+    boardPrefix: string;
+    boardSlug: string;
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    columns: { color: string; default?: boolean; final?: boolean; id: string }[];
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    tickets: Record<string, unknown>[];
+  }[] = [];
 
   for (const configNode of tree) {
     if (
@@ -182,6 +190,13 @@ function apiAllTickets(): Response {
     }
 
     result.push({ boardName, boardPrefix, boardSlug: slug, columns, tickets });
+  }
+
+  // Optionally filter to a single board
+  const boardFilter = url?.searchParams.get("board");
+  if (boardFilter !== undefined && boardFilter !== "") {
+    const filtered = result.filter((entry) => entry.boardSlug === boardFilter);
+    return Response.json(filtered);
   }
 
   return Response.json(result);

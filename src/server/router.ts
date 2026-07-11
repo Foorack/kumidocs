@@ -265,7 +265,7 @@ async function buildRoutes(
         if (!user) {
           return new Response("Unauthorized", { status: 401 });
         }
-        return apiAllTickets();
+        return apiAllTickets(new URL(req.url));
       },
     },
 
