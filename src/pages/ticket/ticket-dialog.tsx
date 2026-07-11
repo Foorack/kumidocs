@@ -816,7 +816,7 @@ function TicketDialog({
                         <button
                           type="button"
                           onClick={() => {
-                            setAssignee(user?.email ?? user?.name ?? "");
+                            setAssignee((user?.email ?? user?.name ?? "").toLowerCase());
                           }}
                           className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap shrink-0"
                         >

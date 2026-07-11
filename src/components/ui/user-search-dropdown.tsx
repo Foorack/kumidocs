@@ -48,8 +48,9 @@ function UserSearchDropdown({
   const showDropdown = focused && shown.length > 0;
 
   function select(email: string): void {
-    onChange(email);
-    setQuery(email);
+    const lower = email.toLowerCase();
+    onChange(lower);
+    setQuery(lower);
     setFocused(false);
     inputRef.current?.blur();
   }
@@ -60,9 +61,11 @@ function UserSearchDropdown({
         ref={inputRef}
         value={query}
         placeholder={placeholder}
+        aria-invalid={query !== "" && !query.includes("@") || undefined}
         onChange={(ev) => {
-          setQuery(ev.target.value);
-          onChange(ev.target.value);
+          const lower = ev.target.value.toLowerCase();
+          setQuery(lower);
+          onChange(lower);
         }}
         onFocus={() => {
           setFocused(true);
