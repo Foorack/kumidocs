@@ -93,7 +93,7 @@ function UserSearchDropdown({
       {showDropdown && (
         <div
           ref={listRef}
-          className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border border-border bg-popover shadow-md"
+          className="absolute left-0 min-w-full w-max top-full mt-1 z-50 rounded-md border border-border bg-popover shadow-md"
         >
           <ScrollArea className="max-h-48">
             <ul className="py-1">
@@ -112,7 +112,7 @@ function UserSearchDropdown({
                     }}
                   >
                     <UserAvatar name={display} email={email} size="xs" />
-                    <span className="truncate">{email}</span>
+                    <span>{email}</span>
                   </li>
                 );
               })}
