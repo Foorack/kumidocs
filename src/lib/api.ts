@@ -118,6 +118,17 @@ const searchPages = async (query: string, mode: string): Promise<SearchResult[]>
     `/api/search?q=${encodeURIComponent(query)}&mode=${encodeURIComponent(mode)}`,
   );
 
+interface BoardTicketData {
+  boardName: string;
+  boardPrefix: string;
+  boardSlug: string;
+  columns: { color: string; default?: boolean; final?: boolean; id: string }[];
+  tickets: Record<string, unknown>[];
+}
+
+const getAllTickets = async (): Promise<BoardTicketData[]> =>
+  request<BoardTicketData[]>("/api/boards/tickets");
+
 const getFile = async (path: string): Promise<FileGetResponse> =>
   request<FileGetResponse>(`/api/file?path=${encodeURIComponent(path)}`);
 
@@ -193,13 +204,21 @@ const duplicatePage = async (path: string): Promise<{ newPath: string } | { erro
   }
 };
 
-export type { DiffData, FileGetResponse, FileSaveResponse, ImageEntry, MeResponse };
+export type {
+  BoardTicketData,
+  DiffData,
+  FileGetResponse,
+  FileSaveResponse,
+  ImageEntry,
+  MeResponse,
+};
 export {
   ApiError,
   createFile,
   deleteFile,
   deleteImage,
   duplicatePage,
+  getAllTickets,
   getBacklinks,
   getFile,
   getFileDiff,
