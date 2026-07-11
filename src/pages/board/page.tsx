@@ -240,10 +240,6 @@ function BoardPage(): JSX.Element {
     }
   }, [boardSlug, columns]);
 
-  const handleDialogChange = useCallback((): void => {
-    void reloadTickets();
-  }, [reloadTickets]);
-
   // Reload tickets when another user saves a ticket file in this board
   useWsListener(
     useCallback(
@@ -528,8 +524,8 @@ function BoardPage(): JSX.Element {
         boardColumns={new Map([[boardSlug, columns]])}
         initialBoardSlug={boardSlug}
         ticket={editTicket}
-        onCreated={handleDialogChange}
-        onSaved={handleDialogChange}
+        onCreated={reloadTickets}
+        onSaved={reloadTickets}
       />
     </div>
   );

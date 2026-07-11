@@ -116,7 +116,6 @@ function BoardListPage(): JSX.Element {
             className="flex flex-col w-72 shrink-0 border-r first:border-l border-border"
           >
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" />
               <span className="font-bold text-sm uppercase tracking-wider">{column.label}</span>
               <span className="ml-auto text-xs tabular-nums">{tickets.length}</span>
             </div>
