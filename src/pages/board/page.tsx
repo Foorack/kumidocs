@@ -2,11 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getAllTickets, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
-import { displayColumnId, isArchived, parseTicketYaml, patchTicketYaml, yamlToBoard } from "@/lib/board";
+import {
+  displayColumnId,
+  isArchived,
+  parseTicketYaml,
+  patchTicketYaml,
+  yamlToBoard,
+} from "@/lib/board";
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Info } from "lucide-react";
+import ArchiveButton from "@/components/ui/archive-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/pages/ticket/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
@@ -442,20 +449,13 @@ function BoardPage(): JSX.Element {
               ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
+          <ArchiveButton
+            showArchived={showArchived}
+            onToggle={() => {
               setShowArchived((prev) => !prev);
             }}
-            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors mr-2 ${showArchived ? "bg-accent font-bold" : "hover:bg-accent/50"}`}
-          >
-            <EmojiIcon
-              fileType="archive"
-              size={18}
-              style={showArchived ? {} : ({ filter: "grayscale(1)" } as React.CSSProperties)}
-            />
-            Archived
-          </button>
+            className="mr-2"
+          />
 
           <Button
             size="sm"

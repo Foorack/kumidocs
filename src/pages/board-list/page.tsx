@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
 import { getAllTickets } from "@/lib/api";
 import type { BoardTicketData } from "@/lib/api";
 import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
-import { EmojiIcon } from "@/components/ui/emoji-icon";
+import ArchiveButton from "@/components/ui/archive-button";
 
 const HOME_COLUMNS = [
   { id: "created-by-me", label: "Created by me" },
@@ -100,20 +100,12 @@ function BoardListPage(): JSX.Element {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <button
-            type="button"
-            onClick={() => {
+          <ArchiveButton
+            showArchived={showArchived}
+            onToggle={() => {
               setShowArchived((prev) => !prev);
             }}
-            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors ${showArchived ? "bg-accent font-bold" : "hover:bg-accent/50"}`}
-          >
-            <EmojiIcon
-              fileType="archive"
-              size={18}
-              style={showArchived ? {} : ({ filter: "grayscale(1)" } as CSSProperties)}
-            />
-            Archived
-          </button>
+          />
         </div>
       </div>
 
