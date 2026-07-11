@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
+import UserSearchDropdown from "@/components/ui/user-search-dropdown";
 import type { CommitEntry } from "@/lib/types";
 import CommitDiffDialog from "@/components/layout/commit-diff-dialog";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
@@ -46,6 +47,9 @@ interface TicketDialogProps {
     ticketId: string;
     title: string;
   };
+  /** Optional pre-scraped user list for the assignee dropdown. */
+  users?: string[];
+  displayNames?: Map<string, string>;
   onCreated?: () => void;
   onSaved?: () => void;
 }
@@ -57,6 +61,8 @@ function TicketDialog({
   boardColumns,
   initialBoardSlug,
   ticket,
+  users = [],
+  displayNames = new Map(),
   onCreated,
   onSaved,
 }: TicketDialogProps): JSX.Element {
@@ -798,25 +804,25 @@ function TicketDialog({
                       size="xs"
                     />
                     {showEditControls ? (
-                      <>
-                        <input
+                      <div className="flex items-center gap-2">
+                        <UserSearchDropdown
+                          users={users}
+                          displayNames={displayNames}
                           value={assignee}
-                          onChange={(ev) => {
-                            setAssignee(ev.target.value);
-                          }}
+                          onChange={setAssignee}
                           placeholder="Unassigned"
-                          className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm placeholder:text-muted-foreground"
+                          className="w-40"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             setAssignee(user?.email ?? user?.name ?? "");
                           }}
-                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap shrink-0"
                         >
                           Assign to me
                         </button>
-                      </>
+                      </div>
                     ) : (
                       assignee || "Unassigned"
                     )}
