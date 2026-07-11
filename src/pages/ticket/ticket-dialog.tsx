@@ -641,6 +641,7 @@ function TicketDialog({
         onChange={setBody}
         placeholder="Add description..."
         minHeight="min-h-[260px]"
+        border={false}
       />
     </div>
   ) : (
