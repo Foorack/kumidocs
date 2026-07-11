@@ -2,34 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { getAllTickets } from "@/lib/api";
 import type { BoardTicketData } from "@/lib/api";
+import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
-
-const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
 
 const HOME_COLUMNS = [
   { id: "created-by-me", label: "Created by me" },
   { id: "assigned-to-me", label: "Assigned to me" },
   { id: "bookmarked", label: "Bookmarked" },
 ] as const;
-
-function isArchived(
-  ticket: Record<string, unknown>,
-  columns: { color: string; default?: boolean; final?: boolean; id: string }[],
-): boolean {
-  const colId = typeof ticket.column === "string" ? ticket.column : "";
-  const col = columns.find((column) => column.id === colId);
-  if (col?.final !== true) {
-    return false;
-  }
-  const updatedAt = typeof ticket.updatedAt === "string" ? ticket.updatedAt : undefined;
-  if (updatedAt === undefined || updatedAt === "") {
-    return false;
-  }
-  return Date.now() - new Date(updatedAt).getTime() > ARCHIVE_AFTER_MS;
-}
 
 function BoardListPage(): JSX.Element {
   const { user } = useUser();
@@ -62,7 +45,14 @@ function BoardListPage(): JSX.Element {
 
     for (const board of boards) {
       for (const ticket of board.tickets) {
-        if (!showArchived && isArchived(ticket, board.columns)) {
+        if (
+          !showArchived &&
+          isArchived(
+            typeof ticket.column === "string" ? ticket.column : undefined,
+            typeof ticket.updatedAt === "string" ? ticket.updatedAt : undefined,
+            board.columns,
+          )
+        ) {
           continue;
         }
         const colColor =

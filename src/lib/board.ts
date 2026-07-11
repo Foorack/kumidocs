@@ -460,6 +460,29 @@ async function patchTicketYaml(
   });
 }
 
+const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
+
+/**
+ * Check whether a ticket should be considered archived.
+ * A ticket is archived when:
+ *   1. Its column has `final: true`
+ *   2. Its `updatedAt` is older than 3 weeks (21 days)
+ */
+function isArchived(
+  column: string | undefined,
+  updatedAt: string | undefined,
+  columns: { final?: boolean; id: string }[],
+): boolean {
+  const col = columns.find((colDef) => colDef.id === column);
+  if (col?.final !== true) {
+    return false;
+  }
+  if (updatedAt === undefined || updatedAt === "") {
+    return false;
+  }
+  return Date.now() - new Date(updatedAt).getTime() > ARCHIVE_AFTER_MS;
+}
+
 export type {
   BoardColumn,
   BoardConfig,
@@ -470,11 +493,13 @@ export type {
   TicketYamlData,
 };
 export {
+  ARCHIVE_AFTER_MS,
   boardToYaml,
   defaultBoardConfig,
   DEFAULT_COLUMNS,
   approvalFileType,
   displayColumnId,
+  isArchived,
   parseTicketYaml,
   patchTicketYaml,
   serializeTicket,

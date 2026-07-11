@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getAllTickets, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
-import { displayColumnId, parseTicketYaml, patchTicketYaml, yamlToBoard } from "@/lib/board";
+import { displayColumnId, isArchived, parseTicketYaml, patchTicketYaml, yamlToBoard } from "@/lib/board";
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -22,8 +22,6 @@ import { useWsListener } from "@/store/ws";
 import type { JSX } from "react";
 import BoardColumnView from "./column";
 import BoardOverlay from "./board-overlay";
-
-const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
 
 // oxlint-disable-next-line complexity
 function BoardPage(): JSX.Element {
@@ -80,19 +78,6 @@ function BoardPage(): JSX.Element {
     isDirtyRef,
     loadDocNoop,
   );
-
-  function isArchived(ticket: TicketData): boolean {
-    const boardCols = config?.columns ?? [];
-    const col = boardCols.find((colDef) => colDef.id === ticket.column);
-    if (col?.final !== true) {
-      return false;
-    }
-    const updatedAt = ticket.updatedAt;
-    if (updatedAt === undefined || updatedAt === "") {
-      return false;
-    }
-    return Date.now() - new Date(updatedAt).getTime() > ARCHIVE_AFTER_MS;
-  }
 
   // Load board config and tickets
   useEffect(() => {
@@ -167,7 +152,7 @@ function BoardPage(): JSX.Element {
     }
     const uncategorized: TicketData[] = [];
     for (const ticket of tickets) {
-      if (!showArchived && isArchived(ticket)) {
+      if (!showArchived && isArchived(ticket.column, ticket.updatedAt, columns)) {
         continue;
       }
       const targetCol = columns.find(
