@@ -2,7 +2,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { Copy, History, MessageSquare, ThumbsUp } from "lucide-react";
+import { Copy, History, MessageSquare, ThumbsUp, X } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
 import { parseTicketYaml, serializeTicket } from "@/lib/board";
@@ -791,7 +791,7 @@ function TicketDialog({
                     <UserAvatar
                       name={emailToDisplayName(reporter || "Unknown")}
                       email={reporter || "Unknown"}
-                      size="xs"
+                      size="sm"
                     />
                     {reporter || "Unknown"}
                   </span>
@@ -802,7 +802,7 @@ function TicketDialog({
                     <UserAvatar
                       name={emailToDisplayName(assignee || "Unassigned")}
                       email={assignee || "Unassigned"}
-                      size="xs"
+                      size="sm"
                     />
                     {showEditControls ? (
                       <div className="flex items-center gap-2">
@@ -814,6 +814,17 @@ function TicketDialog({
                           placeholder="Unassigned"
                           className="w-40"
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignee("");
+                          }}
+                          disabled={assignee === ""}
+                          className={`shrink-0 p-0.5 rounded transition-colors ${assignee === "" ? "text-muted-foreground/40 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                          title="Clear assignee"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
