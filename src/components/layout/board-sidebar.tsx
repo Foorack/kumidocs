@@ -15,6 +15,7 @@ import useMountEffect from "@/hooks/use-mount-effect";
 import { getFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
+import { scrapeUsers } from "@/lib/user-list";
 import TicketDialog from "@/pages/ticket/ticket-dialog";
 
 interface BoardSidebarContentProps {
@@ -262,6 +263,8 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
     [boardConfigs],
   );
 
+  const dialogUsers = useMemo(() => scrapeUsers(tickets), [tickets]);
+
   const defaultNewTicketBoard = useMemo<string | undefined>(() => {
     if (effectiveBoardSlug !== undefined) {
       return effectiveBoardSlug;
@@ -350,6 +353,8 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
         boards={boardNameMap}
         boardColumns={boardColumnsMap}
         initialBoardSlug={defaultNewTicketBoard}
+        users={dialogUsers.emails}
+        displayNames={dialogUsers.displayNames}
         onCreated={reloadTree}
       />
     </>

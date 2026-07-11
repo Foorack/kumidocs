@@ -70,7 +70,7 @@ function MarkdownToolbar({
   setShowPreview,
 }: MarkdownToolbarProps): JSX.Element {
   return (
-    <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border bg-background shrink-0">
+    <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border shrink-0">
       {/* Left: formatting controls */}
       <div className="flex items-center gap-1">
         <Select value={headingValue} onValueChange={handleHeading} disabled={disabled}>

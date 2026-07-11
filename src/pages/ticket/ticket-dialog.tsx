@@ -2,7 +2,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { Copy, History, MessageSquare, ThumbsUp } from "lucide-react";
+import { Copy, History, MessageSquare, ThumbsUp, X } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
 import { parseTicketYaml, serializeTicket } from "@/lib/board";
@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
+import UserSearchDropdown from "@/components/ui/user-search-dropdown";
 import type { CommitEntry } from "@/lib/types";
 import CommitDiffDialog from "@/components/layout/commit-diff-dialog";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
@@ -46,6 +47,9 @@ interface TicketDialogProps {
     ticketId: string;
     title: string;
   };
+  /** Optional pre-scraped user list for the assignee dropdown. */
+  users?: string[];
+  displayNames?: Map<string, string>;
   onCreated?: () => void;
   onSaved?: () => void;
 }
@@ -57,6 +61,8 @@ function TicketDialog({
   boardColumns,
   initialBoardSlug,
   ticket,
+  users = [],
+  displayNames = new Map(),
   onCreated,
   onSaved,
 }: TicketDialogProps): JSX.Element {
@@ -635,6 +641,7 @@ function TicketDialog({
         onChange={setBody}
         placeholder="Add description..."
         minHeight="min-h-[260px]"
+        border={false}
       />
     </div>
   ) : (
@@ -784,7 +791,7 @@ function TicketDialog({
                     <UserAvatar
                       name={emailToDisplayName(reporter || "Unknown")}
                       email={reporter || "Unknown"}
-                      size="xs"
+                      size="sm"
                     />
                     {reporter || "Unknown"}
                   </span>
@@ -795,28 +802,39 @@ function TicketDialog({
                     <UserAvatar
                       name={emailToDisplayName(assignee || "Unassigned")}
                       email={assignee || "Unassigned"}
-                      size="xs"
+                      size="sm"
                     />
                     {showEditControls ? (
-                      <>
-                        <input
+                      <div className="flex items-center gap-2">
+                        <UserSearchDropdown
+                          users={users}
+                          displayNames={displayNames}
                           value={assignee}
-                          onChange={(ev) => {
-                            setAssignee(ev.target.value);
-                          }}
+                          onChange={setAssignee}
                           placeholder="Unassigned"
-                          className="h-7 w-40 rounded border border-input bg-transparent px-2 text-sm placeholder:text-muted-foreground"
+                          className="w-40"
                         />
                         <button
                           type="button"
                           onClick={() => {
-                            setAssignee(user?.email ?? user?.name ?? "");
+                            setAssignee("");
                           }}
-                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap"
+                          disabled={assignee === ""}
+                          className={`shrink-0 p-0.5 rounded transition-colors ${assignee === "" ? "text-muted-foreground/40 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                          title="Clear assignee"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAssignee((user?.email ?? user?.name ?? "").toLowerCase());
+                          }}
+                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap shrink-0"
                         >
                           Assign to me
                         </button>
-                      </>
+                      </div>
                     ) : (
                       assignee || "Unassigned"
                     )}

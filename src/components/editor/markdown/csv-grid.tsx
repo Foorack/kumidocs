@@ -369,7 +369,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
   // --- Toolbar rendering ---
 
   const toolbar = (
-    <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border bg-background shrink-0">
+    <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-border shrink-0">
       {readOnly ? (
         <div />
       ) : (

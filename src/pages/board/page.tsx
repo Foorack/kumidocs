@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getAllTickets, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
+import { scrapeUsers } from "@/lib/user-list";
 import {
   displayColumnId,
   isArchived,
@@ -199,6 +200,8 @@ function BoardPage(): JSX.Element {
     }
     return map;
   }, [tickets, columns, defaultColumnId, showArchived]);
+
+  const dialogUsers = useMemo(() => scrapeUsers(tickets), [tickets]);
 
   // Dialog handlers
   const handleDialogClose = useCallback((): void => {
@@ -524,6 +527,8 @@ function BoardPage(): JSX.Element {
         boardColumns={new Map([[boardSlug, columns]])}
         initialBoardSlug={boardSlug}
         ticket={editTicket}
+        users={dialogUsers.emails}
+        displayNames={dialogUsers.displayNames}
         onCreated={reloadTickets}
         onSaved={reloadTickets}
       />
