@@ -112,8 +112,7 @@ function UserSearchDropdown({
                     }}
                   >
                     <UserAvatar name={display} email={email} size="xs" />
-                    <span className="font-medium truncate">{display}</span>
-                    <span className="text-muted-foreground ml-auto shrink-0 text-xs">{email}</span>
+                    <span className="truncate">{email}</span>
                   </li>
                 );
               })}
