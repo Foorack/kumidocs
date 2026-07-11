@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import Input from "./input";
 import { ScrollArea } from "./scroll-area";
+import { UserAvatar } from "./avatar";
+import { emailToDisplayName } from "@/lib/avatar";
 
 interface UserSearchDropdownProps {
   /** Sorted, deduplicated list of all known user emails. */
@@ -33,7 +35,7 @@ function UserSearchDropdown({
 
   const filtered = useMemo(() => {
     if (query === "") {
-      return [];
+      return users;
     }
     const lower = query.toLowerCase();
     return users.filter((email) => {
@@ -42,7 +44,8 @@ function UserSearchDropdown({
     });
   }, [users, displayNames, query]);
 
-  const showDropdown = focused && query !== "" && filtered.length > 0;
+  const shown = query === "" ? users : filtered;
+  const showDropdown = focused && shown.length > 0;
 
   function select(email: string): void {
     onChange(email);
@@ -75,8 +78,8 @@ function UserSearchDropdown({
             setFocused(false);
             inputRef.current?.blur();
           }
-          if (ev.key === "Enter" && filtered.length > 0) {
-            const first = filtered[0];
+          if (ev.key === "Enter" && shown.length > 0) {
+            const first = shown[0];
             if (first !== undefined) {
               select(first);
             }
@@ -91,22 +94,26 @@ function UserSearchDropdown({
         >
           <ScrollArea className="max-h-48">
             <ul className="py-1">
-              {filtered.map((email) => (
-                <li
-                  key={email}
-                  role="option"
-                  aria-selected={email === value}
-                  tabIndex={-1}
-                  className="px-3 py-1.5 text-sm cursor-pointer hover:bg-accent aria-selected:bg-accent truncate"
-                  onMouseDown={(ev) => {
-                    ev.preventDefault();
-                    select(email);
-                  }}
-                >
-                  <span className="font-medium">{displayNames.get(email) ?? email}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">{email}</span>
-                </li>
-              ))}
+              {shown.map((email) => {
+                const display = displayNames.get(email) ?? emailToDisplayName(email);
+                return (
+                  <li
+                    key={email}
+                    role="option"
+                    aria-selected={email === value}
+                    tabIndex={-1}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-accent aria-selected:bg-accent"
+                    onMouseDown={(ev) => {
+                      ev.preventDefault();
+                      select(email);
+                    }}
+                  >
+                    <UserAvatar name={display} email={email} size="xs" />
+                    <span className="font-medium truncate">{display}</span>
+                    <span className="text-muted-foreground ml-auto shrink-0 text-xs">{email}</span>
+                  </li>
+                );
+              })}
             </ul>
           </ScrollArea>
         </div>

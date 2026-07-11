@@ -20,11 +20,15 @@ function scrapeUsers(tickets: TicketData[]): ScrapeResult {
   const displayNames = new Map<string, string>();
 
   function addEmail(email: string): void {
-    if (email === "" || seen.has(email)) {
+    if (email === "") {
       return;
     }
-    seen.add(email);
-    displayNames.set(email, emailToDisplayName(email));
+    const lower = email.toLowerCase();
+    if (seen.has(lower)) {
+      return;
+    }
+    seen.add(lower);
+    displayNames.set(lower, emailToDisplayName(email));
   }
 
   for (const ticket of tickets) {
@@ -57,7 +61,7 @@ function scrapeUsers(tickets: TicketData[]): ScrapeResult {
   }
 
   const emails = [...seen].toSorted((emailA, emailB) =>
-    emailA.toLowerCase().localeCompare(emailB.toLowerCase()),
+    emailA.localeCompare(emailB),
   );
 
   return { displayNames, emails };
