@@ -131,6 +131,16 @@ async function buildRoutes(
       },
     },
 
+    "/api/boards/tickets": {
+      GET(req: Request) {
+        const user = requireUser(req);
+        if (!user) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+        return apiAllTickets(new URL(req.url));
+      },
+    },
+
     "/api/emojis": {
       GET() {
         return apiEmojis();
@@ -256,16 +266,6 @@ async function buildRoutes(
           return new Response("Unauthorized", { status: 401 });
         }
         return apiSearch(new URL(req.url));
-      },
-    },
-
-    "/api/boards/tickets": {
-      GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        return apiAllTickets(new URL(req.url));
       },
     },
 
