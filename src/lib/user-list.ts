@@ -60,9 +60,7 @@ function scrapeUsers(tickets: TicketData[]): ScrapeResult {
     }
   }
 
-  const emails = [...seen].toSorted((emailA, emailB) =>
-    emailA.localeCompare(emailB),
-  );
+  const emails = [...seen].toSorted((emailA, emailB) => emailA.localeCompare(emailB));
 
   return { displayNames, emails };
 }
