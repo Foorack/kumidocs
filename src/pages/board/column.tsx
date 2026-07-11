@@ -50,7 +50,9 @@ export default function BoardColumnView({
 
       {/* Ticket list */}
       <div className="flex-1 overflow-y-auto space-y-1.5 px-2 py-2 min-h-[4rem]">
-        {tickets.length === 0 && <div className="px-1 py-6 text-center text-muted-foreground">No tickets</div>}
+        {tickets.length === 0 && (
+          <div className="px-1 py-6 text-center text-muted-foreground">No tickets</div>
+        )}
         {tickets.map((ticket) => (
           <TicketCard
             key={`${boardSlug}/${ticket.id}`}

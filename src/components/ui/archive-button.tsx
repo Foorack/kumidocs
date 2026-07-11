@@ -7,7 +7,11 @@ interface ArchiveButtonProps {
   className?: string;
 }
 
-function ArchiveButton({ showArchived, onToggle, className = "" }: ArchiveButtonProps): JSX.Element {
+function ArchiveButton({
+  showArchived,
+  onToggle,
+  className = "",
+}: ArchiveButtonProps): JSX.Element {
   return (
     <button
       type="button"
