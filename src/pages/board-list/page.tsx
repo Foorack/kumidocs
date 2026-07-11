@@ -9,9 +9,9 @@ import type { JSX } from "react";
 const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
 
 const HOME_COLUMNS = [
-  { color: "#1677ff", id: "created-by-me", label: "Created by me" },
-  { color: "#52c41a", id: "assigned-to-me", label: "Assigned to me" },
-  { color: "#faad14", id: "bookmarked", label: "Bookmarked" },
+  { id: "created-by-me", label: "Created by me" },
+  { id: "assigned-to-me", label: "Assigned to me" },
+  { id: "bookmarked", label: "Bookmarked" },
 ] as const;
 
 function isArchived(
@@ -64,7 +64,9 @@ function BoardListPage(): JSX.Element {
         if (!showArchived && isArchived(ticket, board.columns)) {
           continue;
         }
-        const enriched = { ...ticket, boardPrefix: board.boardPrefix };
+        const colColor =
+          board.columns.find((colDef) => colDef.id === ticket.column)?.color ?? "#6b7280";
+        const enriched = { ...ticket, boardPrefix: board.boardPrefix, cardColor: colColor };
         if (ticket.reporter === userEmail) {
           createdByMe.push(enriched);
         }
@@ -128,10 +130,7 @@ function BoardListPage(): JSX.Element {
             className="flex flex-col w-72 shrink-0 border-r first:border-l border-border"
           >
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: column.color }}
-              />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" />
               <span className="font-bold text-sm uppercase tracking-wider">{column.label}</span>
               <span className="ml-auto text-xs tabular-nums">{tickets.length}</span>
             </div>
@@ -144,11 +143,12 @@ function BoardListPage(): JSX.Element {
                 const prefix = typeof rec.boardPrefix === "string" ? rec.boardPrefix : undefined;
                 const slug = typeof rec.boardSlug === "string" ? rec.boardSlug : "";
                 const tid = typeof rec.id === "string" ? rec.id : "";
+                const cardColor = typeof rec.cardColor === "string" ? rec.cardColor : "#6b7280";
                 return (
                   <div
                     key={`${slug}/${tid}`}
                     className="border rounded-md bg-card hover:bg-accent/50 cursor-pointer transition-colors overflow-hidden"
-                    style={{ borderColor: column.color }}
+                    style={{ borderColor: cardColor }}
                     onClick={() => {
                       void navigate(`/b/${slug}/${tid}`);
                     }}
@@ -165,7 +165,7 @@ function BoardListPage(): JSX.Element {
                       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                       ticket={ticket as unknown as Parameters<typeof CardContent>[0]["ticket"]}
                       prefix={prefix ?? slug}
-                      columnColor={column.color}
+                      columnColor={cardColor}
                     />
                   </div>
                 );
