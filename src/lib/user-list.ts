@@ -20,7 +20,7 @@ function scrapeUsers(tickets: TicketData[]): ScrapeResult {
   const displayNames = new Map<string, string>();
 
   function addEmail(email: string): void {
-    if (email === "") {
+    if (email === "" || !email.includes("@")) {
       return;
     }
     const lower = email.toLowerCase();
