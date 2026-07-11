@@ -6,30 +6,7 @@
 
 ---
 
-### 2. Homeboard (`/b/`)
-
-The `/b/` route currently shows "Boards - coming soon". Replace it with a homeboard: a board-like view with built-in columns that aggregate tickets across ALL boards.
-
-**Columns** (static, non-configurable):
-
-| Column         | Filter logic                                   |
-| -------------- | ---------------------------------------------- |
-| Created by me  | `ticket.reporter === currentUserEmail`         |
-| Assigned to me | `ticket.assignee === currentUserEmail`         |
-| Bookmarked     | `ticket.bookmarks?.includes(currentUserEmail)` |
-
-**Approach**:
-
-- Rewrite `src/pages/board-list/page.tsx` to render a board-like kanban with these three columns
-- Fetch all tickets from all boards by scanning the repo tree for `.yaml` files, parsing each
-- The columns should look and behave like `BoardColumnView` from `src/pages/board/column.tsx` -- draggable cards (though dragging between homeboard columns should do nothing or be cosmetic-only since these aren't real columns)
-- Cards link to their original board page (`/b/:slug/:ticketId`)
-- Show the board name/icon on each card so users know which board the ticket belongs to
-
-**Files to touch**:
-
-- `src/pages/board-list/page.tsx` -- complete rewrite
-- Possibly extract shared card rendering from `src/pages/board/card.tsx` if needed
+### 2. Homeboard (`/b/`) (DONE)
 
 ---
 

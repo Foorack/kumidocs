@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { getFile, getTree, putFile } from "@/lib/api";
+import { getAllTickets, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardConfig, TicketData } from "@/lib/board";
-import { displayColumnId, parseTicketYaml, patchTicketYaml, yamlToBoard } from "@/lib/board";
+import {
+  displayColumnId,
+  isArchived,
+  parseTicketYaml,
+  patchTicketYaml,
+  yamlToBoard,
+} from "@/lib/board";
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { Info } from "lucide-react";
+import ArchiveButton from "@/components/ui/archive-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/pages/ticket/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
@@ -23,6 +30,7 @@ import type { JSX } from "react";
 import BoardColumnView from "./column";
 import BoardOverlay from "./board-overlay";
 
+// oxlint-disable-next-line complexity
 function BoardPage(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +42,7 @@ function BoardPage(): JSX.Element {
   const [config, setConfig] = useState<BoardConfig | undefined>(undefined);
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -94,31 +103,41 @@ function BoardPage(): JSX.Element {
         setConfig(boardConfig);
         document.title = `${boardConfig.name} | ${instanceName}`;
 
-        const tree = await getTree();
-        const boardDir = tree.find((node) => node.type === "dir" && node.name === boardSlug);
-        const ticketNodes =
-          boardDir?.children?.filter(
-            (child) => child.type === "file" && child.path.endsWith(".yaml"),
-          ) ?? [];
+        const boardData = await getAllTickets(boardSlug);
+        const board = boardData[0];
+        // oxlint-disable-next-line no-negated-condition
+        if (board !== undefined) {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          setTickets(board.tickets as unknown as TicketData[]);
+        } else {
+          // Fallback: load tickets manually
+          const tree = await getTree();
+          const boardDir = tree.find((node) => node.type === "dir" && node.name === boardSlug);
+          const ticketNodes =
+            boardDir?.children?.filter(
+              (child) => child.type === "file" && child.path.endsWith(".yaml"),
+            ) ?? [];
 
-        const boardDefaultColId = boardConfig.columns.find((col) => col.default === true)?.id ?? "";
-        const loaded = await Promise.all(
-          ticketNodes.map(async (node) => {
-            const ticketId = node.name.replace(/\.yaml$/u, "");
-            try {
-              const fileResp = await getFile(node.path);
-              return await parseTicketYaml(
-                fileResp.content,
-                boardSlug,
-                ticketId,
-                boardDefaultColId,
-              );
-            } catch {
-              return { boardSlug, column: boardDefaultColId, id: ticketId, title: ticketId };
-            }
-          }),
-        );
-        setTickets(loaded);
+          const boardDefaultColId =
+            boardConfig.columns.find((col) => col.default === true)?.id ?? "";
+          const loaded = await Promise.all(
+            ticketNodes.map(async (node) => {
+              const ticketId = node.name.replace(/\.yaml$/u, "");
+              try {
+                const fileResp = await getFile(node.path);
+                return await parseTicketYaml(
+                  fileResp.content,
+                  boardSlug,
+                  ticketId,
+                  boardDefaultColId,
+                );
+              } catch {
+                return { boardSlug, column: boardDefaultColId, id: ticketId, title: ticketId };
+              }
+            }),
+          );
+          setTickets(loaded);
+        }
       } catch {
         setConfig(undefined);
       } finally {
@@ -140,6 +159,9 @@ function BoardPage(): JSX.Element {
     }
     const uncategorized: TicketData[] = [];
     for (const ticket of tickets) {
+      if (!showArchived && isArchived(ticket.column, ticket.updatedAt, columns)) {
+        continue;
+      }
       const targetCol = columns.find(
         (col) =>
           col.id === ticket.column || displayColumnId(col.id) === displayColumnId(ticket.column),
@@ -176,7 +198,7 @@ function BoardPage(): JSX.Element {
       });
     }
     return map;
-  }, [tickets, columns, defaultColumnId]);
+  }, [tickets, columns, defaultColumnId, showArchived]);
 
   // Dialog handlers
   const handleDialogClose = useCallback((): void => {
@@ -217,10 +239,6 @@ function BoardPage(): JSX.Element {
       // ignore
     }
   }, [boardSlug, columns]);
-
-  const handleDialogChange = useCallback((): void => {
-    void reloadTickets();
-  }, [reloadTickets]);
 
   // Reload tickets when another user saves a ticket file in this board
   useWsListener(
@@ -427,6 +445,14 @@ function BoardPage(): JSX.Element {
               ))}
           </div>
 
+          <ArchiveButton
+            showArchived={showArchived}
+            onToggle={() => {
+              setShowArchived((prev) => !prev);
+            }}
+            className="mr-2"
+          />
+
           <Button
             size="sm"
             variant={infoOpen ? "secondary" : "ghost"}
@@ -498,8 +524,8 @@ function BoardPage(): JSX.Element {
         boardColumns={new Map([[boardSlug, columns]])}
         initialBoardSlug={boardSlug}
         ticket={editTicket}
-        onCreated={handleDialogChange}
-        onSaved={handleDialogChange}
+        onCreated={reloadTickets}
+        onSaved={reloadTickets}
       />
     </div>
   );

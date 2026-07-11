@@ -8,6 +8,7 @@ import { Fragment } from "react";
 // Fluent icon names keyed by file/type; the fallback is QuestionCircle24Color.
 const FLUENT_TYPE_ICONS: Record<string, string> = {
   approve: "CheckmarkCircle24Color",
+  archive: "DocumentFolder24Color",
   board: "Board24Color",
   bookmark: "Bookmark24Color",
   code: "Code24Color",

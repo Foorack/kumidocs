@@ -233,6 +233,7 @@ function TicketDialog({
   const columnColor = currentColumns.find((col) => col.id === activeColumn)?.color ?? "#6b7280";
   const showEditControls = editing || !isEdit;
 
+  /* oxlint-disable typescript/no-unnecessary-condition */
   const bookmarkDiff = useMemo(() => {
     const ticketBookmarks = ticket?.bookmarks ?? [];
     const changed =
@@ -246,6 +247,7 @@ function TicketDialog({
         column !== ticket?.column ||
         golden !== (ticket?.golden ?? false) ||
         assignee !== (ticket?.assignee ?? ""));
+    /* oxlint-enable typescript/no-unnecessary-condition */
     return { bookmarksChanged: changed, onlyBookmarksChanged: changed && !contentChanged };
   }, [isEdit, bookmarks, ticket, title, body, column, golden, assignee]);
 
