@@ -102,6 +102,8 @@ interface TicketCardProps {
   boardSlug: string;
   onClick: () => void;
   columnColor: string;
+  /** When false, renders a static card without drag-and-drop. Default true. */
+  draggable?: boolean;
 }
 
 function TicketCard({
@@ -110,9 +112,12 @@ function TicketCard({
   boardSlug,
   onClick,
   columnColor,
+  draggable = true,
 }: TicketCardProps): JSX.Element {
+  // Always call the hook (rule of hooks), but use a unique id per boardSlug/ticket
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `${boardSlug}/${ticket.id}`,
+    disabled: !draggable,
+    id: draggable ? `${boardSlug}/${ticket.id}` : `static-${boardSlug}/${ticket.id}`,
   });
 
   const style: CSSProperties = {

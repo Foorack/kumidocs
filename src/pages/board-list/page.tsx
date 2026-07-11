@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, JSX } from "react";
 import { getAllTickets } from "@/lib/api";
 import type { BoardTicketData } from "@/lib/api";
-import { CardContent } from "@/pages/board/card";
+import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
@@ -149,29 +149,18 @@ function BoardListPage(): JSX.Element {
                 const tid = typeof rec.id === "string" ? rec.id : "";
                 const cardColor = typeof rec.cardColor === "string" ? rec.cardColor : "#6b7280";
                 return (
-                  <div
+                  <TicketCard
                     key={`${slug}/${tid}`}
-                    className="border rounded-md bg-card hover:bg-accent/50 cursor-pointer transition-colors overflow-hidden"
-                    style={{ borderColor: cardColor }}
+                    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+                    ticket={ticket as unknown as Parameters<typeof TicketCard>[0]["ticket"]}
+                    prefix={prefix ?? slug}
+                    boardSlug={slug}
+                    columnColor={cardColor}
+                    draggable={false}
                     onClick={() => {
                       void navigate(`/b/${slug}/${tid}`);
                     }}
-                    onKeyDown={(ev) => {
-                      if (ev.key === "Enter" || ev.key === " ") {
-                        ev.preventDefault();
-                        void navigate(`/b/${slug}/${tid}`);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <CardContent
-                      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-                      ticket={ticket as unknown as Parameters<typeof CardContent>[0]["ticket"]}
-                      prefix={prefix ?? slug}
-                      columnColor={cardColor}
-                    />
-                  </div>
+                  />
                 );
               })}
             </div>
