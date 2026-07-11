@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import Input from "./input";
 import { ScrollArea } from "./scroll-area";
@@ -31,6 +31,11 @@ function UserSearchDropdown({
   const [focused, setFocused] = useState(false);
   const [query, setQuery] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync internal query when value changes externally (e.g. clear button)
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
   const listRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
@@ -61,7 +66,7 @@ function UserSearchDropdown({
         ref={inputRef}
         value={query}
         placeholder={placeholder}
-        aria-invalid={query !== "" && !query.includes("@") || undefined}
+        aria-invalid={(query !== "" && !query.includes("@")) || undefined}
         onChange={(ev) => {
           const lower = ev.target.value.toLowerCase();
           setQuery(lower);
