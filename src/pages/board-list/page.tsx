@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties, JSX } from "react";
 import { getAllTickets } from "@/lib/api";
 import type { BoardTicketData } from "@/lib/api";
 import { CardContent } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
-import type { JSX } from "react";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 
 const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
 
@@ -109,17 +110,20 @@ function BoardListPage(): JSX.Element {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(ev) => {
-                setShowArchived(ev.target.checked);
-              }}
-              className="w-3.5 h-3.5"
+          <button
+            type="button"
+            onClick={() => {
+              setShowArchived((prev) => !prev);
+            }}
+            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors ${showArchived ? "bg-accent font-bold" : "hover:bg-accent/50"}`}
+          >
+            <EmojiIcon
+              fileType="archive"
+              size={18}
+              style={showArchived ? {} : ({ filter: "grayscale(1)" } as CSSProperties)}
             />
-            Show archived
-          </label>
+            Archived
+          </button>
         </div>
       </div>
 

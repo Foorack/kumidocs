@@ -9,6 +9,7 @@ interface User {
 type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType =
   | MarkdownType
+  | "archive"
   | "board"
   | "bookmark"
   | "code"

@@ -25,6 +25,7 @@ import BoardOverlay from "./board-overlay";
 
 const ARCHIVE_AFTER_MS = 21 * 24 * 60 * 60 * 1000;
 
+// oxlint-disable-next-line complexity
 function BoardPage(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -456,17 +457,20 @@ function BoardPage(): JSX.Element {
               ))}
           </div>
 
-          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none mr-2">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(ev) => {
-                setShowArchived(ev.target.checked);
-              }}
-              className="w-3.5 h-3.5"
+          <button
+            type="button"
+            onClick={() => {
+              setShowArchived((prev) => !prev);
+            }}
+            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors mr-2 ${showArchived ? "bg-accent font-bold" : "hover:bg-accent/50"}`}
+          >
+            <EmojiIcon
+              fileType="archive"
+              size={18}
+              style={showArchived ? {} : ({ filter: "grayscale(1)" } as React.CSSProperties)}
             />
-            Show archived
-          </label>
+            Archived
+          </button>
 
           <Button
             size="sm"
