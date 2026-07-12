@@ -428,7 +428,7 @@ function BoardPage(): JSX.Element {
 
         {/* Right: viewers + info */}
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <div className="flex -space-x-1">
+          <div className="flex -space-x-1 me-3">
             {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
               .slice(0, 5)
               .map((viewer: PresenceUser) => (

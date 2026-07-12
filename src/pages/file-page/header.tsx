@@ -197,7 +197,7 @@ function FilePageHeader({
       {/* Right: viewers + info + dropdown */}
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
         {/* Viewers deduplicated by id (same user may have multiple tabs open) */}
-        <div className="flex -space-x-1">
+        <div className="flex -space-x-1 me-3">
           {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
             .slice(0, 5)
             .map((viewer: PresenceUser) => (
@@ -220,7 +220,9 @@ function FilePageHeader({
           <PageHeaderButton
             fileType="toc"
             label="TOC"
-            active={tocOpen}              grayscaleWhenInactive            onClick={() => {
+            active={tocOpen}
+            grayscaleWhenInactive
+            onClick={() => {
               setTocOpen((prev) => {
                 const next = !prev;
                 if (next) {
@@ -239,7 +241,9 @@ function FilePageHeader({
           <PageHeaderButton
             fileType="pageinfo"
             label="Info"
-            active={infoOpen}              grayscaleWhenInactive            onClick={() => {
+            active={infoOpen}
+            grayscaleWhenInactive
+            onClick={() => {
               setInfoOpen((prev) => {
                 const next = !prev;
                 if (next) {
