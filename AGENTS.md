@@ -200,6 +200,14 @@ For most cases, prefer these alternatives in order:
 - Keep `TASKS.md` in sync: add tasks as discovered, mark done as completed.
 - Significant deviations from the spec during implementation must be documented back into `SPEC.md`.
 
+### Shared UI Patterns
+
+Before adding a UI element to one view (doc mode, board mode, etc.), check if the same or a similar element already exists in another view. If it does, extract a shared component instead of duplicating the pattern inline. The same applies to menu items: when the user asks to change items in one mode's hamburger menu, they may want the same treatment in the other mode -- ask or just do it.
+
+Examples of shared patterns already extracted:
+- `PageHeaderButton` -- toggle button with icon + label, used in both doc and board headers
+- `HeaderMenu` -- hamburger dropdown trigger wrapper, used in both doc and board headers with different menu items passed as children
+
 ---
 
 ## Troubleshooting

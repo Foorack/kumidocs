@@ -1,16 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
-import { MoreHorizontal } from "lucide-react";
 import PageHeaderButton from "@/components/layout/page-header-button";
+import HeaderMenu from "@/components/layout/header-menu";
 import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";
 import EmojiPickerPopover from "@/components/ui/emoji-picker-popover";
 import { Link } from "react-router-dom";
@@ -259,33 +253,26 @@ function FilePageHeader({
 
         {/* Advanced / dangerous actions only */}
         {user?.canEdit === true && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <PageMenuItems
-                variant="dropdown"
-                href={`/p/${rawPath}`}
-                path={filePath}
-                displayTitle={title}
-                canEdit={user.canEdit}
-                onDuplicate={handlePageDuplicate}
-                onCopyHtml={onCopyHtml}
-                onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
-                onMove={async (movePath) => {
-                  try {
-                    await openMove(movePath);
-                  } catch (error: unknown) {
-                    console.error("Failed to open move dialog:", error);
-                  }
-                }}
-                onDelete={openDelete}
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HeaderMenu>
+            <PageMenuItems
+              variant="dropdown"
+              href={`/p/${rawPath}`}
+              path={filePath}
+              displayTitle={title}
+              canEdit={user.canEdit}
+              onDuplicate={handlePageDuplicate}
+              onCopyHtml={onCopyHtml}
+              onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
+              onMove={async (movePath) => {
+                try {
+                  await openMove(movePath);
+                } catch (error: unknown) {
+                  console.error("Failed to open move dialog:", error);
+                }
+              }}
+              onDelete={openDelete}
+            />
+          </HeaderMenu>
         )}
       </div>
     </div>

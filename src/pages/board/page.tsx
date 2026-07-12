@@ -17,6 +17,8 @@ import PageHeaderButton from "@/components/layout/page-header-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import HeaderMenu from "@/components/layout/header-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/avatar";
 import PageInfoPanel from "@/components/layout/page-info-panel";
@@ -465,6 +467,34 @@ function BoardPage(): JSX.Element {
               setInfoOpen(!infoOpen);
             }}
           />
+
+          <HeaderMenu>
+            <DropdownMenuItem
+              onClick={() => {
+                globalThis.open(window.location.href, "_blank");
+              }}
+            >
+              Open in new tab
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                } catch {
+                  // clipboard unavailable
+                }
+              }}
+            >
+              Copy link
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                void navigate(`/bm/${boardSlug}`);
+              }}
+            >
+              Manage
+            </DropdownMenuItem>
+          </HeaderMenu>
         </div>
       </div>
 
