@@ -193,7 +193,7 @@ export default function PageInfoPanel({
 
   return (
     <div className="shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-2 border-b border-border shrink-0">
+      <div className="px-3 py-2.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
           <EmojiIcon fileType="pageinfo" size={16} />
           <span className="flex-1">Page info</span>
@@ -213,23 +213,23 @@ export default function PageInfoPanel({
         <div className="p-3 space-y-3">
           {/* Title + path */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Title</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Title</p>
             <p className="break-words">{title}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Path</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Path</p>
             <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Backlinks</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Commit history</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>
