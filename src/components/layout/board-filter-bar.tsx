@@ -101,8 +101,7 @@ function BoardFilterBar({
   }
 
   return (
-    <div className="flex gap-1 pb-2 border-b border-border">
-      {/* Filter dropdown */}
+    <div className="pb-2 border-b border-border space-y-1">
       <DropdownMenu
         open={filterOpen}
         onOpenChange={(open) => {
@@ -117,7 +116,7 @@ function BoardFilterBar({
             type="button"
             variant={hasFilter ? "secondary" : "outline"}
             size="sm"
-            className={`flex-1 truncate ${hasFilter ? "font-bold" : ""}`}
+            className={`truncate w-full ${hasFilter ? "font-bold" : ""}`}
           >
             {filterLabel}
           </Button>
@@ -203,11 +202,9 @@ function BoardFilterBar({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Sort dropdown */}
       <DropdownMenu open={sortOpen} onOpenChange={setSortOpen}>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" size="sm" className="flex-1 truncate">
+          <Button type="button" variant="outline" size="sm" className="w-full truncate">
             {sortLabel}
           </Button>
         </DropdownMenuTrigger>
