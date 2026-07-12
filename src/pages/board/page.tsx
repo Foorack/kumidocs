@@ -460,6 +460,7 @@ function BoardPage(): JSX.Element {
             fileType="pageinfo"
             label="Info"
             active={infoOpen}
+            grayscaleWhenInactive
             onClick={() => {
               setInfoOpen(!infoOpen);
             }}

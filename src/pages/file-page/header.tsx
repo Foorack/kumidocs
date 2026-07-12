@@ -220,8 +220,7 @@ function FilePageHeader({
           <PageHeaderButton
             fileType="toc"
             label="TOC"
-            active={tocOpen}
-            onClick={() => {
+            active={tocOpen}              grayscaleWhenInactive            onClick={() => {
               setTocOpen((prev) => {
                 const next = !prev;
                 if (next) {
@@ -240,8 +239,7 @@ function FilePageHeader({
           <PageHeaderButton
             fileType="pageinfo"
             label="Info"
-            active={infoOpen}
-            onClick={() => {
+            active={infoOpen}              grayscaleWhenInactive            onClick={() => {
               setInfoOpen((prev) => {
                 const next = !prev;
                 if (next) {
