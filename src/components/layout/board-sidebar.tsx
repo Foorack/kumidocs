@@ -101,7 +101,7 @@ function BoardSidebarContent({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2 space-y-0.5">
       {boardEntries.length > 0 && (
-        <div className="px-2 pb-2">
+        <div className="px-2">
           <Select
             value={selectedBoardSlug ?? ""}
             onValueChange={(val: string) => {

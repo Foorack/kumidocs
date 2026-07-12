@@ -101,7 +101,7 @@ function BoardFilterBar({
   }
 
   return (
-    <div className="pb-2 border-b border-border space-y-1">
+    <div className="border-b border-border space-y-0.5">
       <DropdownMenu
         open={filterOpen}
         onOpenChange={(open) => {
