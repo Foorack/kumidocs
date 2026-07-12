@@ -13,15 +13,14 @@ import {
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import ArchiveButton from "@/components/ui/archive-button";
+import PageHeaderButton from "@/components/layout/page-header-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
-import TicketDialog from "@/pages/ticket/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import PageInfoPanel from "@/components/layout/page-info-panel";
+import TicketDialog from "@/pages/ticket/ticket-dialog";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
@@ -447,24 +446,24 @@ function BoardPage(): JSX.Element {
               ))}
           </div>
 
-          <ArchiveButton
-            showArchived={showArchived}
-            onToggle={() => {
+          <PageHeaderButton
+            fileType="archive"
+            label="Archived"
+            active={showArchived}
+            grayscaleWhenInactive
+            onClick={() => {
               setShowArchived((prev) => !prev);
             }}
           />
 
-          <Button
-            size="sm"
-            variant={infoOpen ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs px-2"
+          <PageHeaderButton
+            fileType="pageinfo"
+            label="Info"
+            active={infoOpen}
             onClick={() => {
               setInfoOpen(!infoOpen);
             }}
-          >
-            <EmojiIcon fileType="pageinfo" size={18} />
-            Info
-          </Button>
+          />
         </div>
       </div>
 

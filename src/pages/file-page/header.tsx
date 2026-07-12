@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
 import { MoreHorizontal } from "lucide-react";
-import { EmojiIcon } from "@/components/ui/emoji-icon";
+import PageHeaderButton from "@/components/layout/page-header-button";
 import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -75,42 +75,6 @@ function SaveBadge({
     >
       {saveLabel(manualSaveOnly, saveStatus)}
     </Badge>
-  );
-}
-
-function ToggleButton({
-  label,
-  icon,
-  isOpen,
-  storageKey,
-  onToggle,
-}: {
-  label: string;
-  icon: JSX.Element;
-  isOpen: boolean;
-  storageKey: string;
-  onToggle: Dispatch<SetStateAction<boolean>>;
-}): JSX.Element {
-  return (
-    <Button
-      size="sm"
-      variant={isOpen ? "secondary" : "ghost"}
-      className="h-7 gap-1 text-xs px-2"
-      onClick={() => {
-        onToggle((prev) => {
-          const next = !prev;
-          if (next) {
-            localStorage.setItem(storageKey, "true");
-          } else {
-            localStorage.removeItem(storageKey);
-          }
-          return next;
-        });
-      }}
-    >
-      {icon}
-      {label}
-    </Button>
   );
 }
 
@@ -253,23 +217,41 @@ function FilePageHeader({
 
         {/* TOC toggle: only for doc pages in view mode */}
         {!editMode && fileType === "doc" && (
-          <ToggleButton
+          <PageHeaderButton
+            fileType="toc"
             label="TOC"
-            icon={<EmojiIcon fileType="toc" size={18} />}
-            isOpen={tocOpen}
-            storageKey="kumidocs:toc-open"
-            onToggle={setTocOpen}
+            active={tocOpen}
+            onClick={() => {
+              setTocOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  localStorage.setItem("kumidocs:toc-open", "true");
+                } else {
+                  localStorage.removeItem("kumidocs:toc-open");
+                }
+                return next;
+              });
+            }}
           />
         )}
 
         {/* Dedicated info button */}
         {!editMode && (
-          <ToggleButton
+          <PageHeaderButton
+            fileType="pageinfo"
             label="Info"
-            icon={<EmojiIcon fileType="pageinfo" size={18} />}
-            isOpen={infoOpen}
-            storageKey="kumidocs:info-open"
-            onToggle={setInfoOpen}
+            active={infoOpen}
+            onClick={() => {
+              setInfoOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  localStorage.setItem("kumidocs:info-open", "true");
+                } else {
+                  localStorage.removeItem("kumidocs:info-open");
+                }
+                return next;
+              });
+            }}
           />
         )}
 
