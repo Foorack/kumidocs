@@ -23,7 +23,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   slide: "SlideTextSparkle24Color",
   status: "Diversity24Color",
   ticket: "Board24Color",
-  toc: "AppListDetail24Color",
+  toc: "AppsListDetail24Color",
 };
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";
