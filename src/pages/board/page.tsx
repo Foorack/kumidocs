@@ -453,7 +453,6 @@ function BoardPage(): JSX.Element {
             onToggle={() => {
               setShowArchived((prev) => !prev);
             }}
-            className="mr-2"
           />
 
           <Button
