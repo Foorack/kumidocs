@@ -284,12 +284,6 @@ const COMPONENTS_SLIDE: Record<string, (props: Record<string, unknown>) => JSX.E
   img: ImgComponent,
   "kumi-alert": KumiAlert,
   "kumi-emoji": KumiEmojiComponent,
-  // oxlint-disable-next-line id-length, typescript/no-unsafe-type-assertion
-  p: (props: Record<string, unknown>): JSX.Element => {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const { children } = props as { children?: ReactNode };
-    return <p style={{ margin: 0 }}>{children}</p>;
-  },
   "pages": Pages,
   "toc": Toc,
   "tree": Tree,
