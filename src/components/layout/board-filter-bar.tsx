@@ -59,14 +59,14 @@ function BoardFilterBar({
   // Label for the sort button
   const sortLabel =
     sortBy === "updated"
-      ? `Updated, ${sortOrder === "newest" ? "newest" : "oldest"}`
-      : `Created, ${sortOrder === "newest" ? "newest" : "oldest"}`;
+      ? `Updated: ${sortOrder === "newest" ? "newest" : "oldest"}`
+      : `Created: ${sortOrder === "newest" ? "newest" : "oldest"}`;
 
   const sortOptions = [
-    { label: "Updated, newest first", sortBy: "updated" as const, sortOrder: "newest" as const },
-    { label: "Updated, oldest first", sortBy: "updated" as const, sortOrder: "oldest" as const },
-    { label: "Created, newest first", sortBy: "created" as const, sortOrder: "newest" as const },
-    { label: "Created, oldest first", sortBy: "created" as const, sortOrder: "oldest" as const },
+    { label: "Updated: newest first", sortBy: "updated" as const, sortOrder: "newest" as const },
+    { label: "Updated: oldest first", sortBy: "updated" as const, sortOrder: "oldest" as const },
+    { label: "Created: newest first", sortBy: "created" as const, sortOrder: "newest" as const },
+    { label: "Created: oldest first", sortBy: "created" as const, sortOrder: "oldest" as const },
   ];
 
   // Filter user list by search query
