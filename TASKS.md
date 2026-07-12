@@ -10,60 +10,11 @@
 
 ---
 
-### 3. User List (Scraped from Tickets)
-
-There is no users endpoint. Instead, derive a list of known users by scanning all ticket YAML files for emails in reporter, assignee, timeline entries, bookmarkers, comments, and approvals. Deduplicate and sort.
-
-This user list is used for:
-
-- A dropdown suggestion list in the "Assign to" field (text-search-dropdown: type to filter)
-- Similar for "Reporter" / "Created by" filter dropdowns
-
-**Approach**:
-
-- Create `src/lib/user-list.ts` with a function `scrapeUsers(tickets: TicketData[]): string[]` that extracts all unique emails from the ticket data
-- The function should also return a `Map<email, displayName>` if display names can be derived from timeline comments (first seen name)
-- Create a reusable `UserSearchDropdown` component (`src/components/ui/user-search-dropdown.tsx`) that:
-  - Shows an `<Input>` field
-  - As you type, filters the user list to matching emails/names
-  - Shows results in a dropdown list below the input
-  - Clicking a result fills the input
-- Replace the plain `<Input>` in the ticket dialog's assignee field with this dropdown
-
-**Files to touch**:
-
-- New: `src/lib/user-list.ts`
-- New: `src/components/ui/user-search-dropdown.tsx`
-- `src/pages/ticket/ticket-dialog.tsx` -- replace assignee Input with UserSearchDropdown
+### 3. User List (DONE)
 
 ---
 
-### 4. Sidebar Ticket Filtering
-
-Add filtering controls to the board sidebar so users can narrow down the ticket list.
-
-**Filters**:
-
-| Filter      | Type     | Options                                             |
-| ----------- | -------- | --------------------------------------------------- |
-| Status      | Toggle   | All / Open (not `final` column)                     |
-| Created     | Sort     | Newest first / Oldest first                         |
-| Updated     | Sort     | Newest first / Oldest first                         |
-| Created by  | Dropdown | List of unique reporter emails from visible tickets |
-| Assigned to | Dropdown | List of unique assignee emails from visible tickets |
-
-**Approach**:
-
-- Add filter state to `src/pages/board/page.tsx` (or a dedicated hook)
-- The sidebar area already exists in `src/pages/board/page.tsx` (the column headers area)
-- Add filter UI in a collapsible panel above/beside the columns
-- Sorting and filtering should operate on the in-memory ticket list, not re-fetch
-- Use the user list from Task 3 for the creator/assignee dropdowns
-
-**Files to touch**:
-
-- `src/pages/board/page.tsx` -- add filter state, UI, and filtering/sorting logic
-- Possibly new: `src/pages/board/filter-bar.tsx` if the filter UI is substantial enough to extract
+### 4. Sidebar Ticket Filtering (DONE)
 
 ---
 
@@ -87,10 +38,6 @@ A line-by-line annotation overlay when viewing a markdown file, showing who last
 ---
 
 ### 6. Cross-Board Ticket Search (DONE)
-
-The search palette (`Ctrl+K`) now indexes both `.md` pages and `.yaml` ticket files. Ticket results appear in a separate "Tickets" group. The ticket ID field gets a higher search boost so searching for e.g. "42" finds ticket #42 quickly.
-
-**Implementation**: dual MiniSearch indexes in `src/server/search.ts`, extended `SearchResult` type with `boardSlug`/`ticketId`, split rendering in search palette.
 
 ---
 
