@@ -199,7 +199,7 @@ export default function PageInfoPanel({
           <span className="flex-1">Page info</span>
           {onClose && (
             <button
-              className="ml-auto p-0.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
+              className="ml-auto p-0 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
               onClick={onClose}
               aria-label="Close"
             >
