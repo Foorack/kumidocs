@@ -411,7 +411,7 @@ function BoardPage(): JSX.Element {
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       {/* Board header */}
-      <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
         <span className="w-6 h-6 shrink-0 flex items-center justify-center">
           {config.icon !== undefined && config.icon !== "" ? (
             <EmojiIcon emoji={config.icon} size={24} />
