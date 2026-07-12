@@ -146,7 +146,7 @@ export default function PageInfoPanel({
                 ) : (
                   <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
-                <span className="font-medium">{label}</span>
+                <span>{label}</span>
                 <span className="ml-auto text-xs tabular-nums">{groupCommits.length}</span>
               </Button>
               {/* Commits */}
@@ -209,26 +209,26 @@ export default function PageInfoPanel({
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
-        <div className="p-3 space-y-3">
+        <div className="py-3 space-y-3">
           {/* Title + path */}
-          <div className="space-y-1">
+          <div className="px-3 space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider">Title</p>
             <p className="break-words">{title}</p>
           </div>
-          <div className="space-y-1">
+          <div className="px-3 space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider">Path</p>
             <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
-          <div className="space-y-1">
+          <div className="px-3 space-y-1">
             <p className="text-xs font-medium uppercase tracking-wider">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wider">Commit history</p>
+            <p className="px-3 text-xs font-medium uppercase tracking-wider">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>
