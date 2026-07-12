@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { getBacklinks, getFileDiff, getFileHistory } from "@/lib/api";
 import { useMemo, useState } from "react";
@@ -133,8 +134,9 @@ export default function PageInfoPanel({
           return (
             <div key={key}>
               {/* Date group header */}
-              <button
-                className="w-full flex items-center gap-1 py-1 hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
+              <Button
+                variant="ghost"
+                className="w-full flex items-center gap-1 py-1"
                 onClick={() => {
                   toggleGroup(key);
                 }}
@@ -146,14 +148,15 @@ export default function PageInfoPanel({
                 )}
                 <span className="font-medium">{label}</span>
                 <span className="ml-auto text-xs tabular-nums">{groupCommits.length}</span>
-              </button>
+              </Button>
               {/* Commits */}
               {!isCollapsed && (
                 <div className="space-y-0.5">
                   {groupCommits.map((commit) => (
-                    <button
+                    <Button
                       key={commit.sha}
-                      className="w-full text-left rounded py-1.5 hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
+                      variant="ghost"
+                      className="w-full text-left py-1.5 group flex items-start gap-1.5 rounded"
                       onClick={() => {
                         void openDiff(commit.sha);
                       }}
@@ -180,7 +183,7 @@ export default function PageInfoPanel({
                         )}
                       </span>
                       <ChevronRight className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -198,13 +201,14 @@ export default function PageInfoPanel({
           <EmojiIcon fileType="pageinfo" size={18} />
           <span className="flex-1">Page info</span>
           {onClose && (
-            <button
-              className="ml-auto p-0 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={onClose}
               aria-label="Close"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

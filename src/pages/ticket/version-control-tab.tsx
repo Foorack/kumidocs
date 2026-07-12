@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
 import { relativeTime } from "@/lib/utils";
@@ -23,14 +24,14 @@ export default function VersionControlTab({
   return (
     <div className="space-y-2 bg-background rounded-md p-3 border">
       {commits.map((commit) => (
-        <button
+        <Button
           key={commit.sha}
-          type="button"
+          variant="ghost"
+          className="w-full text-left flex items-start gap-3 py-1.5 rounded"
           onClick={() => {
             onCommitClick(commit.sha);
           }}
           aria-label={`View diff for commit ${commit.sha.slice(0, 7)}`}
-          className="w-full text-left flex items-start gap-3 py-1.5 border-b border-border last:border-0 hover:bg-accent/40 group transition-colors rounded"
         >
           <UserAvatar
             name={emailToDisplayName(commit.author)}
@@ -53,7 +54,7 @@ export default function VersionControlTab({
               )}
             </div>
           </div>
-        </button>
+        </Button>
       ))}
     </div>
   );

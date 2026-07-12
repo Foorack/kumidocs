@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -93,13 +94,14 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
           <EmojiIcon fileType="toc" size={18} />
           <span className="flex-1">On this page</span>
           {onClose && (
-            <button
-              className="ml-auto p-0.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={onClose}
               aria-label="Close"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
