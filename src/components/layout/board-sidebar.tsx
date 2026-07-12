@@ -258,8 +258,8 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
         .toSorted((left, right) => {
           const getTime = (ticket: TicketData): string =>
             sortBy === "updated"
-              ? ticket.updatedAt ?? ticket.createdAt ?? ""
-              : ticket.createdAt ?? "";
+              ? (ticket.updatedAt ?? ticket.createdAt ?? "")
+              : (ticket.createdAt ?? "");
           const timeA = getTime(left);
           const timeB = getTime(right);
           const comparison = timeA.localeCompare(timeB);
