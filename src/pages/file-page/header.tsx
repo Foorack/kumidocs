@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";
 import EmojiPickerPopover from "@/components/ui/emoji-picker-popover";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageMenuItems } from "@/components/ui/page-menu-items";
 import type { SaveStatus } from "./use-save";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -101,12 +102,10 @@ function FilePageHeader({
   setTocOpen,
   handlePageDuplicate,
   onCopyHtml,
-  exportPagePdf,
-  openMove,
-  openDelete,
 }: FilePageHeaderProps): JSX.Element {
   const editButtonClass = getEditButtonClass(editMode, editLocked, user);
   const saveBadgeClass = getSaveBadgeClass(saveStatus);
+  const navigate = useNavigate();
   return (
     <div
       className={`flex items-center gap-2 px-4 ${breadcrumb.length > 0 ? "py-1" : "py-2"} border-b border-border shrink-0`}
@@ -274,16 +273,14 @@ function FilePageHeader({
                 canEdit={user.canEdit}
                 onDuplicate={handlePageDuplicate}
                 onCopyHtml={onCopyHtml}
-                onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
-                onMove={async (movePath) => {
-                  try {
-                    await openMove(movePath);
-                  } catch (error: unknown) {
-                    console.error("Failed to open move dialog:", error);
-                  }
-                }}
-                onDelete={openDelete}
               />
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate("/bm");
+                }}
+              >
+                Manage
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
