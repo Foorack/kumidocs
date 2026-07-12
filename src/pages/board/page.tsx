@@ -17,7 +17,7 @@ import PageHeaderButton from "@/components/layout/page-header-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import HeaderMenu from "@/components/layout/header-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/avatar";
@@ -487,6 +487,7 @@ function BoardPage(): JSX.Element {
             >
               Copy link
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
                 void navigate(`/bm/${boardSlug}`);
