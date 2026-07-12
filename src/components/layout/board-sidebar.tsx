@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useMountEffect from "@/hooks/use-mount-effect";
 import { getFile } from "@/lib/api";
@@ -288,13 +288,6 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
 
   const dialogUsers = useMemo(() => scrapeUsers(tickets), [tickets]);
 
-  const handleFilterReporterChange = useCallback((val: string) => {
-    setFilterReporter(val);
-  }, []);
-  const handleFilterAssigneeChange = useCallback((val: string) => {
-    setFilterAssignee(val);
-  }, []);
-
   const defaultNewTicketBoard = useMemo<string | undefined>(() => {
     if (effectiveBoardSlug !== undefined) {
       return effectiveBoardSlug;
@@ -364,9 +357,9 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
               sortOrder={sortOrder}
               onSortOrderChange={setSortOrder}
               filterReporter={filterReporter}
-              onFilterReporterChange={handleFilterReporterChange}
+              onFilterReporterChange={setFilterReporter}
               filterAssignee={filterAssignee}
-              onFilterAssigneeChange={handleFilterAssigneeChange}
+              onFilterAssigneeChange={setFilterAssignee}
               users={dialogUsers.emails}
               displayNames={dialogUsers.displayNames}
             />

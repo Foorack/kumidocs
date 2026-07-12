@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import Input from "@/components/ui/input";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
 
@@ -43,17 +44,13 @@ function BoardFilterBar({
 
   const hasFilter = filterReporter !== "" || filterAssignee !== "";
 
-  // Label for the filter button
-  let filterLabel = "Filter";
-  if (hasFilter) {
-    const parts: string[] = [];
-    if (filterReporter !== "") {
-      parts.push(`Created: ${displayNames.get(filterReporter) ?? filterReporter}`);
-    }
-    if (filterAssignee !== "") {
-      parts.push(`Assigned: ${displayNames.get(filterAssignee) ?? filterAssignee}`);
-    }
-    filterLabel = parts.join(", ");
+  // Label lines for the filter button
+  const filterLabels: string[] = [];
+  if (filterReporter !== "") {
+    filterLabels.push(`Created: ${displayNames.get(filterReporter) ?? filterReporter}`);
+  }
+  if (filterAssignee !== "") {
+    filterLabels.push(`Assigned: ${displayNames.get(filterAssignee) ?? filterAssignee}`);
   }
 
   // Label for the sort button
@@ -82,13 +79,21 @@ function BoardFilterBar({
   }, [users, displayNames, filterSearch]);
 
   function applyReporter(email: string): void {
-    onFilterReporterChange(email);
+    if (email === filterReporter) {
+      onFilterReporterChange("");
+    } else {
+      onFilterReporterChange(email);
+    }
     setFilterOpen(false);
     setFilterSearch("");
   }
 
   function applyAssignee(email: string): void {
-    onFilterAssigneeChange(email);
+    if (email === filterAssignee) {
+      onFilterAssigneeChange("");
+    } else {
+      onFilterAssigneeChange(email);
+    }
     setFilterOpen(false);
     setFilterSearch("");
   }
@@ -116,21 +121,36 @@ function BoardFilterBar({
             type="button"
             variant={hasFilter ? "secondary" : "outline"}
             size="sm"
-            className={`truncate w-full ${hasFilter ? "font-bold" : ""}`}
+            className={`w-full ${hasFilter ? "font-bold" : ""}`}
           >
-            {filterLabel}
+            {filterLabels.length > 0 ? (
+              <span className="flex flex-col items-start leading-tight">
+                {filterLabels.map((line) => (
+                  <span key={line} className="text-left">
+                    {line}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              "Filter"
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64 max-h-80">
-          <div className="px-2 py-1.5">
-            <input
+          <div
+            className="px-2 py-1.5"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <Input
               ref={searchRef}
               value={filterSearch}
               onChange={(ev) => {
                 setFilterSearch(ev.target.value);
               }}
               placeholder="Search users..."
-              className="w-full h-7 rounded border border-input bg-transparent px-2 text-xs placeholder:text-muted-foreground outline-none focus:border-ring"
+              className="h-7 text-xs"
               autoFocus
             />
           </div>
