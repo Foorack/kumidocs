@@ -5,7 +5,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
-import { Info, List, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -254,7 +255,7 @@ function FilePageHeader({
         {!editMode && fileType === "doc" && (
           <ToggleButton
             label="TOC"
-            icon={<List className="w-4 h-4" />}
+            icon={<EmojiIcon fileType="toc" size={16} />}
             isOpen={tocOpen}
             storageKey="kumidocs:toc-open"
             onToggle={setTocOpen}
@@ -265,7 +266,7 @@ function FilePageHeader({
         {!editMode && (
           <ToggleButton
             label="Info"
-            icon={<Info className="w-4 h-4" />}
+            icon={<EmojiIcon fileType="pageinfo" size={16} />}
             isOpen={infoOpen}
             storageKey="kumidocs:info-open"
             onToggle={setInfoOpen}

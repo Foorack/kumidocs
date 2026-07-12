@@ -13,7 +13,6 @@ import {
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { Info } from "lucide-react";
 import ArchiveButton from "@/components/ui/archive-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import TicketDialog from "@/pages/ticket/ticket-dialog";
@@ -463,7 +462,7 @@ function BoardPage(): JSX.Element {
               setInfoOpen(!infoOpen);
             }}
           >
-            <Info className="w-4 h-4" />
+            <EmojiIcon fileType="pageinfo" size={16} />
             Info
           </Button>
         </div>
