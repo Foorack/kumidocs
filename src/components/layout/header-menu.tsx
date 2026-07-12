@@ -21,9 +21,7 @@ function HeaderMenu({ children, align = "end" }: HeaderMenuProps): JSX.Element {
           <MoreHorizontal className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align}>
-        {children}
-      </DropdownMenuContent>
+      <DropdownMenuContent align={align}>{children}</DropdownMenuContent>
     </DropdownMenu>
   );
 }
