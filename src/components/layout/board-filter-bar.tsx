@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
 
@@ -112,16 +113,14 @@ function BoardFilterBar({
         }}
       >
         <DropdownMenuTrigger asChild>
-          <button
+          <Button
             type="button"
-            className={`flex-1 h-7 rounded text-xs px-2 truncate transition-colors border ${
-              hasFilter
-                ? "bg-accent font-bold text-foreground border-accent"
-                : "bg-muted hover:bg-accent text-foreground border-border"
-            }`}
+            variant={hasFilter ? "secondary" : "outline"}
+            size="sm"
+            className={`flex-1 truncate ${hasFilter ? "font-bold" : ""}`}
           >
             {filterLabel}
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64 max-h-80">
           <div className="px-2 py-1.5">
@@ -208,12 +207,14 @@ function BoardFilterBar({
       {/* Sort dropdown */}
       <DropdownMenu open={sortOpen} onOpenChange={setSortOpen}>
         <DropdownMenuTrigger asChild>
-          <button
+          <Button
             type="button"
-            className="flex-1 h-7 rounded text-xs px-2 truncate bg-muted hover:bg-accent text-foreground transition-colors border border-border"
+            variant="outline"
+            size="sm"
+            className="flex-1 truncate"
           >
             {sortLabel}
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           {sortOptions.map((option) => {
