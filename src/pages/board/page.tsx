@@ -462,7 +462,7 @@ function BoardPage(): JSX.Element {
               setInfoOpen(!infoOpen);
             }}
           >
-            <EmojiIcon fileType="pageinfo" size={16} />
+            <EmojiIcon fileType="pageinfo" size={18} />
             Info
           </Button>
         </div>

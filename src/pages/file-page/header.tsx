@@ -255,7 +255,7 @@ function FilePageHeader({
         {!editMode && fileType === "doc" && (
           <ToggleButton
             label="TOC"
-            icon={<EmojiIcon fileType="toc" size={16} />}
+            icon={<EmojiIcon fileType="toc" size={18} />}
             isOpen={tocOpen}
             storageKey="kumidocs:toc-open"
             onToggle={setTocOpen}
@@ -266,7 +266,7 @@ function FilePageHeader({
         {!editMode && (
           <ToggleButton
             label="Info"
-            icon={<EmojiIcon fileType="pageinfo" size={16} />}
+            icon={<EmojiIcon fileType="pageinfo" size={18} />}
             isOpen={infoOpen}
             storageKey="kumidocs:info-open"
             onToggle={setInfoOpen}

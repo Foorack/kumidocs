@@ -1,5 +1,6 @@
 import type { CSSProperties, JSX } from "react";
 import { EmojiIcon } from "./emoji-icon";
+import { Button } from "./button";
 
 interface ArchiveButtonProps {
   showArchived: boolean;
@@ -13,10 +14,12 @@ function ArchiveButton({
   className = "",
 }: ArchiveButtonProps): JSX.Element {
   return (
-    <button
+    <Button
       type="button"
+      variant={showArchived ? "secondary" : "ghost"}
+      size="sm"
       onClick={onToggle}
-      className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded transition-colors ${showArchived ? "bg-accent font-bold" : "hover:bg-accent/50"} ${className}`}
+      className={`gap-1.5 text-xs ${showArchived ? "font-bold" : ""} ${className}`}
     >
       <EmojiIcon
         fileType="archive"
@@ -24,7 +27,7 @@ function ArchiveButton({
         style={showArchived ? {} : ({ filter: "grayscale(1)" } as CSSProperties)}
       />
       Archived
-    </button>
+    </Button>
   );
 }
 
