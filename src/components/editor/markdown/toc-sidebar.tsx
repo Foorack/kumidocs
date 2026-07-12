@@ -90,7 +90,7 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
       {/* Header bar: matches PageInfoPanel */}
       <div className="px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <EmojiIcon fileType="toc" size={16} />
+          <EmojiIcon fileType="toc" size={18} />
           <span className="flex-1">On this page</span>
           {onClose && (
             <button

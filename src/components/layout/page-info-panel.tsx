@@ -195,7 +195,7 @@ export default function PageInfoPanel({
     <div className="shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
       <div className="px-3 py-2.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <EmojiIcon fileType="pageinfo" size={16} />
+          <EmojiIcon fileType="pageinfo" size={18} />
           <span className="flex-1">Page info</span>
           {onClose && (
             <button
