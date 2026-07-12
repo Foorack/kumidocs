@@ -156,7 +156,7 @@ export default function PageInfoPanel({
                     <Button
                       key={commit.sha}
                       variant="ghost"
-                      className="w-full text-left group flex items-start gap-1.5 rounded"
+                      className="w-full text-left px-0 group flex items-start gap-1.5 rounded"
                       onClick={() => {
                         void openDiff(commit.sha);
                       }}
