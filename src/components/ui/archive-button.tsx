@@ -19,7 +19,7 @@ function ArchiveButton({
       variant={showArchived ? "secondary" : "ghost"}
       size="sm"
       onClick={onToggle}
-      className={`gap-1.5 text-xs ${showArchived ? "font-bold" : ""} ${className}`}
+      className={`h-7 gap-1.5 text-xs ${showArchived ? "font-bold" : ""} ${className}`}
     >
       <EmojiIcon
         fileType="archive"
