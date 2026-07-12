@@ -10,6 +10,7 @@ import {
 import { buildFrontmatter, parseFrontmatter } from "@/lib/frontmatter";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { BUILTIN_SLIDE_THEMES } from "@/lib/slide";
+import { splitSlides } from "@/components/editor/slides/utils";
 import type { PageMeta } from "@/lib/frontmatter";
 import type { SlideThemeMap } from "@/lib/slide";
 import useMarkdownImageHandler from "./use-image-handler";
@@ -51,6 +52,7 @@ interface UseMarkdownEditorReturn {
   handleTask: () => void;
   handleTextareaChange: (ev: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleUnordered: () => void;
+  activeSlideIndex: number;
   headingValue: string;
   previewRef: RefObject<HTMLDivElement | null>;
   previewValue: string;
@@ -62,6 +64,41 @@ interface UseMarkdownEditorReturn {
   taRef: RefObject<HTMLTextAreaElement | null>;
   themeOptions: string[];
 }
+
+/**
+ * Given a cursor offset in the raw text (including frontmatter), determine
+ * which slide index that cursor falls into.  Slides are split on `---`
+ * separators (fence-aware via splitSlides).
+ */
+const getSlideIndexAtCursor = (cursorPos: number, fullValue: string): number => {
+  // Strip frontmatter to match what SlideViewer receives
+  const bodyMatch = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/u.exec(fullValue);
+  const frontmatterLen = bodyMatch ? bodyMatch[0].length : 0;
+  const offsetInBody = Math.max(0, cursorPos - frontmatterLen);
+
+  const body = fullValue.slice(frontmatterLen);
+  const slides = splitSlides(body);
+  if (slides.length <= 1) {
+    return 0;
+  }
+
+  // Walk through the body tracking where each slide's content sits
+  let searchPos = 0;
+  let slideIndex = 0;
+  for (const slideText of slides) {
+    const found = body.indexOf(slideText, searchPos);
+    if (found === -1) {
+      continue;
+    }
+    if (offsetInBody >= found && offsetInBody < found + slideText.length) {
+      return slideIndex;
+    }
+    searchPos = found + slideText.length;
+    slideIndex++;
+  }
+
+  return slides.length - 1;
+};
 
 /** A snapshot of the editor state before an edit, used for undo/redo. */
 interface UndoEntry {
@@ -107,12 +144,18 @@ function useMarkdownEditor({
   const savedSelectionRef = useRef({ end: 0, start: 0 });
   const saveSelection = useCallback(() => {
     if (taRef.current) {
+      const start = taRef.current.selectionStart;
       savedSelectionRef.current = {
         end: taRef.current.selectionEnd,
-        start: taRef.current.selectionStart,
+        start,
       };
+      // Update active slide index from cursor position
+      setActiveSlideIndex(getSlideIndexAtCursor(start, valueRef.current));
     }
   }, []);
+
+  // Active slide index derived from cursor position (used for syncing editor cursor to slide preview)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   // Dispatch a synthetic change so React picks up imperative textarea edits.
   // Pushes the previous value to the undo stack so toolbar actions are undoable.
@@ -321,8 +364,9 @@ function useMarkdownEditor({
     isUndoRedoRef.current = false;
     queueMicrotask(() => {
       ta.setSelectionRange(entry.cursor, entry.cursor);
+      saveSelection();
     });
-  }, [onChange]);
+  }, [onChange, saveSelection]);
 
   const handleContextRedo = useCallback(() => {
     const ta = taRef.current;
@@ -342,8 +386,9 @@ function useMarkdownEditor({
     isUndoRedoRef.current = false;
     queueMicrotask(() => {
       ta.setSelectionRange(next.cursor, next.cursor);
+      saveSelection();
     });
-  }, [onChange]);
+  }, [onChange, saveSelection]);
 
   const handleContextCut = useCallback(async () => {
     const ta = taRef.current;
@@ -481,6 +526,7 @@ function useMarkdownEditor({
     handleTask,
     handleTextareaChange,
     handleUnordered,
+    activeSlideIndex,
     headingValue,
     previewRef,
     previewValue,

@@ -28,6 +28,8 @@ interface SlideViewerProps {
   slideThemes?: SlideThemeMap;
   /** User-defined variables from frontmatter (theme-var-* fields) substituted into theme element content */
   themeVars?: Record<string, string>;
+  /** When set, scrolls to the slide at this index in scroll mode. */
+  scrollToIndex?: number;
 }
 
 function SlideViewer({
@@ -40,6 +42,7 @@ function SlideViewer({
   footer,
   slideThemes,
   themeVars,
+  scrollToIndex,
 }: SlideViewerProps): JSX.Element {
   const {
     parsedSlides,
@@ -70,7 +73,16 @@ function SlideViewer({
     enterSpotlight,
     exportPdf,
     currentSlide,
-  } = useSlideViewer({ filename, paginate, slideThemes, standalone, theme, themeVars, value });
+  } = useSlideViewer({
+    filename,
+    paginate,
+    scrollToIndex,
+    slideThemes,
+    standalone,
+    theme,
+    themeVars,
+    value,
+  });
 
   return (
     <>

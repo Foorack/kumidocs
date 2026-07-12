@@ -99,6 +99,7 @@ export default function MarkdownEditor({
     handleContextCut,
     handleContextCopy,
     handleContextPaste,
+    activeSlideIndex,
     handleContextSelectAll,
     selectAllPendingRef,
   } = useMarkdownEditor({ onChange, onMetaChange, onSave, slideThemes, value });
@@ -359,6 +360,7 @@ export default function MarkdownEditor({
                 paginate={slidePaginate}
                 slideThemes={slideThemes}
                 themeVars={slideThemeVars}
+                scrollToIndex={activeSlideIndex}
               />
             ) : (
               <div ref={previewRef} className="h-full overflow-y-auto">

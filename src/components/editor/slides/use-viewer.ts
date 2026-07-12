@@ -1,7 +1,7 @@
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { ParsedSlide, SlideThemeMap } from "@/lib/slide";
 import { SLIDE_H, SLIDE_W, addOverlayToPdf, splitSlides } from "./utils";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { parseSlideDirectives } from "@/lib/slide";
 import useMountEffect from "@/hooks/use-mount-effect";
 
@@ -13,6 +13,8 @@ interface UseSlideViewerProps {
   paginate?: boolean;
   slideThemes?: SlideThemeMap;
   themeVars?: Record<string, string>;
+  /** When set, scrolls to the slide at this index in scroll mode. */
+  scrollToIndex?: number;
 }
 
 interface UseSlideViewerReturn {
@@ -56,6 +58,7 @@ function useSlideViewer({
   paginate: _paginate = false,
   slideThemes: _slideThemes,
   themeVars: _themeVars,
+  scrollToIndex,
 }: UseSlideViewerProps): UseSlideViewerReturn {
   // Parse slides once per value change
   const parsedSlides = useMemo<ParsedSlide[]>(
@@ -127,6 +130,17 @@ function useSlideViewer({
       window.removeEventListener("keydown", handler);
     };
   });
+
+  // Scroll to the requested slide index when it changes
+  useEffect(() => {
+    if (scrollToIndex === undefined || !scrollMode) {
+      return;
+    }
+    slideElemsRef.current[scrollToIndex]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [scrollToIndex, scrollMode]);
 
   // Scale slide canvas to fit the stage
   useMountEffect(() => {
