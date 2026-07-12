@@ -114,10 +114,10 @@ function BoardFilterBar({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className={`flex-1 h-7 rounded text-xs px-2 truncate transition-colors ${
+            className={`flex-1 h-7 rounded text-xs px-2 truncate transition-colors border ${
               hasFilter
-                ? "bg-accent font-bold text-foreground"
-                : "bg-accent/50 hover:bg-accent text-muted-foreground"
+                ? "bg-accent font-bold text-foreground border-accent"
+                : "bg-muted hover:bg-accent text-foreground border-border"
             }`}
           >
             {filterLabel}
@@ -210,7 +210,7 @@ function BoardFilterBar({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex-1 h-7 rounded text-xs px-2 truncate bg-accent/50 hover:bg-accent transition-colors"
+            className="flex-1 h-7 rounded text-xs px-2 truncate bg-muted hover:bg-accent text-foreground transition-colors border border-border"
           >
             {sortLabel}
           </button>
