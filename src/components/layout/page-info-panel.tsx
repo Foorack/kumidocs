@@ -1,4 +1,6 @@
-import { ChevronDown, ChevronRight, File, X } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { getBacklinks, getFileDiff, getFileHistory } from "@/lib/api";
 import { useMemo, useState } from "react";
 import type { BacklinkEntry, CommitEntry } from "@/lib/types";
@@ -132,8 +134,9 @@ export default function PageInfoPanel({
           return (
             <div key={key}>
               {/* Date group header */}
-              <button
-                className="w-full flex items-center gap-1 py-1 hover:text-foreground transition-colors rounded hover:bg-accent/40 select-none"
+              <Button
+                variant="ghost"
+                className="w-full flex items-center gap-1 py-1"
                 onClick={() => {
                   toggleGroup(key);
                 }}
@@ -143,16 +146,17 @@ export default function PageInfoPanel({
                 ) : (
                   <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
-                <span className="font-medium">{label}</span>
+                <span>{label}</span>
                 <span className="ml-auto text-xs tabular-nums">{groupCommits.length}</span>
-              </button>
+              </Button>
               {/* Commits */}
               {!isCollapsed && (
                 <div className="space-y-0.5">
                   {groupCommits.map((commit) => (
-                    <button
+                    <Button
                       key={commit.sha}
-                      className="w-full text-left rounded py-1.5 hover:bg-accent/60 group flex items-start gap-1.5 transition-colors"
+                      variant="ghost"
+                      className="w-full text-left px-0 group flex items-start gap-1.5 rounded"
                       onClick={() => {
                         void openDiff(commit.sha);
                       }}
@@ -179,7 +183,7 @@ export default function PageInfoPanel({
                         )}
                       </span>
                       <ChevronRight className="w-3 h-3 shrink-0 mt-0.5 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -192,18 +196,14 @@ export default function PageInfoPanel({
 
   return (
     <div className="shrink-0 border-l border-border bg-sidebar flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-2 border-b border-border shrink-0">
+      <div className="px-3 py-2.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <File className="w-4 h-4 shrink-0" />
+          <EmojiIcon fileType="pageinfo" size={17} />
           <span className="flex-1">Page info</span>
           {onClose && (
-            <button
-              className="ml-auto p-0.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={onClose}
-              aria-label="Close"
-            >
+            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -212,23 +212,23 @@ export default function PageInfoPanel({
         <div className="p-3 space-y-3">
           {/* Title + path */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Title</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Title</p>
             <p className="break-words">{title}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Path</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Path</p>
             <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Backlinks</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide">Commit history</p>
+            <p className="text-xs font-medium uppercase tracking-wider">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>

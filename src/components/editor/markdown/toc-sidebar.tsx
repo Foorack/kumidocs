@@ -1,4 +1,6 @@
-import { List, X } from "lucide-react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { extractTocItems } from "@/lib/heading";
@@ -89,16 +91,12 @@ export default function TocSidebar({ content, onClose }: TocSidebarProps): JSX.E
       {/* Header bar: matches PageInfoPanel */}
       <div className="px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <List className="w-4 h-4 shrink-0" />
+          <EmojiIcon fileType="toc" size={17} />
           <span className="flex-1">On this page</span>
           {onClose && (
-            <button
-              className="ml-auto p-0.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground transition-colors"
-              onClick={onClose}
-              aria-label="Close"
-            >
+            <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

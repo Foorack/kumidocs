@@ -1,15 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { FileType, PresenceUser, User } from "@/lib/types";
-import { Info, List, MoreHorizontal } from "lucide-react";
+import PageHeaderButton from "@/components/layout/page-header-button";
+import HeaderMenu from "@/components/layout/header-menu";
 import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";
 import EmojiPickerPopover from "@/components/ui/emoji-picker-popover";
 import { Link } from "react-router-dom";
@@ -74,42 +69,6 @@ function SaveBadge({
     >
       {saveLabel(manualSaveOnly, saveStatus)}
     </Badge>
-  );
-}
-
-function ToggleButton({
-  label,
-  icon,
-  isOpen,
-  storageKey,
-  onToggle,
-}: {
-  label: string;
-  icon: JSX.Element;
-  isOpen: boolean;
-  storageKey: string;
-  onToggle: Dispatch<SetStateAction<boolean>>;
-}): JSX.Element {
-  return (
-    <Button
-      size="sm"
-      variant={isOpen ? "secondary" : "ghost"}
-      className="h-7 gap-1 text-xs px-2"
-      onClick={() => {
-        onToggle((prev) => {
-          const next = !prev;
-          if (next) {
-            localStorage.setItem(storageKey, "true");
-          } else {
-            localStorage.removeItem(storageKey);
-          }
-          return next;
-        });
-      }}
-    >
-      {icon}
-      {label}
-    </Button>
   );
 }
 
@@ -232,7 +191,7 @@ function FilePageHeader({
       {/* Right: viewers + info + dropdown */}
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
         {/* Viewers deduplicated by id (same user may have multiple tabs open) */}
-        <div className="flex -space-x-1">
+        <div className="flex -space-x-1 me-3">
           {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
             .slice(0, 5)
             .map((viewer: PresenceUser) => (
@@ -252,55 +211,68 @@ function FilePageHeader({
 
         {/* TOC toggle: only for doc pages in view mode */}
         {!editMode && fileType === "doc" && (
-          <ToggleButton
+          <PageHeaderButton
+            fileType="toc"
             label="TOC"
-            icon={<List className="w-4 h-4" />}
-            isOpen={tocOpen}
-            storageKey="kumidocs:toc-open"
-            onToggle={setTocOpen}
+            active={tocOpen}
+            grayscaleWhenInactive
+            onClick={() => {
+              setTocOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  localStorage.setItem("kumidocs:toc-open", "true");
+                } else {
+                  localStorage.removeItem("kumidocs:toc-open");
+                }
+                return next;
+              });
+            }}
           />
         )}
 
         {/* Dedicated info button */}
         {!editMode && (
-          <ToggleButton
+          <PageHeaderButton
+            fileType="pageinfo"
             label="Info"
-            icon={<Info className="w-4 h-4" />}
-            isOpen={infoOpen}
-            storageKey="kumidocs:info-open"
-            onToggle={setInfoOpen}
+            active={infoOpen}
+            grayscaleWhenInactive
+            onClick={() => {
+              setInfoOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  localStorage.setItem("kumidocs:info-open", "true");
+                } else {
+                  localStorage.removeItem("kumidocs:info-open");
+                }
+                return next;
+              });
+            }}
           />
         )}
 
         {/* Advanced / dangerous actions only */}
         {user?.canEdit === true && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-7 w-7">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <PageMenuItems
-                variant="dropdown"
-                href={`/p/${rawPath}`}
-                path={filePath}
-                displayTitle={title}
-                canEdit={user.canEdit}
-                onDuplicate={handlePageDuplicate}
-                onCopyHtml={onCopyHtml}
-                onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
-                onMove={async (movePath) => {
-                  try {
-                    await openMove(movePath);
-                  } catch (error: unknown) {
-                    console.error("Failed to open move dialog:", error);
-                  }
-                }}
-                onDelete={openDelete}
-              />
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HeaderMenu>
+            <PageMenuItems
+              variant="dropdown"
+              href={`/p/${rawPath}`}
+              path={filePath}
+              displayTitle={title}
+              canEdit={user.canEdit}
+              onDuplicate={handlePageDuplicate}
+              onCopyHtml={onCopyHtml}
+              onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
+              onMove={async (movePath) => {
+                try {
+                  await openMove(movePath);
+                } catch (error: unknown) {
+                  console.error("Failed to open move dialog:", error);
+                }
+              }}
+              onDelete={openDelete}
+            />
+          </HeaderMenu>
         )}
       </div>
     </div>

@@ -13,16 +13,16 @@ import {
 import { load as parseYaml } from "js-yaml";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { Info } from "lucide-react";
-import ArchiveButton from "@/components/ui/archive-button";
+import PageHeaderButton from "@/components/layout/page-header-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
-import TicketDialog from "@/pages/ticket/ticket-dialog";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import HeaderMenu from "@/components/layout/header-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import PageInfoPanel from "@/components/layout/page-info-panel";
+import TicketDialog from "@/pages/ticket/ticket-dialog";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
@@ -411,7 +411,7 @@ function BoardPage(): JSX.Element {
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       {/* Board header */}
-      <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
         <span className="w-6 h-6 shrink-0 flex items-center justify-center">
           {config.icon !== undefined && config.icon !== "" ? (
             <EmojiIcon emoji={config.icon} size={24} />
@@ -430,7 +430,7 @@ function BoardPage(): JSX.Element {
 
         {/* Right: viewers + info */}
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <div className="flex -space-x-1">
+          <div className="flex -space-x-1 me-3">
             {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
               .slice(0, 5)
               .map((viewer: PresenceUser) => (
@@ -448,25 +448,54 @@ function BoardPage(): JSX.Element {
               ))}
           </div>
 
-          <ArchiveButton
-            showArchived={showArchived}
-            onToggle={() => {
+          <PageHeaderButton
+            fileType="archive"
+            label="Archived"
+            active={showArchived}
+            grayscaleWhenInactive
+            onClick={() => {
               setShowArchived((prev) => !prev);
             }}
-            className="mr-2"
           />
 
-          <Button
-            size="sm"
-            variant={infoOpen ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-xs px-2"
+          <PageHeaderButton
+            fileType="pageinfo"
+            label="Info"
+            active={infoOpen}
+            grayscaleWhenInactive
             onClick={() => {
               setInfoOpen(!infoOpen);
             }}
-          >
-            <Info className="w-4 h-4" />
-            Info
-          </Button>
+          />
+
+          <HeaderMenu>
+            <DropdownMenuItem
+              onClick={() => {
+                globalThis.open(window.location.href, "_blank");
+              }}
+            >
+              Open in new tab
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                } catch {
+                  // clipboard unavailable
+                }
+              }}
+            >
+              Copy link
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                void navigate(`/bm/${boardSlug}`);
+              }}
+            >
+              Manage
+            </DropdownMenuItem>
+          </HeaderMenu>
         </div>
       </div>
 

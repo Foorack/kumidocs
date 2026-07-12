@@ -56,7 +56,7 @@ function TicketSidebar({
 
   return (
     <div className="w-52 shrink-0 border-l p-3 space-y-2" style={{ borderColor: columnColor }}>
-      <h3 className="text-sm font-bold uppercase tracking-wide">Status</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider">Status</h3>
       <div className="space-y-0.5">
         {columns.length === 0 && <p>No columns</p>}
         {(showEditControls ? columns : columns.filter((col) => col.id === activeColumn)).map(
@@ -81,7 +81,7 @@ function TicketSidebar({
 
       <Separator className="my-3" />
 
-      <h3 className="text-sm font-bold uppercase tracking-wide">Actions</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider">Actions</h3>
       <div className="space-y-0.5">
         <TicketSidebarButton
           active={golden}

@@ -685,8 +685,9 @@ function TicketDialog({
                     <span className="px-3"> | </span>
                     <span className="inline-flex items-center gap-1">
                       {ticket.boardSlug.toUpperCase()}-{ticket.ticketId}
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => {
                           void navigator.clipboard.writeText(
                             `${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`,
@@ -695,12 +696,10 @@ function TicketDialog({
                             `Copied ${ticket.boardSlug.toUpperCase()}-${ticket.ticketId}`,
                           );
                         }}
-                        className="ms-3 opacity-80 hover:opacity-60"
                         title="Copy ticket number"
-                        tabIndex={-1}
                       >
                         <Copy className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </span>
                   </>
                 ) : (
@@ -814,26 +813,26 @@ function TicketDialog({
                           placeholder="Unassigned"
                           className="w-40"
                         />
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           onClick={() => {
                             setAssignee("");
                           }}
                           disabled={assignee === ""}
-                          className={`shrink-0 p-0.5 rounded transition-colors ${assignee === "" ? "text-muted-foreground/40 cursor-not-allowed" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
                           title="Clear assignee"
                         >
                           <X className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="link"
                           onClick={() => {
                             setAssignee((user?.email ?? user?.name ?? "").toLowerCase());
                           }}
-                          className="text-primary hover:text-foreground underline underline-offset-2 whitespace-nowrap shrink-0"
+                          className="whitespace-nowrap shrink-0"
                         >
                           Assign to me
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       assignee || "Unassigned"

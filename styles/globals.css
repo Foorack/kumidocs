@@ -268,14 +268,28 @@
   background-color: oklch(0.556 0 0 / 80%);
 }
 
-/* -- Ticket flags -------------------------------------------------------------
-   Applied to kanban cards and dialog bodies. */
-.ticket-golden {
-  background-image: radial-gradient(
-    oklch(79.5% 0.184 86.047 / 0.3),
-    oklch(79.5% 0.184 86.047 / 0.8)
-  );
+/* Override typography plugin's default semibold (600) to bold (700) */
+.prose strong,
+.prose b {
+  font-weight: 700;
 }
+
+/* Typography plugin defaults hr to ~40px margin, which is excessive */
+.prose hr {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Fix lineheight everywhere in UI, except .prose documents */
+*:not(:is(.prose, .prose *)) {
+  line-height: normal;
+}
+
+/* -- Tickets ----------------------------------------------------------------
+   --------------------------------------------------------------------------- */
+
+/* Apply Gold background to golden kanban cards and dialog bodies. */
+.ticket-golden,
 .ticket-golden-body {
   background-image: radial-gradient(
     oklch(79.5% 0.184 86.047 / 0.3),
@@ -328,18 +342,6 @@
   --slide-fg: oklch(from var(--slide-bg) calc(1 - l) 0 0);
   /* Fallback for browsers that don't support relative color syntax */
   filter: invert(1) hue-rotate(180deg);
-}
-
-/* Override typography plugin's default semibold (600) to bold (700) */
-.prose strong,
-.prose b {
-  font-weight: 700;
-}
-
-/* Typography plugin defaults hr to ~40px margin, which is excessive */
-.prose hr {
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
 /* -- Typography ------------------------------------------------------------- */

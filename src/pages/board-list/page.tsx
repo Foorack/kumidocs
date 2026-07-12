@@ -6,7 +6,7 @@ import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
-import ArchiveButton from "@/components/ui/archive-button";
+import PageHeaderButton from "@/components/layout/page-header-button";
 
 const HOME_COLUMNS = [
   { id: "created-by-me", label: "Created by me" },
@@ -100,9 +100,12 @@ function BoardListPage(): JSX.Element {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <ArchiveButton
-            showArchived={showArchived}
-            onToggle={() => {
+          <PageHeaderButton
+            fileType="archive"
+            label="Archived"
+            active={showArchived}
+            grayscaleWhenInactive
+            onClick={() => {
               setShowArchived((prev) => !prev);
             }}
           />

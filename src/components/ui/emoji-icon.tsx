@@ -17,11 +17,13 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   golden: "RibbonStar24Color",
   image: "Image24Color",
   outdated: "ErrorCircle24Color",
+  pageinfo: "DocumentText24Color",
   reject: "DismissCircle24Color",
   sheet: "Table24Color",
   slide: "SlideTextSparkle24Color",
   status: "Diversity24Color",
   ticket: "Board24Color",
+  toc: "AppsListDetail24Color",
 };
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";

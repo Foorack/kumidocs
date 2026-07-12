@@ -16,6 +16,7 @@ import { getFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
 import { scrapeUsers } from "@/lib/user-list";
+import BoardFilterBar from "./board-filter-bar";
 import TicketDialog from "@/pages/ticket/ticket-dialog";
 
 interface BoardSidebarContentProps {
@@ -27,6 +28,7 @@ interface BoardSidebarContentProps {
   setSelectedBoardSlug: (slug: string | undefined) => void;
   navigate: (path: string) => void;
   location: { pathname: string };
+  filterBar?: JSX.Element;
 }
 
 function BoardSidebarContent({
@@ -38,6 +40,7 @@ function BoardSidebarContent({
   setSelectedBoardSlug,
   navigate,
   location,
+  filterBar,
 }: BoardSidebarContentProps): JSX.Element {
   let body: JSX.Element;
   if (boardLoading) {
@@ -96,9 +99,9 @@ function BoardSidebarContent({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2 space-y-0.5">
+    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2 space-y-1">
       {boardEntries.length > 0 && (
-        <div className="px-2 pb-2">
+        <div className="px-2">
           <Select
             value={selectedBoardSlug ?? ""}
             onValueChange={(val: string) => {
@@ -134,6 +137,8 @@ function BoardSidebarContent({
         </div>
       )}
 
+      {filterBar}
+
       {body}
     </div>
   );
@@ -151,6 +156,12 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [boardLoading, setBoardLoading] = useState(false);
   const [newTicketOpen, setNewTicketOpen] = useState(false);
+
+  // Sidebar filter state
+  const [sortBy, setSortBy] = useState<"created" | "updated">("updated");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [filterReporter, setFilterReporter] = useState("");
+  const [filterAssignee, setFilterAssignee] = useState("");
 
   const currentBoardSlug = useMemo<string | undefined>(() => {
     const re = /^\/b\/(?<slug>[^/]+)/u;
@@ -234,15 +245,27 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
 
   const sortedTickets = useMemo<TicketData[]>(
     () =>
-      visibleTickets.toSorted((left, right) => {
-        const an = Number(left.id);
-        const bn = Number(right.id);
-        if (!Number.isNaN(an) && !Number.isNaN(bn)) {
-          return an - bn;
-        }
-        return left.id.localeCompare(right.id);
-      }),
-    [visibleTickets],
+      visibleTickets
+        .filter((ticket) => {
+          if (filterReporter !== "" && ticket.reporter !== filterReporter) {
+            return false;
+          }
+          if (filterAssignee !== "" && ticket.assignee !== filterAssignee) {
+            return false;
+          }
+          return true;
+        })
+        .toSorted((left, right) => {
+          const getTime = (ticket: TicketData): string =>
+            sortBy === "updated"
+              ? (ticket.updatedAt ?? ticket.createdAt ?? "")
+              : (ticket.createdAt ?? "");
+          const timeA = getTime(left);
+          const timeB = getTime(right);
+          const comparison = timeA.localeCompare(timeB);
+          return sortOrder === "newest" ? -comparison : comparison;
+        }),
+    [visibleTickets, filterReporter, filterAssignee, sortBy, sortOrder],
   );
 
   const boardEntries = useMemo<{ slug: string; config: BoardConfig }[]>(
@@ -326,6 +349,22 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
         setSelectedBoardSlug={setSelectedBoardSlug}
         navigate={navigate}
         location={location}
+        filterBar={
+          <div className="px-2 pb-2">
+            <BoardFilterBar
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              sortOrder={sortOrder}
+              onSortOrderChange={setSortOrder}
+              filterReporter={filterReporter}
+              onFilterReporterChange={setFilterReporter}
+              filterAssignee={filterAssignee}
+              onFilterAssigneeChange={setFilterAssignee}
+              users={dialogUsers.emails}
+              displayNames={dialogUsers.displayNames}
+            />
+          </div>
+        }
       />
 
       {hasTickets && (
