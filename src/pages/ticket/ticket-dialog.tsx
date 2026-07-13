@@ -8,8 +8,10 @@ import type { DiffData } from "@/lib/api";
 import { parseTicketYaml, serializeTicket } from "@/lib/board";
 import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "@/lib/board";
+import type { CommitEntry, PresenceUser } from "@/lib/types";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { useWsListener, wsClient } from "@/store/ws";
 import { toast } from "@/components/ui/toaster";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +19,6 @@ import { useUser } from "@/store/user";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
 import UserSearchDropdown from "@/components/ui/user-search-dropdown";
-import type { CommitEntry } from "@/lib/types";
 import CommitDiffDialog from "@/components/layout/commit-diff-dialog";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
 import InlineEditor from "@/components/editor/markdown/inline-editor";
@@ -92,8 +93,33 @@ function TicketDialog({
   const [diffData, setDiffData] = useState<DiffData | undefined>();
   const [diffLoading, setDiffLoading] = useState(false);
 
-  // File path for the current ticket (used for diff + git log)
+  // File path for the current ticket (used for diff + git log + WS presence)
   const ticketFilePath = isEdit ? `${ticket.boardSlug}/${ticket.ticketId}.yaml` : "";
+  const [editLocked, setEditLocked] = useState<PresenceUser | undefined>();
+  const editingRef = useRef(false);
+  editingRef.current = editing;
+
+  // Join WS presence room for the ticket when the dialog opens for an existing ticket.
+  // Cleanup leaves the room and releases the edit lock if active.
+  useEffect((): (() => void) | undefined => {
+    if (!isEdit || !user) {
+      return undefined;
+    }
+    wsClient.joinPage(ticketFilePath);
+    return (): void => {
+      if (editingRef.current) {
+        wsClient.stopEditing(ticketFilePath);
+      }
+      wsClient.leavePage();
+    };
+  }, [isEdit, ticketFilePath, user]);
+
+  // Track who is editing this ticket via WS presence.
+  useWsListener((msg) => {
+    if (msg.type === "presence_update" && msg.pageId === ticketFilePath) {
+      setEditLocked(msg.editor);
+    }
+  });
 
   const openDiff = useCallback(
     async (sha: string): Promise<void> => {
@@ -311,6 +337,7 @@ function TicketDialog({
         toast.success("Ticket saved");
         onSaved?.();
         void loadTicketData();
+        wsClient.stopEditing(path);
         setEditing(false);
       } catch {
         toast.error("Failed to save ticket");
@@ -716,6 +743,7 @@ function TicketDialog({
                   editing && isEdit
                     ? () => {
                         setEditing(false);
+                        wsClient.stopEditing(ticketFilePath);
                       }
                     : onClose
                 }
@@ -740,7 +768,12 @@ function TicketDialog({
                 <Button
                   className="rounded-none px-7 text-background items-end"
                   onClick={() => {
+                    if (editLocked !== undefined && editLocked.id !== user?.id) {
+                      toast.warning(`${editLocked.name} is currently editing this ticket.`);
+                      return;
+                    }
                     setEditing(true);
+                    wsClient.startEditing(ticketFilePath);
                   }}
                   style={{ backgroundColor: columnColor }}
                 >
@@ -781,6 +814,13 @@ function TicketDialog({
 
               {/* Title */}
               {titleContent}
+
+              {/* Lock banner: shown when another user is editing this ticket */}
+              {editLocked !== undefined && editLocked.id !== user?.id && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-600 text-xs">
+                  <span>{editLocked.name} is currently editing this ticket.</span>
+                </div>
+              )}
 
               {/* Reporter + Assignee row */}
               <div className="flex items-center gap-4 text-sm">
@@ -900,7 +940,7 @@ function TicketDialog({
                       approvals={approvals}
                       timeline={timeline}
                       columns={currentColumns}
-                      showAddComment={!showEditControls}
+                      showAddComment={!showEditControls && !(editLocked !== undefined && editLocked.id !== user?.id)}
                       commentBody={commentBody}
                       onCommentChange={setCommentBody}
                       onCommentKeyDown={handleCommentKeyDown}
@@ -920,7 +960,7 @@ function TicketDialog({
                   {activeTab === "approval" && (
                     <ApprovalTab
                       approvals={approvals}
-                      showActions={!editing && isEdit}
+                      showActions={!editing && isEdit && !(editLocked !== undefined && editLocked.id !== user?.id)}
                       currentUser={user?.email}
                       onApprove={() => {
                         void handleApproval("approved");
