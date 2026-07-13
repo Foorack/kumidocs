@@ -84,8 +84,7 @@ function useFilePage(): UseFilePageReturn {
   const [filePath, setFilePath] = useState(rawPath.includes(".") ? rawPath : `${rawPath}.md`);
   const navigate = useNavigate();
   const { reloadTree, autoSaveDelay, instanceName } = useOutletContext<OutletCtx>();
-  const { user, slideThemes } = useUser();
-  const pageTemplates = useUser().pageTemplates;
+  const { user, slideThemes, pageTemplates } = useUser();
 
   const [editMode, setEditMode] = useState(false);
   const {
