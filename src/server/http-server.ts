@@ -20,7 +20,8 @@ function writeNodeResponse(nodeRes: ServerResponse, webRes: Response): void {
   const headerKeys = webRes.headers.keys();
   for (const key of headerKeys) {
     const value = webRes.headers.get(key);
-    if (value !== undefined && value !== null) {
+    // Headers.get() returns string | null, so undefined check is redundant.
+    if (value !== null) {
       nodeRes.setHeader(key, value);
     }
   }
@@ -152,6 +153,7 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
         if (params === undefined) {
           continue;
         }
+        // oxlint-disable-next-line typescript/no-unnecessary-condition -- IncomingMessage.method is typed as string, defensive fallback
         const method = request.method ?? "GET";
         const handler = handlers[method];
         if (typeof handler === "function") {
