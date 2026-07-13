@@ -32,9 +32,6 @@ const EmailSetupDialog = (): JSX.Element => {
         <form
           onSubmit={(event): void => {
             event.preventDefault();
-            if (!email.includes("@")) {
-              return;
-            }
             setEmailAndRefetch(email);
           }}
         >
