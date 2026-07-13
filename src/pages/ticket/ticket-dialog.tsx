@@ -487,6 +487,9 @@ function TicketDialog({
       assignee !== (ticket.assignee ?? "") ||
       bookmarkDiff.bookmarksChanged);
 
+  const lockedByOther = editLocked !== undefined && editLocked.id !== user?.id;
+  const canShowActions = !editing && isEdit && !lockedByOther;
+
   const [commentBody, setCommentBody] = useState("");
 
   const handleCommentSubmit = useCallback(async (): Promise<void> => {
@@ -768,7 +771,7 @@ function TicketDialog({
                 <Button
                   className="rounded-none px-7 text-background items-end"
                   onClick={() => {
-                    if (editLocked !== undefined && editLocked.id !== user?.id) {
+                    if (lockedByOther) {
                       toast.warning(`${editLocked.name} is currently editing this ticket.`);
                       return;
                     }
@@ -816,7 +819,7 @@ function TicketDialog({
               {titleContent}
 
               {/* Lock banner: shown when another user is editing this ticket */}
-              {editLocked !== undefined && editLocked.id !== user?.id && (
+              {lockedByOther && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-600 text-xs">
                   <span>{editLocked.name} is currently editing this ticket.</span>
                 </div>
@@ -940,7 +943,7 @@ function TicketDialog({
                       approvals={approvals}
                       timeline={timeline}
                       columns={currentColumns}
-                      showAddComment={!showEditControls && !(editLocked !== undefined && editLocked.id !== user?.id)}
+                      showAddComment={!showEditControls && !lockedByOther}
                       commentBody={commentBody}
                       onCommentChange={setCommentBody}
                       onCommentKeyDown={handleCommentKeyDown}
@@ -960,7 +963,7 @@ function TicketDialog({
                   {activeTab === "approval" && (
                     <ApprovalTab
                       approvals={approvals}
-                      showActions={!editing && isEdit && !(editLocked !== undefined && editLocked.id !== user?.id)}
+                      showActions={canShowActions}
                       currentUser={user?.email}
                       onApprove={() => {
                         void handleApproval("approved");
