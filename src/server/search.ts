@@ -140,12 +140,7 @@ function updateInIndex(path: string): void {
     return;
   }
   if (path.endsWith(".md")) {
-    try {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      docIndex.remove({ id: path } as DocEntry);
-    } catch {
-      // not in index
-    }
+    docIndex.discard(path);
     const docs = buildDocs([path]);
     const doc = docs[0];
     if (doc) {
@@ -156,12 +151,7 @@ function updateInIndex(path: string): void {
       }
     }
   } else if (path.endsWith(".yaml")) {
-    try {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      ticketIndex.remove({ id: path } as TicketEntry);
-    } catch {
-      // not in index
-    }
+    ticketIndex.discard(path);
     const tickets = buildTickets([path]);
     const ticket = tickets[0];
     if (ticket) {
@@ -179,19 +169,9 @@ function removeFromIndex(path: string): void {
     return;
   }
   if (path.endsWith(".md")) {
-    try {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      docIndex.remove({ id: path } as DocEntry);
-    } catch {
-      // not in index
-    }
+    docIndex.discard(path);
   } else if (path.endsWith(".yaml")) {
-    try {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      ticketIndex.remove({ id: path } as TicketEntry);
-    } catch {
-      // not in index
-    }
+    ticketIndex.discard(path);
   }
 }
 
