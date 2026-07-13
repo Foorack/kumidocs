@@ -41,4 +41,3 @@ function assertJsonObject(value: unknown): Record<string, unknown> {
 }
 
 export { assertJsonObject, checkBodySize, isSafePath };
-export default isSafePath;

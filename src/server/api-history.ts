@@ -1,7 +1,7 @@
 import { gitBlobAt, gitFileLog, gitFileLogWithStats } from "./git";
 import type { Config } from "./config";
 import { createTwoFilesPatch } from "diff";
-import isSafePath from "./api-utils";
+import { isSafePath } from "./api-utils";
 
 // GET /api/file/history?path=<path>
 async function apiFileHistory(url: URL, config: Config): Promise<Response> {
