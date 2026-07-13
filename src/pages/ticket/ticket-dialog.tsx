@@ -2,7 +2,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { Copy, History, MessageSquare, ThumbsUp, X } from "lucide-react";
+import { Copy, X } from "lucide-react";
 import { createFile, getFile, getFileDiff, getFileHistory, getTree, putFile } from "@/lib/api";
 import type { DiffData } from "@/lib/api";
 import { parseTicketYaml, serializeTicket } from "@/lib/board";
@@ -10,6 +10,7 @@ import { load } from "js-yaml";
 import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "@/lib/board";
 import type { CommitEntry, PresenceUser } from "@/lib/types";
 import { sha256 } from "@noble/hashes/sha2.js";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useWsListener, wsClient } from "@/store/ws";
 import { toast } from "@/components/ui/toaster";
@@ -903,7 +904,7 @@ function TicketDialog({
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <MessageSquare className="w-4 h-4" />
+                      <EmojiIcon fileType="activity" size={20} />
                       Activity
                     </button>
                     <button
@@ -917,7 +918,7 @@ function TicketDialog({
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <ThumbsUp className="w-4 h-4" />
+                      <EmojiIcon fileType="approval" size={20} />
                       Approval
                     </button>
                     <button
@@ -931,7 +932,7 @@ function TicketDialog({
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <History className="w-4 h-4" />
+                      <EmojiIcon fileType="version" size={20} />
                       Version Control
                     </button>
                   </div>

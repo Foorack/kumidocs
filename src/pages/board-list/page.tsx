@@ -6,6 +6,7 @@ import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import PageHeaderButton from "@/components/layout/page-header-button";
 
 const HOME_COLUMNS = [
@@ -91,6 +92,9 @@ function BoardListPage(): JSX.Element {
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
+        <span className="w-6 h-6 shrink-0 flex items-center justify-center">
+          <EmojiIcon fileType="home" size={24} />
+        </span>
         <div className="flex flex-col min-w-0">
           <h1 className="font-bold text-base truncate">Homeboard</h1>
           <div className="flex items-center gap-1 -mt-1">
