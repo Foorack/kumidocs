@@ -139,6 +139,9 @@ function useMarkdownEditor({
   const isUndoRedoRef = useRef(false);
   const selectAllPendingRef = useRef(false);
 
+  // Active slide index derived from cursor position (used for syncing editor cursor to slide preview)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+
   // Track the last known cursor/selection so toolbar actions that steal focus
   // (especially the heading Select dropdown) still operate at the right position.
   const savedSelectionRef = useRef({ end: 0, start: 0 });
@@ -153,9 +156,6 @@ function useMarkdownEditor({
       setActiveSlideIndex(getSlideIndexAtCursor(start, valueRef.current));
     }
   }, []);
-
-  // Active slide index derived from cursor position (used for syncing editor cursor to slide preview)
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   // Dispatch a synthetic change so React picks up imperative textarea edits.
   // Pushes the previous value to the undo stack so toolbar actions are undoable.
@@ -498,6 +498,7 @@ function useMarkdownEditor({
   );
 
   return {
+    activeSlideIndex,
     applyMeta,
     dlgMeta,
     fileInputRef,
@@ -526,7 +527,6 @@ function useMarkdownEditor({
     handleTask,
     handleTextareaChange,
     handleUnordered,
-    activeSlideIndex,
     headingValue,
     previewRef,
     previewValue,

@@ -139,8 +139,8 @@ function BoardFilterBar({
         <DropdownMenuContent align="start" className="w-64 max-h-80">
           <div
             className="px-2 py-1.5"
-            onPointerDown={(e) => {
-              e.stopPropagation();
+            onPointerDown={(ev) => {
+              ev.stopPropagation();
             }}
           >
             <Input

@@ -70,12 +70,12 @@ const UserProfile = (allProps: { headSha: string; repoUrl?: string }): JSX.Eleme
                 <p className="text-sm font-bold text-foreground">{user.displayName}</p>
                 <p className="mt-0.5">{user.email}</p>
               </div>
-              {headSha && (
+              {headSha !== "" && (
                 <div className="w-full border-t border-border pt-2 mt-1 text-center">
                   <p className="text-xs text-muted-foreground">HEAD</p>
-                  {repoUrl ? (
+                  {repoUrl !== undefined && repoUrl !== "" ? (
                     <a
-                      href={`${repoUrl}/commit/${headSha}`}
+                      href={repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-xs hover:text-primary hover:underline"
