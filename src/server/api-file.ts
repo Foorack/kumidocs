@@ -17,6 +17,7 @@ import {
 import { getHeadSha, gitMoveAndCommit, gitRemoveAndCommit, gitStageAndCommit } from "./git";
 import { mkdir, rename } from "node:fs/promises";
 import { removeFromIndex, updateInIndex } from "./search";
+import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
@@ -33,39 +34,35 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     return content;
   }
 
-  // If updatedAt already exists in the client-provided content, preserve it
-  // (e.g. bookmark-only saves should not bump the timestamp).
-  if (/^updatedAt: /mu.test(content)) {
-    // Still ensure createdAt exists
-    if (!/^createdAt: /mu.test(content)) {
-      const createdLine = `createdAt: ${JSON.stringify(now)}`;
-      const bodyIdx = content.search(/\nbody: /u);
-      if (bodyIdx !== -1) {
-        return `${content.slice(0, bodyIdx + 1)}${createdLine}\n${content.slice(bodyIdx + 1)}`;
-      }
-      return `${content}\n${createdLine}\n`;
-    }
+  // Parse with js-yaml to avoid fragile regex manipulation.
+  let data: unknown;
+  try {
+    data = parseYaml(content);
+  } catch {
     return content;
   }
+  if (typeof data !== "object" || data === null) {
+    return content;
+  }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const obj = data as Record<string, unknown>;
 
-  const withoutUpdated = content.replaceAll(/^updatedAt: .*$/gmu, "").replaceAll(/\n{2,}/gu, "\n");
-  const hasCreated = /^createdAt: /mu.test(content);
-  const tsLine = `updatedAt: ${JSON.stringify(now)}`;
-
-  if (hasCreated) {
-    const bodyIdx = withoutUpdated.search(/\nbody: /u);
-    if (bodyIdx !== -1) {
-      return `${withoutUpdated.slice(0, bodyIdx + 1)}${tsLine}\n${withoutUpdated.slice(bodyIdx + 1)}`;
+  // If updatedAt is already present in the client-provided content, preserve it
+  // (e.g. bookmark-only saves should not bump the timestamp).
+  if (obj.updatedAt !== undefined && obj.updatedAt !== "") {
+    // Still ensure createdAt exists
+    if (obj.createdAt === undefined || obj.createdAt === "") {
+      obj.createdAt = now;
     }
-    return `${withoutUpdated}\n${tsLine}\n`;
+    return stringifyYaml(obj, { lineWidth: 120, noRefs: true });
   }
 
-  const createdLine = `createdAt: ${JSON.stringify(now)}`;
-  const bodyIdx = withoutUpdated.search(/\nbody: /u);
-  if (bodyIdx !== -1) {
-    return `${withoutUpdated.slice(0, bodyIdx + 1)}${createdLine}\n${tsLine}\n${withoutUpdated.slice(bodyIdx + 1)}`;
+  obj.updatedAt = now;
+  if (obj.createdAt === undefined || obj.createdAt === "") {
+    obj.createdAt = now;
   }
-  return `${withoutUpdated}\n${createdLine}\n${tsLine}\n`;
+
+  return stringifyYaml(obj, { lineWidth: 120, noRefs: true });
 }
 
 /**
