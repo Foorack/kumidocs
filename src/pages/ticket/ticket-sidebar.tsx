@@ -23,7 +23,11 @@ function TicketSidebarButton({
   return (
     <Button
       variant="ghost"
-      className={cn("w-full justify-start gap-2 px-2 h-7 text-sm font-normal disabled:opacity-100", stateClass, className)}
+      className={cn(
+        "w-full justify-start gap-2 px-2 h-7 text-sm font-normal disabled:opacity-100",
+        stateClass,
+        className,
+      )}
       {...props}
     />
   );

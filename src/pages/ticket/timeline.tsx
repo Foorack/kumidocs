@@ -198,7 +198,9 @@ function renderTimelineItem(
             {isRejected ? (
               <span className="font-bold text-destructive">rejected</span>
             ) : (
-              <span className={cn(outdated === true ? "font-bold text-amber" : "font-bold text-green")}>
+              <span
+                className={cn(outdated === true ? "font-bold text-amber" : "font-bold text-green")}
+              >
                 approved
               </span>
             )}

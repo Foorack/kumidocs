@@ -229,7 +229,10 @@ export default function InlineEditor({
         onSelect={onSelect}
         onClick={onClick}
         placeholder={placeholder}
-        className={cn("w-full p-3 resize-none outline-none font-mono text-sm leading-relaxed", minHeight)}
+        className={cn(
+          "w-full p-3 resize-none outline-none font-mono text-sm leading-relaxed",
+          minHeight,
+        )}
       />
     </div>
   );

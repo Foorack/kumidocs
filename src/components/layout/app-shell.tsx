@@ -310,7 +310,10 @@ export default function AppShell(): JSX.Element {
 
         {/* Resize handle */}
         <div
-          className={cn("w-1 shrink-0 cursor-col-resize transition-colors hover:bg-primary/30", isDragging && "bg-primary/40")}
+          className={cn(
+            "w-1 shrink-0 cursor-col-resize transition-colors hover:bg-primary/30",
+            isDragging && "bg-primary/40",
+          )}
           onMouseDown={handleResizeMouseDown}
         />
 

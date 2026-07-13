@@ -138,7 +138,10 @@ function TicketCard({
           onClick();
         }
       }}
-      className={cn("rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing", ticket.golden === true && "ticket-golden")}
+      className={cn(
+        "rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing",
+        ticket.golden === true && "ticket-golden",
+      )}
       role="button"
       tabIndex={0}
     >

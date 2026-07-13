@@ -78,7 +78,12 @@ function BoardSidebarContent({
               onClick={() => {
                 navigate(`/b/${ticket.boardSlug}/${ticket.id}`);
               }}
-              className={cn("w-full text-left px-3 py-1.5 rounded transition-colors flex items-center gap-2", isActive ? "bg-accent text-accent-foreground" : "hover:text-foreground hover:bg-accent/50")}
+              className={cn(
+                "w-full text-left px-3 py-1.5 rounded transition-colors flex items-center gap-2",
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:text-foreground hover:bg-accent/50",
+              )}
             >
               {columnColor === undefined ? undefined : (
                 <span

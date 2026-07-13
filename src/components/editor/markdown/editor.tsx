@@ -260,7 +260,10 @@ export default function MarkdownEditor({
         >
           <ContextMenuTrigger asChild>
             <div
-              className={cn("flex-1 min-w-0 flex flex-col overflow-hidden", showPreview && "border-r border-border")}
+              className={cn(
+                "flex-1 min-w-0 flex flex-col overflow-hidden",
+                showPreview && "border-r border-border",
+              )}
             >
               <textarea
                 ref={taRef}

@@ -70,7 +70,11 @@ function PresenceAvatars({
       ))}
       {resolved.length > 3 && (
         <div
-          className={cn(circleSize, "rounded-full bg-muted flex items-center justify-center font-bold ring-1 ring-sidebar cursor-default shrink-0", textSize)}
+          className={cn(
+            circleSize,
+            "rounded-full bg-muted flex items-center justify-center font-bold ring-1 ring-sidebar cursor-default shrink-0",
+            textSize,
+          )}
         >
           +{resolved.length - 3}
         </div>
@@ -196,7 +200,10 @@ function PageNodeRow({
 
   const chevron = (
     <span
-      className={cn("shrink-0 w-3 h-3 flex items-center justify-center", hasChildren ? "cursor-pointer" : "pointer-events-none opacity-0")}
+      className={cn(
+        "shrink-0 w-3 h-3 flex items-center justify-center",
+        hasChildren ? "cursor-pointer" : "pointer-events-none opacity-0",
+      )}
       onClick={hasChildren ? toggleOpen : undefined}
     >
       {hasChildren && open && <ChevronDown className="w-3 h-3" />}

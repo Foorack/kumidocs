@@ -62,7 +62,10 @@ function SaveBadge({
   return (
     <Badge
       variant="outline"
-      className={cn("text-xs h-5 shrink-0 cursor-pointer select-none", manualSaveOnly ? "border-destructive text-destructive" : saveBadgeClass)}
+      className={cn(
+        "text-xs h-5 shrink-0 cursor-pointer select-none",
+        manualSaveOnly ? "border-destructive text-destructive" : saveBadgeClass,
+      )}
       onClick={toggleManualSaveOnly}
       role="button"
     >
@@ -102,7 +105,10 @@ function FilePageHeader({
   const saveBadgeClass = getSaveBadgeClass(saveStatus);
   return (
     <div
-      className={cn("flex items-center gap-2 px-4 border-b border-border shrink-0", breadcrumb.length > 0 ? "py-1" : "py-2")}
+      className={cn(
+        "flex items-center gap-2 px-4 border-b border-border shrink-0",
+        breadcrumb.length > 0 ? "py-1" : "py-2",
+      )}
     >
       {/* Left: icon + title + breadcrumb */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -150,7 +156,12 @@ function FilePageHeader({
           }
         >
           <button
-            className={cn("h-6 px-2.5 rounded text-xs transition-colors select-none", editMode ? "text-muted-foreground hover:text-foreground" : "bg-background text-foreground shadow-sm")}
+            className={cn(
+              "h-6 px-2.5 rounded text-xs transition-colors select-none",
+              editMode
+                ? "text-muted-foreground hover:text-foreground"
+                : "bg-background text-foreground shadow-sm",
+            )}
             onClick={async () => {
               if (editMode) {
                 try {
@@ -164,7 +175,10 @@ function FilePageHeader({
             Read
           </button>
           <button
-            className={cn("h-6 px-2.5 rounded text-xs transition-colors select-none", editButtonClass)}
+            className={cn(
+              "h-6 px-2.5 rounded text-xs transition-colors select-none",
+              editButtonClass,
+            )}
             onClick={() => {
               if (!editMode && !(editLocked && editLocked.id !== user.id)) {
                 enterEdit();
