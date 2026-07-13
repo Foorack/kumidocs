@@ -1,4 +1,4 @@
-// oxlint-disable promise/avoid-new, promise/catch-or-return, promise/prefer-await-to-then, promise/always-return, eslint/id-length, unicorn/prefer-add-event-listener, typescript/explicit-function-return-type, typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style, typescript/no-unnecessary-condition, typescript/no-unnecessary-type-assertion, typescript/no-floating-promises, typescript/promise-function-async, promise/no-floating-promises, no-await-in-loop, no-use-before-define, adjacent-overload-signatures
+// oxlint-disable unicorn/prefer-add-event-listener, promise/avoid-new, promise/prefer-await-to-then, promise/always-return, no-await-in-loop, typescript/explicit-function-return-type, typescript/promise-function-async, adjacent-overload-signatures
 /**
  * http-server.ts -- Node/bun portable HTTP + WebSocket server.
  *
@@ -92,8 +92,10 @@ function matchRoute(pattern: string, pathname: string): Record<string, string> |
 
   const params: Record<string, string> = {};
   for (let index = 0; index < patternParts.length; index++) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
     const part = patternParts[index] as string;
     if (part.startsWith(":")) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
       params[part.slice(1)] = decodeURIComponent(pathParts[index] as string);
     } else if (part !== pathParts[index]) {
       return undefined;
@@ -151,10 +153,11 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
           continue;
         }
         const method = request.method ?? "GET";
-        const handler = (handlers as Record<string, unknown>)[method];
+        const handler = handlers[method];
         if (typeof handler === "function") {
           // Attach route params to the request context so handlers can
           // access them via the URL (they use new URL(req.url).pathname).
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/no-unnecessary-type-assertion
           const response = await (handler as (req: Request) => Response | Promise<Response>)(
             request,
           );
@@ -216,16 +219,18 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
       wss.handleUpgrade(nodeReq, socket, head, (ws) => {
         // The underlying socket is kept alive, but we're now in WS mode.
         // Store the auth data for the open handler.
-        // oxlint-disable-next-line no-unsafe-type-assertion
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         (ws as unknown as Record<string, unknown>).wsAuthData = authData;
 
-        // oxlint-disable-next-line no-unsafe-type-assertion
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const wssWs = ws as unknown as WebSocket;
         websocket.open(wssWs);
 
         wssWs.onmessage = (event: MessageEvent) => {
-          const data =
-            typeof event.data === "string" ? event.data : Buffer.from(event.data as ArrayBuffer);
+          // oxlint-disable-next-line typescript/no-unsafe-assignment
+          const raw: unknown = event.data;
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          const data = typeof raw === "string" ? raw : Buffer.from(raw as ArrayBuffer);
           websocket.message(wssWs, data);
         };
 
