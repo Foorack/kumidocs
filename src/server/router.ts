@@ -44,7 +44,7 @@ const publicDir =
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
-  const filePath = path.join(publicDir, rel);
+  const filePath = path.resolve(publicDir, rel);
   if (!filePath.startsWith(publicDir + path.sep)) {
     return serveFileResponse(path.join(publicDir, "index.html"), {
       "Content-Security-Policy": SPA_CSP,
