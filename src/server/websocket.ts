@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { PresenceUser, User, WsClientMessage, WsServerMessage } from "@/lib/types";
 import { getFile } from "./filestore";
 
@@ -11,8 +12,6 @@ interface WsData {
 // Per-connection data store. On Bun the initial data is populated by
 // srv.upgrade()'s `data` option; on Node the upgrade handler would set it.
 const wsDataStore = new WeakMap<WebSocket, WsData>();
-
-let sessionCounter = 0;
 
 const sessions = new Map<string, WebSocket>(); // sessionId -> ws
 const pageViewers = new Map<string, Set<string>>(); // pageId -> Set<sessionId>
@@ -177,7 +176,7 @@ function wsOpen(ws: WebSocket): void {
   }
 
   const wsInfo = getWsData(ws);
-  wsInfo.sessionId = String(++sessionCounter);
+  wsInfo.sessionId = randomUUID();
   wsInfo.lastHeartbeat = Date.now();
   sessions.set(wsInfo.sessionId, ws);
 }
