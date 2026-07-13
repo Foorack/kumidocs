@@ -62,10 +62,9 @@ function buildTickets(paths: string[]): TicketEntry[] {
     if (parts.length < 2) {
       continue;
     }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
-    const boardSlug = parts[0] as string;
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, typescript/non-nullable-type-assertion-style
-    const basename = parts.at(-1) as string;
+    // Guard above ensures parts.length >= 2, so these are safe.
+    const boardSlug = parts[0] ?? "";
+    const basename = parts.at(-1) ?? "";
     const ticketId = basename.replace(/\.yaml$/u, "");
     if (!/^\d+$/u.test(ticketId)) {
       continue; // Only numeric IDs are tickets; board config files are e.g. board.yaml
