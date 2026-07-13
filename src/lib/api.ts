@@ -26,6 +26,7 @@ interface MeResponse {
   canEdit: boolean;
   headSha?: string;
   instanceName?: string;
+  repoUrl?: string;
   mode?: "docs" | "board";
   autoSaveDelay?: number;
   sidebarDefaultDepth?: number;

@@ -28,7 +28,7 @@ const SIDEBAR_MIN = 160;
 const SIDEBAR_MAX = 480;
 
 export default function AppShell(): JSX.Element {
-  const { user, instanceName, autoSaveDelay, headSha, refreshUser } = useUser();
+  const { user, instanceName, autoSaveDelay, headSha, repoUrl, refreshUser } = useUser();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tree, setTree] = useState<TreeNode[]>([]);
   const [presenceByPage, setPresenceByPage] = useState<Map<string, PresenceUser[]>>(new Map());
@@ -285,6 +285,7 @@ export default function AppShell(): JSX.Element {
       <TopBar
         instanceName={instanceName}
         headSha={headSha}
+        repoUrl={repoUrl}
         onSearchOpen={() => {
           setSearchOpen(true);
         }}

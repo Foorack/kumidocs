@@ -5,6 +5,7 @@ import { emailToDisplayName } from "@/lib/avatar";
 
 interface KumiDocsPermissions {
   instanceName?: string;
+  repoUrl?: string;
   editors?: string[];
   slideThemes?: SlideThemeMap;
   pageTemplates?: PageTemplateMap;

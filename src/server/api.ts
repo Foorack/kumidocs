@@ -24,6 +24,7 @@ async function apiMe(user: User, config: Config): Promise<Response> {
     autoSaveDelay: config.autoSaveDelay,
     headSha,
     instanceName: perms.instanceName ?? "KumiDocs",
+    repoUrl: perms.repoUrl,
     mode: config.board ? "board" : "docs",
     pageTemplates: perms.pageTemplates ?? {},
     sidebarDefaultDepth: perms.sidebarDefaultDepth ?? 2,

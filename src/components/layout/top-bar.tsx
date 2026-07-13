@@ -16,6 +16,7 @@ const APP_VERSION = __VERSION__ ?? "dev";
 interface TopBarProps {
   instanceName: string;
   headSha: string;
+  repoUrl?: string;
   onSearchOpen: () => void;
 }
 
@@ -42,9 +43,9 @@ const ThemeToggle = (): JSX.Element => {
   );
 };
 
-const UserProfile = (allProps: { headSha: string }): JSX.Element => {
+const UserProfile = (allProps: { headSha: string; repoUrl?: string }): JSX.Element => {
   const { user } = useUser();
-  const { headSha } = allProps;
+  const { headSha, repoUrl } = allProps;
   if (!user) {
     return <></>;
   }
@@ -71,17 +72,28 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
               </div>
               {headSha && (
                 <div className="w-full border-t border-border pt-2 mt-1 text-center">
-                  <p>HEAD</p>
-                  <code className="font-mono">{headSha}</code>
+                  <p className="text-xs text-muted-foreground">HEAD</p>
+                  {repoUrl ? (
+                    <a
+                      href={`${repoUrl}/commit/${headSha}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs hover:text-primary hover:underline"
+                    >
+                      {headSha}
+                    </a>
+                  ) : (
+                    <code className="font-mono text-xs">{headSha}</code>
+                  )}
                 </div>
               )}
               <div className="w-full border-t border-border pt-2 mt-1 text-center">
-                <p>VERSION</p>
+                <p className="text-xs text-muted-foreground">VERSION</p>
                 <a
                   href="https://www.npmjs.com/package/kumidocs"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono hover:text-primary hover:underline"
+                  className="font-mono text-xs hover:text-primary hover:underline"
                 >
                   v{APP_VERSION}
                 </a>
@@ -95,7 +107,7 @@ const UserProfile = (allProps: { headSha: string }): JSX.Element => {
 };
 
 const TopBar = (allProps: TopBarProps): JSX.Element => {
-  const { instanceName, headSha, onSearchOpen } = allProps;
+  const { instanceName, headSha, repoUrl, onSearchOpen } = allProps;
   return (
     <header className="h-11 border-b border-neutral-800 bg-black grid grid-cols-3 items-center px-3 gap-2 shrink-0 z-10 shadow-sm">
       <div className="flex justify-start">
@@ -123,7 +135,7 @@ const TopBar = (allProps: TopBarProps): JSX.Element => {
       </div>
       <div className="flex items-center gap-1 justify-end">
         <ThemeToggle />
-        <UserProfile headSha={headSha} />
+        <UserProfile headSha={headSha} repoUrl={repoUrl} />
       </div>
     </header>
   );

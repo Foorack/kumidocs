@@ -19,6 +19,7 @@ interface UserContextValue {
   instanceName: string;
   autoSaveDelay: number;
   headSha: string;
+  repoUrl?: string;
   refreshUser: () => Promise<void>;
   setEmailAndRefetch: (email: string) => void;
 }
@@ -34,6 +35,7 @@ const UserContext = createContext<UserContextValue>({
   refreshUser: async () => {
     /* noop until provider mounts */
   },
+  repoUrl: undefined,
   setEmailAndRefetch: () => {
     globalThis.location.reload();
   },
@@ -50,6 +52,7 @@ interface FetchMeResult {
   instanceName: string;
   autoSaveDelay: number;
   headSha: string;
+  repoUrl?: string;
   needs401: boolean;
 }
 
@@ -69,6 +72,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       autoSaveDelay: rawDelay,
       headSha: rawSha,
       instanceName: rawName,
+      repoUrl: rawRepoUrl,
     } = data;
     const user: User = { canEdit, displayName, email, id, name };
     return {
@@ -78,6 +82,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       mode: mode === "board" ? "board" : "docs",
       needs401: false,
       pageTemplates: pageData ?? {},
+      repoUrl: rawRepoUrl,
       sidebarDefaultDepth: sidebarDefaultDepth ?? 2,
       slideThemes: themeData ?? {},
       user,
@@ -91,6 +96,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       mode: "docs",
       needs401,
       pageTemplates: {},
+      repoUrl: undefined,
       sidebarDefaultDepth: 0,
       slideThemes: {},
     };
@@ -108,6 +114,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
   const [instanceName, setInstanceName] = useState("KumiDocs");
   const [autoSaveDelay, setAutoSaveDelay] = useState(5000);
   const [headSha, setHeadSha] = useState("");
+  const [repoUrl, setRepoUrl] = useState<string | undefined>();
   const [mode, setMode] = useState<"docs" | "board">("docs");
 
   useMountEffect(() => {
@@ -122,6 +129,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
         setInstanceName(result.instanceName);
         setAutoSaveDelay(result.autoSaveDelay);
         setHeadSha(result.headSha);
+        setRepoUrl(result.repoUrl);
         setMode(result.mode);
         setLoading(false);
       } catch {
@@ -141,6 +149,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
       setInstanceName(result.instanceName);
       setAutoSaveDelay(result.autoSaveDelay);
       setHeadSha(result.headSha);
+      setRepoUrl(result.repoUrl);
       setMode(result.mode);
     } catch {
       // keep current state
@@ -189,6 +198,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
         needsEmailSetup,
         pageTemplates,
         refreshUser,
+        repoUrl,
         setEmailAndRefetch,
         sidebarDefaultDepth,
         slideThemes,
