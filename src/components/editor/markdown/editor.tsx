@@ -219,7 +219,7 @@ export default function MarkdownEditor({
                     <SelectContent>
                       {themeOptions.map((theme) => (
                         <SelectItem key={theme} value={theme} className="text-xs">
-                          {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                          {theme}
                         </SelectItem>
                       ))}
                     </SelectContent>
