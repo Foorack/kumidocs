@@ -1,3 +1,4 @@
+import cn from "@/lib/utils";
 import { useCallback, useRef, useState } from "react";
 import type { RefObject } from "react";
 import MarkdownToolbar from "@/components/editor/markdown/toolbar";
@@ -192,7 +193,7 @@ export default function InlineEditor({
   );
 
   return (
-    <div className={`flex flex-col${showBorder ? " border rounded-md overflow-hidden" : ""}`}>
+    <div className={cn("flex flex-col", showBorder && "border rounded-md overflow-hidden")}>
       <MarkdownToolbar
         editorOnly
         disabled={false}
@@ -228,7 +229,7 @@ export default function InlineEditor({
         onSelect={onSelect}
         onClick={onClick}
         placeholder={placeholder}
-        className={`w-full p-3 resize-none outline-none font-mono text-sm leading-relaxed ${minHeight}`}
+        className={cn("w-full p-3 resize-none outline-none font-mono text-sm leading-relaxed", minHeight)}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import cn from "@/lib/utils";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import {
   Command,
@@ -131,7 +132,7 @@ function PageActionDialogs({
                               }}
                             >
                               <CheckIcon
-                                className={`mr-2 h-4 w-4 ${moveParent === ROOT ? "opacity-100" : "opacity-0"}`}
+                                className={cn("mr-2 h-4 w-4", moveParent === ROOT ? "opacity-100" : "opacity-0")}
                               />
                               (root)
                             </CommandItem>
@@ -151,7 +152,7 @@ function PageActionDialogs({
                                 }}
                               >
                                 <CheckIcon
-                                  className={`mr-2 h-4 w-4 ${moveParent === pg.dir ? "opacity-100" : "opacity-0"}`}
+                                  className={cn("mr-2 h-4 w-4", moveParent === pg.dir ? "opacity-100" : "opacity-0")}
                                 />
                                 <span className="truncate">{pg.title}</span>
                                 <span className="ml-auto truncate">{pg.dir}</span>

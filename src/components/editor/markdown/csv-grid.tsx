@@ -1,3 +1,4 @@
+import cn from "@/lib/utils";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { columnLetter, parseCsv, serializeCsv } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
@@ -298,7 +299,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
       const cellValue = row[cIdx] ?? "";
       if (readOnly) {
         return (
-          <td key={cIdx} className={`${CELL_CLASS} bg-background`}>
+          <td key={cIdx} className={cn(CELL_CLASS, "bg-background")}>
             {cellValue}
           </td>
         );
@@ -326,7 +327,7 @@ function CsvGrid({ value, readOnly = false, onChange, onSave }: CsvGridProps): J
             onKeyDown={(ev: KeyboardEvent<HTMLInputElement>): void => {
               handleKeyDown(ev, rIdx, cIdx);
             }}
-            className={`${CELL_CLASS} h-full w-full bg-background ${cellBorder}`}
+            className={cn(CELL_CLASS, "h-full w-full bg-background", cellBorder)}
           />
         </td>
       );

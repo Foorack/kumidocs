@@ -1,4 +1,5 @@
 import type { BoardColumn } from "@/lib/board";
+import cn from "@/lib/utils";
 import { displayColumnId } from "@/lib/board";
 import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
@@ -22,7 +23,7 @@ function TicketSidebarButton({
   return (
     <Button
       variant="ghost"
-      className={`w-full justify-start gap-2 px-2 h-7 text-sm font-normal disabled:opacity-100 ${stateClass} ${className ?? ""}`}
+      className={cn("w-full justify-start gap-2 px-2 h-7 text-sm font-normal disabled:opacity-100", stateClass, className)}
       {...props}
     />
   );
@@ -87,7 +88,7 @@ function TicketSidebar({
           active={golden}
           disabled={!showEditControls}
           onClick={onGoldenToggle}
-          className={golden ? "font-bold" : ""}
+          className={cn(golden && "font-bold")}
         >
           <EmojiIcon fileType="golden" size={20} style={goldenIconStyle} />
           <span>{golden ? "Golden" : "Regular"}</span>
@@ -96,7 +97,7 @@ function TicketSidebar({
           active={bookmarked}
           disabled={!showEditControls}
           onClick={onBookmarkToggle}
-          className={bookmarked ? "font-bold" : ""}
+          className={cn(bookmarked && "font-bold")}
         >
           <EmojiIcon fileType="bookmark" size={20} style={bookmarkIconStyle} />
           <span>{bookmarked ? "Bookmarked" : "Bookmark"}</span>

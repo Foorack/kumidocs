@@ -24,6 +24,7 @@ import type { PageMeta } from "@/lib/frontmatter";
 import type { PageTemplateMap } from "@/lib/page";
 import type { SlideThemeMap } from "@/lib/slide";
 import { SlideViewer } from "@/components/editor/slides/viewer";
+import cn from "@/lib/utils";
 import { useMarkdownEditor } from "./use-editor";
 
 interface MarkdownEditorProps {
@@ -106,7 +107,7 @@ export default function MarkdownEditor({
 
   return (
     <div
-      className={`flex flex-col h-full${showBorder ? " rounded-md border" : ""}`}
+      className={cn("flex flex-col h-full", showBorder && "rounded-md border")}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -259,7 +260,7 @@ export default function MarkdownEditor({
         >
           <ContextMenuTrigger asChild>
             <div
-              className={`flex-1 min-w-0 flex flex-col overflow-hidden${showPreview ? " border-r border-border" : ""}`}
+              className={cn("flex-1 min-w-0 flex flex-col overflow-hidden", showPreview && "border-r border-border")}
             >
               <textarea
                 ref={taRef}

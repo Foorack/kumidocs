@@ -13,6 +13,7 @@ import type { PageNode, PresenceUser, User } from "@/lib/types";
 import { PageMenuItems } from "@/components/ui/page-menu-items";
 import { UserAvatar } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/toaster";
+import cn from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 function getParentDir(path: string): string {
@@ -56,7 +57,7 @@ function PresenceAvatars({
   const circleSize = isCompact ? "w-[11px] h-[11px]" : "w-[18px] h-[18px]";
   const textSize = isCompact ? "text-[4px]" : "text-[7px]";
   return (
-    <div className={`flex items-center shrink-0 ${isCompact ? "-space-x-[3px]" : "-space-x-1"}`}>
+    <div className={cn("flex items-center shrink-0", isCompact ? "-space-x-[3px]" : "-space-x-1")}>
       {slice.map((user) => (
         <UserAvatar
           key={user.id}
@@ -69,7 +70,7 @@ function PresenceAvatars({
       ))}
       {resolved.length > 3 && (
         <div
-          className={`${circleSize} rounded-full bg-muted flex items-center justify-center ${textSize} font-bold ring-1 ring-sidebar cursor-default shrink-0`}
+          className={cn(circleSize, "rounded-full bg-muted flex items-center justify-center font-bold ring-1 ring-sidebar cursor-default shrink-0", textSize)}
         >
           +{resolved.length - 3}
         </div>
@@ -195,9 +196,7 @@ function PageNodeRow({
 
   const chevron = (
     <span
-      className={`shrink-0 w-3 h-3 flex items-center justify-center ${
-        hasChildren ? "cursor-pointer" : "pointer-events-none opacity-0"
-      }`}
+      className={cn("shrink-0 w-3 h-3 flex items-center justify-center", hasChildren ? "cursor-pointer" : "pointer-events-none opacity-0")}
       onClick={hasChildren ? toggleOpen : undefined}
     >
       {hasChildren && open && <ChevronDown className="w-3 h-3" />}

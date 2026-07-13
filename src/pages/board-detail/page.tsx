@@ -7,6 +7,7 @@ import Label from "@/components/ui/label";
 import { toast } from "@/components/ui/toaster";
 import { deleteFile, getFile, getTree, putFile } from "@/lib/api";
 import type { BoardColumn, BoardConfig } from "@/lib/board";
+import cn from "@/lib/utils";
 import { boardToYaml, displayColumnId, yamlToBoard } from "@/lib/board";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
@@ -304,7 +305,7 @@ function BoardDetailPage(): JSX.Element {
             id="board-prefix"
             value={config.prefix}
             disabled
-            className={`${INPUT_CLASS} w-32 font-mono uppercase opacity-60`}
+            className={cn(INPUT_CLASS, "w-32 font-mono uppercase opacity-60")}
             placeholder="PROJ"
             maxLength={10}
           />

@@ -1,3 +1,4 @@
+import cn from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { Kbd } from "@/components/ui/kbd";
 import type { TreeNode } from "@/lib/types";
@@ -77,11 +78,7 @@ function BoardSidebarContent({
               onClick={() => {
                 navigate(`/b/${ticket.boardSlug}/${ticket.id}`);
               }}
-              className={`w-full text-left px-3 py-1.5 rounded transition-colors flex items-center gap-2 ${
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:text-foreground hover:bg-accent/50"
-              }`}
+              className={cn("w-full text-left px-3 py-1.5 rounded transition-colors flex items-center gap-2", isActive ? "bg-accent text-accent-foreground" : "hover:text-foreground hover:bg-accent/50")}
             >
               {columnColor === undefined ? undefined : (
                 <span

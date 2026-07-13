@@ -1,3 +1,4 @@
+import cn from "@/lib/utils";
 import { useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import {
@@ -169,7 +170,7 @@ function BoardFilterBar({
                 onSelect={() => {
                   applyReporter(email);
                 }}
-                className={selected ? "bg-accent" : ""}
+                className={cn(selected && "bg-accent")}
               >
                 <UserAvatar name={display} email={email} size="xxs" />
                 <span className="truncate flex-1">{email}</span>
@@ -194,7 +195,7 @@ function BoardFilterBar({
                 onSelect={() => {
                   applyAssignee(email);
                 }}
-                className={selected ? "bg-accent" : ""}
+                className={cn(selected && "bg-accent")}
               >
                 <UserAvatar name={display} email={email} size="xxs" />
                 <span className="truncate flex-1">{email}</span>
@@ -239,7 +240,7 @@ function BoardFilterBar({
                   onSortOrderChange(option.sortOrder);
                   setSortOpen(false);
                 }}
-                className={active ? "bg-accent font-bold" : ""}
+                className={cn(active && "bg-accent font-bold")}
               >
                 <span className="flex-1">{option.label}</span>
                 {active && <span className="text-xs text-primary">&#10003;</span>}

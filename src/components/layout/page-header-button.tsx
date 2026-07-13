@@ -1,6 +1,7 @@
 import type { CSSProperties, JSX } from "react";
 import type { FileType } from "@/lib/types";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
+import cn from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface PageHeaderButtonProps {
@@ -30,7 +31,7 @@ function PageHeaderButton({
       variant={active ? "secondary" : "ghost"}
       size="sm"
       onClick={onClick}
-      className={`h-7 gap-1.5 text-xs ${active ? "font-bold" : ""} ${className}`}
+      className={cn("h-7 gap-1.5 text-xs", active && "font-bold", className)}
     >
       <EmojiIcon
         fileType={fileType}

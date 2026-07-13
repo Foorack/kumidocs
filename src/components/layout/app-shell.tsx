@@ -8,6 +8,7 @@ import NewPageDialog from "@/components/dialogs/new-page-dialog";
 import { Outlet } from "react-router-dom";
 import SearchPalette from "@/components/search/search-palette";
 import Sidebar from "./sidebar";
+import cn from "@/lib/utils";
 import Toaster from "@/components/ui/toaster";
 import TopBar from "./top-bar";
 import useMountEffect from "@/hooks/use-mount-effect";
@@ -309,7 +310,7 @@ export default function AppShell(): JSX.Element {
 
         {/* Resize handle */}
         <div
-          className={`w-1 shrink-0 cursor-col-resize transition-colors hover:bg-primary/30 ${isDragging ? "bg-primary/40" : ""}`}
+          className={cn("w-1 shrink-0 cursor-col-resize transition-colors hover:bg-primary/30", isDragging && "bg-primary/40")}
           onMouseDown={handleResizeMouseDown}
         />
 

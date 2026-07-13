@@ -2,7 +2,7 @@ import { UserAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { emailToDisplayName } from "@/lib/avatar";
-import { relativeTime } from "@/lib/utils";
+import cn, { relativeTime } from "@/lib/utils";
 import { displayColumnId, approvalFileType } from "@/lib/board";
 import type { TicketComment, TicketApproval, TimelineEntry, BoardColumn } from "@/lib/board";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
@@ -198,7 +198,7 @@ function renderTimelineItem(
             {isRejected ? (
               <span className="font-bold text-destructive">rejected</span>
             ) : (
-              <span className={outdated === true ? "font-bold text-amber" : "font-bold text-green"}>
+              <span className={cn(outdated === true ? "font-bold text-amber" : "font-bold text-green")}>
                 approved
               </span>
             )}

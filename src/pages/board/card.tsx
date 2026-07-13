@@ -3,7 +3,7 @@ import { useDraggable } from "@dnd-kit/core";
 import type { CSSProperties, JSX } from "react";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
-import { relativeTime } from "@/lib/utils";
+import cn, { relativeTime } from "@/lib/utils";
 
 // Shared card content
 
@@ -138,7 +138,7 @@ function TicketCard({
           onClick();
         }
       }}
-      className={`rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing ${ticket.golden === true ? "ticket-golden" : ""}`}
+      className={cn("rounded-lg border-3 shadow-xs cursor-pointer active:cursor-grabbing", ticket.golden === true && "ticket-golden")}
       role="button"
       tabIndex={0}
     >
@@ -163,7 +163,7 @@ function DragOverlayCard({ ticket, prefix, columnColor }: DragOverlayCardProps):
 
   return (
     <div
-      className={`rounded-lg border-3 shadow-xl ${ticket.golden === true ? "ticket-golden" : ""}`}
+      className={cn("rounded-lg border-3 shadow-xl", ticket.golden === true && "ticket-golden")}
       style={style}
     >
       <CardContent ticket={ticket} prefix={prefix} columnColor={columnColor} />
