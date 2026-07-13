@@ -20,9 +20,10 @@ const pageEditors = new Map<string, string>(); // pageId -> sessionId holding ed
 
 function getWsData(ws: WebSocket): WsData {
   const data = wsDataStore.get(ws);
-  // Always set by wsOpen before handlers run, so assertion is safe.
-  // oxlint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return data!;
+  if (!data) {
+    throw new Error("WebSocket data not initialized");
+  }
+  return data;
 }
 
 function send(ws: WebSocket, msg: WsServerMessage): void {
