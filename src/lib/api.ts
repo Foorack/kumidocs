@@ -63,6 +63,7 @@ interface DiffData {
 
 // Deduplicate in-flight GET requests.
 // If multiple callers hit the same URL concurrently, only one fetch goes out.
+const INFLIGHT_MAX = 200;
 const inflight = new Map<string, Promise<unknown>>();
 
 async function doFetch<TResponse>(url: string, init?: RequestInit): Promise<TResponse> {
@@ -91,6 +92,13 @@ async function request<TResponse>(url: string, init?: RequestInit): Promise<TRes
       return pending as Promise<TResponse>;
     }
     const promise = doFetch<TResponse>(url, init);
+    // Evict oldest entry when at capacity to prevent unbounded growth.
+    if (inflight.size >= INFLIGHT_MAX) {
+      const oldest = inflight.keys().next();
+      if (oldest.value !== undefined) {
+        inflight.delete(oldest.value);
+      }
+    }
     inflight.set(url, promise);
     // Clean up cache when the request settles, regardless of success/failure
     void (async (): Promise<void> => {
