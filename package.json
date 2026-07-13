@@ -79,7 +79,7 @@
 		"sonner": "2.0.7",
 		"streamdown": "2.5.0",
 		"tailwind-merge": "3.6.0",
-		"ws": "^8.21.0"
+		"ws": "8.21.0"
 	},
 	"devDependencies": {
 		"@tailwindcss/typography": "0.5.20",
@@ -88,7 +88,7 @@
 		"@types/node": "26.0.1",
 		"@types/react": "19.2.17",
 		"@types/react-dom": "19.2.3",
-		"@types/ws": "^8.18.1",
+		"@types/ws": "8.18.1",
 		"@typescript/native-preview": "7.0.0-dev.20260626.1",
 		"bun-plugin-tailwind": "0.1.2",
 		"country-flag-icons": "1.6.19",
