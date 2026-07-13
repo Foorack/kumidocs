@@ -88,6 +88,7 @@ export default function NewPageDialog({
 
   const handleKeyDown = async (ev: React.KeyboardEvent): Promise<void> => {
     if (ev.key === "Enter" && !creating && title.trim() && effectiveSlug) {
+      ev.preventDefault();
       await handleCreate();
     }
   };
