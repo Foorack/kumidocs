@@ -36,11 +36,13 @@ class RateLimiter {
     const cutoff = now - this.windowMs;
     bucket.timestamps = bucket.timestamps.filter((ts) => ts >= cutoff);
 
+    // Eagerly evict empty buckets so stale entries don't accumulate.
+    if (bucket.timestamps.length === 0) {
+      this.store.delete(key);
+      return true;
+    }
+
     if (bucket.timestamps.length >= this.maxRequests) {
-      // Eagerly evict empty buckets so stale entries don't accumulate.
-      if (bucket.timestamps.length === 0) {
-        this.store.delete(key);
-      }
       return false;
     }
     bucket.timestamps.push(now);
