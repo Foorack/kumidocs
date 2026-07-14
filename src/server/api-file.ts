@@ -18,6 +18,7 @@ import { getHeadSha, gitMoveAndCommit, gitRemoveAndCommit, gitStageAndCommit } f
 import { mkdir, rename } from "node:fs/promises";
 import { removeFromIndex, updateInIndex } from "./search";
 import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
+import { sortedObject } from "@/lib/utils";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
@@ -54,7 +55,12 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     if (obj.createdAt === undefined || obj.createdAt === "") {
       obj.createdAt = now;
     }
-    return stringifyYaml(obj, { lineWidth: 120, noRefs: true });
+    return stringifyYaml(sortedObject(obj), {
+      forceQuotes: false,
+      lineWidth: -1,
+      noRefs: true,
+      sortKeys: true,
+    });
   }
 
   obj.updatedAt = now;
@@ -62,7 +68,12 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     obj.createdAt = now;
   }
 
-  return stringifyYaml(obj, { lineWidth: 120, noRefs: true });
+  return stringifyYaml(sortedObject(obj), {
+    forceQuotes: false,
+    lineWidth: -1,
+    noRefs: true,
+    sortKeys: true,
+  });
 }
 
 /**
