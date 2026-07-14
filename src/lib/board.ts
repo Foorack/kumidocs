@@ -387,7 +387,7 @@ function ticketToYaml(data: {
     forceQuotes: false,
     lineWidth: -1,
     noRefs: true,
-    sortKeys: false, // sortedObject handles key ordering
+    sortKeys: true, // + sortedObject for nested object key ordering
   });
 }
 
