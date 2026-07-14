@@ -140,7 +140,11 @@ function updateInIndex(path: string): void {
     return;
   }
   if (path.endsWith(".md")) {
-    docIndex.discard(path);
+    try {
+      docIndex.discard(path);
+    } catch {
+      // not in index
+    }
     const docs = buildDocs([path]);
     const doc = docs[0];
     if (doc) {
@@ -151,7 +155,11 @@ function updateInIndex(path: string): void {
       }
     }
   } else if (path.endsWith(".yaml")) {
-    ticketIndex.discard(path);
+    try {
+      ticketIndex.discard(path);
+    } catch {
+      // not in index
+    }
     const tickets = buildTickets([path]);
     const ticket = tickets[0];
     if (ticket) {
@@ -169,9 +177,17 @@ function removeFromIndex(path: string): void {
     return;
   }
   if (path.endsWith(".md")) {
-    docIndex.discard(path);
+    try {
+      docIndex.discard(path);
+    } catch {
+      // not in index
+    }
   } else if (path.endsWith(".yaml")) {
-    ticketIndex.discard(path);
+    try {
+      ticketIndex.discard(path);
+    } catch {
+      // not in index
+    }
   }
 }
 
