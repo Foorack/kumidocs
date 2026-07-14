@@ -28,7 +28,7 @@ import type { User } from "@/lib/types";
 import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } from "./runtime";
 import { existsSync } from "node:fs";
 
-const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; font-src 'self' data:; connect-src 'self' ws: wss:`;
+const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'sha256-/B3E5pbfFPGgmBRhPY0V/2FdVdAF/X+VsnnYj4S2xlw='; font-src 'self' data:; connect-src 'self' ws: wss:`;
 
 // Resolve the public directory relative to this module.
 // When bundled into dist/index.js, import.meta.dir = dist/, so dist/public
@@ -87,6 +87,7 @@ async function buildRoutes(
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
   const routes: Record<string, unknown> = {
+    // oxlint-disable sort-keys -- Route patterns must be ordered for match priority, not alphabetically.
     "/api/auth/email": {
       async POST(req: Request) {
         let body: unknown;
@@ -312,7 +313,18 @@ async function buildRoutes(
         return serveRepoAsset(`images/${filename}`, config);
       },
     },
+
+    "/favicon.ico": {
+      async GET() {
+        const iconFile = config.board ? "icon.board.png" : "icon.docs.png";
+        const filePath = path.join(publicDir, iconFile);
+        return serveFileResponse(filePath, {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        });
+      },
+    },
   };
+  // oxlint-enable sort-keys
 
   return routes;
 }

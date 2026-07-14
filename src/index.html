@@ -4,7 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="icon" type="image/png" href="./logo.png" />
+    <script>
+      document.head.appendChild(
+        Object.assign(document.createElement("link"), {
+          rel: "icon",
+          type: "image/png",
+          href: "/favicon.ico",
+        }),
+      );
+    </script>
     <title>Loading…</title>
     <script type="module" src="./frontend.tsx" async></script>
   </head>
