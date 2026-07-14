@@ -553,6 +553,7 @@ function BoardPage(): JSX.Element {
         open={dialogOpen}
         onClose={handleDialogClose}
         boards={boardNameMap}
+        boardIcons={new Map([[boardSlug, config.icon]])}
         boardColumns={new Map([[boardSlug, columns]])}
         initialBoardSlug={boardSlug}
         ticket={editTicket}

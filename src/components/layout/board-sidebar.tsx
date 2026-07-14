@@ -1,6 +1,7 @@
 import cn from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { Kbd } from "@/components/ui/kbd";
+import { EmojiIcon } from "@/components/ui/emoji-icon";
 import type { TreeNode } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -128,9 +129,9 @@ function BoardSidebarContent({
               <SelectItem value="">All boards</SelectItem>
               {boardEntries.map((entry) => (
                 <SelectItem key={entry.slug} value={entry.slug}>
-                  {entry.config.icon !== undefined && entry.config.icon !== ""
-                    ? `${entry.config.icon} `
-                    : ""}
+                  {entry.config.icon !== undefined && entry.config.icon !== "" ? (
+                    <EmojiIcon emoji={entry.config.icon} size={16} className="inline me-1" />
+                  ) : undefined}
                   {entry.config.name}
                 </SelectItem>
               ))}
@@ -392,6 +393,9 @@ export default function BoardSidebar({ tree, reloadTree }: BoardSidebarProps): J
           setNewTicketOpen(false);
         }}
         boards={boardNameMap}
+        boardIcons={
+          new Map([...boardConfigs.entries()].map(([slug, config]) => [slug, config.icon]))
+        }
         boardColumns={boardColumnsMap}
         initialBoardSlug={defaultNewTicketBoard}
         users={dialogUsers.emails}

@@ -9,12 +9,15 @@ interface User {
 type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType =
   | MarkdownType
+  | "activity"
+  | "approval"
   | "archive"
   | "board"
   | "bookmark"
   | "code"
   | "edit"
   | "golden"
+  | "home"
   | "image"
   | "other"
   | "pageinfo"
@@ -23,7 +26,8 @@ type FileType =
   | "ticket"
   | "approve"
   | "reject"
-  | "outdated";
+  | "outdated"
+  | "version";
 
 interface FileEntry {
   path: string;

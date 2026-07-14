@@ -11,6 +11,13 @@ import type { BoardColumn, TicketComment, TicketApproval, TimelineEntry } from "
 import type { CommitEntry, PresenceUser } from "@/lib/types";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useWsListener, wsClient } from "@/store/ws";
 import { toast } from "@/components/ui/toaster";
@@ -33,6 +40,8 @@ interface TicketDialogProps {
   onClose: () => void;
   /** All known boards: slug -> display name. Used in create mode. */
   boards: Map<string, string>;
+  /** Board icons: slug -> emoji character. Used in create mode. */
+  boardIcons?: Map<string, string | undefined>;
   /** Columns for each board: slug -> column definitions. */
   boardColumns: Map<string, BoardColumn[]>;
   /** Board to preselect in create mode. */
@@ -60,6 +69,7 @@ function TicketDialog({
   open,
   onClose,
   boards,
+  boardIcons,
   boardColumns,
   initialBoardSlug,
   ticket,
@@ -796,24 +806,31 @@ function TicketDialog({
             >
               {/* Board selector (create only) */}
               {!isEdit && (
-                <select
-                  aria-label="Select a board"
+                <Select
                   value={boardSlug}
-                  onChange={(ev) => {
-                    setBoardSlug(ev.target.value);
+                  onValueChange={(val: string) => {
+                    setBoardSlug(val);
                     setColumn("");
                   }}
-                  className="w-full h-9 text-sm rounded-md border border-input bg-transparent text-foreground px-3"
                 >
-                  <option value="" disabled>
-                    Select a board
-                  </option>
-                  {boardNames.map(([slug, name]) => (
-                    <option key={slug} value={slug}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-9 text-sm">
+                    <SelectValue placeholder="Select a board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardNames.map(([slug, name]) => (
+                      <SelectItem key={slug} value={slug}>
+                        {boardIcons?.get(slug) !== undefined && boardIcons.get(slug) !== "" ? (
+                          <EmojiIcon
+                            emoji={boardIcons.get(slug)}
+                            size={16}
+                            className="inline me-1"
+                          />
+                        ) : undefined}
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {/* Title */}
