@@ -24,6 +24,10 @@ class RateLimiter {
   /**
    * Check and record a request for the given key (e.g. user id).
    * Returns `true` if the request is allowed, `false` if rate-limited.
+   *
+   * The check and record happen in a single synchronous pass: if the
+   * bucket is under the limit, the timestamp is pushed immediately before
+   * returning, so no intervening event can observe stale state.
    */
   public check(key: string): boolean {
     const now = Date.now();
@@ -32,21 +36,21 @@ class RateLimiter {
       bucket = { timestamps: [] };
       this.store.set(key, bucket);
     }
-    // Drop timestamps outside the current window
+    // Drop timestamps outside the sliding window
     const cutoff = now - this.windowMs;
     bucket.timestamps = bucket.timestamps.filter((ts) => ts >= cutoff);
 
-    // Eagerly evict empty buckets so stale entries don't accumulate.
-    if (bucket.timestamps.length === 0) {
-      this.store.delete(key);
+    // Under the limit -- record this request atomically and allow.
+    if (bucket.timestamps.length < this.maxRequests) {
+      bucket.timestamps.push(now);
       return true;
     }
 
-    if (bucket.timestamps.length >= this.maxRequests) {
-      return false;
+    // At or over the limit -- evict the empty bucket if stale and deny.
+    if (bucket.timestamps.length === 0) {
+      this.store.delete(key);
     }
-    bucket.timestamps.push(now);
-    return true;
+    return false;
   }
 }
 
