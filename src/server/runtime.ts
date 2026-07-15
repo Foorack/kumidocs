@@ -58,8 +58,13 @@ async function doesFileExist(filePath: string): Promise<boolean> {
 /** Compute the lowercase hex SHA-256 digest of data. */
 function sha256Hex(data: string | Buffer | ArrayBuffer): string {
   const hash = createHash("sha256");
-  const buf = data instanceof ArrayBuffer ? Buffer.from(new Uint8Array(data)) : Buffer.from(data);
-  hash.update(buf);
+  if (data instanceof ArrayBuffer) {
+    hash.update(new Uint8Array(data));
+  } else if (typeof data === "string") {
+    hash.update(data, "utf8");
+  } else {
+    hash.update(data);
+  }
   return hash.digest("hex");
 }
 

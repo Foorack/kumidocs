@@ -1,51 +1,53 @@
-import { existsSync, readFileSync } from "node:fs";
+import { execFile } from "node:child_process";
+import { access, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
+import { promisify } from "node:util";
 import ignore from "ignore";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+
+const execFileAsync = promisify(execFile);
 
 /** Returns true if the repo-relative path should be excluded from watching/indexing. */
 type IgnoreChecker = (relPath: string) => boolean;
 
-function loadGlobalGitignore(): string | undefined {
+async function loadGlobalGitignore(): Promise<string | undefined> {
   // Ask git for the configured global excludes file
   try {
-    // oxlint-disable-next-line node/no-sync
-    const result = spawnSync("git", ["config", "--global", "core.excludesFile"], {
+    const { stdout } = await execFileAsync("git", ["config", "--global", "core.excludesFile"], {
       encoding: "utf8",
     });
-    if (result.status === 0) {
-      const configPath = result.stdout.trim();
-      // Expand ~ manually since spawnSync doesn't run through a shell
-      const expanded = configPath.startsWith("~/")
-        ? path.join(homedir(), configPath.slice(2))
-        : configPath;
-      // oxlint-disable-next-line node/no-sync
-      if (expanded && existsSync(expanded)) {
-        // oxlint-disable-next-line node/no-sync
-        return readFileSync(expanded, "utf8");
+    const configPath = stdout.trim();
+    // Expand ~ manually since execFile doesn't run through a shell
+    const expanded = configPath.startsWith("~/")
+      ? path.join(homedir(), configPath.slice(2))
+      : configPath;
+    if (expanded) {
+      try {
+        await access(expanded);
+        return await readFile(expanded, "utf8");
+      } catch {
+        // not readable; fall through
       }
     }
   } catch {
     // git not on PATH or config query failed; fall through to candidates
   }
 
-  // Common fallback locations
+  // Common fallback locations -- sequential is intentional (first-found-wins).
+  // oxlint-disable no-await-in-loop
   for (const candidate of [
     path.join(homedir(), ".config/git/ignore"),
     path.join(homedir(), ".gitignore"),
     path.join(homedir(), ".gitignore_global"),
   ]) {
-    // oxlint-disable-next-line node/no-sync
-    if (existsSync(candidate)) {
-      try {
-        // oxlint-disable-next-line node/no-sync
-        return readFileSync(candidate, "utf8");
-      } catch {
-        // unreadable; skip
-      }
+    try {
+      await access(candidate);
+      return await readFile(candidate, "utf8");
+    } catch {
+      // unreadable; skip
     }
   }
+  // oxlint-enable no-await-in-loop
 
   return undefined;
 }
@@ -54,23 +56,20 @@ function loadGlobalGitignore(): string | undefined {
  * Build an IgnoreChecker from the global gitignore and the repo's .gitignore.
  * The returned function returns true for paths that should be excluded.
  */
-function buildIgnoreChecker(repoPath: string): IgnoreChecker {
+async function buildIgnoreChecker(repoPath: string): Promise<IgnoreChecker> {
   const ig = ignore();
 
-  const globalContent = loadGlobalGitignore();
+  const globalContent = await loadGlobalGitignore();
   if (globalContent !== undefined && globalContent !== "") {
     ig.add(globalContent);
   }
 
   const repoGitignorePath = path.join(repoPath, ".gitignore");
-  // oxlint-disable-next-line node/no-sync
-  if (existsSync(repoGitignorePath)) {
-    try {
-      // oxlint-disable-next-line node/no-sync
-      ig.add(readFileSync(repoGitignorePath, "utf8"));
-    } catch {
-      // unreadable
-    }
+  try {
+    await access(repoGitignorePath);
+    ig.add(await readFile(repoGitignorePath, "utf8"));
+  } catch {
+    // not readable or missing; skip
   }
 
   return (relPath: string): boolean => {
