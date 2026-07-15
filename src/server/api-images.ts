@@ -13,6 +13,7 @@ import {
   sha256Hex,
   writeFileBytes,
 } from "./runtime";
+import { parseHTML } from "linkedom";
 
 async function apiUploadImage(req: Request, user: User, config: Config): Promise<Response> {
   if (!user.canEdit) {
@@ -143,35 +144,130 @@ async function apiImageDelete(filename: string, user: User, config: Config): Pro
  * Strip dangerous content from SVGs before serving.
  * Applied at response time so stored files are untouched.
  *
- * Removes: script, foreignObject, use, animate*, on* attributes,
- * javascript: and data: URIs in href/action/src.
+ * Uses a proper XML DOM parser (linkedom) instead of regex, which
+ * correctly handles edge cases like CDATA sections, HTML entities,
+ * namespace tricks, and nested elements that regex cannot reliably parse.
+ *
+ * Whitelist approach: only known-safe SVG elements are kept, and
+ * dangerous attributes (event handlers, javascript: URIs) are removed.
  */
+
+// SVG elements that are safe to render. Absent elements are stripped.
+const SAFE_SVG_ELEMENTS = new Set([
+  "svg",
+  "g",
+  "path",
+  "circle",
+  "ellipse",
+  "rect",
+  "line",
+  "polyline",
+  "polygon",
+  "text",
+  "tspan",
+  "textpath",
+  "defs",
+  "lineargradient",
+  "radialgradient",
+  "stop",
+  "pattern",
+  "filter",
+  "fegaussianblur",
+  "feoffset",
+  "feblend",
+  "fecolormatrix",
+  "fecomposite",
+  "feflood",
+  "feturbulence",
+  "fedisplacementmap",
+  "fedropshadow",
+  "fecomponenttransfer",
+  "fefunca",
+  "fefuncr",
+  "fefuncg",
+  "fefuncb",
+  "femerge",
+  "femergenode",
+  "clipPath",
+  "mask",
+  "marker",
+  "symbol",
+  "use",
+  "switch",
+  "title",
+  "desc",
+  "metadata",
+  "style",
+]);
+
+// Index page-type resources (external images) are not allowed.
+// Events and URI-based attacks are blocked via attribute checks.
+const URI_ATTRIBUTES = new Set(["href", "xlink:href", "src", "action", "formaction", "xlink:show"]);
+const EVENT_HANDLER_RE = /^on\w+$/iu;
+const SAFE_URI_RE = /^(?:https?|ftp|mailto|tel|#|[^:]*)$/iu;
+
 function sanitizeSvg(raw: string): string {
-  return (
-    raw
-      // <script>
-      .replaceAll(/<script[\s\S]*?<\/script\s*>/giu, "")
-      // self-closing <script />
-      .replaceAll(/<script[^>]*\/>/giu, "")
-      // <foreignObject>
-      .replaceAll(/<foreignObject[\s\S]*?<\/foreignObject\s*>/giu, "")
-      // <use>
-      .replaceAll(/<use[\s\S]*?<\/use\s*>/giu, "")
-      .replaceAll(/<use[^>]*\/>/giu, "")
-      // <animate*>, <set>
-      .replaceAll(
-        /<(?:animate(?:Transform|Motion)?|set)[\s\S]*?<\/(?:animate(?:Transform|Motion)?|set)\s*>/giu,
-        "",
-      )
-      .replaceAll(/<(?:animate(?:Transform|Motion)?|set)[^>]*\/>/giu, "")
-      // on* event handler attributes
-      .replaceAll(/(?:^|\s)on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s/>]*)/giu, "")
-      // javascript: and data: URIs in URL-type attributes
-      .replaceAll(
-        /(?<attr>(?:xlink:)?href|action|formaction|src|xlink:show)\s*=\s*(?:"(?:javascript|data):[^"]*"|'(?:javascript|data):[^']*')/giu,
-        "",
-      )
-  );
+  try {
+    const { document } = parseHTML(raw);
+
+    const walker = (el: Element): void => {
+      const tagName = el.tagName.toLowerCase();
+
+      // Strip disallowed elements entirely
+      if (!SAFE_SVG_ELEMENTS.has(tagName)) {
+        el.replaceWith("");
+        return;
+      }
+
+      // For <use> elements, only allow fragment-only hrefs (#id)
+      if (tagName === "use") {
+        for (const attr of ["href", "xlink:href"] as const) {
+          const val = el.getAttribute(attr);
+          if (val !== null && val !== "" && !val.startsWith("#")) {
+            el.removeAttribute(attr);
+          }
+        }
+      }
+
+      // Remove dangerous attributes
+      const attrs = [...el.attributes] as { name: string; value: string }[];
+      for (const attr of attrs) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value;
+
+        // Remove event handlers (onclick, onload, onerror, etc.)
+        if (EVENT_HANDLER_RE.test(name)) {
+          el.removeAttribute(attr.name);
+          continue;
+        }
+
+        // Validate URI attributes
+        if (URI_ATTRIBUTES.has(name)) {
+          const trimmed = value.trim().toLowerCase();
+          if (!SAFE_URI_RE.test(trimmed)) {
+            el.removeAttribute(attr.name);
+          }
+        }
+      }
+
+      // Recurse into children (snapshot because we may mutate)
+      const children = [...el.children];
+      for (const child of children) {
+        walker(child);
+      }
+    };
+
+    const svgEl = document.querySelector("svg");
+    if (!svgEl) {
+      return "";
+    }
+
+    walker(svgEl);
+    return svgEl.outerHTML;
+  } catch {
+    // If parsing fails, return empty string -- don't serve malformed SVG.
+    return "";
+  }
 }
 
 // GET /images/:filename
