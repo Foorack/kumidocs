@@ -6,6 +6,7 @@ import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
+import useMountEffect from "@/hooks/use-mount-effect";
 import BoardHeader from "@/components/layout/board-header";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import PageHeaderButton from "@/components/layout/page-header-button";
@@ -17,7 +18,7 @@ const HOME_COLUMNS = [
 ] as const;
 
 function BoardListPage(): JSX.Element {
-  const { user } = useUser();
+  const { user, instanceName } = useUser();
   const navigate = useNavigate();
   const [boards, setBoards] = useState<BoardTicketData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,11 @@ function BoardListPage(): JSX.Element {
   useEffect(() => {
     void loadAllBoards();
   }, [loadAllBoards]);
+
+  // Set document title
+  useMountEffect(() => {
+    document.title = `Homeboard | ${instanceName}`;
+  });
 
   const columns = useMemo(() => {
     const createdByMe: Record<string, unknown>[] = [];
