@@ -4,6 +4,7 @@ import BoardDetailPage from "@/pages/board-detail/page";
 import BoardListPage from "@/pages/board-list/page";
 import BoardManagerPage from "@/pages/board-manager/page";
 import BoardPage from "@/pages/board/page";
+import ErrorBoundary from "@/components/ui/error-boundary";
 import FilePageRoute from "@/pages/file-page/route";
 import ImageLibraryPage from "@/pages/image-library/page";
 import NotFound from "@/pages/not-found/page";
@@ -50,7 +51,9 @@ function AppRoutes(): JSX.Element {
 const App = (): JSX.Element => (
   <BrowserRouter>
     <Providers>
-      <AppRoutes />
+      <ErrorBoundary label="page">
+        <AppRoutes />
+      </ErrorBoundary>
     </Providers>
   </BrowserRouter>
 );
