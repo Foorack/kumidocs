@@ -6,6 +6,7 @@ import { isArchived } from "@/lib/board";
 import { TicketCard } from "@/pages/board/card";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/store/user";
+import BoardHeader from "@/components/layout/board-header";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import PageHeaderButton from "@/components/layout/page-header-button";
 
@@ -91,30 +92,21 @@ function BoardListPage(): JSX.Element {
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
-      <div className="flex items-center gap-2 px-4 py-1 border-b border-border shrink-0">
-        <span className="w-6 h-6 shrink-0 flex items-center justify-center">
-          <EmojiIcon fileType="home" size={24} />
-        </span>
-        <div className="flex flex-col min-w-0">
-          <h1 className="font-bold text-base truncate">Homeboard</h1>
-          <div className="flex items-center gap-1 -mt-1">
-            <span className="text-xs tabular-nums">
-              {totalTickets} {totalTickets === 1 ? "ticket" : "tickets"}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <PageHeaderButton
-            fileType="archive"
-            label="Archived"
-            active={showArchived}
-            grayscaleWhenInactive
-            onClick={() => {
-              setShowArchived((prev) => !prev);
-            }}
-          />
-        </div>
-      </div>
+      <BoardHeader
+        icon={<EmojiIcon fileType="home" size={24} />}
+        title="Homeboard"
+        subtitle={`${totalTickets} ${totalTickets === 1 ? "ticket" : "tickets"}`}
+      >
+        <PageHeaderButton
+          fileType="archive"
+          label="Archived"
+          active={showArchived}
+          grayscaleWhenInactive
+          onClick={() => {
+            setShowArchived((prev) => !prev);
+          }}
+        />
+      </BoardHeader>
 
       <div className="flex-1 flex overflow-hidden">
         {columns.map(({ column, tickets }) => (

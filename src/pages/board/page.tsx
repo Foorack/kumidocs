@@ -15,6 +15,7 @@ import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import PageHeaderButton from "@/components/layout/page-header-button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
+import BoardHeader from "@/components/layout/board-header";
 import ICONS from "@/components/ui/icon/fluent";
 import type { PresenceUser } from "@/lib/types";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -410,94 +411,84 @@ function BoardPage(): JSX.Element {
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
-      {/* Board header */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-        <span className="w-6 h-6 shrink-0 flex items-center justify-center">
-          {config.icon !== undefined && config.icon !== "" ? (
+      <BoardHeader
+        icon={
+          config.icon !== undefined && config.icon !== "" ? (
             <EmojiIcon emoji={config.icon} size={24} />
           ) : (
             <span dangerouslySetInnerHTML={{ __html: ICONS.Board24Color ?? "" }} />
-          )}
-        </span>
-        <div className="flex flex-col min-w-0">
-          <h1 className="font-bold text-base truncate">{config.name}</h1>
-          <div className="flex items-center gap-1 -mt-1">
-            <span className="text-xs tabular-nums">
-              {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
-            </span>
-          </div>
+          )
+        }
+        title={config.name}
+        subtitle={`${tickets.length} ${tickets.length === 1 ? "ticket" : "tickets"}`}
+      >
+        <div className="flex -space-x-1 me-3">
+          {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
+            .slice(0, 5)
+            .map((viewer: PresenceUser) => (
+              <Tooltip key={viewer.id}>
+                <TooltipTrigger asChild>
+                  <UserAvatar
+                    name={viewer.name}
+                    email={viewer.email}
+                    size="sm"
+                    className="border border-background ring-1 ring-border"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>{viewer.name}</TooltipContent>
+              </Tooltip>
+            ))}
         </div>
 
-        {/* Right: viewers + info */}
-        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <div className="flex -space-x-1 me-3">
-            {[...new Map(viewers.map((viewer) => [viewer.id, viewer])).values()]
-              .slice(0, 5)
-              .map((viewer: PresenceUser) => (
-                <Tooltip key={viewer.id}>
-                  <TooltipTrigger asChild>
-                    <UserAvatar
-                      name={viewer.name}
-                      email={viewer.email}
-                      size="sm"
-                      className="border border-background ring-1 ring-border"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>{viewer.name}</TooltipContent>
-                </Tooltip>
-              ))}
-          </div>
+        <PageHeaderButton
+          fileType="archive"
+          label="Archived"
+          active={showArchived}
+          grayscaleWhenInactive
+          onClick={() => {
+            setShowArchived((prev) => !prev);
+          }}
+        />
 
-          <PageHeaderButton
-            fileType="archive"
-            label="Archived"
-            active={showArchived}
-            grayscaleWhenInactive
+        <PageHeaderButton
+          fileType="pageinfo"
+          label="Info"
+          active={infoOpen}
+          grayscaleWhenInactive
+          onClick={() => {
+            setInfoOpen(!infoOpen);
+          }}
+        />
+
+        <HeaderMenu>
+          <DropdownMenuItem
             onClick={() => {
-              setShowArchived((prev) => !prev);
+              globalThis.open(window.location.href, "_blank");
             }}
-          />
-
-          <PageHeaderButton
-            fileType="pageinfo"
-            label="Info"
-            active={infoOpen}
-            grayscaleWhenInactive
+          >
+            Open in new tab
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+              } catch {
+                // clipboard unavailable
+              }
+            }}
+          >
+            Copy link
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
             onClick={() => {
-              setInfoOpen(!infoOpen);
+              void navigate(`/bm/${boardSlug}`);
             }}
-          />
-
-          <HeaderMenu>
-            <DropdownMenuItem
-              onClick={() => {
-                globalThis.open(window.location.href, "_blank");
-              }}
-            >
-              Open in new tab
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(window.location.href);
-                } catch {
-                  // clipboard unavailable
-                }
-              }}
-            >
-              Copy link
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                void navigate(`/bm/${boardSlug}`);
-              }}
-            >
-              Manage
-            </DropdownMenuItem>
-          </HeaderMenu>
-        </div>
-      </div>
+          >
+            Manage
+          </DropdownMenuItem>
+        </HeaderMenu>
+      </BoardHeader>
 
       {/* Content area: kanban + optional info panel */}
       <div className="flex flex-1 overflow-hidden">
