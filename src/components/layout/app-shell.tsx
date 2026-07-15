@@ -1,6 +1,6 @@
 import type { PresenceUser, SyncStatus, TreeNode } from "@/lib/types";
 import { getTree } from "@/lib/api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWsConnectionState, useWsListener, wsClient } from "@/store/ws";
 import { setActiveUsers } from "@/store/active-users";
 import { Button } from "@/components/ui/button";
@@ -131,15 +131,20 @@ export default function AppShell(): JSX.Element {
   });
 
   // Derive the global set of active user emails from per-page presence
-  useEffect(() => {
-    const allEmails = new Set<string>();
+  const activeEmails = useMemo(() => {
+    const emails = new Set<string>();
     for (const users of presenceByPage.values()) {
       for (const usr of users) {
-        allEmails.add(usr.email);
+        emails.add(usr.email);
       }
     }
-    setActiveUsers(allEmails);
+    return emails;
   }, [presenceByPage]);
+
+  // Sync derived set to module-level store (external system side effect)
+  useEffect(() => {
+    setActiveUsers(activeEmails);
+  }, [activeEmails]);
 
   // Ctrl+K shortcut
   useMountEffect(() => {

@@ -14,7 +14,7 @@ import { PageMenuItems } from "@/components/ui/page-menu-items";
 import { UserAvatar } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/toaster";
 import cn from "@/lib/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 function getParentDir(path: string): string {
   return path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
@@ -124,15 +124,16 @@ function PageNodeRow({
   const isAncestor = hasChildren && location.pathname.startsWith(`${href}/`);
 
   const [open, setOpen] = useState(depth < defaultDepth || isAncestor);
+  const prevIsAncestorRef = useRef(isAncestor);
 
   // When navigating to a child of this node, auto-open this ancestor.
   // defaultDepth is intentionally excluded; it only sets the initial default;
   // reapplying it would override manual toggles and make it act as a max depth.
-  useEffect(() => {
-    if (isAncestor) {
-      setOpen(true);
-    }
-  }, [isAncestor]);
+  // Runs during render (not an effect) per project convention: compute inline.
+  if (isAncestor && !prevIsAncestorRef.current) {
+    setOpen(true);
+  }
+  prevIsAncestorRef.current = isAncestor;
 
   // Aggregate presence from all descendant pages (for folder presence badge).
   // Includes self (isAncestor) so collapsed folders show avatars when you're inside.
