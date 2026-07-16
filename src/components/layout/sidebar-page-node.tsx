@@ -88,7 +88,7 @@ async function handleDuplicatePage(
   navigate: (to: string) => void,
 ): Promise<string | undefined> {
   const result = await duplicatePage(path);
-  if ("error" in result) {
+  if (!result.ok) {
     return result.error;
   }
   toast.success("Page duplicated");
