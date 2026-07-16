@@ -29,6 +29,13 @@ function relativeTime(iso?: string): string {
   }
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < 0) {
+    const absDiff = Math.abs(diff);
+    for (const [ms, label] of UNITS) {
+      const count = Math.floor(absDiff / ms);
+      if (count >= 1) {
+        return `in ${count} ${label}${count === 1 ? "" : "s"}`;
+      }
+    }
     return "just now";
   }
   for (const [ms, label] of UNITS) {
