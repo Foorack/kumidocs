@@ -161,8 +161,8 @@ function PageNodeRow({
     return users;
   }, [hasChildren, node.path, presenceByPage, isAncestor, currentUser]);
 
-  const [dotsHovered, setDotsHovered] = useState(false);
-  const [dotsOpen, setDotsOpen] = useState(false);
+  const [, setDotsHovered] = useState(false);
+  const [, setDotsOpen] = useState(false);
   const indent = 8 + depth * 14;
   const parentDir = getParentDir(node.path);
   const rowVariant = isActive
@@ -186,12 +186,7 @@ function PageNodeRow({
   const entryType = entry?.type ?? "doc";
   const linkClass = `truncate flex-1 min-w-0${node.isVirtual ? " italic opacity-50" : ""}`;
 
-  const dotsIcon =
-    dotsHovered || dotsOpen ? (
-      <MoreHorizontal className="w-4 h-4" />
-    ) : (
-      <MoreHorizontal className="w-4 h-4" />
-    );
+  const dotsIcon = <MoreHorizontal className="w-4 h-4" />;
 
   const toggleOpen = (ev: React.MouseEvent): void => {
     ev.preventDefault();
