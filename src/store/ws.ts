@@ -123,11 +123,17 @@ class WsClient {
     this.ws.removeEventListener("error", this.onWsError);
   }
 
+  /** Max number of reopen callbacks before evicting oldest. */
+  private static readonly MAX_REOPEN_CALLBACKS = 100;
+
   /**
    * Register a callback that fires each time the WS opens (initial + reconnects).
    * Returns an unsubscribe function to remove the callback.
    */
   public onReopen(fn: () => void): () => void {
+    if (this.reopenCallbacks.length >= WsClient.MAX_REOPEN_CALLBACKS) {
+      this.reopenCallbacks.shift();
+    }
     this.reopenCallbacks.push(fn);
     return (): void => {
       const idx = this.reopenCallbacks.indexOf(fn);

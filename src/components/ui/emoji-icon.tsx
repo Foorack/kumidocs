@@ -32,7 +32,9 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
 
 const FILE_TYPE_FALLBACK = "QuestionCircle24Color";
 
-// Cache computed data URIs so btoa() only runs once per emoji
+// Cache computed data URIs so btoa() only runs once per emoji.
+// Capped at 500 entries to prevent unbounded memory growth.
+const DATA_URI_CACHE_MAX = 500;
 const dataUriCache = new Map<string, string>();
 
 function getDataUri(emoji: string): string {
@@ -41,6 +43,13 @@ function getDataUri(emoji: string): string {
     const svgText = EMOJI_SVGS[emoji];
     if (svgText !== undefined && svgText !== "") {
       uri = `data:image/svg+xml;base64,${btoa(svgText)}`;
+      // Evict oldest entry when at capacity
+      if (dataUriCache.size >= DATA_URI_CACHE_MAX) {
+        const firstKey = dataUriCache.keys().next().value;
+        if (firstKey !== undefined) {
+          dataUriCache.delete(firstKey);
+        }
+      }
       dataUriCache.set(emoji, uri);
     }
   }

@@ -319,6 +319,8 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
 
 // GET /api/avatar/:hash proxies Gravatar so the client never contacts Gravatar directly.
 // The hash must be a 64-char lowercase hex string (SHA-256).
+// Capped at 200 entries to prevent unbounded memory growth.
+const AVATAR_CACHE_MAX = 200;
 const avatarCache = new Map<string, { body: ArrayBuffer; type: string }>();
 
 async function apiAvatarProxy(hash: string): Promise<Response> {
@@ -343,6 +345,14 @@ async function apiAvatarProxy(hash: string): Promise<Response> {
 
   const body = await upstream.arrayBuffer();
   const type = upstream.headers.get("Content-Type") ?? "image/jpeg";
+
+  // Evict oldest entry when at capacity
+  if (avatarCache.size >= AVATAR_CACHE_MAX) {
+    const firstKey = avatarCache.keys().next().value;
+    if (firstKey !== undefined) {
+      avatarCache.delete(firstKey);
+    }
+  }
   avatarCache.set(hash, { body, type });
 
   return new Response(body, {
