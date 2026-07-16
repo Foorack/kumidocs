@@ -132,7 +132,7 @@ export default function Sidebar({
                 ) : (
                   pages.map((node) => (
                     <PageNodeRow
-                      key={`${node.path}-d${sidebarDefaultDepth}`}
+                      key={node.path}
                       node={node}
                       depth={0}
                       defaultDepth={sidebarDefaultDepth}
