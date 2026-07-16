@@ -32,8 +32,7 @@ const getInitialTheme = (): Theme => {
   return theme;
 };
 
-const ThemeProvider = (allProps: { children: ReactNode }): JSX.Element => {
-  const { children } = allProps;
+const ThemeProvider = ({ children }: { children: ReactNode }): JSX.Element => {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   const toggle = (): void => {

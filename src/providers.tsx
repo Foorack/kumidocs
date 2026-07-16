@@ -64,19 +64,15 @@ interface ProvidersProps {
   children: ReactNode;
 }
 
-const Providers = (allProps: ProvidersProps): JSX.Element => {
-  const { children } = allProps;
-
-  return (
-    <ThemeProvider>
-      <UserProvider>
-        <TooltipProvider delayDuration={TOOLTIP_DELAY}>
-          <EmailSetupDialog />
-          {children}
-        </TooltipProvider>
-      </UserProvider>
-    </ThemeProvider>
-  );
-};
+const Providers = ({ children }: ProvidersProps): JSX.Element => (
+  <ThemeProvider>
+    <UserProvider>
+      <TooltipProvider delayDuration={TOOLTIP_DELAY}>
+        <EmailSetupDialog />
+        {children}
+      </TooltipProvider>
+    </UserProvider>
+  </ThemeProvider>
+);
 
 export default Providers;
