@@ -72,29 +72,48 @@ function resolveWikilinks(markdown: string, lookup: WikilinkLookup): string {
   });
 }
 
-/** Build a WikilinkLookup from the full file tree (TreeNode[]). */
-function buildLookupFromTree(tree: TreeNode[]): WikilinkLookup {
+/** A page entry used to build a WikilinkLookup. */
+interface PageEntry {
+  path: string;
+  title: string;
+}
+
+/**
+ * Build a WikilinkLookup from a list of page entries.
+ * Shared between server and client to keep the mapping logic in one place.
+ */
+function buildWikilinkLookup(entries: PageEntry[]): WikilinkLookup {
   const byTitle: Record<string, string> = {};
   const byPath: Record<string, string> = {};
+
+  for (const { path: filePath, title } of entries) {
+    // byTitle: first win for duplicate titles
+    if (title && !(title in byTitle)) {
+      byTitle[title] = filePath;
+    }
+    // byPath: path without .md
+    const pathKey = filePath.replace(/\.md$/u, "");
+    if (!(pathKey in byPath)) {
+      byPath[pathKey] = filePath;
+    }
+    // Base filename (e.g. "aws-architecture" -> path)
+    const baseName = filePath.split("/").pop()?.replace(/\.md$/u, "");
+    if (baseName !== undefined && baseName !== "" && baseName !== pathKey && !(baseName in byPath)) {
+      byPath[baseName] = filePath;
+    }
+  }
+
+  return { byPath, byTitle };
+}
+
+/** Build a WikilinkLookup from the full file tree (TreeNode[]). */
+function buildLookupFromTree(tree: TreeNode[]): WikilinkLookup {
+  const entries: PageEntry[] = [];
 
   function walk(nodes: TreeNode[]): void {
     for (const node of nodes) {
       if (node.type === "file" && node.fileEntry) {
-        const fe = node.fileEntry;
-        // byTitle: first win for duplicate titles
-        if (!(fe.title in byTitle)) {
-          byTitle[fe.title] = fe.path;
-        }
-        // byPath: path without .md
-        const pathKey = fe.path.replace(/\.md$/u, "");
-        if (!(pathKey in byPath)) {
-          byPath[pathKey] = fe.path;
-        }
-        // Base filename
-        const baseName = fe.path.split("/").pop()?.replace(/\.md$/u, "");
-        if (baseName !== undefined && baseName !== "" && !(baseName in byPath)) {
-          byPath[baseName] = fe.path;
-        }
+        entries.push({ path: node.fileEntry.path, title: node.fileEntry.title });
       }
       if (node.children) {
         walk(node.children);
@@ -103,8 +122,8 @@ function buildLookupFromTree(tree: TreeNode[]): WikilinkLookup {
   }
 
   walk(tree);
-  return { byPath, byTitle };
+  return buildWikilinkLookup(entries);
 }
 
 export type { WikilinkLookup };
-export { buildLookupFromTree, resolveWikilinks, resolveWikilinkTarget, WIKILINK_RE };
+export { buildLookupFromTree, buildWikilinkLookup, resolveWikilinks, resolveWikilinkTarget, WIKILINK_RE };

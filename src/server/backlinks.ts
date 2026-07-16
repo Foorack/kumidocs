@@ -1,4 +1,4 @@
-import { WIKILINK_RE, resolveWikilinkTarget } from "@/lib/wikilinks";
+import { buildWikilinkLookup, WIKILINK_RE, resolveWikilinkTarget } from "@/lib/wikilinks";
 import { getAllPaths, getFile, getGeneration, parseFileEntry } from "./filestore";
 import type { WikilinkLookup } from "@/lib/wikilinks";
 import type { BacklinkEntry } from "@/lib/types";
@@ -6,40 +6,17 @@ import matter from "gray-matter";
 
 /**
  * Build the wiki-link lookup map from all `.md` files in the repo.
- * Used by the client to resolve `[[Page Name]]` links at render time.
  */
 function buildLookup(): WikilinkLookup {
-  const byTitle: Record<string, string> = {};
-  const byPath: Record<string, string> = {};
-
+  const entries: { path: string; title: string }[] = [];
   for (const filePath of getAllPaths()) {
     if (!filePath.endsWith(".md")) {
       continue;
     }
-
     const entry = parseFileEntry(filePath);
-    // byTitle: map display title to path (skip duplicates; first wins)
-    if (entry.title && !(entry.title in byTitle)) {
-      byTitle[entry.title] = filePath;
-    }
-    // byPath: map path without .md to the full path
-    const pathKey = filePath.replace(/\.md$/u, "");
-    if (!(pathKey in byPath)) {
-      byPath[pathKey] = filePath;
-    }
-    // Also map the base filename (e.g. "aws-architecture" -> path)
-    const baseName = filePath.split("/").pop()?.replace(/\.md$/u, "");
-    if (
-      baseName !== undefined &&
-      baseName !== "" &&
-      baseName !== pathKey &&
-      !(baseName in byPath)
-    ) {
-      byPath[baseName] = filePath;
-    }
+    entries.push({ path: filePath, title: entry.title });
   }
-
-  return { byPath, byTitle };
+  return buildWikilinkLookup(entries);
 }
 
 // Cached lookup -- rebuilt automatically when the filestore generation advances.
