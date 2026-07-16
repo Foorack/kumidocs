@@ -14,11 +14,14 @@ import TopBar from "./top-bar";
 import useMountEffect from "@/hooks/use-mount-effect";
 import { useUser } from "@/store/user";
 
-// Connects the WS client once on mount.
+// Connects the WS client once on mount, disconnects on unmount.
 // Only rendered when the user is available (authenticated).
 function WsConnector({ userId }: { userId: string }): JSX.Element {
   useMountEffect(() => {
     wsClient.connect(userId);
+    return (): void => {
+      wsClient.disconnect();
+    };
   });
   return <></>;
 }
