@@ -12,6 +12,10 @@ class ExitRequestError extends Error {
   }
 }
 
+interface JsonWebKeySet {
+  keys: Record<string, unknown>[];
+}
+
 interface Config {
   repoPath: string;
   port: number;
@@ -22,6 +26,12 @@ interface Config {
   readonly: boolean;
   board: boolean;
   docs: boolean;
+  /**
+   * Optional base64-encoded JWKS for JWT signature verification.
+   * When set, incoming JWTs are verified against this key set before
+   * extracting the email claim. No outbound requests are made.
+   */
+  jwtJwks: JsonWebKeySet | undefined;
 }
 
 // Option definitions
@@ -177,6 +187,33 @@ const OPTIONS: OptionDef[] = [
     key: "docs",
     needsValue: false,
   },
+  {
+    coerce: (raw) => {
+      try {
+        const decoded = atob(raw);
+        const parsed: unknown = JSON.parse(decoded);
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+          !Array.isArray((parsed as Record<string, unknown>).keys)
+        ) {
+          // oxlint-disable-next-line typescript/consistent-return
+          return fatal("JWKS must be a JSON object with a 'keys' array");
+        }
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        return parsed as JsonWebKeySet;
+      } catch {
+        // oxlint-disable-next-line typescript/consistent-return
+        return fatal("JWKS must be a valid base64-encoded JSON Web Key Set");
+      }
+    },
+    default: undefined,
+    description: "Base64-encoded JWKS for JWT signature verification",
+    env: "KUMIDOCS_JWKS_BASE64",
+    flags: ["--jwks-base64"],
+    key: "jwtJwks",
+  },
 ];
 
 // Help / version
@@ -205,9 +242,11 @@ const printHelp = (): void => {
   for (const opt of OPTIONS) {
     const flagStr = opt.flags.join(", ").padEnd(FLAG_COLUMN_WIDTH);
     const rawDefault = defaultValue(opt);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const rl = rawDefault as { count: number; windowMs: number };
     const defaultStr =
       typeof rawDefault === "object"
-        ? `${(rawDefault as { count: number }).count}/${(rawDefault as { windowMs: number }).windowMs}`
+        ? `${String(rl.count)}/${String(rl.windowMs)}`
         : String(rawDefault);
     lines.push(`  ${flagStr} ${opt.description} (default: ${defaultStr}, env: ${opt.env})`);
   }

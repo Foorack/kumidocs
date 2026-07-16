@@ -1,6 +1,6 @@
 import { existsSync, watch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
-import { parseUser, setPermissions, setReadonly } from "./server/auth";
+import { parseUser, setJwtJwks, setPermissions, setReadonly } from "./server/auth";
 import { readTextFile, writeFileBytes } from "./server/runtime";
 import { loadConfig } from "./server/config";
 import {
@@ -49,6 +49,9 @@ if (!existsSync(path.join(config.repoPath, ".git"))) {
 
 // Propagate readonly flag to auth layer so all users get canEdit=false
 setReadonly(config.readonly);
+
+// Configure JWT verification keys (no-op if not set)
+setJwtJwks(config.jwtJwks);
 
 // Load .kumidocs.json permissions
 async function loadPermissions(): Promise<void> {

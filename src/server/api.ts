@@ -7,7 +7,7 @@ import { assertJsonObject } from "@/lib/utils";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
 import { getHeadSha } from "./git";
-import { getPermissions } from "./auth";
+import { getJwtKids, getPermissions } from "./auth";
 import { searchDocs } from "./search";
 import { load as parseYaml } from "js-yaml";
 
@@ -25,6 +25,7 @@ async function apiMe(user: User, config: Config): Promise<Response> {
     autoSaveDelay: config.autoSaveDelay,
     headSha,
     instanceName: perms.instanceName ?? "KumiDocs",
+    jwtKids: getJwtKids(),
     mode: config.board ? "board" : "docs",
     pageTemplates: perms.pageTemplates ?? {},
     repoUrl: perms.repoUrl,
