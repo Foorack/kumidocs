@@ -63,7 +63,9 @@ function useFilePageSave({
   const [manualSaveOnly, setManualSaveOnly] = useState(false);
 
   const autoSaveTimer = useRef(undefined as ReturnType<typeof setTimeout> | undefined);
+  const isMountedRef = useRef(true);
   useMountEffect(() => (): void => {
+    isMountedRef.current = false;
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
     }
@@ -211,6 +213,9 @@ function useFilePageSave({
         clearTimeout(autoSaveTimer.current);
       }
       autoSaveTimer.current = setTimeout(async () => {
+        if (!isMountedRef.current) {
+          return;
+        }
         try {
           await doSave(val, true);
         } catch (error: unknown) {
