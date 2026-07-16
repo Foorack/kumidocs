@@ -1,12 +1,11 @@
 import { CODE_TYPES, IMAGE_TYPES, extensionToType, pathExtension } from "@/lib/filetypes";
-import { extractHeadingTitle } from "@/lib/frontmatter";
+import { extractHeadingTitle, parseFrontmatter } from "@/lib/frontmatter";
 import { mkdir, readdir, unlink } from "node:fs/promises";
 import type { FileEntry, TreeNode } from "@/lib/types";
 import type { Config } from "./config";
 import type { IgnoreChecker } from "./git-ignore";
 import { readTextFile, writeFileBytes } from "./runtime";
 import ignore from "ignore";
-import matter from "gray-matter";
 import path from "node:path";
 
 const fileCache = new Map<string, string>(); // relPath -> content
@@ -197,12 +196,12 @@ function parseFileEntry(filePath: string): FileEntry {
     type = "doc";
     const content = fileCache.get(filePath) ?? "";
     try {
-      const parsed = matter(content);
+      const parsed = parseFrontmatter(content);
       const headingTitle = extractHeadingTitle(parsed.content);
       if (headingTitle !== undefined && headingTitle !== "") {
         title = headingTitle;
       }
-      if (typeof parsed.data.emoji === "string" && parsed.data.emoji !== "") {
+      if (parsed.data.emoji !== undefined && parsed.data.emoji !== "") {
         emoji = parsed.data.emoji;
       }
       if (parsed.data.slides === true) {

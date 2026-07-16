@@ -1,7 +1,7 @@
 import type { FileType, SearchResult } from "@/lib/types";
 import { getAllPaths, getFile, parseFileEntry } from "./filestore";
 import MiniSearch from "minisearch";
-import matter from "gray-matter";
+import { parseFrontmatter } from "@/lib/frontmatter";
 import { load as parseYaml } from "js-yaml";
 
 interface DocEntry {
@@ -32,7 +32,7 @@ function buildDocs(paths: string[]): DocEntry[] {
 
       let body = getFile(path) ?? "";
       try {
-        const parsed = matter(body);
+        const parsed = parseFrontmatter(body);
         body = parsed.content;
       } catch {
         // keep raw content if frontmatter parse fails

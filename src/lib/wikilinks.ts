@@ -98,7 +98,12 @@ function buildWikilinkLookup(entries: PageEntry[]): WikilinkLookup {
     }
     // Base filename (e.g. "aws-architecture" -> path)
     const baseName = filePath.split("/").pop()?.replace(/\.md$/u, "");
-    if (baseName !== undefined && baseName !== "" && baseName !== pathKey && !(baseName in byPath)) {
+    if (
+      baseName !== undefined &&
+      baseName !== "" &&
+      baseName !== pathKey &&
+      !(baseName in byPath)
+    ) {
       byPath[baseName] = filePath;
     }
   }
@@ -126,4 +131,10 @@ function buildLookupFromTree(tree: TreeNode[]): WikilinkLookup {
 }
 
 export type { WikilinkLookup };
-export { buildLookupFromTree, buildWikilinkLookup, resolveWikilinks, resolveWikilinkTarget, WIKILINK_RE };
+export {
+  buildLookupFromTree,
+  buildWikilinkLookup,
+  resolveWikilinks,
+  resolveWikilinkTarget,
+  WIKILINK_RE,
+};

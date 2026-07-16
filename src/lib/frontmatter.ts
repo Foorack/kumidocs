@@ -1,4 +1,4 @@
-/** Minimal frontmatter parser. Avoids a gray-matter browser dependency. */
+/** Minimal frontmatter parser. Only whitelisted fields are extracted. */
 
 /** Whitelisted KumiDocs frontmatter fields. */
 interface PageMeta {

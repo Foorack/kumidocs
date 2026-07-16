@@ -2,7 +2,7 @@ import { buildWikilinkLookup, WIKILINK_RE, resolveWikilinkTarget } from "@/lib/w
 import { getAllPaths, getFile, getGeneration, parseFileEntry } from "./filestore";
 import type { WikilinkLookup } from "@/lib/wikilinks";
 import type { BacklinkEntry } from "@/lib/types";
-import matter from "gray-matter";
+import { parseFrontmatter } from "@/lib/frontmatter";
 
 /**
  * Build the wiki-link lookup map from all `.md` files in the repo.
@@ -57,7 +57,7 @@ function buildBacklinks(queryPath: string): BacklinkEntry[] {
     // Skip frontmatter
     let body = content;
     try {
-      const parsed = matter(content);
+      const parsed = parseFrontmatter(content);
       body = parsed.content;
     } catch {
       // keep raw
