@@ -66,5 +66,14 @@ function sortedObject<TType extends object | null | undefined>(value: TType): TT
   }) as TType;
 }
 
-export { relativeTime, sortedObject };
+/** Validate that a parsed JSON value is a plain object (not null, array, or primitive). */
+function assertJsonObject(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError("Expected a JSON object");
+  }
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return value as Record<string, unknown>;
+}
+
+export { assertJsonObject, relativeTime, sortedObject };
 export default cn;

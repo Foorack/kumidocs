@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { apiBacklinks } from "./backlinks";
 import { buildFileTree, getFile } from "./filestore";
+import { assertJsonObject } from "@/lib/utils";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
 import { getHeadSha } from "./git";
@@ -121,8 +122,7 @@ function apiAllTickets(url?: URL): Response {
 
     let cfg: Record<string, unknown>;
     try {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      cfg = parseYaml(raw) as Record<string, unknown>;
+      cfg = assertJsonObject(parseYaml(raw));
     } catch {
       continue;
     }
@@ -136,8 +136,7 @@ function apiAllTickets(url?: URL): Response {
         if (typeof col !== "object" || col === null) {
           continue;
         }
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        const colData = col as Record<string, unknown>;
+        const colData = assertJsonObject(col);
         columns.push({
           color: typeof colData.color === "string" ? colData.color : "#6b7280",
           default: colData.default === true,
@@ -161,8 +160,7 @@ function apiAllTickets(url?: URL): Response {
           continue;
         }
         try {
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const parsed = parseYaml(rawTicket) as Record<string, unknown>;
+          const parsed = assertJsonObject(parseYaml(rawTicket));
           const defaultCol = columns.find((col) => col.default === true)?.id ?? "";
           tickets.push({
             assignee: typeof parsed.assignee === "string" ? parsed.assignee : undefined,

@@ -1,5 +1,5 @@
 import { dump } from "js-yaml";
-import { sortedObject } from "./utils";
+import { assertJsonObject, sortedObject } from "./utils";
 
 interface BoardColumn {
   color: string;
@@ -137,8 +137,7 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
   if (typeof parsed !== "object" || parsed === null) {
     return undefined;
   }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const obj = parsed as Record<string, unknown>;
+  const obj = assertJsonObject(parsed);
   if (typeof obj.name !== "string" || typeof obj.prefix !== "string") {
     return undefined;
   }
@@ -152,8 +151,8 @@ async function yamlToBoard(raw: string): Promise<BoardConfig | undefined> {
     if (typeof col !== "object" || col === null) {
       continue;
     }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion, id-length
-    const rawCol = col as Record<string, unknown>;
+    // oxlint-disable-next-line id-length
+    const rawCol = assertJsonObject(col);
     columns.push({
       color: typeof rawCol.color === "string" ? rawCol.color : "#6b7280",
       default: rawCol.default === true,
@@ -204,8 +203,7 @@ async function parseTicketYaml(
     return defaultData;
   }
 
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const obj = parsed as Record<string, unknown>;
+  const obj = assertJsonObject(parsed);
   const rawColumn = typeof obj.column === "string" ? obj.column : "";
 
   // Parse comments
@@ -213,15 +211,17 @@ async function parseTicketYaml(
   const comments: TicketComment[] | undefined = Array.isArray(rawComments)
     ? rawComments.filter(
         // oxlint-disable-next-line id-length
-        (comment): comment is TicketComment =>
-          typeof comment === "object" &&
-          comment !== null &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (comment as Record<string, unknown>).user === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (comment as Record<string, unknown>).timestamp === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (comment as Record<string, unknown>).message === "string",
+        (comment): comment is TicketComment => {
+          if (typeof comment !== "object" || comment === null) {
+            return false;
+          }
+          const c = assertJsonObject(comment);
+          return (
+            typeof c.user === "string" &&
+            typeof c.timestamp === "string" &&
+            typeof c.message === "string"
+          );
+        },
       )
     : undefined;
 
@@ -231,28 +231,26 @@ async function parseTicketYaml(
     ? rawApprovals
         .filter(
           // oxlint-disable-next-line id-length
-          (approval): approval is TicketApproval =>
-            typeof approval === "object" &&
-            approval !== null &&
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            typeof (approval as Record<string, unknown>).user === "string" &&
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            typeof (approval as Record<string, unknown>).timestamp === "string" &&
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            typeof (approval as Record<string, unknown>).hash === "string",
+          (approval): approval is TicketApproval => {
+            if (typeof approval !== "object" || approval === null) {
+              return false;
+            }
+            const a = assertJsonObject(approval);
+            return (
+              typeof a.user === "string" &&
+              typeof a.timestamp === "string" &&
+              typeof a.hash === "string"
+            );
+          },
         )
         .map((appr): TicketApproval => {
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          const apprRaw = appr as unknown as Record<string, unknown>;
+          const apprRaw = assertJsonObject(appr);
           // oxlint-disable-next-line id-length
           const st = apprRaw.status;
           const result: TicketApproval = {
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            hash: apprRaw.hash as string,
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            timestamp: apprRaw.timestamp as string,
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-            user: apprRaw.user as string,
+            hash: typeof apprRaw.hash === "string" ? apprRaw.hash : "",
+            timestamp: typeof apprRaw.timestamp === "string" ? apprRaw.timestamp : "",
+            user: typeof apprRaw.user === "string" ? apprRaw.user : "",
           };
           const od = apprRaw.outdated;
           if (st === "approved" || st === "rejected") {
@@ -268,17 +266,17 @@ async function parseTicketYaml(
   // Parse timeline entries
   const rawTimeline = obj.timeline;
   const timeline: TimelineEntry[] | undefined = Array.isArray(rawTimeline)
-    ? rawTimeline.filter(
-        (entry): entry is TimelineEntry =>
-          typeof entry === "object" &&
-          entry !== null &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (entry as Record<string, unknown>).type === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (entry as Record<string, unknown>).timestamp === "string" &&
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          typeof (entry as Record<string, unknown>).user === "string",
-      )
+    ? rawTimeline.filter((entry): entry is TimelineEntry => {
+        if (typeof entry !== "object" || entry === null) {
+          return false;
+        }
+        const e = assertJsonObject(entry);
+        return (
+          typeof e.type === "string" &&
+          typeof e.timestamp === "string" &&
+          typeof e.user === "string"
+        );
+      })
     : undefined;
 
   const rawBookmarks = obj.bookmarks;
