@@ -152,8 +152,8 @@ function useFilePageSave({
       const next: Promise<void> = (async () => {
         try {
           await prev;
-        } catch {
-          /* intentionally empty; previous save errors must not block the queue */
+        } catch (error: unknown) {
+          console.error("Previous save failed, continuing queue:", error);
         }
         setSaveStatus("saving");
 
