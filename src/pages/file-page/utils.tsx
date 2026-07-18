@@ -28,6 +28,9 @@ function pathToTitle(path: string): string {
 
 function resolveFileType(rawExt: string, slides: boolean | undefined, page?: string): FileType {
   const base = extensionToType(rawExt);
+  if (base === "mermaid") {
+    return "mermaid";
+  }
   if (base === "doc" && page !== undefined && page !== "") {
     return "page";
   }
@@ -143,6 +146,16 @@ function buildEditorContent({
         onChange={editMode ? handleChange : undefined}
         onSave={editMode ? handleSave : undefined}
       />
+    );
+  }
+  if (fileType === "mermaid") {
+    // Wrap raw mermaid content in a fenced code block so the existing
+    // streamdown mermaid plugin renders it as a full-page diagram.
+    const wrapped = `\`\`\`mermaid\n${content}\n\`\`\``;
+    return (
+      <ScrollArea className="h-full">
+        <MarkdownViewer value={wrapped} />
+      </ScrollArea>
     );
   }
   if (editMode) {

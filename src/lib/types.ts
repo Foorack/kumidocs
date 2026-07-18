@@ -19,6 +19,7 @@ type FileType =
   | "golden"
   | "home"
   | "image"
+  | "mermaid"
   | "other"
   | "pageinfo"
   | "status"

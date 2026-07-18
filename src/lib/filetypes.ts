@@ -65,6 +65,7 @@ const CODE_TYPES = new Set([
   ".ini",
   ".cfg",
   ".csv",
+  ".mermaid",
 ]);
 
 const NO_DOT = -1;
@@ -99,6 +100,9 @@ const extensionToType = (inputExt: string): FileType => {
   }
   if (ext === ".csv") {
     return "sheet";
+  }
+  if (ext === ".mermaid") {
+    return "mermaid";
   }
   if (CODE_TYPES.has(ext)) {
     return "code";
