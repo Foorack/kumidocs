@@ -28,7 +28,7 @@ import type { User } from "@/lib/types";
 import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } from "./runtime";
 import { existsSync } from "node:fs";
 
-const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'sha256-/B3E5pbfFPGgmBRhPY0V/2FdVdAF/X+VsnnYj4S2xlw='; font-src 'self' data:; connect-src 'self' ws: wss:`;
+const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: wss:`;
 
 // Resolve the public directory relative to this module.
 // When bundled into dist/index.js, import.meta.dir = dist/, so dist/public

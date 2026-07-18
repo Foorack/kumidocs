@@ -150,12 +150,13 @@ function buildEditorContent({
   }
   if (fileType === "mermaid") {
     // Wrap raw mermaid content in a fenced code block so the existing
-    // streamdown mermaid plugin renders it as a full-page diagram.
+    // streamdown mermaid plugin renders it. Strip the chrome so only
+    // the diagram fills the page.
     const wrapped = `\`\`\`mermaid\n${content}\n\`\`\``;
     return (
-      <ScrollArea className="h-full">
+      <div className="mermaid-fullpage flex flex-col flex-1 min-h-0">
         <MarkdownViewer value={wrapped} />
-      </ScrollArea>
+      </div>
     );
   }
   if (editMode) {

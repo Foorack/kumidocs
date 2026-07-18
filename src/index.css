@@ -11,3 +11,54 @@
     @apply h-full w-full m-0 p-0 overflow-hidden bg-background text-foreground;
   }
 }
+
+/* Full-page mermaid diagram view -- strip chrome, fill available space */
+.mermaid-fullpage {
+  /* flex parent provides height; streamdown fills via flex-1 */
+}
+.mermaid-fullpage .prose {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.mermaid-fullpage .prose > :only-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.mermaid-fullpage [data-streamdown="mermaid-block"] > :first-child {
+  display: none;
+}
+.mermaid-fullpage [data-streamdown="mermaid-block-actions"] {
+  display: none;
+}
+.mermaid-fullpage [data-streamdown="mermaid-block"] {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.mermaid-fullpage [data-streamdown="mermaid-block"] > div:last-child {
+  border-radius: 0;
+  border: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.mermaid-fullpage [data-streamdown="mermaid"] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.mermaid-fullpage [data-streamdown="mermaid"] > div {
+  flex: 1;
+}
