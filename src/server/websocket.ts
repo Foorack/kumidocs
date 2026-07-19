@@ -248,6 +248,8 @@ function wsMessage(ws: WebSocket, raw: string | Buffer): void {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     msg = JSON.parse(String(raw)) as WsClientMessage;
   } catch {
+    const preview = String(raw).slice(0, 200);
+    console.warn(`WS  invalid message from ${getWsData(ws).sessionId}: ${preview}`);
     return;
   }
 
