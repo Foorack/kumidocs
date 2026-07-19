@@ -19,7 +19,7 @@ import type { BoardColumn, BoardConfig, TicketData } from "@/lib/board";
 import { displayColumnId, parseTicketYaml, yamlToBoard } from "@/lib/board";
 import { scrapeUsers } from "@/lib/user-list";
 import BoardFilterBar from "./board-filter-bar";
-import TicketDialog from "@/pages/ticket/ticket-dialog";
+import TicketDialog from "@/components/dialogs/ticket/ticket-dialog";
 
 interface BoardSidebarContentProps {
   boardConfigs: Map<string, BoardConfig>;

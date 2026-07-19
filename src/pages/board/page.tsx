@@ -23,7 +23,7 @@ import HeaderMenu from "@/components/layout/header-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/ui/avatar";
 import PageInfoPanel from "@/components/layout/page-info-panel";
-import TicketDialog from "@/pages/ticket/ticket-dialog";
+import TicketDialog from "@/components/dialogs/ticket/ticket-dialog";
 import usePagePresence from "@/hooks/use-page-presence";
 import useInfoPanel from "@/hooks/use-info-panel";
 import { useUser } from "@/store/user";
