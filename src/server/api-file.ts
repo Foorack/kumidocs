@@ -107,7 +107,12 @@ async function apiFileGet(url: URL, config: Config): Promise<Response> {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  const sha = await getHeadSha(config);
+  let sha: string;
+  try {
+    sha = await getHeadSha(config);
+  } catch {
+    return Response.json({ error: "Not a git repository" }, { status: 500 });
+  }
   return Response.json({ content, path: filePath, sha });
 }
 
