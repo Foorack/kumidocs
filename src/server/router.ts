@@ -83,6 +83,26 @@ async function buildRoutes(
   config: Config,
   requireUser: RequireUser,
 ): Promise<Record<string, unknown>> {
+  /** Authenticate and return the user, or return a 401 response. */
+  function requireUserOr(req: Request): User | Response {
+    const user = requireUser(req);
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return user;
+  }
+
+  /** Authenticate user and enforce rate limit. Returns user or error response. */
+  function requireRateLimitOr(req: Request, limiter: RateLimiter): User | Response {
+    const user = requireUser(req);
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    if (!limiter.check(user.id)) {
+      return new Response("Too many requests", { status: 429 });
+    }
+    return user;
+  }
   /** Per-user rate limiter with configurable limits. */
   const mutationLimiter = new RateLimiter(config.rateLimit.count, config.rateLimit.windowMs);
   const routes: Record<string, unknown> = {
@@ -124,9 +144,9 @@ async function buildRoutes(
 
     "/api/backlinks": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiBacklinks(new URL(req.url));
       },
@@ -134,9 +154,9 @@ async function buildRoutes(
 
     "/api/boards/tickets": {
       GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiAllTickets(new URL(req.url));
       },
@@ -149,39 +169,30 @@ async function buildRoutes(
     },
     "/api/file": {
       async DELETE(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileDelete(new URL(req.url), user, config);
       },
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileGet(new URL(req.url), config);
       },
       async POST(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileCreate(req, user, config);
       },
       async PUT(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFilePut(new URL(req.url), req, user, config);
       },
@@ -189,9 +200,9 @@ async function buildRoutes(
 
     "/api/file/diff": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileDiff(new URL(req.url), config);
       },
@@ -199,9 +210,9 @@ async function buildRoutes(
 
     "/api/file/history": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileHistory(new URL(req.url), config);
       },
@@ -209,12 +220,9 @@ async function buildRoutes(
 
     "/api/file/rename": {
       async POST(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         return apiFileRename(req, user, config);
       },
@@ -228,9 +236,9 @@ async function buildRoutes(
 
     "/api/images": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiImagesList(config);
       },
@@ -238,12 +246,9 @@ async function buildRoutes(
 
     "/api/images/:filename": {
       async DELETE(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         const filename = new URL(req.url).pathname.slice("/api/images/".length);
         return apiImageDelete(decodeURIComponent(filename), user, config);
@@ -252,9 +257,9 @@ async function buildRoutes(
 
     "/api/me": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiMe(user, config);
       },
@@ -262,9 +267,9 @@ async function buildRoutes(
 
     "/api/search": {
       GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiSearch(new URL(req.url));
       },
@@ -272,9 +277,9 @@ async function buildRoutes(
 
     "/api/tree": {
       GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         return apiTree();
       },
@@ -282,12 +287,9 @@ async function buildRoutes(
 
     "/api/upload/image": {
       async POST(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        if (!mutationLimiter.check(user.id)) {
-          return new Response("Too many requests", { status: 429 });
+        const user = requireRateLimitOr(req, mutationLimiter);
+        if (user instanceof Response) {
+          return user;
         }
         return apiUploadImage(req, user, config);
       },
@@ -295,9 +297,9 @@ async function buildRoutes(
 
     "/images/:filename": {
       async GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
+        const user = requireUserOr(req);
+        if (user instanceof Response) {
+          return user;
         }
         const filename = decodeURIComponent(new URL(req.url).pathname.slice("/images/".length));
         return serveRepoAsset(`images/${filename}`, config);
