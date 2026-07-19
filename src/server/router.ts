@@ -102,7 +102,8 @@ async function buildRoutes(
           return new Response("Bad request", { status: 400 });
         }
         const email = rawEmail.trim().toLowerCase();
-        if (!email.includes("@") || email.startsWith("@") || email.endsWith("@")) {
+        // Max email length per RFC 5321 (path element, excluding angle brackets).
+        if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) {
           return new Response("Bad request", { status: 400 });
         }
         const user = makeUser(email);
