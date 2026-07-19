@@ -86,12 +86,6 @@ const apiEmojis = createGzipEndpoint(path.join(publicDir, "emojis.txt"), "emoji 
 
 const apiIcons = createGzipEndpoint(path.join(publicDir, "icons.txt"), "icon packs");
 
-// GET /api/sidebar
-function apiSidebar(): Response {
-  const content = getFile("_sidebar.md") ?? "";
-  return Response.json({ content });
-}
-
 // GET /api/boards/tickets[?board=slug]
 // oxlint-disable-next-line complexity
 function apiAllTickets(url?: URL): Response {
@@ -202,7 +196,7 @@ function apiAllTickets(url?: URL): Response {
   return Response.json(result);
 }
 
-export { apiAllTickets, apiBacklinks, apiEmojis, apiIcons, apiMe, apiSearch, apiSidebar, apiTree };
+export { apiAllTickets, apiBacklinks, apiEmojis, apiIcons, apiMe, apiSearch, apiTree };
 export { apiFileCreate, apiFileDelete, apiFileGet, apiFilePut, apiFileRename } from "./api-file";
 export { apiFileDiff, apiFileHistory } from "./api-history";
 export {

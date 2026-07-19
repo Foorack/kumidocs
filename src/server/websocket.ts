@@ -326,18 +326,6 @@ function broadcastPageCreated(pageId: string, path: string): void {
   }
 }
 
-function sendSaveConflict(userId: string, pageId: string): void {
-  for (const ws of sessions.values()) {
-    if (getWsData(ws).user.id === userId) {
-      send(ws, {
-        message: "Save conflict: remote changes could not be merged.",
-        pageId,
-        type: "save_conflict_lost",
-      });
-    }
-  }
-}
-
 function getEditorForPage(pageId: string): User | undefined {
   const sid = pageEditors.get(pageId);
   if (sid === undefined || sid === "") {
@@ -377,7 +365,6 @@ export {
   broadcastPageCreated,
   broadcastSyncStatus,
   getSyncStatus,
-  sendSaveConflict,
   getEditorForPage,
   pruneDeadSessions,
 };

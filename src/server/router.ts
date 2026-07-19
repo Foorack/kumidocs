@@ -15,7 +15,6 @@ import {
   apiImagesList,
   apiMe,
   apiSearch,
-  apiSidebar,
   apiTree,
   apiUploadImage,
   serveRepoAsset,
@@ -268,16 +267,6 @@ async function buildRoutes(
           return new Response("Unauthorized", { status: 401 });
         }
         return apiSearch(new URL(req.url));
-      },
-    },
-
-    "/api/sidebar": {
-      GET(req: Request) {
-        const user = requireUser(req);
-        if (!user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        return apiSidebar();
       },
     },
 
