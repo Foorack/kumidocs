@@ -1,4 +1,5 @@
-import { assertJsonObject, checkBodySize, isSafePath } from "./api-utils";
+import { assertJsonObject, sortedObject } from "@/lib/utils";
+import { checkBodySize, isSafePath } from "./api-utils";
 import {
   broadcastPageChanged,
   broadcastPageCreated,
@@ -18,7 +19,6 @@ import { getHeadSha, gitMoveAndCommit, gitRemoveAndCommit, gitStageAndCommit } f
 import { mkdir, rename } from "node:fs/promises";
 import { removeFromIndex, updateInIndex } from "./search";
 import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
-import { sortedObject } from "@/lib/utils";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
