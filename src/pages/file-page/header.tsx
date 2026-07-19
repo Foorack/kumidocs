@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { FileType, PresenceUser, User } from "@/lib/types";
 import PageHeaderButton from "@/components/layout/page-header-button";
 import HeaderMenu from "@/components/layout/header-menu";
-import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./utils";
+import { SAVE_BADGE_TEXT, getEditButtonClass, getSaveBadgeClass } from "./editor-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";

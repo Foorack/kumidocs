@@ -2,7 +2,7 @@ import { duplicatePage } from "@/lib/api";
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react";
 import type { FileType, PresenceUser, TreeNode, User } from "@/lib/types";
 import { buildFrontmatter, parseFrontmatter } from "@/lib/frontmatter";
-import { computeTitle, resolveFileType } from "./utils";
+import { computeTitle, resolveFileType } from "./editor-content";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";

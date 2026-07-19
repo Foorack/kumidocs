@@ -5,7 +5,7 @@ import NotFound from "@/pages/not-found/page";
 import PageInfoPanel from "@/components/layout/page-info-panel";
 import { PageContextProvider } from "@/lib/page-context";
 import TocSidebar from "@/components/editor/markdown/toc-sidebar";
-import { buildEditorContent } from "./utils";
+import { buildEditorContent } from "./editor-content";
 import { useFilePage } from "./use-page";
 import { useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
