@@ -2,6 +2,19 @@ import type { FileType } from "./types";
 
 const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
 
+// oxlint-disable unicorn/number-literal-case -- oxfmt converts hex to lowercase
+const MAGIC_BYTES: Record<string, Uint8Array[]> = {
+  ".gif": [
+    new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]),
+    new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]),
+  ],
+  ".jpeg": [new Uint8Array([0xff, 0xd8, 0xff])],
+  ".jpg": [new Uint8Array([0xff, 0xd8, 0xff])],
+  ".png": [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
+  ".webp": [new Uint8Array([0x52, 0x49, 0x46, 0x46])],
+};
+// oxlint-enable unicorn/number-literal-case
+
 const CODE_TYPES = new Set([
   ".txt",
   ".ts",
@@ -113,4 +126,4 @@ const extensionToType = (inputExt: string): FileType => {
   return "other";
 };
 
-export { IMAGE_TYPES, CODE_TYPES, pathExtension, extensionToType };
+export { IMAGE_TYPES, MAGIC_BYTES, CODE_TYPES, pathExtension, extensionToType };

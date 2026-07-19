@@ -1,4 +1,4 @@
-import { IMAGE_TYPES } from "@/lib/filetypes";
+import { IMAGE_TYPES, MAGIC_BYTES } from "@/lib/filetypes";
 import { addToCache, deleteFileFromRepo, getAllPaths, getFile } from "./filestore";
 import { gitRemoveAndCommit, gitStageAndCommit } from "./git";
 import { mkdir } from "node:fs/promises";
@@ -41,6 +41,29 @@ async function apiUploadImage(req: Request, user: User, config: Config): Promise
   if (!IMAGE_TYPES.has(ext)) {
     return Response.json({ error: "File type not allowed" }, { status: 415 });
   }
+
+  const header = new Uint8Array(await entry.slice(0, 12).arrayBuffer());
+  const signatures = MAGIC_BYTES[ext];
+  if (signatures !== undefined) {
+    const match = signatures.some((sig) => {
+      if (sig.length > header.length) {
+        return false;
+      }
+      return sig.every((byte, i) => header[i] === byte);
+    });
+    if (!match) {
+      return Response.json({ error: "File content does not match extension" }, { status: 415 });
+    }
+    // WEBP needs an additional check: bytes 8-11 must be "WEBP"
+    if (ext === ".webp") {
+      const webpId = new TextDecoder().decode(header.slice(8, 12));
+      if (webpId !== "WEBP") {
+        return Response.json({ error: "File content does not match extension" }, { status: 415 });
+      }
+    }
+  }
+  // SVG content validation is handled by the sanitizer later.
+  // Other formats without a magic-bytes entry are accepted as-is.
 
   const bytes = await entry.arrayBuffer();
   const sha256 = sha256Hex(bytes);
