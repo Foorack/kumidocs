@@ -36,7 +36,8 @@
 		"start": "NODE_ENV=production bun src/index.ts",
 		"lint": "oxlint src/",
 		"format": "oxfmt src/",
-		"typecheck": "tsgo --noEmit"
+		"typecheck": "tsgo --noEmit",
+		"test": "bun test"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "6.3.1",

@@ -51,28 +51,6 @@ function relativeTime(iso?: string): string {
 const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));
 
 /**
- * Proxy that intercepts `ownKeys` so JSON.stringify / js-yaml dump / etc.
- * always emit object keys in alphabetical order, without mutating the original.
- * Recursively wraps nested plain objects too.
- */
-function sortedObject<TType extends object | null | undefined>(value: TType): TType {
-  // oxlint-disable-next-line typescript/no-unnecessary-condition
-  if (value === undefined || value === null || Array.isArray(value)) {
-    return value;
-  }
-  return new Proxy(value, {
-    get: (target, prop) => {
-      const val = Reflect.get(target, prop) as unknown;
-      if (typeof val === "object" && val !== null && !Array.isArray(val)) {
-        return sortedObject(val);
-      }
-      return val;
-    },
-    ownKeys: (target) =>
-      Reflect.ownKeys(target).toSorted((left, right) => String(left).localeCompare(String(right))),
-  }) as TType;
-}
-
 /** Validate that a parsed JSON value is a plain object (not null, array, or primitive). */
 function assertJsonObject(value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -82,5 +60,5 @@ function assertJsonObject(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-export { assertJsonObject, relativeTime, sortedObject };
+export { assertJsonObject, relativeTime };
 export default cn;

@@ -1,5 +1,5 @@
 import { dump } from "js-yaml";
-import { assertJsonObject, sortedObject } from "./utils";
+import { assertJsonObject } from "./utils";
 
 interface BoardColumn {
   color: string;
@@ -381,11 +381,11 @@ function ticketToYaml(data: {
     obj.updatedAt = data.updatedAt;
   }
 
-  return dump(sortedObject(obj), {
+  return dump(obj, {
     forceQuotes: false,
     lineWidth: -1,
     noRefs: true,
-    sortKeys: true, // + sortedObject for nested object key ordering
+    sortKeys: true,
   });
 }
 

@@ -1,4 +1,4 @@
-import { assertJsonObject, sortedObject } from "@/lib/utils";
+import { assertJsonObject } from "@/lib/utils";
 import { checkBodySize, isSafePath } from "./api-utils";
 import {
   broadcastPageChanged,
@@ -55,7 +55,7 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     if (obj.createdAt === undefined || obj.createdAt === "") {
       obj.createdAt = now;
     }
-    return stringifyYaml(sortedObject(obj), {
+    return stringifyYaml(obj, {
       forceQuotes: false,
       lineWidth: -1,
       noRefs: true,
@@ -68,7 +68,7 @@ function injectTicketTimestamps(content: string, filePath: string, now: string):
     obj.createdAt = now;
   }
 
-  return stringifyYaml(sortedObject(obj), {
+  return stringifyYaml(obj, {
     forceQuotes: false,
     lineWidth: -1,
     noRefs: true,
