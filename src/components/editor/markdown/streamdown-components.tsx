@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { harden } from "rehype-harden";
 import { Pages, Toc, Tree } from "./tree-components";
 import { usePageContext } from "@/lib/page-context";
+import { ALLOWED_BG_URL_PREFIXES } from "@/lib/slide";
 import rehypeCsvTable from "@/components/editor/plugins/csv-table";
 import rehypeEmojiPlugin from "@/components/editor/plugins/emoji";
 import rehypeGfmAlertsPlugin from "@/components/editor/plugins/gfm-alerts";
@@ -12,8 +13,6 @@ import rehypeHeadingIdsPlugin from "@/components/editor/plugins/heading-ids";
 import rehypeResolveRelativeUrlsPlugin from "@/components/editor/plugins/resolve-relative-urls";
 import rehypeTreeDirective from "@/components/editor/plugins/tree-directive";
 
-/** Allowed URL prefixes for images (rehype-harden + slide CSS validation) */
-const ALLOWED_IMAGE_PREFIXES = ["/images/", "data:image/"];
 /** Allowed URL to LINK to anywhere */
 const ALLOWED_LINK_PREFIXES = ["*"];
 
@@ -37,7 +36,7 @@ const REHYPE_PLUGINS: PluggableList = [
     harden,
     {
       allowDataImages: true,
-      allowedImagePrefixes: ALLOWED_IMAGE_PREFIXES,
+      allowedImagePrefixes: ALLOWED_BG_URL_PREFIXES,
       allowedLinkPrefixes: ALLOWED_LINK_PREFIXES,
       allowedProtocols: ["mailto", "https"],
       defaultOrigin: DEFAULT_ORIGIN,
@@ -290,7 +289,6 @@ const COMPONENTS_SLIDE: Record<string, (props: Record<string, unknown>) => JSX.E
 };
 
 export {
-  ALLOWED_IMAGE_PREFIXES as ALLOWED_BG_URL_PREFIXES,
   ALLOWED_LINK_PREFIXES,
   AnchorComponent,
   COMPONENTS_DOC,

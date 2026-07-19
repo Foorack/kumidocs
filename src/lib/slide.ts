@@ -1,4 +1,5 @@
-import { ALLOWED_BG_URL_PREFIXES } from "@/components/editor/markdown/streamdown-components";
+/** Prefixes allowed in slide background-image `url(...)` references. */
+const ALLOWED_BG_URL_PREFIXES = ["/images/", "data:image/"];
 
 /**
  * Validate that all `url(...)` references in a CSS value point to allowed origins.
@@ -351,6 +352,7 @@ const splitAtSecondH2 = (content: string): [string, string] => {
 
 export type { SlideDirectives, ParsedSlide, SlideThemeElement, SlideThemeDef, SlideThemeMap };
 export {
+  ALLOWED_BG_URL_PREFIXES,
   cssUrlsAreSafe,
   parseSlideDirectives,
   isBgDark,
