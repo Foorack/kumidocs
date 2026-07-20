@@ -1,4 +1,4 @@
-import { addOverlayToPdf } from "@/components/editor/slides/utils";
+import addOverlayToPdf from "@/components/editor/slides/pdf-overlay";
 import { useCallback, useRef, useState } from "react";
 import type { RefObject } from "react";
 

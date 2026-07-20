@@ -4,7 +4,8 @@ import SlideOverlay, { interpolate } from "./overlay";
 import { isBgDark, resolveTheme } from "@/lib/slide";
 import cn from "@/lib/utils";
 import { useTheme } from "@/store/theme";
-import { SLIDE_H, SLIDE_W, buildCanvasStyle } from "./utils";
+import { SLIDE_H, SLIDE_W } from "./constants";
+import { buildCanvasStyle } from "./utils";
 import SlideMarkdownViewer from "./markdown-viewer";
 /* eslint-enable sort-imports */
 

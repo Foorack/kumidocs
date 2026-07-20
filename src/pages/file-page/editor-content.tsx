@@ -9,7 +9,7 @@ import type { SaveStatus } from "./use-save";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SlideThemeMap } from "@/lib/slide";
 import { SlideViewer } from "@/components/editor/slides/viewer";
-import { addOverlayToPdf } from "@/components/editor/slides/utils";
+import addOverlayToPdf from "@/components/editor/slides/pdf-overlay";
 import { extensionToType } from "@/lib/filetypes";
 import { extractHeadingTitle } from "@/lib/frontmatter";
 import type { PageTemplateMap } from "@/lib/page";

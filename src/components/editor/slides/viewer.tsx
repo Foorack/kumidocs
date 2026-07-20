@@ -1,4 +1,4 @@
-import { SLIDE_H, SLIDE_W } from "./utils";
+import { SLIDE_H, SLIDE_W } from "./constants";
 import ScaledSlide from "./scaled-slide";
 import SlideControlsBar from "./controls-bar";
 import SlideSpotlightOverlay from "./spotlight-overlay";
@@ -233,4 +233,4 @@ function SlideViewer({
   );
 }
 
-export { SLIDE_W, SLIDE_H, ScaledSlide, type SlideViewerProps, SlideViewer };
+export { ScaledSlide, type SlideViewerProps, SlideViewer };
