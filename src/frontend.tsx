@@ -8,7 +8,7 @@ import App from "./app";
 import { StrictMode } from "react";
 import { adjust as _khromaAdjust } from "khroma";
 import { createRoot } from "react-dom/client";
-import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
+import { registerMermaidIcons } from "@/client/register-mermaid-icons";
 
 const elemOrNull = document.querySelector("#root");
 if (!elemOrNull) {
