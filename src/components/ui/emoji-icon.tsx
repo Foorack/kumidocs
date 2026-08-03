@@ -19,7 +19,7 @@ const FLUENT_TYPE_ICONS: Record<string, string> = {
   golden: "RibbonStar24Color",
   home: "Home24Color",
   image: "Image24Color",
-  mermaid: "ShareAndroid24Color",
+  mermaid: "Molecule24Color",
   outdated: "ErrorCircle24Color",
   pageinfo: "DocumentText24Color",
   reject: "DismissCircle24Color",
