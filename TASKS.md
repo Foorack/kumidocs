@@ -2,23 +2,7 @@
 
 ---
 
-### 1. Bookmark Tickets (DONE)
-
----
-
-### 2. Homeboard (`/b/`) (DONE)
-
----
-
-### 3. User List (DONE)
-
----
-
-### 4. Sidebar Ticket Filtering (DONE)
-
----
-
-### 5. Git Blame for Docs
+### 1. Git Blame for Docs
 
 A line-by-line annotation overlay when viewing a markdown file, showing who last changed each line and when. Uses `git blame` output parsed on the server.
 
@@ -37,11 +21,7 @@ A line-by-line annotation overlay when viewing a markdown file, showing who last
 
 ---
 
-### 6. Cross-Board Ticket Search (DONE)
-
----
-
-### 7. Ticket Mentions / Activity Digest
+### 2. Ticket Mentions / Activity Digest
 
 When someone mentions a user in a comment (`@email`) or assigns a ticket to them, there is no way for that user to know. A simple notification system would fill the gap.
 
@@ -61,7 +41,7 @@ When someone mentions a user in a comment (`@email`) or assigns a ticket to them
 
 ---
 
-### 8. CSV Export of Board
+### 3. CSV Export of Board
 
 There is already a CSV utility at `src/lib/csv.ts`. Add a way to export all tickets in a board (or the filtered view) as a CSV file.
 
@@ -74,3 +54,25 @@ There is already a CSV utility at `src/lib/csv.ts`. Add a way to export all tick
 **Files to touch**:
 
 - `src/pages/board/page.tsx` -- add export button + CSV generation logic
+
+---
+
+### 4. Kumidraw Renderer
+
+Draw a parsed `KumidrawDoc` to SVG or canvas using the existing icon library.
+
+- Render boxes (fill, border, dashed/noborder, icon, label, anchor)
+- Render lines (straight, ortho, ortho-hv, ortho-vh, curve, arrowheads, label)
+- Render text
+- Resolve `:NAME` icons from the registered icon set; unknown names draw the
+  fallback symbol and may warn
+
+---
+
+### 5. Kumidraw Editor
+
+Drag-drop editor for pleasant visual placement (the original motivation).
+
+- Snap element positions to the grid (round half up to nearest 10)
+- Drag to move boxes; click to add/edit lines and text
+- Convert the edited element model back to Kumidraw source (a writer)
