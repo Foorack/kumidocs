@@ -395,8 +395,10 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
       const py = cy + (event.nativeEvent.offsetY / (event.currentTarget.clientHeight || 1)) * ch;
       const newScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, view.scale * factor));
       const ratio = newScale / view.scale;
-      const nx = px - (px - cx) * ratio;
-      const ny = py - (py - cy) * ratio;
+      // Keep the user coordinate under the cursor fixed: as the viewBox
+      // shrinks by ratio, the origin moves toward the cursor by px/ratio.
+      const nx = px - (px - cx) / ratio;
+      const ny = py - (py - cy) / ratio;
       setView({ scale: newScale, tx: nx, ty: ny });
     },
     [baseH, baseW, view],
