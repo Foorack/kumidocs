@@ -418,38 +418,35 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
     [view],
   );
 
-  const handlePointerMove = useCallback(
-    (event: ReactPointerEvent<SVGSVGElement>) => {
-      const drag = dragRef.current;
-      const svg = svgRef.current;
-      if (drag === undefined || svg === null) {
-        return;
-      }
-      const ctm = svg.getScreenCTM();
-      if (ctm === null) {
-        return;
-      }
-      const inv = ctm.inverse();
-      // Translate by the pointer's movement in user units so panning stays
-      // correct even when the SVG is scaled or letterboxed.
-      const start = svg.createSVGPoint();
-      start.x = drag.startX;
-      start.y = drag.startY;
-      const startUser = start.matrixTransform(inv);
-      const current = svg.createSVGPoint();
-      current.x = event.clientX;
-      current.y = event.clientY;
-      const currentUser = current.matrixTransform(inv);
-      const dx = currentUser.x - startUser.x;
-      const dy = currentUser.y - startUser.y;
-      setView({
-        scale: drag.view.scale,
-        tx: drag.view.tx - dx,
-        ty: drag.view.ty - dy,
-      });
-    },
-    [],
-  );
+  const handlePointerMove = useCallback((event: ReactPointerEvent<SVGSVGElement>) => {
+    const drag = dragRef.current;
+    const svg = svgRef.current;
+    if (drag === undefined || svg === null) {
+      return;
+    }
+    const ctm = svg.getScreenCTM();
+    if (ctm === null) {
+      return;
+    }
+    const inv = ctm.inverse();
+    // Translate by the pointer's movement in user units so panning stays
+    // correct even when the SVG is scaled or letterboxed.
+    const start = svg.createSVGPoint();
+    start.x = drag.startX;
+    start.y = drag.startY;
+    const startUser = start.matrixTransform(inv);
+    const current = svg.createSVGPoint();
+    current.x = event.clientX;
+    current.y = event.clientY;
+    const currentUser = current.matrixTransform(inv);
+    const dx = currentUser.x - startUser.x;
+    const dy = currentUser.y - startUser.y;
+    setView({
+      scale: drag.view.scale,
+      tx: drag.view.tx - dx,
+      ty: drag.view.ty - dy,
+    });
+  }, []);
 
   const endDrag = useCallback(() => {
     dragRef.current = undefined;
@@ -466,7 +463,12 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-hidden={doc.header === null}
-      style={{ cursor: dragRef.current === undefined ? "grab" : "grabbing", touchAction: "none" }}
+      style={{
+        cursor: dragRef.current === undefined ? "grab" : "grabbing",
+        touchAction: "none",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+      }}
       onWheel={handleWheel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
