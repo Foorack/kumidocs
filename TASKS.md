@@ -57,19 +57,7 @@ There is already a CSV utility at `src/lib/csv.ts`. Add a way to export all tick
 
 ---
 
-### 4. Kumidraw Renderer
-
-Draw a parsed `KumidrawDoc` to SVG or canvas using the existing icon library.
-
-- Render boxes (fill, border, dashed/noborder, icon, label, anchor)
-- Render lines (straight, ortho, ortho-hv, ortho-vh, curve, arrowheads, label)
-- Render text
-- Resolve `:NAME` icons from the registered icon set; unknown names draw the
-  fallback symbol and may warn
-
----
-
-### 5. Kumidraw Editor
+### 4. Kumidraw Editor
 
 Drag-drop editor for pleasant visual placement (the original motivation).
 
