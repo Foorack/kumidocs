@@ -13,7 +13,7 @@ function BoardHeader({ icon, title, subtitle, children }: BoardHeaderProps): JSX
       <span className="w-6 h-6 shrink-0 flex items-center justify-center">{icon}</span>
       <div className="flex flex-col min-w-0">
         <h1 className="font-bold text-base truncate">{title}</h1>
-        <div className="flex items-center gap-1 -mt-1">
+        <div className="flex items-center gap-1" style={{ marginTop: "-5px" }}>
           <span className="text-xs tabular-nums">{subtitle}</span>
         </div>
       </div>

@@ -28,7 +28,7 @@ import type {
   Point,
   TextElement,
 } from "./types";
-import { resolveKumidrawIconSvg } from "./icons";
+import { resolveKumidrawIconHref } from "./icons";
 import { useId } from "react";
 
 const BORDER = 2;
@@ -127,7 +127,7 @@ function renderBox(box: BoxElement, key: string): JSX.Element {
       />
       {box.icon !== undefined && (
         <image
-          href={resolveKumidrawIconSvg(box.icon, ICON_SIZE)}
+          href={resolveKumidrawIconHref(box.icon, ICON_SIZE)}
           x={anchor.icon.x - ICON_SIZE / 2}
           y={anchor.icon.y - ICON_SIZE / 2}
           width={ICON_SIZE}

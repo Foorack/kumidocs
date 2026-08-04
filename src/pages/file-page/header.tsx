@@ -104,12 +104,7 @@ function FilePageHeader({
   const editButtonClass = getEditButtonClass(editMode, editLocked, user);
   const saveBadgeClass = getSaveBadgeClass(saveStatus);
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 px-4 border-b border-border shrink-0",
-        breadcrumb.length > 0 ? "py-1" : "py-2",
-      )}
-    >
+    <div className={cn("flex items-center gap-2 px-4 border-b border-border shrink-0", "py-2")}>
       {/* Left: icon + title + breadcrumb */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <EmojiPickerPopover
@@ -122,7 +117,7 @@ function FilePageHeader({
         <div className="flex flex-col min-w-0">
           <h1 className="font-bold text-base truncate">{title}</h1>
           {breadcrumb.length > 0 && (
-            <div className="flex items-center gap-1 text-xs -mt-1">
+            <div className="flex items-center gap-1 text-xs" style={{ marginTop: "-5px" }}>
               {breadcrumb.map((segment, idx) => {
                 const path = breadcrumb.slice(0, idx + 1).join("/");
                 const isLast = idx === breadcrumb.length - 1;

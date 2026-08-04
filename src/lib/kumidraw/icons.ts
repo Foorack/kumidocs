@@ -13,17 +13,16 @@ import ICONS from "@/components/ui/icon/fluent";
 /** The fallback icon for unknown names. Plainly visible and color-filled. */
 const KUMIDRAW_FALLBACK_ICON = "DesignIdeas24Color";
 
-function injectSize(svg: string, size: number): string {
-  return svg.replace("<svg", `<svg width="${size}" height="${size}"`);
-}
-
 /**
- * Resolve an icon name to an SVG string of the given size. Returns the fallback
- * icon (never empty) when the name is not in the Fluent registry.
+ * Resolve an icon name to an SVG data URI of the given size. Returns the
+ * fallback icon (never empty) when the name is not in the Fluent registry.
+ *
+ * The value is a `data:image/svg+xml;base64,...` URI so it can be used as the
+ * `href` of an SVG <image> element.
  */
 // oxlint-disable-next-line import/prefer-default-export
-export function resolveKumidrawIconSvg(name: string, size: number): string {
-  const known = ICONS[name];
-  const svg = known ?? ICONS[KUMIDRAW_FALLBACK_ICON] ?? "";
-  return injectSize(svg, size);
+export function resolveKumidrawIconHref(name: string, size: number): string {
+  const known = ICONS[name] ?? ICONS[KUMIDRAW_FALLBACK_ICON] ?? "";
+  const svg = known.replace("<svg", `<svg width="${size}" height="${size}"`);
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
