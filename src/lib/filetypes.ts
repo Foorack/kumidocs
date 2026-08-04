@@ -79,6 +79,7 @@ const CODE_TYPES = new Set([
   ".cfg",
   ".csv",
   ".mermaid",
+  ".kumidraw",
 ]);
 
 const NO_DOT = -1;
@@ -116,6 +117,9 @@ const extensionToType = (inputExt: string): FileType => {
   }
   if (ext === ".mermaid") {
     return "mermaid";
+  }
+  if (ext === ".kumidraw") {
+    return "kumidraw";
   }
   if (CODE_TYPES.has(ext)) {
     return "code";

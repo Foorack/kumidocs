@@ -19,6 +19,7 @@ type FileType =
   | "golden"
   | "home"
   | "image"
+  | "kumidraw"
   | "mermaid"
   | "other"
   | "pageinfo"

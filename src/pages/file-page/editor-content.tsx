@@ -31,6 +31,9 @@ function resolveFileType(rawExt: string, slides: boolean | undefined, page?: str
   if (base === "mermaid") {
     return "mermaid";
   }
+  if (base === "kumidraw") {
+    return "kumidraw";
+  }
   if (base === "doc" && page !== undefined && page !== "") {
     return "page";
   }
@@ -155,6 +158,17 @@ function buildEditorContent({
     const wrapped = `\`\`\`mermaid\n${content}\n\`\`\``;
     return (
       <div className="mermaid-fullpage flex flex-col flex-1 min-h-0">
+        <MarkdownViewer value={wrapped} />
+      </div>
+    );
+  }
+  if (fileType === "kumidraw") {
+    // Wrap raw kumidraw content in a fenced code block so the streamdown
+    // kumidraw plugin renders it. Strip the chrome so only the diagram
+    // fills the page.
+    const wrapped = `\`\`\`kumidraw\n${content}\n\`\`\``;
+    return (
+      <div className="kumidraw-fullpage flex flex-col flex-1 min-h-0">
         <MarkdownViewer value={wrapped} />
       </div>
     );
