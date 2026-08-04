@@ -385,23 +385,29 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
 
   const handleWheel = useCallback(
     (event: ReactWheelEvent<SVGSVGElement>) => {
+      const svg = svgRef.current;
+      if (svg === null) {
+        return;
+      }
+      const ctm = svg.getScreenCTM();
+      if (ctm === null) {
+        return;
+      }
+      // Invert the full screen transform (including CSS scaling and
+      // preserveAspectRatio letterboxing) to get the user-space point under
+      // the cursor, then zoom keeping that point fixed.
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const user = point.matrixTransform(ctm.inverse());
       const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
-      const cx = view.tx;
-      const cy = view.ty;
-      const cw = baseW / view.scale;
-      const ch = baseH / view.scale;
-      // User coordinate under the cursor stays fixed while we zoom.
-      const px = cx + (event.nativeEvent.offsetX / (event.currentTarget.clientWidth || 1)) * cw;
-      const py = cy + (event.nativeEvent.offsetY / (event.currentTarget.clientHeight || 1)) * ch;
       const newScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, view.scale * factor));
       const ratio = newScale / view.scale;
-      // Keep the user coordinate under the cursor fixed: as the viewBox
-      // shrinks by ratio, the origin moves toward the cursor by px/ratio.
-      const nx = px - (px - cx) / ratio;
-      const ny = py - (py - cy) / ratio;
+      const nx = user.x - (user.x - view.tx) / ratio;
+      const ny = user.y - (user.y - view.ty) / ratio;
       setView({ scale: newScale, tx: nx, ty: ny });
     },
-    [baseH, baseW, view],
+    [view],
   );
 
   const handlePointerDown = useCallback(
@@ -415,21 +421,34 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<SVGSVGElement>) => {
       const drag = dragRef.current;
-      if (drag === undefined) {
+      const svg = svgRef.current;
+      if (drag === undefined || svg === null) {
         return;
       }
-      const rect = event.currentTarget.getBoundingClientRect();
-      const dx = event.clientX - drag.startX;
-      const dy = event.clientY - drag.startY;
-      // Use the view captured at pointer-down so the pan stays stable even
-      // if the user zoomed in between down and move.
-      const cw = baseW / drag.view.scale;
-      const ch = baseH / drag.view.scale;
-      const sx = cw / (rect.width || 1);
-      const sy = ch / (rect.height || 1);
-      setView({ scale: drag.view.scale, tx: drag.view.tx - dx * sx, ty: drag.view.ty - dy * sy });
+      const ctm = svg.getScreenCTM();
+      if (ctm === null) {
+        return;
+      }
+      const inv = ctm.inverse();
+      // Translate by the pointer's movement in user units so panning stays
+      // correct even when the SVG is scaled or letterboxed.
+      const start = svg.createSVGPoint();
+      start.x = drag.startX;
+      start.y = drag.startY;
+      const startUser = start.matrixTransform(inv);
+      const current = svg.createSVGPoint();
+      current.x = event.clientX;
+      current.y = event.clientY;
+      const currentUser = current.matrixTransform(inv);
+      const dx = currentUser.x - startUser.x;
+      const dy = currentUser.y - startUser.y;
+      setView({
+        scale: drag.view.scale,
+        tx: drag.view.tx - dx,
+        ty: drag.view.ty - dy,
+      });
     },
-    [baseH, baseW],
+    [],
   );
 
   const endDrag = useCallback(() => {
