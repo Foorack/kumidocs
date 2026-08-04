@@ -11,7 +11,7 @@
  * Example:
  *   ```kumidraw
  *   # kumidraw v:1 grid:10
- *   box (40, 40) (300, 180) dashed topleft "AWS"
+ *   box (40, 40) (300, 180) dashed "AWS"
  *   ```
  */
 

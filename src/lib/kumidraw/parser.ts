@@ -27,7 +27,6 @@
 */
 
 import type {
-  Anchor,
   ArrowHeads,
   BoxElement,
   KumidrawDoc,
@@ -48,19 +47,6 @@ type Token =
   | { kind: "color"; value: string }
   | { kind: "icon"; name: string }
   | { kind: "quoted"; text: string };
-
-const ANCHORS: Record<string, Anchor | undefined> = {
-  topleft: "topleft",
-  top: "top",
-  topright: "topright",
-  left: "left",
-  right: "right",
-  bottom: "bottom",
-};
-
-function anchorFromWord(value: string): Anchor | null {
-  return ANCHORS[value] ?? null;
-}
 
 function isHexDigit(c: string | undefined): boolean {
   return (
@@ -336,16 +322,8 @@ function parseBox(tokens: Token[], report: (msg: string) => void): BoxElement | 
             if (box.noborder) report("box has more than one 'noborder'");
             else box.noborder = true;
             break;
-          default: {
-            const anchor = anchorFromWord(t.value);
-            if (anchor === null) {
-              report(`unknown box decoration '${t.value}'`);
-            } else if (box.anchor !== undefined) {
-              report("box has more than one anchor");
-            } else {
-              box.anchor = anchor;
-            }
-          }
+          default:
+            report(`unknown box decoration '${t.value}'`);
         }
         break;
     }

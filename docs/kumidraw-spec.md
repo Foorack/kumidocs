@@ -49,15 +49,14 @@ The format does NOT specify:
 
 ## 2. Terminology
 
-| Term   | Definition                                                   |
-| ------ | ------------------------------------------------------------ |
-| File   | The whole Kumidraw source text.                              |
-| Line   | A single statement in the source, delimited by a line break. |
-| Point  | A pair `(x, y)` giving a position in the diagram.            |
-| Box    | A rectangular element with a width and a height.             |
-| Icon   | A named graphic from a registered icon set.                  |
-| Anchor | A token that sets where the icon and label sit inside a box. |
-| Grid   | A fixed spacing of 10 that the editor uses for snapping.     |
+| Term  | Definition                                                   |
+| ----- | ------------------------------------------------------------ |
+| File  | The whole Kumidraw source text.                              |
+| Line  | A single statement in the source, delimited by a line break. |
+| Point | A pair `(x, y)` giving a position in the diagram.            |
+| Box   | A rectangular element with a width and a height.             |
+| Icon  | A named graphic from a registered icon set.                  |
+| Grid  | A fixed spacing of 10 that the editor uses for snapping.     |
 
 The term "Group" is intentionally not defined. A group is just a box with a
 dashed outline and a label. It has no containment meaning.
@@ -184,7 +183,6 @@ The valid decorations are:
 | Fill color | `#RRGGBB`  | Fill the box with the given color.      |
 | Icon       | `:NAME`    | Draw the named icon in the box.         |
 | Label      | `"TEXT"`   | Draw the text label in or near the box. |
-| Anchor     | `topleft`  | Place icon and label per the anchor.    |
 
 #### 5.2.0. Token Disambiguation
 
@@ -251,26 +249,18 @@ both dashed and filled. A fill color is a six-digit hex RGB value.
 
 #### 5.2.2. Icon and Label Placement
 
-By default, the icon is centered in the box and the label is centered below
-the icon. There is no `center` anchor; centering is the default when no
-anchor is present.
+The icon and the label always sit at the top-left of the box. There is no
+placement configuration; a box has no anchor decoration.
 
-A box MAY specify a placement anchor. The anchor sets where the icon and
-label sit inside the box. The valid anchors are:
+- The icon sits in the top-left corner.
+- The label sits to the right of the icon.
 
-- `topleft` -- icon and label at the top-left corner,
-- `top` -- icon and label at the top center,
-- `topright` -- icon and label at the top-right corner,
-- `left` -- icon centered vertically on the left edge,
-- `right` -- icon centered vertically on the right edge,
-- `bottom` -- icon and label at the bottom center.
+This matches the AWS reference architecture look, where a group has a small
+icon and a label beside it in the corner.
 
-An icon and a fill MAY both be present. The icon draws on top of the fill.
+An icon and a fill MAY both be present, and the icon draws on top of the fill.
 An icon begins with `:` (see 5.2.0). A label is a quoted string. It MAY
 contain spaces.
-
-The `topleft` anchor places the icon in the corner and the label to its
-right, matching the AWS reference architecture look.
 
 #### 5.2.3. Examples
 
@@ -278,17 +268,17 @@ right, matching the AWS reference architecture look.
 # solid border, transparent interior
 box (110, 110) (180, 80)
 
-# solid border, filled interior, centered icon and label
+# solid border, filled interior, icon and label top-left
 box (110, 110) (180, 80) #3498db :gitlab "GitLab"
 
-# no border, filled interior (a color band); icon and label at top-left
-box (60, 60) (400, 200) noborder #e8f4fd topleft :gitlab "Availability Zone A"
+# no border, filled interior (a color band); icon and label top-left
+box (60, 60) (400, 200) noborder #e8f4fd :gitlab "Availability Zone A"
 
 # dashed border, filled interior (a group)
-box (40, 40) (1800, 1000) dashed #f4f6f8 topleft "AWS Region"
+box (40, 40) (1800, 1000) dashed #f4f6f8 "AWS Region"
 
 # no border, no fill, icon and label top-left (a plain label tag)
-box (110, 110) (180, 60) noborder topleft "subnet 1 10.0.0.0/24"
+box (110, 110) (180, 60) noborder "subnet 1 10.0.0.0/24"
 # an icon alone
 box (110, 110) (180, 80) :nginx
 ```
@@ -442,10 +432,12 @@ that change colors, fonts, or border styles, but it MUST NOT move elements.
   border thickness, and boxes never have rounded corners.
 - If a fill color is present, the interior is filled. If not, the interior
   is transparent.
-- If an icon is present, it is drawn according to the anchor (Section 5.2.2).
-  The default is centered.
-- If a label is present, it is drawn according to the anchor. Placement
+- If an icon is present, it is drawn in the top-left corner.
+- If a label is present, it is drawn to the right of the icon. Placement
   (inside vs. below) is a renderer choice.
+
+Note: an icon and a label are never centered in a box. Placement is always
+top-left (Section 5.2.2).
 
 ### 7.3. Lines
 
@@ -499,8 +491,7 @@ comment       = "%x23" *VCHAR        ; any line starting with # except header
 blank         = *WSP
 
 box           = "box" SP point SP size *(SP box-decoration)
-box-decoration= "dashed" / "noborder" / hex-color / icon / quoted / anchor
-anchor        = "topleft" / "top" / "topright" / "left" / "right" / "bottom"
+box-decoration= "dashed" / "noborder" / hex-color / icon / quoted
 
 line-stmt     = "line" SP point *(SP point) *(SP line-style)
 line-style    = "ortho" / "ortho-hv" / "ortho-vh" / "curve" / "->" / "<-" / "<->" / quoted
@@ -523,8 +514,8 @@ SP            = 1*WSP
 - A `line` MUST have at least two points: a start and an end. Points in
   between are passed through in order.
 - A `box` and a `line` MUST have at most one of each decoration or style
-  token. Repeating a routing token, an arrowhead token, or an anchor is an
-  error.
+  token. Repeating a routing token, an arrowhead token, a fill color, an
+  icon, or a label is an error.
 - The grammar is unambiguous: any valid line matches exactly one statement
   rule, and within a statement each token belongs to exactly one class.
 
@@ -539,18 +530,18 @@ file carries no title.)
 # kumidraw v:1 grid:10
 
 # the network cage: dashed border, light fill, text top-left
-box (40, 40) (1800, 1000) dashed #ff0000 topleft "Production VPC"
+box (40, 40) (1800, 1000) dashed #ff0000 "Production VPC"
 
-# filled nodes with centered icons and labels
+# filled nodes with icons and labels top-left
 box (110, 110) (180, 80) #3498db :nginx "Web"
 box (330, 110) (180, 80) #3498db :gitlab "GitLab"
 box (840, 110) (180, 80) #2ecc71 :docker "Docker"
 
 # a color band: no border, light fill, icon and label top-left
-box (90, 260) (600, 200) noborder #e1ff00 topleft :kubernetes "Availability Zone A"
+box (90, 260) (600, 200) noborder #e1ff00 :kubernetes "Availability Zone A"
 
 # a label tag: no border, no fill
-box (110, 320) (260, 60) noborder topleft "subnet 1 10.0.0.0/24"
+box (110, 320) (260, 60) noborder "subnet 1 10.0.0.0/24"
 
 # an elbow arrow with a label
 line (200, 190) (840, 150) ortho "deploys"

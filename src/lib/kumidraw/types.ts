@@ -4,8 +4,6 @@
 // deliberately small: a diagram is a header plus a flat list of independent
 // elements (box, line, text). See docs/kumidraw-spec.md for the format.
 
-type Anchor = "topleft" | "top" | "topright" | "left" | "right" | "bottom";
-
 type LineRouting = "ortho" | "ortho-hv" | "ortho-vh" | "curve";
 
 type ArrowHeads = "start" | "end" | "both";
@@ -26,7 +24,6 @@ interface BoxElement {
   fill?: string;
   icon?: string;
   label?: string;
-  anchor?: Anchor;
 }
 
 interface LineElement {
@@ -67,7 +64,6 @@ interface KumidrawDoc {
 }
 
 export type {
-  Anchor,
   ArrowHeads,
   BoxElement,
   KumidrawDoc,

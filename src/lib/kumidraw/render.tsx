@@ -34,84 +34,53 @@ import { useId } from "react";
 const BORDER = 2;
 const PAD = 20;
 const ICON_SIZE = 32;
+const CHIP_PAD = 4;
+const CHIP_RADIUS = 4;
 const INNER_PAD = 10;
 const FONT_SIZE = 13;
+const BOX_BORDER = "#64748b";
+const TEXT_COLOR = "#1e293b";
 
-interface BoxAnchor {
-  icon: { x: number; y: number };
+interface BoxCorner {
+  /** Top-left position of the icon chip. */
+  iconTopLeft: { x: number; y: number };
+  /** Position (and anchoring) of the label to the right of the icon. */
   label: { x: number; y: number };
-  labelAnchor: "start" | "middle" | "end";
 }
 
-/** Compute where a box's icon and label sit, per the anchor token. */
-function boxAnchor(box: BoxElement): BoxAnchor {
-  const cx = box.x + box.w / 2;
-  const cy = box.y + box.h / 2;
-  const innerLeft = box.x + INNER_PAD;
-  const innerTop = box.y + INNER_PAD;
-  const innerRight = box.x + box.w - INNER_PAD;
-  const innerBottom = box.y + box.h - INNER_PAD;
-  const iconHalf = ICON_SIZE / 2;
-
-  switch (box.anchor) {
-    case "topleft":
-      return {
-        icon: { x: innerLeft + iconHalf, y: innerTop + iconHalf },
-        label: { x: innerLeft + ICON_SIZE + 8, y: innerTop + iconHalf + FONT_SIZE / 2 - 1 },
-        labelAnchor: "start",
-      };
-    case "top":
-      return {
-        icon: { x: cx, y: innerTop + iconHalf },
-        label: { x: cx, y: innerTop + ICON_SIZE + FONT_SIZE },
-        labelAnchor: "middle",
-      };
-    case "topright":
-      return {
-        icon: { x: innerRight - iconHalf, y: innerTop + iconHalf },
-        label: { x: innerRight, y: innerTop + iconHalf + FONT_SIZE / 2 - 1 },
-        labelAnchor: "end",
-      };
-    case "left":
-      return {
-        icon: { x: innerLeft + iconHalf, y: cy },
-        label: { x: innerLeft + ICON_SIZE + 8, y: cy + FONT_SIZE / 2 - 1 },
-        labelAnchor: "start",
-      };
-    case "right":
-      return {
-        icon: { x: innerRight - iconHalf, y: cy },
-        label: { x: innerRight, y: cy + FONT_SIZE / 2 - 1 },
-        labelAnchor: "end",
-      };
-    case "bottom":
-      return {
-        icon: { x: cx, y: innerBottom - iconHalf },
-        label: { x: cx, y: innerBottom + FONT_SIZE },
-        labelAnchor: "middle",
-      };
-    default:
-      // No anchor: icon above the label, both centered on the box.
-      return {
-        icon: { x: cx, y: box.y + box.h / 2 - 20 },
-        label: { x: cx, y: box.y + box.h / 2 + 22 },
-        labelAnchor: "middle",
-      };
-  }
+/** Compute where a box's icon and label sit. Placement is always top-left. */
+function boxCorner(box: BoxElement): BoxCorner {
+  const iconX = box.x + INNER_PAD;
+  const iconY = box.y + INNER_PAD;
+  return {
+    iconTopLeft: { x: iconX, y: iconY },
+    label: {
+      x: iconX + ICON_SIZE + 8,
+      y: iconY + ICON_SIZE / 2 + FONT_SIZE / 2 - 1,
+    },
+  };
 }
 
 function boxStroke(box: BoxElement): string {
   if (box.noborder) {
     return "none";
   }
-  return "#64748b";
+  return BOX_BORDER;
+}
+
+/** The border color of a box, or undefined when it has no border. */
+function boxBorderColor(box: BoxElement): string | undefined {
+  return box.noborder ? undefined : BOX_BORDER;
 }
 
 function renderBox(box: BoxElement, key: string): JSX.Element {
-  const anchor = boxAnchor(box);
+  const corner = boxCorner(box);
   const fill = box.fill ?? "none";
   const stroke = boxStroke(box);
   const dash = box.dashed ? "6 4" : undefined;
+  const borderColor = boxBorderColor(box);
+  const chipSize = ICON_SIZE + CHIP_PAD * 2;
+  const labelColor = borderColor ?? TEXT_COLOR;
 
   return (
     <g key={key}>
@@ -125,11 +94,21 @@ function renderBox(box: BoxElement, key: string): JSX.Element {
         strokeWidth={BORDER}
         strokeDasharray={dash}
       />
+      {box.icon !== undefined && borderColor !== undefined && (
+        <rect
+          x={corner.iconTopLeft.x}
+          y={corner.iconTopLeft.y}
+          width={chipSize}
+          height={chipSize}
+          rx={CHIP_RADIUS}
+          fill={borderColor}
+        />
+      )}
       {box.icon !== undefined && (
         <image
           href={resolveKumidrawIconHref(box.icon, ICON_SIZE)}
-          x={anchor.icon.x - ICON_SIZE / 2}
-          y={anchor.icon.y - ICON_SIZE / 2}
+          x={corner.iconTopLeft.x + CHIP_PAD}
+          y={corner.iconTopLeft.y + CHIP_PAD}
           width={ICON_SIZE}
           height={ICON_SIZE}
           pointerEvents="none"
@@ -137,11 +116,11 @@ function renderBox(box: BoxElement, key: string): JSX.Element {
       )}
       {box.label !== undefined && (
         <text
-          x={anchor.label.x}
-          y={anchor.label.y}
-          textAnchor={anchor.labelAnchor}
+          x={corner.label.x}
+          y={corner.label.y}
+          textAnchor="start"
           fontSize={FONT_SIZE}
-          fill="#1e293b"
+          fill={labelColor}
         >
           {box.label}
         </text>
@@ -287,7 +266,7 @@ function renderLine(line: LineElement, key: string): JSX.Element {
 
 function renderText(text: TextElement, key: string): JSX.Element {
   return (
-    <text key={key} x={text.x} y={text.y + FONT_SIZE} fontSize={FONT_SIZE} fill="#1e293b">
+    <text key={key} x={text.x} y={text.y + FONT_SIZE} fontSize={FONT_SIZE} fill={TEXT_COLOR}>
       {text.text}
     </text>
   );

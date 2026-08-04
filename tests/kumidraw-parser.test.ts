@@ -140,12 +140,11 @@ describe("box", () => {
     expect(doc.errors).toEqual([]);
   });
 
-  it("parses a dashed group with anchor and label", () => {
-    const doc = parse(`${HEADER}\nbox (40, 40) (1800, 1000) dashed #f4f6f8 topleft "AWS Region"`);
+  it("parses a dashed group with a label", () => {
+    const doc = parse(`${HEADER}\nbox (40, 40) (1800, 1000) dashed #f4f6f8 "AWS Region"`);
     expect(firstElement(doc)).toMatchObject({
       dashed: true,
       fill: "#f4f6f8",
-      anchor: "topleft",
       label: "AWS Region",
     });
     expect(doc.errors).toEqual([]);
@@ -157,12 +156,10 @@ describe("box", () => {
     expect(doc.errors).toEqual([]);
   });
 
-  it("parses all anchors", () => {
-    const anchors = ["topleft", "top", "topright", "left", "right", "bottom"];
-    for (const a of anchors) {
-      const doc = parse(`${HEADER}\nbox (1, 2) (3, 4) ${a}`);
-      expect(doc.errors, a).toEqual([]);
-      expect(firstElement(doc)).toMatchObject({ anchor: a });
+  it("rejects anchor keywords as unknown decorations", () => {
+    for (const word of ["topleft", "top", "topright", "left", "right", "bottom"]) {
+      const doc = parse(`${HEADER}\nbox (1, 2) (3, 4) ${word}`);
+      expect(doc.errors[0]?.message, word).toMatch(/unknown box decoration/);
     }
   });
 
@@ -200,11 +197,6 @@ describe("box", () => {
     const doc = parse(`${HEADER}\nbox (10, 10) (20, 20) :a :b`);
     expect(doc.elements).toHaveLength(1);
     expect(doc.errors[0]?.message).toMatch(/more than one icon/);
-  });
-
-  it("reports a duplicate anchor", () => {
-    const doc = parse(`${HEADER}\nbox (10, 10) (20, 20) topleft top`);
-    expect(doc.errors[0]?.message).toMatch(/more than one anchor/);
   });
 
   it("reports a zero size", () => {
@@ -376,18 +368,18 @@ describe("spec example", () => {
   const example = `# kumidraw v:1 grid:10
 
 # the network cage: dashed border, light fill, text top-left
-box (40, 40) (1800, 1000) dashed #ff0000 topleft "Production VPC"
+box (40, 40) (1800, 1000) dashed #ff0000 "Production VPC"
 
-# filled nodes with centered icons and labels
+# filled nodes with icons and labels top-left
 box (110, 110) (180, 80) #3498db :nginx "Web"
 box (330, 110) (180, 80) #3498db :gitlab "GitLab"
 box (840, 110) (180, 80) #2ecc71 :docker "Docker"
 
 # a color band: no border, light fill, icon and label top-left
-box (90, 260) (600, 200) noborder #e1ff00 topleft :kubernetes "Availability Zone A"
+box (90, 260) (600, 200) noborder #e1ff00 :kubernetes "Availability Zone A"
 
 # a label tag: no border, no fill
-box (110, 320) (260, 60) noborder topleft "subnet 1 10.0.0.0/24"
+box (110, 320) (260, 60) noborder "subnet 1 10.0.0.0/24"
 
 # an elbow arrow with a label
 line (200, 190) (840, 150) ortho "deploys"

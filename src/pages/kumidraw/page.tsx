@@ -26,7 +26,7 @@ function extractKumidrawBlocks(markdown: string): string[] {
 
 const DEFAULT_SOURCE = `# kumidraw v:1 grid:10
 
-box (40, 40) (700, 420) dashed #f4f6f8 topleft "Example diagram"
+box (40, 40) (700, 420) dashed #f4f6f8 "Example diagram"
 box (90, 110) (180, 80) #3498db :DesignIdeas24Color "Web"
 box (320, 110) (180, 80) #2ecc71 :DesignIdeas24Color "API"
 line (270, 150) (320, 150) ->
