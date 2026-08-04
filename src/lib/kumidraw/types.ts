@@ -19,9 +19,9 @@ interface BoxElement {
   y: number;
   w: number;
   h: number;
+  filled: boolean;
   dashed: boolean;
-  noborder: boolean;
-  fill?: string;
+  color?: string;
   icon?: string;
   label?: string;
 }

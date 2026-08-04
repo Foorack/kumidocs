@@ -117,8 +117,8 @@ describe("box", () => {
       y: 110,
       w: 180,
       h: 80,
+      filled: false,
       dashed: false,
-      noborder: false,
     });
     expect(doc.errors).toEqual([]);
   });
@@ -129,14 +129,31 @@ describe("box", () => {
     expect(firstElement(doc)).toMatchObject({ x: 110, y: 110, w: 180, h: 80 });
   });
 
-  it("parses a filled box with icon and label", () => {
+  it("parses a colored border box with icon and label", () => {
     const doc = parse(`${HEADER}\nbox (110, 110) (180, 80) #3498db :gitlab "GitLab"`);
     expect(firstElement(doc)).toMatchObject({
       kind: "box",
-      fill: "#3498db",
+      filled: false,
+      color: "#3498db",
       icon: "gitlab",
       label: "GitLab",
     });
+    expect(doc.errors).toEqual([]);
+  });
+
+  it("parses a filled box", () => {
+    const doc = parse(`${HEADER}\nbox (110, 110) (180, 80) fill #3498db`);
+    expect(firstElement(doc)).toMatchObject({
+      kind: "box",
+      filled: true,
+      color: "#3498db",
+    });
+    expect(doc.errors).toEqual([]);
+  });
+
+  it("parses an explicit border box", () => {
+    const doc = parse(`${HEADER}\nbox (110, 110) (180, 80) border`);
+    expect(firstElement(doc)).toMatchObject({ filled: false });
     expect(doc.errors).toEqual([]);
   });
 
@@ -144,7 +161,7 @@ describe("box", () => {
     const doc = parse(`${HEADER}\nbox (40, 40) (1800, 1000) dashed #f4f6f8 "AWS Region"`);
     expect(firstElement(doc)).toMatchObject({
       dashed: true,
-      fill: "#f4f6f8",
+      color: "#f4f6f8",
       label: "AWS Region",
     });
     expect(doc.errors).toEqual([]);
@@ -409,11 +426,11 @@ box (110, 110) (180, 80) #3498db :nginx "Web"
 box (330, 110) (180, 80) #3498db :gitlab "GitLab"
 box (840, 110) (180, 80) #2ecc71 :docker "Docker"
 
-# a color band: no border, light fill, icon and label top-left
-box (90, 260) (600, 200) noborder #e1ff00 :kubernetes "Availability Zone A"
+# a color band: fill, icon and label top-left
+box (90, 260) (600, 200) fill #e1ff00 :kubernetes "Availability Zone A"
 
-# a label tag: no border, no fill
-box (110, 320) (260, 60) noborder "subnet 1 10.0.0.0/24"
+# a label tag: border
+box (110, 320) (260, 60) "subnet 1 10.0.0.0/24"
 
 # an elbow arrow with a label
 line (200, 190) (840, 150) ortho "deploys"

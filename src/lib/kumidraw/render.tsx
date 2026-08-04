@@ -28,7 +28,7 @@ import type {
   Point,
   TextElement,
 } from "./types";
-import { resolveKumidrawIconHref } from "./icons";
+import { resolveKumidrawIconHref } from "@/client/kumidraw-icons";
 import { useId } from "react";
 
 const BORDER = 2;
@@ -36,9 +36,9 @@ const PAD = 20;
 const ICON_SIZE = 32;
 const CHIP_PAD = 4;
 const CHIP_RADIUS = 4;
-const INNER_PAD = 10;
 const FONT_SIZE = 13;
 const BOX_BORDER = "#64748b";
+const BOX_FILL = "#e2e8f0";
 const TEXT_COLOR = "#1e293b";
 const LINE_COLOR = "#475569";
 const LINE_DASH = "6 4";
@@ -50,10 +50,11 @@ interface BoxCorner {
   label: { x: number; y: number };
 }
 
-/** Compute where a box's icon and label sit. Placement is always top-left. */
+/** Compute where a box's icon and label sit. Placement is always top-left,
+ * flush against the box frame with no inset. */
 function boxCorner(box: BoxElement): BoxCorner {
-  const iconX = box.x + INNER_PAD;
-  const iconY = box.y + INNER_PAD;
+  const iconX = box.x;
+  const iconY = box.y;
   return {
     iconTopLeft: { x: iconX, y: iconY },
     label: {
@@ -63,27 +64,44 @@ function boxCorner(box: BoxElement): BoxCorner {
   };
 }
 
-function boxStroke(box: BoxElement): string {
-  if (box.noborder) {
-    return "none";
-  }
-  return BOX_BORDER;
-}
-
-/** The border color of a box, or undefined when it has no border. */
-function boxBorderColor(box: BoxElement): string | undefined {
-  return box.noborder ? undefined : BOX_BORDER;
-}
-
 function renderBox(box: BoxElement, key: string): JSX.Element {
   const corner = boxCorner(box);
-  const fill = box.fill ?? "none";
-  const stroke = boxStroke(box);
-  const dash = box.dashed ? "6 4" : undefined;
-  const borderColor = boxBorderColor(box);
   const chipSize = ICON_SIZE + CHIP_PAD * 2;
-  const labelColor = borderColor ?? TEXT_COLOR;
 
+  if (box.filled) {
+    // Fill mode: a solid color block with no outline.
+    const fillColor = box.color ?? BOX_FILL;
+    return (
+      <g key={key}>
+        <rect x={box.x} y={box.y} width={box.w} height={box.h} fill={fillColor} stroke="none" />
+        {box.icon !== undefined && (
+          <image
+            href={resolveKumidrawIconHref(box.icon, ICON_SIZE)}
+            x={corner.iconTopLeft.x}
+            y={corner.iconTopLeft.y}
+            width={ICON_SIZE}
+            height={ICON_SIZE}
+            pointerEvents="none"
+          />
+        )}
+        {box.label !== undefined && (
+          <text
+            x={corner.label.x}
+            y={corner.label.y}
+            textAnchor="start"
+            fontSize={FONT_SIZE}
+            fill={TEXT_COLOR}
+          >
+            {box.label}
+          </text>
+        )}
+      </g>
+    );
+  }
+
+  // Border mode (default): an outline with a transparent interior.
+  const borderColor = box.color ?? BOX_BORDER;
+  const dash = box.dashed ? LINE_DASH : undefined;
   return (
     <g key={key}>
       <rect
@@ -91,12 +109,12 @@ function renderBox(box: BoxElement, key: string): JSX.Element {
         y={box.y}
         width={box.w}
         height={box.h}
-        fill={fill}
-        stroke={stroke}
+        fill="none"
+        stroke={borderColor}
         strokeWidth={BORDER}
         strokeDasharray={dash}
       />
-      {box.icon !== undefined && borderColor !== undefined && (
+      {box.icon !== undefined && (
         <rect
           x={corner.iconTopLeft.x}
           y={corner.iconTopLeft.y}
@@ -122,7 +140,7 @@ function renderBox(box: BoxElement, key: string): JSX.Element {
           y={corner.label.y}
           textAnchor="start"
           fontSize={FONT_SIZE}
-          fill={labelColor}
+          fill={borderColor}
         >
           {box.label}
         </text>

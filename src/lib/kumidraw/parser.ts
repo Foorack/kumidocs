@@ -271,8 +271,8 @@ function parseBox(tokens: Token[], report: (msg: string) => void): BoxElement | 
     y: 0,
     w: 0,
     h: 0,
+    filled: false,
     dashed: false,
-    noborder: false,
   };
 
   const pos = tokens[1];
@@ -298,8 +298,8 @@ function parseBox(tokens: Token[], report: (msg: string) => void): BoxElement | 
         report("unexpected '(a, b)' in box decorations");
         break;
       case "color":
-        if (box.fill !== undefined) report("box has more than one fill color");
-        else box.fill = t.value;
+        if (box.color !== undefined) report("box has more than one color");
+        else box.color = t.value;
         break;
       case "icon":
         if (box.icon !== undefined) report("box has more than one icon");
@@ -314,13 +314,15 @@ function parseBox(tokens: Token[], report: (msg: string) => void): BoxElement | 
         break;
       case "word":
         switch (t.value) {
+          case "border":
+            box.filled = false;
+            break;
+          case "fill":
+            box.filled = true;
+            break;
           case "dashed":
             if (box.dashed) report("box has more than one 'dashed'");
             else box.dashed = true;
-            break;
-          case "noborder":
-            if (box.noborder) report("box has more than one 'noborder'");
-            else box.noborder = true;
             break;
           default:
             report(`unknown box decoration '${t.value}'`);

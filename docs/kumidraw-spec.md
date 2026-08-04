@@ -80,13 +80,13 @@ The following two files are equivalent:
 
 ```
 box (40, 40) (1800, 1000) dashed "AWS Region"
-box (90, 160) (800, 500) noborder "Availability Zone A"
+box (90, 160) (800, 500) fill "Availability Zone A"
 box (120, 280) (300, 100) :nginx "Web"
 ```
 
 ```
 box (40, 40) (1800, 1000) dashed "AWS Region"
-  box (90, 160) (800, 500) noborder "Availability Zone A"
+  box (90, 160) (800, 500) fill "Availability Zone A"
     box (120, 280) (300, 100) :nginx "Web"
 ```
 
@@ -176,13 +176,14 @@ The `box` statement draws a rectangle.
 
 The valid decorations are:
 
-| Decoration | Form       | Meaning                                 |
-| ---------- | ---------- | --------------------------------------- |
-| Dashed     | `dashed`   | Draw the outline with a dashed style.   |
-| No border  | `noborder` | Draw no outline.                        |
-| Fill color | `#RRGGBB`  | Fill the box with the given color.      |
-| Icon       | `:NAME`    | Draw the named icon in the box.         |
-| Label      | `"TEXT"`   | Draw the text label in or near the box. |
+| Decoration | Form      | Meaning                                          |
+| ---------- | --------- | ------------------------------------------------ |
+| Border     | `border`  | Draw the box as an outline. This is the default. |
+| Fill       | `fill`    | Draw the box as a solid filled block.            |
+| Dashed     | `dashed`  | (Border mode) Draw the outline dashed.           |
+| Color      | `#RRGGBB` | Border color, or fill color when `fill`.         |
+| Icon       | `:NAME`   | Draw the named icon in the box.                  |
+| Label      | `"TEXT"`  | Draw the text label in or near the box.          |
 
 #### 5.2.0. Token Disambiguation
 
@@ -192,10 +193,10 @@ parser MUST identify tokens by these rules, in order:
 | First char | Token class           | Example      |
 | ---------- | --------------------- | ------------ |
 | `(`        | geometry (point/size) | `(110, 110)` |
-| `#`        | fill color            | `#3498db`    |
+| `#`        | color                 | `#3498db`    |
 | `:`        | icon name             | `:home`      |
 | `"`        | label text            | `"Web"`      |
-| letter     | keyword               | `dashed`     |
+| letter     | keyword               | `border`     |
 
 Because each class is identified by its first character, there is no
 ambiguity between an icon name and a keyword. An icon MUST begin with `:`.
@@ -220,32 +221,29 @@ renderer MAY also report a warning for diagnostics.
 
 #### 5.2.1. Border and Fill
 
-A box has a border and an interior. By default:
+A box is drawn one of two ways, never both:
 
-- the border is drawn (solid),
-- the interior is not filled.
+- `border` draws an outline with a transparent interior. This is the
+  default when neither keyword is present.
+- `fill` draws a solid filled block with no outline.
 
-The border and the interior are controlled independently:
+The two keywords are exclusive; the last one written wins. There is no
+`noborder` and no way to have both an outline and a fill.
 
-| Decoration         | Effect                              |
-| ------------------ | ----------------------------------- |
-| (none)             | solid border, transparent interior  |
-| `dashed`           | dashed border, transparent interior |
-| `noborder`         | no border, transparent interior     |
-| `#RRGGBB`          | solid border, filled interior       |
-| `dashed #RRGGBB`   | dashed border, filled interior      |
-| `noborder #RRGGBB` | no border, filled interior          |
+| Statement                     | Effect                          |
+| ----------------------------- | ------------------------------- |
+| `box (x, y) (w, h)`           | border (outline), default color |
+| `box (x, y) (w, h) border`    | border (outline), default color |
+| `box (x, y) (w, h) fill`      | fill, default fill color        |
+| `box (x, y) (w, h) border #R` | border (outline) in color `#R`  |
+| `box (x, y) (w, h) fill #R`   | fill in color `#R`              |
+| `box (x, y) (w, h) dashed`    | dashed border (outline)         |
 
-Notes:
+A single `#RRGGBB` color sets the border color in border mode, or the fill
+color in fill mode. A fill color is a six-digit hex RGB value.
 
-- A filled box with a border is the common look for nodes.
-- A filled box with `noborder` is a solid color block. It is useful for
-  color bands, callouts, and other graphic shapes.
-- A box with no fill and `noborder` is invisible. It is not useful by
-  itself. A renderer MAY ignore it.
-
-The `#RRGGBB` fill and the `dashed` decoration are independent. A box MAY be
-both dashed and filled. A fill color is a six-digit hex RGB value.
+The `dashed` decoration applies only to border mode; it draws the outline
+dashed. It has no effect in fill mode.
 
 #### 5.2.2. Icon and Label Placement
 
@@ -265,20 +263,20 @@ contain spaces.
 #### 5.2.3. Examples
 
 ```
-# solid border, transparent interior
+# border (outline), default color
 box (110, 110) (180, 80)
 
-# solid border, filled interior, icon and label top-left
+# border (outline), filled interior, icon and label top-left
 box (110, 110) (180, 80) #3498db :gitlab "GitLab"
 
-# no border, filled interior (a color band); icon and label top-left
-box (60, 60) (400, 200) noborder #e8f4fd :gitlab "Availability Zone A"
+# fill (solid color block); icon and label top-left
+box (60, 60) (400, 200) fill #e8f4fd :gitlab "Availability Zone A"
 
-# dashed border, filled interior (a group)
-box (40, 40) (1800, 1000) dashed #f4f6f8 "AWS Region"
+# dashed border (outline) for a group
+box (40, 40) (1800, 1000) dashed "AWS Region"
 
-# no border, no fill, icon and label top-left (a plain label tag)
-box (110, 110) (180, 60) noborder "subnet 1 10.0.0.0/24"
+# border (outline) as a label tag
+box (110, 110) (180, 60) "subnet 1 10.0.0.0/24"
 # an icon alone
 box (110, 110) (180, 80) :nginx
 ```
@@ -436,14 +434,15 @@ that change colors, fonts, or border styles, but it MUST NOT move elements.
 
 ### 7.2. Boxes
 
-- A box draws an outline by default. The outline is removed if the
-  `noborder` decoration is present.
-- The outline style is solid by default, dashed if the `dashed` decoration
-  is present.
+- A box is drawn one of two ways: as an outline (border mode, the default)
+  or as a solid block (fill mode). The two are exclusive.
+- In border mode, the box draws an outline with a transparent interior. The
+  outline is solid by default, dashed if the `dashed` decoration is present.
 - Border thickness is fixed at 2px. The format does not allow any other
   border thickness, and boxes never have rounded corners.
-- If a fill color is present, the interior is filled. If not, the interior
-  is transparent.
+- In fill mode, the box draws a solid block with no outline.
+- A single `#RRGGBB` color colors the border in border mode, or the interior
+  in fill mode.
 - If an icon is present, it is drawn in the top-left corner.
 - If a label is present, it is drawn to the right of the icon. Placement
   (inside vs. below) is a renderer choice.
@@ -506,7 +505,7 @@ comment       = "%x23" *VCHAR        ; any line starting with # except header
 blank         = *WSP
 
 box           = "box" SP point SP size *(SP box-decoration)
-box-decoration= "dashed" / "noborder" / hex-color / icon / quoted
+box-decoration= "border" / "fill" / "dashed" / hex-color / icon / quoted
 
 line-stmt     = "line" SP point *(SP point) *(SP line-style)
 line-style    = "dashed" / hex-color / "ortho" / "ortho-hv" / "ortho-vh" / "curve" / "->" / "<-" / "<->" / quoted
@@ -552,11 +551,11 @@ box (110, 110) (180, 80) #3498db :nginx "Web"
 box (330, 110) (180, 80) #3498db :gitlab "GitLab"
 box (840, 110) (180, 80) #2ecc71 :docker "Docker"
 
-# a color band: no border, light fill, icon and label top-left
-box (90, 260) (600, 200) noborder #e1ff00 :kubernetes "Availability Zone A"
+# a color band: fill, icon and label top-left
+box (90, 260) (600, 200) fill #e1ff00 :kubernetes "Availability Zone A"
 
-# a label tag: no border, no fill
-box (110, 320) (260, 60) noborder "subnet 1 10.0.0.0/24"
+# a label tag: border
+box (110, 320) (260, 60) "subnet 1 10.0.0.0/24"
 
 # an elbow arrow with a label
 line (200, 190) (840, 150) ortho "deploys"
