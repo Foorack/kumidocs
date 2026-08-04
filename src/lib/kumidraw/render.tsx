@@ -217,9 +217,12 @@ function arrowPath(from: Point, to: Point): string {
   const size = 10;
   const perpX = -uy * size;
   const perpY = ux * size;
+  // The tip sits just past the line end in the direction of travel, and the
+  // base is a perpendicular fin at the end point. This makes the arrow point
+  // FORWARD (from -> to) instead of back along the line.
   const tipX = to.x + ux * size;
   const tipY = to.y + uy * size;
-  return `${to.x},${to.y} ${tipX + perpX},${tipY + perpY} ${tipX - perpX},${tipY - perpY}`;
+  return `${tipX},${tipY} ${to.x + perpX},${to.y + perpY} ${to.x - perpX},${to.y - perpY}`;
 }
 
 function lineLabelPoint(points: Point[]): Point {
