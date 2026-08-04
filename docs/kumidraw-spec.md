@@ -304,6 +304,8 @@ The styling tokens, in any order:
 
 | Token      | Meaning                                             |
 | ---------- | --------------------------------------------------- |
+| `dashed`   | Draw the line with a dashed stroke                  |
+| `#RRGGBB`  | Draw the line in the given color                    |
 | `ortho`    | right-angle segments; the renderer picks the bend   |
 | `ortho-hv` | right-angle segments; bend Horizontal-then-Vertical |
 | `ortho-vh` | right-angle segments; bend Vertical-then-Horizontal |
@@ -320,6 +322,10 @@ Rules:
 - The arrowhead is optional. With no arrowhead token, the line has no
   arrowhead.
 - The label is optional.
+- The stroke is solid by default. With the `dashed` token, it is dashed.
+- The stroke is a single default color by default. With a `#RRGGBB` token,
+  it is that color. The arrowheads, when present, draw in the same color as
+  the line.
 - The parser reads points while a token starts with `(`, then reads styling
   for the rest of the line. A token that starts with `(` after styling is an
   error.
@@ -343,11 +349,17 @@ line (200, 190) (400, 300) (840, 150)
 # an elbow line
 line (200, 190) (840, 150) ortho
 
+# a dashed, red arrow
+line (200, 190) (840, 150) dashed #e74c3c ->
+
 # an elbow line, Horizontal-then-Vertical forced, with a label
 line (200, 190) (400, 300) (840, 150) ortho-hv "route"
 
 # a curved line with arrowheads at both ends
 line (200, 190) (840, 150) curve <->
+
+# a dashed, green curved arrow
+line (200, 190) (840, 150) curve #2ecc71 dashed <->
 
 # an elbow polyline with an arrowhead
 line (200, 190) (400, 300) (600, 100) (840, 150) ortho ->
@@ -453,6 +465,9 @@ top-left (Section 5.2.2).
 - Arrowheads follow the arrowhead token (`->`, `<-`, `<->`).
 - A line with no arrowhead token is a plain line. It is the same statement
   type.
+- The stroke is solid by default, dashed if the `dashed` token is present.
+- The stroke and arrowheads use the `#RRGGBB` color if present; otherwise they
+  use the renderer's default line color.
 - Line thickness is fixed at 2px.
 
 ### 7.4. Text
@@ -494,7 +509,7 @@ box           = "box" SP point SP size *(SP box-decoration)
 box-decoration= "dashed" / "noborder" / hex-color / icon / quoted
 
 line-stmt     = "line" SP point *(SP point) *(SP line-style)
-line-style    = "ortho" / "ortho-hv" / "ortho-vh" / "curve" / "->" / "<-" / "<->" / quoted
+line-style    = "dashed" / hex-color / "ortho" / "ortho-hv" / "ortho-vh" / "curve" / "->" / "<-" / "<->" / quoted
 
 text-stmt     = "text" SP point SP quoted
 

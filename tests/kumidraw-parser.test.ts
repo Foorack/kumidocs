@@ -222,6 +222,7 @@ describe("line", () => {
         { x: 200, y: 190 },
         { x: 840, y: 150 },
       ],
+      dashed: false,
     });
     expect(doc.errors).toEqual([]);
   });
@@ -281,6 +282,39 @@ describe("line", () => {
   it("parses curve with both arrows", () => {
     const doc = parse(`${HEADER}\nline (200, 190) (840, 150) curve <->`);
     expect(firstElement(doc)).toMatchObject({ routing: "curve", arrows: "both" });
+  });
+
+  it("parses a dashed line", () => {
+    const doc = parse(`${HEADER}\nline (200, 190) (840, 150) dashed ->`);
+    expect(firstElement(doc)).toMatchObject({ dashed: true, arrows: "end" });
+    expect(doc.errors).toEqual([]);
+  });
+
+  it("parses a colored line", () => {
+    const doc = parse(`${HEADER}\nline (200, 190) (840, 150) #e74c3c`);
+    expect(firstElement(doc)).toMatchObject({ color: "#e74c3c" });
+    expect(doc.errors).toEqual([]);
+  });
+
+  it("parses a dashed, colored line with both arrows", () => {
+    const doc = parse(`${HEADER}\nline (200, 190) (840, 150) curve #2ecc71 dashed <->`);
+    expect(firstElement(doc)).toMatchObject({
+      routing: "curve",
+      dashed: true,
+      color: "#2ecc71",
+      arrows: "both",
+    });
+    expect(doc.errors).toEqual([]);
+  });
+
+  it("reports a duplicate dashed", () => {
+    const doc = parse(`${HEADER}\nline (200, 190) (840, 150) dashed dashed`);
+    expect(doc.errors[0]?.message).toMatch(/more than one 'dashed'/);
+  });
+
+  it("reports a duplicate color", () => {
+    const doc = parse(`${HEADER}\nline (200, 190) (840, 150) #ff0000 #00ff00`);
+    expect(doc.errors[0]?.message).toMatch(/more than one color/);
   });
 
   it("reports a line with a single point", () => {

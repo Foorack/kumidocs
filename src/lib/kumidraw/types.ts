@@ -31,6 +31,8 @@ interface LineElement {
   points: Point[];
   routing?: LineRouting;
   arrows?: ArrowHeads;
+  dashed: boolean;
+  color?: string;
   label?: string;
 }
 

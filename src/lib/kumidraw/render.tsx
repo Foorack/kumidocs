@@ -40,6 +40,8 @@ const INNER_PAD = 10;
 const FONT_SIZE = 13;
 const BOX_BORDER = "#64748b";
 const TEXT_COLOR = "#1e293b";
+const LINE_COLOR = "#475569";
+const LINE_DASH = "6 4";
 
 interface BoxCorner {
   /** Top-left position of the icon chip. */
@@ -219,23 +221,22 @@ function renderLine(line: LineElement, key: string): JSX.Element {
   const d = line.routing === "curve" ? buildCurvePath(vertices) : buildPolylinePath(vertices);
   const first = vertices[0] as Point;
   const last = vertices[vertices.length - 1] as Point;
+  const color = line.color ?? LINE_COLOR;
+  const dash = line.dashed ? LINE_DASH : undefined;
 
   return (
     <g key={key}>
-      <path d={d} fill="none" stroke="#475569" strokeWidth={BORDER} />
+      <path d={d} fill="none" stroke={color} strokeWidth={BORDER} strokeDasharray={dash} />
       {line.arrows === "start" && (
-        <polygon points={arrowPath(vertices[1] as Point, first)} fill="#475569" />
+        <polygon points={arrowPath(vertices[1] as Point, first)} fill={color} />
       )}
       {line.arrows === "end" && (
-        <polygon points={arrowPath(vertices[vertices.length - 2] as Point, last)} fill="#475569" />
+        <polygon points={arrowPath(vertices[vertices.length - 2] as Point, last)} fill={color} />
       )}
       {line.arrows === "both" && (
         <g>
-          <polygon points={arrowPath(vertices[1] as Point, first)} fill="#475569" />
-          <polygon
-            points={arrowPath(vertices[vertices.length - 2] as Point, last)}
-            fill="#475569"
-          />
+          <polygon points={arrowPath(vertices[1] as Point, first)} fill={color} />
+          <polygon points={arrowPath(vertices[vertices.length - 2] as Point, last)} fill={color} />
         </g>
       )}
       {line.label !== undefined && (
@@ -254,7 +255,7 @@ function renderLine(line: LineElement, key: string): JSX.Element {
             y={lineLabelPoint(vertices).y + 4}
             textAnchor="middle"
             fontSize={FONT_SIZE - 4}
-            fill="#1e293b"
+            fill={TEXT_COLOR}
           >
             {line.label}
           </text>

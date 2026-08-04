@@ -332,7 +332,7 @@ function parseBox(tokens: Token[], report: (msg: string) => void): BoxElement | 
 }
 
 function parseLineStmt(tokens: Token[], report: (msg: string) => void): LineElement | null {
-  const line: LineElement = { kind: "line", points: [] };
+  const line: LineElement = { kind: "line", points: [], dashed: false };
   let idx = 1;
 
   // Points come first, one after another, until a non-group token appears.
@@ -362,13 +362,18 @@ function parseLineStmt(tokens: Token[], report: (msg: string) => void): LineElem
         else line.arrows = arrowFor(t.value);
         break;
       case "color":
-        report("colors are not allowed on a line");
+        if (line.color !== undefined) report("line has more than one color");
+        else line.color = t.value;
         break;
       case "icon":
         report("icons are not allowed on a line");
         break;
       case "word":
         switch (t.value) {
+          case "dashed":
+            if (line.dashed) report("line has more than one 'dashed'");
+            else line.dashed = true;
+            break;
           case "ortho":
           case "ortho-hv":
           case "ortho-vh":
