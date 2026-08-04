@@ -7,7 +7,6 @@ import BoardPage from "@/pages/board/page";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import FilePageRoute from "@/pages/file-page/route";
 import ImageLibraryPage from "@/pages/image-library/page";
-import KumidrawPage from "@/pages/kumidraw/page";
 import NotFound from "@/pages/not-found/page";
 import PageThemesPage from "@/pages/page-themes/page";
 import Providers from "@/providers";
@@ -41,8 +40,6 @@ function AppRoutes(): JSX.Element {
         <Route path="/b/:name/*" element={<BoardPage />} />
         <Route path="/i" element={<ImageLibraryPage />} />
         <Route path="/i/:filename" element={<ImageLibraryPage />} />
-        <Route path="/kd" element={<KumidrawPage />} />
-        <Route path="/kd/*" element={<KumidrawPage />} />
         <Route path="/s" element={<SlideThemesPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="*" element={<NotFound />} />

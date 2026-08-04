@@ -163,9 +163,21 @@ function buildEditorContent({
     );
   }
   if (fileType === "kumidraw") {
-    // Wrap raw kumidraw content in a fenced code block so the streamdown
-    // kumidraw plugin renders it. Strip the chrome so only the diagram
-    // fills the page.
+    // Edit the raw .kumidraw source as text, like any other page.
+    if (editMode) {
+      return (
+        <CodeEditor
+          value={content}
+          language={rawExt}
+          readOnly={false}
+          onChange={handleChange}
+          onSave={handleSave}
+        />
+      );
+    }
+    // View mode: wrap raw kumidraw content in a fenced code block so the
+    // streamdown kumidraw plugin renders it. Strip the chrome so only the
+    // diagram fills the page.
     const wrapped = `\`\`\`kumidraw\n${content}\n\`\`\``;
     return (
       <div className="kumidraw-fullpage flex flex-col flex-1 min-h-0">
