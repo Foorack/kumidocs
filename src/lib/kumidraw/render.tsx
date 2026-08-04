@@ -376,7 +376,9 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
   const baseW = Math.max(1, e.maxX - e.minX);
   const baseH = Math.max(1, e.maxY - e.minY);
   const svgRef = useRef<SVGSVGElement>(null);
-  const dragRef = useRef<{ startX: number; startY: number; view: ViewState } | undefined>(undefined);
+  const dragRef = useRef<{ startX: number; startY: number; view: ViewState } | undefined>(
+    undefined,
+  );
 
   // The viewBox for scale=1, no pan centers the base extents.
   const [view, setView] = useState<ViewState>({ scale: 1, tx: e.minX, ty: e.minY });
