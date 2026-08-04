@@ -29,7 +29,8 @@ import type {
   TextElement,
 } from "./types";
 import { resolveKumidrawIconHref } from "@/client/kumidraw-icons";
-import { useId } from "react";
+import { useCallback, useId, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 
 const BORDER = 2;
 const PAD = 20;
@@ -354,22 +355,103 @@ interface KumidrawDiagramProps {
   className?: string;
 }
 
+const ZOOM_MIN = 0.1;
+const ZOOM_MAX = 8;
+const ZOOM_STEP = 1.15;
+
+interface ViewState {
+  scale: number;
+  tx: number;
+  ty: number;
+}
+
 /**
- * Render a parsed Kumidraw document to SVG. Uses `svg` viewBox units that match
- * the format's coordinate space 1:1, so positions are pixel-accurate. Embed with
- * `width=100%` when you want the diagram to scale to its container.
+ * Render a parsed Kumidraw document to SVG with interactive pan and zoom.
+ * Scroll to zoom in/out around the cursor; click-and-drag to pan. Uses `svg`
+ * viewBox units that match the format's coordinate space 1:1.
  */
 function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element {
   const e = docExtents(doc);
   const ids = useId();
+  const baseW = Math.max(1, e.maxX - e.minX);
+  const baseH = Math.max(1, e.maxY - e.minY);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef<{ startX: number; startY: number; view: ViewState } | undefined>(undefined);
+
+  // The viewBox for scale=1, no pan centers the base extents.
+  const [view, setView] = useState<ViewState>({ scale: 1, tx: e.minX, ty: e.minY });
+
+  const handleWheel = useCallback(
+    (event: ReactWheelEvent<SVGSVGElement>) => {
+      const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+      const cx = view.tx;
+      const cy = view.ty;
+      const cw = baseW / view.scale;
+      const ch = baseH / view.scale;
+      // User coordinate under the cursor stays fixed while we zoom.
+      const px = cx + (event.nativeEvent.offsetX / (event.currentTarget.clientWidth || 1)) * cw;
+      const py = cy + (event.nativeEvent.offsetY / (event.currentTarget.clientHeight || 1)) * ch;
+      const newScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, view.scale * factor));
+      const ratio = newScale / view.scale;
+      const nx = px - (px - cx) * ratio;
+      const ny = py - (py - cy) * ratio;
+      setView({ scale: newScale, tx: nx, ty: ny });
+    },
+    [baseH, baseW, view],
+  );
+
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      dragRef.current = { startX: event.clientX, startY: event.clientY, view };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [view],
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      const drag = dragRef.current;
+      if (drag === undefined) {
+        return;
+      }
+      const rect = event.currentTarget.getBoundingClientRect();
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      // Use the view captured at pointer-down so the pan stays stable even
+      // if the user zoomed in between down and move.
+      const cw = baseW / drag.view.scale;
+      const ch = baseH / drag.view.scale;
+      const sx = cw / (rect.width || 1);
+      const sy = ch / (rect.height || 1);
+      setView({ scale: drag.view.scale, tx: drag.view.tx - dx * sx, ty: drag.view.ty - dy * sy });
+    },
+    [baseH, baseW],
+  );
+
+  const endDrag = useCallback(() => {
+    dragRef.current = undefined;
+  }, []);
+
+  // The rendered viewBox is derived from the interactive view state.
+  const renderedBox = `${view.tx} ${view.ty} ${baseW / view.scale} ${baseH / view.scale}`;
 
   return (
     <svg
+      ref={svgRef}
       className={className}
-      viewBox={`${e.minX} ${e.minY} ${e.maxX - e.minX} ${e.maxY - e.minY}`}
+      viewBox={renderedBox}
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-hidden={doc.header === null}
+      style={{ cursor: dragRef.current === undefined ? "grab" : "grabbing", touchAction: "none" }}
+      onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={endDrag}
+      onPointerLeave={endDrag}
+      onDoubleClick={() => {
+        setView({ scale: 1, tx: e.minX, ty: e.minY });
+      }}
     >
       {doc.elements.map((el, i) => {
         if (el.kind === "box") {
