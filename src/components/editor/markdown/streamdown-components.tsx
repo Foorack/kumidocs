@@ -10,8 +10,10 @@ import rehypeCsvTable from "@/components/editor/plugins/csv-table";
 import rehypeEmojiPlugin from "@/components/editor/plugins/emoji";
 import rehypeGfmAlertsPlugin from "@/components/editor/plugins/gfm-alerts";
 import rehypeHeadingIdsPlugin from "@/components/editor/plugins/heading-ids";
+import rehypeKumidraw from "@/components/editor/plugins/kumidraw-code-block";
 import rehypeResolveRelativeUrlsPlugin from "@/components/editor/plugins/resolve-relative-urls";
 import rehypeTreeDirective from "@/components/editor/plugins/tree-directive";
+import KumidrawDiagramComponent from "./kumidraw-diagram-component";
 
 /** Allowed URL to LINK to anywhere */
 const ALLOWED_LINK_PREFIXES = ["*"];
@@ -46,6 +48,7 @@ const REHYPE_PLUGINS: PluggableList = [
   rehypeEmojiPlugin,
   rehypeGfmAlertsPlugin,
   rehypeTreeDirective,
+  rehypeKumidraw,
 ];
 
 // KumiEmojiComponent
@@ -269,6 +272,7 @@ const COMPONENTS_DOC: Record<string, (props: Record<string, unknown>) => JSX.Ele
   img: ImgComponent,
   "kumi-alert": KumiAlert,
   "kumi-emoji": KumiEmojiComponent,
+  "kumidraw-diagram": KumidrawDiagramComponent,
   "pages": Pages,
   "toc": Toc,
   "tree": Tree,
@@ -283,6 +287,7 @@ const COMPONENTS_SLIDE: Record<string, (props: Record<string, unknown>) => JSX.E
   img: ImgComponent,
   "kumi-alert": KumiAlert,
   "kumi-emoji": KumiEmojiComponent,
+  "kumidraw-diagram": KumidrawDiagramComponent,
   "pages": Pages,
   "toc": Toc,
   "tree": Tree,
