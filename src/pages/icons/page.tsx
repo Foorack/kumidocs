@@ -22,14 +22,38 @@ interface IconEntry {
   src: string;
 }
 
+// fluent-color ships every icon at several sizes (question-circle-16, -20,
+// -24, -28, -32, -48...). Pick one representative per base name so the grid
+// doesn't repeat each icon six times; prefer the standard 24px, else the
+// size nearest to it. Names like `nginx` (no size suffix) are untouched.
+function prefersSize(candidate: number, current: number): boolean {
+  if (candidate === 24 && current !== 24) {
+    return true;
+  }
+  return Math.abs(candidate - 24) < Math.abs(current - 24);
+}
+
 function collectIcons(): IconEntry[] {
   const entries: IconEntry[] = [];
+  const sizeSuffix = /-(?<size>\d+)$/u;
   for (const pack of getKumidrawIconPacks()) {
+    const byBase = new Map<string, { key: string; size: number; src: string }>();
     for (const name of Object.keys(pack.icons)) {
       const src = buildKumidrawIconDataUri(pack, name, GRID_SIZE);
-      if (src !== undefined) {
-        entries.push({ key: `${pack.prefix}:${name}`, src });
+      if (src === undefined) {
+        continue;
       }
+      const sizeMatch = sizeSuffix.exec(name);
+      const size = sizeMatch === null ? 0 : Number(sizeMatch.groups?.size);
+      const base = sizeMatch === null ? name : name.slice(0, sizeMatch.index);
+      const key = `${pack.prefix}:${name}`;
+      const existing = byBase.get(base);
+      if (existing === undefined || prefersSize(size, existing.size)) {
+        byBase.set(base, { key, size, src });
+      }
+    }
+    for (const { key, src } of byBase.values()) {
+      entries.push({ key, src });
     }
   }
   entries.sort((left, right) => left.key.localeCompare(right.key));
