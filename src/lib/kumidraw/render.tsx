@@ -491,4 +491,24 @@ function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element 
   );
 }
 
-export { kumidrawDimensions, KumidrawDiagram, type KumidrawDiagramProps };
+export {
+  kumidrawDimensions,
+  KumidrawDiagram,
+  renderBox,
+  renderLine,
+  renderText,
+  boxCorner,
+  lineVertices,
+  arrowPath,
+  BORDER,
+  PAD,
+  FONT_SIZE,
+  ICON_SIZE,
+  BOX_BORDER,
+  BOX_FILL,
+  TEXT_COLOR,
+  LINE_COLOR,
+  LINE_DASH,
+  type BoxCorner,
+  type KumidrawDiagramProps,
+};

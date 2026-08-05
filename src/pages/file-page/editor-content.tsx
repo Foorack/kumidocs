@@ -2,6 +2,7 @@ import type { Dispatch, ReactNode, Ref, RefObject, SetStateAction } from "react"
 import type { FileType, PresenceUser, User } from "@/lib/types";
 import CodeEditor from "@/components/editor/markdown/code-editor";
 import CsvGrid from "@/components/editor/markdown/csv-grid";
+import KumidrawEditor from "@/components/editor/kumidraw/kumidraw-editor";
 import type { PageMeta as DocMeta } from "@/lib/frontmatter";
 import MarkdownEditor from "@/components/editor/markdown/editor";
 import MarkdownViewer from "@/components/editor/markdown/viewer";
@@ -163,12 +164,13 @@ function buildEditorContent({
     );
   }
   if (fileType === "kumidraw") {
-    // Edit the raw .kumidraw source as text, like any other page.
+    // Edit the diagram on an interactive canvas, with a Raw toggle back to
+    // the plain text editor (mirrors the CSV editor). View mode renders the
+    // diagram full-page.
     if (editMode) {
       return (
-        <CodeEditor
+        <KumidrawEditor
           value={content}
-          language={rawExt}
           readOnly={false}
           onChange={handleChange}
           onSave={handleSave}
