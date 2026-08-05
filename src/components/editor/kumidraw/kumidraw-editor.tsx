@@ -114,7 +114,11 @@ function handleAt(p: Point, el: BoxElement): Handle | undefined {
   const cys = [el.y, el.y + el.h / 2, el.y + el.h] as const;
   for (let yi = 0; yi < 3; yi += 1) {
     for (let xi = 0; xi < 3; xi += 1) {
-      if ((xi === 1 && yi === 1) || !near(x, cxs[xi] as number, hit) || !near(y, cys[yi] as number, hit)) {
+      if (
+        (xi === 1 && yi === 1) ||
+        !near(x, cxs[xi] as number, hit) ||
+        !near(y, cys[yi] as number, hit)
+      ) {
         continue;
       }
       const name = `${yi === 0 ? "n" : yi === 2 ? "s" : ""}${xi === 0 ? "w" : xi === 2 ? "e" : ""}`;
