@@ -2,7 +2,7 @@
 //
 // Resolves a Kumidraw icon name (e.g. `:nginx`) to real Iconify artwork using
 // the same icon packs Mermaid already registers: devicon, logos, flag,
-// fluent-color, and glyphs-poly. The pack data comes from /api/icons, is
+// fluent, and glyphs-poly. The pack data comes from /api/icons, is
 // cached in IndexedDB (7-day TTL), and is loaded once at startup.
 //
 // A bare name is looked up across the packs in a fixed order and the first
@@ -21,7 +21,7 @@ const FALLBACK_BODY =
 
 // Packs are searched in this order so common tech/brand names resolve to
 // their recognizable art first.
-const PACK_PRIORITY = ["devicon", "logos", "fluent-color", "glyphs-poly", "flag"];
+const PACK_PRIORITY = ["devicon", "logos", "fluent", "glyphs-poly", "flag"];
 
 interface IconPack {
   prefix: string;

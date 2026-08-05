@@ -1,6 +1,6 @@
 /**
  * Registers Iconify icon packs with Mermaid for architecture diagrams.
- * Supports `logos:*`, `devicon:*`, `flag:*`, `fluent-color:*`, `glyphs-poly:*`.
+ * Supports `logos:*`, `devicon:*`, `flag:*`, `fluent:*`, `glyphs-poly:*`.
  *
  * Icon data is a gzipped text file from /api/icons.
  * Loaded on demand, cached in IndexedDB (7-day TTL).
