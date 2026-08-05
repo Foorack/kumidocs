@@ -23,11 +23,11 @@ function buildDataUri(emoji: string): string {
   return uri ?? "";
 }
 
-const EmojisPage = (): JSX.Element => {
+const EmojiPage = (): JSX.Element => {
   const { instanceName } = useOutletContext<OutletCtx>();
 
   useMountEffect(() => {
-    document.title = `Emojis | ${instanceName}`;
+    document.title = `Emoji | ${instanceName}`;
   });
 
   const entries = Object.entries(EMOJI_SVGS);
@@ -35,12 +35,12 @@ const EmojisPage = (): JSX.Element => {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
-        <h1 className="text-lg font-bold flex-1">Emojis</h1>
+        <h1 className="text-lg font-bold flex-1">Emoji</h1>
         <span className="text-sm text-muted-foreground">{entries.length} total</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-2">
         {entries.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">Loading emojis…</p>
+          <p className="p-4 text-sm text-muted-foreground">Loading emoji…</p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-px bg-border">
             {entries
@@ -62,4 +62,4 @@ const EmojisPage = (): JSX.Element => {
   );
 };
 
-export default EmojisPage;
+export default EmojiPage;

@@ -4,9 +4,10 @@ import BoardDetailPage from "@/pages/board-detail/page";
 import BoardListPage from "@/pages/board-list/page";
 import BoardManagerPage from "@/pages/board-manager/page";
 import BoardPage from "@/pages/board/page";
-import EmojisPage from "@/pages/emojis/page";
+import EmojiPage from "@/pages/emoji/page";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import FilePageRoute from "@/pages/file-page/route";
+import FluentIconsPage from "@/pages/fluenticons/page";
 import ImageLibraryPage from "@/pages/image-library/page";
 import IconsPage from "@/pages/icons/page";
 import NotFound from "@/pages/not-found/page";
@@ -42,8 +43,9 @@ function AppRoutes(): JSX.Element {
         <Route path="/b/:name/*" element={<BoardPage />} />
         <Route path="/i" element={<ImageLibraryPage />} />
         <Route path="/i/:filename" element={<ImageLibraryPage />} />
-        <Route path="/emojis" element={<EmojisPage />} />
+        <Route path="/emoji" element={<EmojiPage />} />
         <Route path="/icons" element={<IconsPage />} />
+        <Route path="/fluenticons" element={<FluentIconsPage />} />
         <Route path="/s" element={<SlideThemesPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="*" element={<NotFound />} />

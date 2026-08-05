@@ -55,6 +55,20 @@ function bodyToSvg(body: string, pack: IconPack, size: number): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
+/** Build a data URI for one icon in a loaded pack. */
+function buildKumidrawIconDataUri(pack: IconPack, name: string, size: number): string | undefined {
+  const body = pack.icons[name]?.body;
+  if (body === undefined) {
+    return undefined;
+  }
+  return bodyToSvg(body, pack, size);
+}
+
+/** The packs loaded so far; empty until loadKumidrawIcons resolves. */
+function getKumidrawIconPacks(): IconPack[] {
+  return packs;
+}
+
 /**
  * Load the icon packs. Safe to call multiple times; the load is idempotent.
  * Returns a promise other code can await before first render if needed.
@@ -118,4 +132,9 @@ function resolveKumidrawIconHref(name: string, size: number): string {
   return colorFallback(size);
 }
 
-export { loadKumidrawIcons, resolveKumidrawIconHref };
+export {
+  buildKumidrawIconDataUri,
+  getKumidrawIconPacks,
+  loadKumidrawIcons,
+  resolveKumidrawIconHref,
+};
