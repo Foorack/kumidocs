@@ -99,27 +99,27 @@ function snapPoint(p: Point): Point {
   return { x: snap(p.x), y: snap(p.y) };
 }
 
-/** Which box-resize corner handle, if any, a pointer is over. */
+/** Is `a` within `m` of `b`? */
+function near(a: number, b: number, m: number): boolean {
+  return b - m <= a && a <= b + m;
+}
+
+/** Which box-resize handle, if any, a pointer is over. Handles are the four
+ * corners plus the four edge midpoints. */
 function handleAt(p: Point, el: BoxElement): Handle | undefined {
   const x = snap(p.x);
   const y = snap(p.y);
   const hit = 6;
-  if (x >= el.x - hit && x <= el.x + hit && y >= el.y - hit && y <= el.y + hit) {
-    return "nw";
-  }
-  if (x >= el.x + el.w - hit && x <= el.x + el.w + hit && y >= el.y - hit && y <= el.y + hit) {
-    return "ne";
-  }
-  if (x >= el.x - hit && x <= el.x + hit && y >= el.y + el.h - hit && y <= el.y + el.h + hit) {
-    return "sw";
-  }
-  if (
-    x >= el.x + el.w - hit &&
-    x <= el.x + el.w + hit &&
-    y >= el.y + el.h - hit &&
-    y <= el.y + el.h + hit
-  ) {
-    return "se";
+  const cxs = [el.x, el.x + el.w / 2, el.x + el.w] as const;
+  const cys = [el.y, el.y + el.h / 2, el.y + el.h] as const;
+  for (let yi = 0; yi < 3; yi += 1) {
+    for (let xi = 0; xi < 3; xi += 1) {
+      if ((xi === 1 && yi === 1) || !near(x, cxs[xi] as number, hit) || !near(y, cys[yi] as number, hit)) {
+        continue;
+      }
+      const name = `${yi === 0 ? "n" : yi === 2 ? "s" : ""}${xi === 0 ? "w" : xi === 2 ? "e" : ""}`;
+      return name as Handle;
+    }
   }
   return undefined;
 }
@@ -272,6 +272,9 @@ function KumidrawEditor({
   const [tool, setTool] = useState<Tool>("select");
   const [rawMode, setRawMode] = useState(false);
   const [rawText, setRawText] = useState(value);
+  // Index of a text element whose label is being typed inline on the canvas.
+  const [pendingText, setPendingText] = useState<number | undefined>(undefined);
+  const pendingInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<DragState>(undefined);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -423,11 +426,17 @@ function KumidrawEditor({
       }
 
       if (tool === "text") {
-        const target: TextElement = { kind: "text", x: snap(p.x), y: snap(p.y), text: "text" };
+        const target: TextElement = {
+          kind: "text",
+          x: snap(p.x),
+          y: snap(p.y),
+          text: "",
+        };
         setElements((prev) => {
           const next = prev.slice();
           next.push(target);
           setSelected(next.length - 1);
+          setPendingText(next.length - 1);
           commit(next);
           return next;
         });
@@ -538,10 +547,35 @@ function KumidrawEditor({
       const next = prev.slice();
       next.splice(selected, 1);
       setSelected(undefined);
+      setPendingText(undefined);
       commit(next);
       return next;
     });
   }, [selected, commit]);
+
+  // Commit the text being typed into the inline canvas editor. Bail if the
+  // input is already gone, so an Enter commit that also triggers blur (or a
+  // blur after the element was removed) does not double-apply or wipe text.
+  const commitPendingText = useCallback((): void => {
+    if (pendingText === undefined || pendingInputRef.current === null) {
+      return;
+    }
+    const text = pendingInputRef.current.value;
+    updateElement(pendingText, (el) => {
+      if (el.kind === "text") {
+        el.text = text;
+      }
+    });
+    setPendingText(undefined);
+  }, [pendingText, updateElement]);
+
+  // Focus the inline text editor as soon as a text element is placed.
+  useEffect(() => {
+    if (pendingText !== undefined) {
+      pendingInputRef.current?.focus();
+      pendingInputRef.current?.select();
+    }
+  }, [pendingText, commitPendingText]);
 
   useEffect(() => {
     const handler = (ev: globalThis.KeyboardEvent): void => {
@@ -559,6 +593,8 @@ function KumidrawEditor({
 
   const selectedElement =
     selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
+  const pendingElement =
+    pendingText === undefined ? undefined : (elements[pendingText] as KumidrawElement | undefined);
 
   const toolbar = (
     <div className="flex items-center gap-0.5 border-b border-border px-2 py-1.5 shrink-0">
@@ -708,6 +744,32 @@ function KumidrawEditor({
             {selectedElement !== undefined && selectedElement.kind === "box" && (
               <SelectionChrome box={selectedElement} />
             )}
+            {pendingElement !== undefined && pendingElement.kind === "text" && (
+              <foreignObject
+                x={pendingElement.x}
+                y={pendingElement.y - 2}
+                width={220}
+                height={FONT_SIZE + 14}
+              >
+                <div className="flex items-center">
+                  <input
+                    ref={pendingInputRef}
+                    autoFocus
+                    data-kd-inline
+                    className="w-full rounded border border-primary bg-background px-1 py-0.5 text-[13px] text-foreground focus:outline-none"
+                    placeholder="Text…"
+                    defaultValue={pendingElement.text}
+                    onBlur={commitPendingText}
+                    onKeyDown={(ev): void => {
+                      if (ev.key === "Enter") {
+                        commitPendingText();
+                      }
+                    }}
+                    onPointerDown={(ev): void => ev.stopPropagation()}
+                  />
+                </div>
+              </foreignObject>
+            )}
           </svg>
         </div>
         {selected !== undefined && selectedElement !== undefined && (
@@ -781,11 +843,17 @@ function Drafter({
 }
 
 function SelectionChrome({ box }: { box: BoxElement }): JSX.Element {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
   const pts: Point[] = [
-    { x: box.x, y: box.y },
-    { x: box.x + box.w, y: box.y },
-    { x: box.x + box.w, y: box.y + box.h },
-    { x: box.x, y: box.y + box.h },
+    { x: box.x, y: box.y }, // nw
+    { x: cx, y: box.y }, // n
+    { x: box.x + box.w, y: box.y }, // ne
+    { x: box.x + box.w, y: cy }, // e
+    { x: box.x + box.w, y: box.y + box.h }, // se
+    { x: cx, y: box.y + box.h }, // s
+    { x: box.x, y: box.y + box.h }, // sw
+    { x: box.x, y: cy }, // w
   ];
   return (
     <g pointerEvents="none">
