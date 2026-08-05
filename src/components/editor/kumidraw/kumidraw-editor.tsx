@@ -41,21 +41,27 @@ import type {
 } from "@/lib/kumidraw/types";
 import { parseKumidraw } from "@/lib/kumidraw/parser";
 import { serializeKumidraw } from "@/lib/kumidraw/serialize";
-import { FONT_SIZE, PAD, lineVertices, renderBox, renderLine, renderText } from "@/lib/kumidraw/render";
+import {
+  FONT_SIZE,
+  PAD,
+  lineVertices,
+  renderBox,
+  renderLine,
+  renderText,
+} from "@/lib/kumidraw/render";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import Separator from "@/components/ui/separator";
 import Checkbox from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Box as BoxIcon,
-  CodeXml,
-  Delete,
-  MousePointer2,
-  Minus,
-  Type,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Box as BoxIcon, CodeXml, Delete, MousePointer2, Minus, Type } from "lucide-react";
 import type { PointerEvent as ReactPointerEvent, ChangeEvent, ReactNode } from "react";
 
 interface KumidrawEditorProps {
@@ -107,7 +113,12 @@ function handleAt(p: Point, el: BoxElement): Handle | undefined {
   if (x >= el.x - hit && x <= el.x + hit && y >= el.y + el.h - hit && y <= el.y + el.h + hit) {
     return "sw";
   }
-  if (x >= el.x + el.w - hit && x <= el.x + el.w + hit && y >= el.y + el.h - hit && y <= el.y + el.h + hit) {
+  if (
+    x >= el.x + el.w - hit &&
+    x <= el.x + el.w + hit &&
+    y >= el.y + el.h - hit &&
+    y <= el.y + el.h + hit
+  ) {
     return "se";
   }
   return undefined;
@@ -126,7 +137,8 @@ function distToSegment(p: Point, a: Point, b: Point): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const lenSq = dx * dx + dy * dy;
-  const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq));
+  const t =
+    lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq));
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
@@ -233,7 +245,12 @@ function docExtents(doc: KumidrawDoc): { minX: number; minY: number; maxX: numbe
   }
   const width = Math.max(400, maxX - minX + PAD * 2);
   const height = Math.max(300, maxY - minY + PAD * 2);
-  return { minX: Math.max(0, minX - PAD), minY: Math.max(0, minY - PAD), maxX: minX - PAD + width, maxY: minY - PAD + height };
+  return {
+    minX: Math.max(0, minX - PAD),
+    minY: Math.max(0, minY - PAD),
+    maxX: minX - PAD + width,
+    maxY: minY - PAD + height,
+  };
 }
 
 type DragState =
@@ -311,10 +328,7 @@ function KumidrawEditor({
     [commit],
   );
 
-  const extents = useMemo(
-    () => docExtents({ header, elements, errors: [] }),
-    [header, elements],
-  );
+  const extents = useMemo(() => docExtents({ header, elements, errors: [] }), [header, elements]);
   const worldW = Math.max(1, extents.maxX - extents.minX);
   const worldH = Math.max(1, extents.maxY - extents.minY);
 
@@ -543,7 +557,8 @@ function KumidrawEditor({
     return (): void => window.removeEventListener("keydown", handler);
   }, [selected, deleteSelected]);
 
-  const selectedElement = selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
+  const selectedElement =
+    selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
 
   const toolbar = (
     <div className="flex items-center gap-0.5 border-b border-border px-2 py-1.5 shrink-0">
@@ -605,7 +620,13 @@ function KumidrawEditor({
       </Button>
       <div className="flex-1" />
       <span className="text-xs text-muted-foreground font-mono">{elements.length} elements</span>
-      <Button variant="ghost" size="sm" className="ml-2" onClick={onSave} disabled={onSave === undefined}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="ml-2"
+        onClick={onSave}
+        disabled={onSave === undefined}
+      >
         Save
       </Button>
     </div>
@@ -652,7 +673,12 @@ function KumidrawEditor({
             onPointerLeave={handlePointerUp}
           >
             <defs>
-              <pattern id="kd-grid" width={GRID * ZOOM} height={GRID * ZOOM} patternUnits="userSpaceOnUse">
+              <pattern
+                id="kd-grid"
+                width={GRID * ZOOM}
+                height={GRID * ZOOM}
+                patternUnits="userSpaceOnUse"
+              >
                 <path
                   d={`M ${GRID} 0 L 0 0 0 ${GRID}`}
                   fill="none"
@@ -670,13 +696,11 @@ function KumidrawEditor({
               stroke="#cbd5e1"
             />
             {elements.map((el, i) =>
-              el.kind === "box" ? (
-                renderBox(el, `kd-box-${i}`)
-              ) : el.kind === "line" ? (
-                renderLine(el, `kd-line-${i}`)
-              ) : (
-                renderText(el, `kd-text-${i}`)
-              ),
+              el.kind === "box"
+                ? renderBox(el, `kd-box-${i}`)
+                : el.kind === "line"
+                  ? renderLine(el, `kd-line-${i}`)
+                  : renderText(el, `kd-text-${i}`),
             )}
             {drag !== undefined && (drag.mode === "draw-box" || drag.mode === "draw-line") && (
               <Drafter mode={drag.mode} start={drag.start} current={drag.current} />
@@ -717,7 +741,15 @@ function replaceProps(target: KumidrawElement, source: KumidrawElement): void {
   }
 }
 
-function Drafter({ mode, start, current }: { mode: "draw-box" | "draw-line"; start: Point; current: Point }): JSX.Element {
+function Drafter({
+  mode,
+  start,
+  current,
+}: {
+  mode: "draw-box" | "draw-line";
+  start: Point;
+  current: Point;
+}): JSX.Element {
   if (mode === "draw-line") {
     return (
       <line
@@ -817,30 +849,40 @@ function BoxPanel({
         <Input
           value={element.label ?? ""}
           placeholder="(none)"
-          onChange={(ev: ChangeEvent<HTMLInputElement>): void => set({ label: ev.target.value === "" ? undefined : ev.target.value })}
+          onChange={(ev: ChangeEvent<HTMLInputElement>): void =>
+            set({ label: ev.target.value === "" ? undefined : ev.target.value })
+          }
         />
       </Field>
       <Field label="Icon">
         <Input
           value={element.icon ?? ""}
           placeholder=":icon-name"
-          onChange={(ev: ChangeEvent<HTMLInputElement>): void => set({ icon: ev.target.value === "" ? undefined : ev.target.value })}
+          onChange={(ev: ChangeEvent<HTMLInputElement>): void =>
+            set({ icon: ev.target.value === "" ? undefined : ev.target.value })
+          }
         />
       </Field>
       <div className="flex items-center gap-2">
         <Checkbox
           id="kd-fill"
           checked={element.filled}
-          onCheckedChange={(v: boolean | "indeterminate"): void => set({ dashed: v === true ? false : element.dashed, filled: v === true })}
+          onCheckedChange={(v: boolean | "indeterminate"): void =>
+            set({ dashed: v === true ? false : element.dashed, filled: v === true })
+          }
         />
-        <Label htmlFor="kd-fill" className="text-xs">Fill</Label>
+        <Label htmlFor="kd-fill" className="text-xs">
+          Fill
+        </Label>
         <Checkbox
           id="kd-dashed"
           checked={element.dashed}
           disabled={element.filled}
           onCheckedChange={(v: boolean | "indeterminate"): void => set({ dashed: v === true })}
         />
-        <Label htmlFor="kd-dashed" className="text-xs">Dashed</Label>
+        <Label htmlFor="kd-dashed" className="text-xs">
+          Dashed
+        </Label>
       </div>
       <Field label="Color">
         <div className="flex flex-wrap gap-1">
@@ -874,7 +916,9 @@ function LinePanel({
         <Input
           value={element.label ?? ""}
           placeholder="(none)"
-          onChange={(ev: ChangeEvent<HTMLInputElement>): void => set({ label: ev.target.value === "" ? undefined : ev.target.value })}
+          onChange={(ev: ChangeEvent<HTMLInputElement>): void =>
+            set({ label: ev.target.value === "" ? undefined : ev.target.value })
+          }
         />
       </Field>
       <div className="flex items-center gap-2">
@@ -883,12 +927,16 @@ function LinePanel({
           checked={element.dashed}
           onCheckedChange={(v: boolean | "indeterminate"): void => set({ dashed: v === true })}
         />
-        <Label htmlFor="kd-line-dashed" className="text-xs">Dashed</Label>
+        <Label htmlFor="kd-line-dashed" className="text-xs">
+          Dashed
+        </Label>
       </div>
       <Field label="Arrow">
         <Select
           value={element.arrows ?? "none"}
-          onValueChange={(v: string): void => set({ arrows: v === "none" ? undefined : (v as LineElement["arrows"]) })}
+          onValueChange={(v: string): void =>
+            set({ arrows: v === "none" ? undefined : (v as LineElement["arrows"]) })
+          }
         >
           <SelectTrigger>
             <SelectValue />
@@ -904,7 +952,9 @@ function LinePanel({
       <Field label="Routing">
         <Select
           value={element.routing ?? "straight"}
-          onValueChange={(v: string): void => set({ routing: v === "straight" ? undefined : (v as LineElement["routing"]) })}
+          onValueChange={(v: string): void =>
+            set({ routing: v === "straight" ? undefined : (v as LineElement["routing"]) })
+          }
         >
           <SelectTrigger>
             <SelectValue />
@@ -947,7 +997,9 @@ function TextPanel({
     <Field label="Text">
       <Input
         value={element.text}
-        onChange={(ev: ChangeEvent<HTMLInputElement>): void => onChange({ ...element, text: ev.target.value })}
+        onChange={(ev: ChangeEvent<HTMLInputElement>): void =>
+          onChange({ ...element, text: ev.target.value })
+        }
       />
     </Field>
   );
