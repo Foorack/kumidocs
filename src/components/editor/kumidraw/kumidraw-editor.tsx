@@ -9,13 +9,14 @@
 // Coordinates snap to the fixed grid (10) on the way in and out, matching
 // what the renderer and parser already guarantee.
 //
-// A couple of pedantic lint rules are disabled for the interactive bits. The
-// pointer handlers and the string-to-union conversions for arrowheads and
-// routing read more clearly with shorthand arrow bodies and direct casts; the
-// formatting-pedantry churn would only bury the interaction logic. None of
+// A few pedantic lint rules are disabled for the interactive bits. The pointer
+// handlers and the string-to-union conversions for arrowheads and routing read
+// more clearly with shorthand arrow bodies and direct casts; the complexity
+// and formatting-pedantry churn would only bury the interaction logic. None of
 // these disabled rules flag correctness bugs.
 
 /* oxlint-disable
+   eslint/complexity,
    eslint/no-use-before-define,
    eslint/no-nested-ternary,
    eslint/sort-keys,
@@ -23,6 +24,8 @@
    typescript/no-confusing-void-expression,
    typescript/no-unsafe-type-assertion,
    typescript/no-unnecessary-type-assertion,
+   typescript/non-nullable-type-assertion-style,
+   typescript/prefer-nullish-coalescing,
    typescript/prefer-optional-chain,
    unicorn/no-nested-ternary,
    unicorn/prefer-spread
@@ -138,6 +141,71 @@ function lineHit(line: LineElement, p: Point): boolean {
   return false;
 }
 
+/** Shallow structural equality for two element arrays (flat, independent elements). */
+function sameElements(a: KumidrawElement[], b: KumidrawElement[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i += 1) {
+    if (!sameElement(a[i] as KumidrawElement, b[i] as KumidrawElement)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function sameElement(a: KumidrawElement, b: KumidrawElement): boolean {
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  if (a.kind === "box") {
+    return sameBox(a, b as BoxElement);
+  }
+  if (a.kind === "text") {
+    return sameText(a, b as TextElement);
+  }
+  return sameLine(a as LineElement, b as LineElement);
+}
+
+function sameBox(a: BoxElement, b: BoxElement): boolean {
+  return (
+    a.x === b.x &&
+    a.y === b.y &&
+    a.w === b.w &&
+    a.h === b.h &&
+    a.filled === b.filled &&
+    a.dashed === b.dashed &&
+    a.color === b.color &&
+    a.icon === b.icon &&
+    a.label === b.label
+  );
+}
+
+function sameText(a: TextElement, b: TextElement): boolean {
+  return a.x === b.x && a.y === b.y && a.text === b.text;
+}
+
+function sameLine(a: LineElement, b: LineElement): boolean {
+  if (
+    a.routing !== b.routing ||
+    a.arrows !== b.arrows ||
+    a.dashed !== b.dashed ||
+    a.color !== b.color ||
+    a.label !== b.label ||
+    a.points.length !== b.points.length
+  ) {
+    return false;
+  }
+  for (let i = 0; i < a.points.length; i += 1) {
+    const pa = a.points[i] as Point;
+    const pb = b.points[i] as Point;
+    if (pa.x !== pb.x || pa.y !== pb.y) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function docExtents(doc: KumidrawDoc): { minX: number; minY: number; maxX: number; maxY: number } {
   let minX = 0;
   let minY = 0;
@@ -191,12 +259,17 @@ function KumidrawEditor({
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Sync from external value changes (server push) unless we are mid-edit.
+  // Keep the current selection when the pushed content matches what we last
+  // produced, so an auto-save round-trip does not drop the open property panel.
   const prevValueRef = useRef(value);
   if (value !== prevValueRef.current && dragRef.current === undefined) {
     prevValueRef.current = value;
-    setElements(parsed.elements);
+    const pushed = parseKumidraw(value).elements;
+    setElements(pushed);
     setRawText(value);
-    setSelected(undefined);
+    if (!sameElements(pushed, elements)) {
+      setSelected(undefined);
+    }
   }
 
   // Re-parse raw text back into elements when switching off raw mode.
@@ -347,48 +420,39 @@ function KumidrawEditor({
         return;
       }
 
-      // select tool: resize handle first, then an element, else clear.
-      if (selected === undefined) {
-        const emptyHit = hitTest(p);
-        if (emptyHit !== -1) {
-          setSelected(emptyHit);
-        }
-        return;
-      }
-      const selEl = elements[selected] as KumidrawElement | undefined;
-      if (selEl !== undefined && selEl.kind === "box") {
-        const handle = handleAt(p, selEl);
-        if (handle !== undefined) {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          dragRef.current = {
-            mode: "resize",
-            index: selected,
-            handle,
-            anchor: { x: selEl.x, y: selEl.y, w: selEl.w, h: selEl.h },
-            start: p,
-          };
-          return;
-        }
-      }
-
+      // select tool: pick what is under the pointer (resize handle first,
+      // then an element), else clear the selection.
       const index = hitTest(p);
       if (index === -1) {
         setSelected(undefined);
         return;
       }
-      setSelected(index);
       const el = elements[index] as KumidrawElement | undefined;
       if (el === undefined) {
         return;
       }
+      setSelected(index);
       event.currentTarget.setPointerCapture(event.pointerId);
+      if (el.kind === "box") {
+        const handle = handleAt(p, el);
+        if (handle !== undefined) {
+          dragRef.current = {
+            mode: "resize",
+            index,
+            handle,
+            anchor: { x: el.x, y: el.y, w: el.w, h: el.h },
+            start: p,
+          };
+          return;
+        }
+      }
       const grab = {
         x: p.x - (el.kind === "line" ? 0 : el.x),
         y: p.y - (el.kind === "line" ? 0 : el.y),
       };
       dragRef.current = { mode: "move", index, grab, start: p };
     },
-    [readOnly, screenToUser, tool, hitTest, elements, commit, selected, handleAt],
+    [readOnly, screenToUser, tool, hitTest, elements, commit, handleAt],
   );
 
   const handlePointerMove = useCallback(
@@ -611,7 +675,7 @@ function KumidrawEditor({
               ) : el.kind === "line" ? (
                 renderLine(el, `kd-line-${i}`)
               ) : (
-                renderText(el as TextElement, `kd-text-${i}`)
+                renderText(el, `kd-text-${i}`)
               ),
             )}
             {drag !== undefined && (drag.mode === "draw-box" || drag.mode === "draw-line") && (
