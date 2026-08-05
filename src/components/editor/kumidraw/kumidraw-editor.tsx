@@ -104,6 +104,33 @@ function near(a: number, b: number, m: number): boolean {
   return b - m <= a && a <= b + m;
 }
 
+/** CSS cursor for the diagram surface based on the active tool and hover. */
+function diagramCursor(tool: Tool, hover: CursorKind): string {
+  if (tool !== "select") {
+    return "crosshair";
+  }
+  if (hover === "resize-nw" || hover === "resize-se") {
+    return "nwse-resize";
+  }
+  if (hover === "resize-ne" || hover === "resize-sw") {
+    return "nesw-resize";
+  }
+  if (hover === "line" || hover === "text" || hover === "move") {
+    return "move";
+  }
+  return "default";
+}
+
+type CursorKind =
+  | "none"
+  | "line"
+  | "text"
+  | "move"
+  | "resize-nw"
+  | "resize-ne"
+  | "resize-sw"
+  | "resize-se";
+
 /** Which box-resize handle, if any, a pointer is over. Handles are the four
  * corners plus the four edge midpoints. */
 function handleAt(p: Point, el: BoxElement): Handle | undefined {
@@ -273,6 +300,9 @@ function KumidrawEditor({
   const parsed = useMemo(() => parseKumidraw(value), [value]);
   const [elements, setElements] = useState<KumidrawElement[]>(parsed.elements);
   const [selected, setSelected] = useState<number | undefined>(undefined);
+  // What is under the cursor, so we can show the right pointer and make it
+  // obvious what will be grabbed.
+  const [hover, setHover] = useState<CursorKind>("none");
   const [tool, setTool] = useState<Tool>("select");
   const [rawMode, setRawMode] = useState(false);
   const [rawText, setRawText] = useState(value);
@@ -485,10 +515,32 @@ function KumidrawEditor({
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<SVGSVGElement>): void => {
       const drag = dragRef.current;
+      const p = screenToUser(event.clientX, event.clientY);
       if (drag === undefined) {
+        // Hover: show the right cursor for whatever is under the pointer.
+        const sel = selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
+        if (sel !== undefined && sel.kind === "box") {
+          const name = handleAt(p, sel);
+          if (name !== undefined) {
+            setHover(`resize-${name}` as never);
+            return;
+          }
+        }
+        const index = hitTest(p);
+        if (index === -1) {
+          setHover("none");
+          return;
+        }
+        const kind = (elements[index] as KumidrawElement).kind;
+        if (kind === "line") {
+          setHover("line");
+        } else if (kind === "text") {
+          setHover("text");
+        } else {
+          setHover("move");
+        }
         return;
       }
-      const p = screenToUser(event.clientX, event.clientY);
 
       if (drag.mode === "draw-box" || drag.mode === "draw-line") {
         dragRef.current = { ...drag, current: p };
@@ -515,7 +567,7 @@ function KumidrawEditor({
         }
       });
     },
-    [screenToUser, resize, updateElement],
+    [screenToUser, resize, updateElement, selected, elements],
   );
 
   const handlePointerUp = useCallback((): void => {
@@ -541,6 +593,7 @@ function KumidrawEditor({
       });
     }
     dragRef.current = undefined;
+    setHover("none");
   }, [commit]);
 
   const deleteSelected = useCallback((): void => {
@@ -704,7 +757,7 @@ function KumidrawEditor({
             xmlns="http://www.w3.org/2000/svg"
             style={{
               touchAction: "none",
-              cursor: tool === "select" ? "default" : "crosshair",
+              cursor: diagramCursor(tool, hover),
               backgroundColor: "#ffffff",
             }}
             onPointerDown={handlePointerDown}
@@ -747,6 +800,12 @@ function KumidrawEditor({
             )}
             {selectedElement !== undefined && selectedElement.kind === "box" && (
               <SelectionChrome box={selectedElement} />
+            )}
+            {selectedElement !== undefined && selectedElement.kind === "line" && (
+              <LineSelection line={selectedElement} />
+            )}
+            {selectedElement !== undefined && selectedElement.kind === "text" && (
+              <TextSelection text={selectedElement} />
             )}
             {pendingElement !== undefined && pendingElement.kind === "text" && (
               <foreignObject
@@ -883,6 +942,60 @@ function SelectionChrome({ box }: { box: BoxElement }): JSX.Element {
           strokeWidth={1.5}
         />
       ))}
+    </g>
+  );
+}
+
+/** Selection highlight for a line: a bold overlay stroke plus vertex dots. */
+function LineSelection({ line }: { line: LineElement }): JSX.Element {
+  const verts = lineVertices(line);
+  const first = verts[0] as Point;
+  let d = `M ${first.x} ${first.y}`;
+  for (const p of verts.slice(1)) {
+    d += ` L ${p.x} ${p.y}`;
+  }
+  return (
+    <g pointerEvents="none">
+      <path
+        d={d}
+        fill="none"
+        stroke={SELECT_COLOR}
+        strokeWidth={6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={0.35}
+      />
+      {verts.map((p, i) => (
+        <rect
+          key={i}
+          x={p.x - HANDLE_SIZE / 2}
+          y={p.y - HANDLE_SIZE / 2}
+          width={HANDLE_SIZE}
+          height={HANDLE_SIZE}
+          fill="#ffffff"
+          stroke={SELECT_COLOR}
+          strokeWidth={1.5}
+        />
+      ))}
+    </g>
+  );
+}
+
+/** Selection highlight for a text label: a thin bounding outline. */
+function TextSelection({ text }: { text: TextElement }): JSX.Element {
+  const w = Math.max(40, text.text.length * FONT_SIZE * 0.62);
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={text.x - 2}
+        y={text.y - 2}
+        width={w + 4}
+        height={FONT_SIZE + 8}
+        fill="none"
+        stroke={SELECT_COLOR}
+        strokeWidth={1.5}
+        strokeDasharray="4 4"
+      />
     </g>
   );
 }
