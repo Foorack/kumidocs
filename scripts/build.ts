@@ -60,11 +60,7 @@ if (!frontendResult.success) {
 
 // Step 2: Icon packs (combined into a single text file for /api/icons endpoint)
 console.log("  [2/3] Icon packs…");
-// The external `fluent-color` pack ships every Fluent icon in every size.
-// We replace it with a curated `fluent` pack built from the same 24x24 color
-// icons the app chrome actually uses, so diagrams can address them as e.g.
-// `fluent:buildinggovernment`.
-const iconPacks = ["devicon", "flag", "glyphs-poly", "logos"];
+const iconPacks = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
 const iconLines: string[] = [];
 for (const name of iconPacks) {
   const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
@@ -72,38 +68,7 @@ for (const name of iconPacks) {
   const data: unknown = JSON.parse(await Bun.file(src).text());
   iconLines.push(`${name};${JSON.stringify(data)}`);
 }
-// The local Fluent registry stores full <svg> strings keyed like
-// `BuildingGovernment24Color`. Iconify wants the inner body plus a name like
-// `buildinggovernment`. Extract those two things per icon.
-const fluentModule = await import("../src/components/ui/icon/fluent.ts");
-// oxlint-disable-next-line typescript/no-unsafe-assignment
-const fluentIcons: Record<string, { body: string }> = {};
-for (const [key, svg] of Object.entries(fluentModule.default as Record<string, string>)) {
-  const body = extractSvgBody(svg);
-  if (body === undefined || body === "") {
-    continue;
-  }
-  fluentIcons[fluentIconName(key)] = { body };
-}
-iconLines.push(
-  `fluent;${JSON.stringify({ prefix: "fluent", width: 24, height: 24, icons: fluentIcons })}`,
-);
 await Bun.write(join(publicDir, "icons.txt"), iconLines.join("\n"));
-
-/** Pull the inner SVG content out of a full `<svg>...</svg>` string. */
-function extractSvgBody(svg: string): string | undefined {
-  const endOfOpenTag = svg.indexOf(">");
-  const closeTag = svg.lastIndexOf("</svg>");
-  if (endOfOpenTag === -1 || closeTag === -1 || closeTag <= endOfOpenTag) {
-    return undefined;
-  }
-  return svg.slice(endOfOpenTag + 1, closeTag);
-}
-
-/** `BuildingGovernment24Color` -> `buildinggovernment` (drop size + Color, lowercase). */
-function fluentIconName(key: string): string {
-  return key.replace(/Color$/, "").replace(/\d+$/, "").toLowerCase();
-}
 
 // Mode icons (board / docs favicon)
 await Bun.write(join(publicDir, "icon.board.png"), Bun.file(join(root, "src/icon.board.png")));

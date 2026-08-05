@@ -314,7 +314,7 @@ Architecture diagrams support **icon packs** via the `prefix:icon-name` syntax. 
 | `logos:*` | [Logos](https://github.com/gilbarbara/logos) | `logos:aws-s3`, `logos:github`, `logos:react` |
 | `devicon:*` | [Devicon](https://devicon.dev) | `devicon:docker`, `devicon:postgresql` |
 | `flag:*` | [Flag](https://github.com/iconify/icon-sets/tree/master/flag) | `flag:us`, `flag:gb-eng`, `flag:jp` |
-| `fluent:*` | Curated Fluent Color (from the app's icon registry) | `fluent:buildinggovernment`, `fluent:cloud` |
+| `fluent-color:*` | [Fluent Color](https://github.com/iconify/icon-sets/tree/master/fluent-color) | `fluent-color:cloud`, `fluent-color:database` |
 | `glyphs-poly:*` | [Glyphs Poly](https://github.com/iconify/icon-sets/tree/master/glyphs-poly) | `glyphs-poly:server`, `glyphs-poly:shield` |
 
 **Usage in architecture diagrams:**
