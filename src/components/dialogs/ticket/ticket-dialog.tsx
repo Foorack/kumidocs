@@ -1,5 +1,12 @@
 // oxlint-disable complexity
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { Copy, X } from "lucide-react";
@@ -103,6 +110,19 @@ function TicketDialog({
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffData, setDiffData] = useState<DiffData | undefined>();
   const [diffLoading, setDiffLoading] = useState(false);
+  // Confirm dialog shown before discarding unsaved edits when closing.
+  const [discardOpen, setDiscardOpen] = useState(false);
+  // Last-persisted editable values, used to detect unsaved edits so closing
+  // (Esc, backdrop, Close) can warn before discarding them. Comparing against
+  // the ticket prop is unreliable because it changes after a save.
+  const cleanRef = useRef<{ assignee: string; body: string; bookmarks: string[]; column: string; golden: boolean; title: string }>({
+    assignee: "",
+    body: "",
+    bookmarks: [],
+    column: "",
+    golden: false,
+    title: "",
+  });
 
   // File path for the current ticket (used for diff + git log + WS presence)
   const ticketFilePath = isEdit ? `${ticket.boardSlug}/${ticket.ticketId}.yaml` : "";
@@ -176,6 +196,14 @@ function TicketDialog({
       setTimeline([]);
       setCommits([]);
       setEditing(false);
+      cleanRef.current = {
+        assignee: ticket.assignee ?? "",
+        body: ticket.body,
+        bookmarks: ticket.bookmarks ?? [],
+        column: ticket.column,
+        golden: ticket.golden ?? false,
+        title: ticket.title,
+      };
     } else {
       setBoardSlug(initialBoardSlug ?? "");
       setTitle("");
@@ -245,6 +273,14 @@ function TicketDialog({
       });
       setApprovals(updatedApprovals);
       setColumn(data.column);
+      cleanRef.current = {
+        assignee: data.assignee ?? "",
+        body: parsedBody,
+        bookmarks: data.bookmarks ?? [],
+        column: data.column,
+        golden: data.golden ?? false,
+        title: data.title,
+      };
 
       // Fetch git history for Version Control tab
       setCommitsLoading(true);
@@ -293,6 +329,27 @@ function TicketDialog({
     /* oxlint-enable typescript/no-unnecessary-condition */
     return { bookmarksChanged: changed, onlyBookmarksChanged: changed && !contentChanged };
   }, [isEdit, bookmarks, ticket, title, body, column, golden, assignee]);
+
+  // True when an existing ticket has edits that have not been saved yet.
+  const hasUnsavedEdits = isEdit
+    ? title !== cleanRef.current.title ||
+      body !== cleanRef.current.body ||
+      column !== cleanRef.current.column ||
+      golden !== cleanRef.current.golden ||
+      assignee !== cleanRef.current.assignee ||
+      bookmarks.length !== cleanRef.current.bookmarks.length ||
+      !bookmarks.every((bm) => cleanRef.current.bookmarks.includes(bm))
+    : false;
+
+  // Close the dialog, but warn before discarding unsaved edits (Esc, backdrop
+  // and Close all land here) so a stray close never silently loses work.
+  const requestClose = useCallback((): void => {
+    if (hasUnsavedEdits) {
+      setDiscardOpen(true);
+      return;
+    }
+    onClose();
+  }, [hasUnsavedEdits, onClose]);
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
@@ -697,7 +754,7 @@ function TicketDialog({
         open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
-            onClose();
+            requestClose();
           }
         }}
       >
@@ -759,7 +816,7 @@ function TicketDialog({
                         setEditing(false);
                         wsClient.stopEditing(ticketFilePath);
                       }
-                    : onClose
+                    : requestClose
                 }
               >
                 <span className="leading-[1.2]">{editing && isEdit ? "Cancel" : "Close"}</span>
@@ -1036,6 +1093,37 @@ function TicketDialog({
         diffData={diffData}
         diffLoading={diffLoading}
       />
+
+      {/* Warn before discarding unsaved edits on close */}
+      <Dialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Discard unsaved changes?</DialogTitle>
+            <DialogDescription>
+              You have edits that have not been saved. Closing now will lose them.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDiscardOpen(false);
+              }}
+            >
+              Keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setDiscardOpen(false);
+                onClose();
+              }}
+            >
+              Discard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

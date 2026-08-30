@@ -218,7 +218,7 @@ function BoardDetailPage(): JSX.Element {
         toast.error("Failed to save board on exit");
       }
     }
-    navigate("/bm");
+    void navigate("/bm");
   }, [name, navigate, storageYaml]);
 
   const handleDelete = useCallback(async () => {
