@@ -518,7 +518,8 @@ function KumidrawEditor({
       const p = screenToUser(event.clientX, event.clientY);
       if (drag === undefined) {
         // Hover: show the right cursor for whatever is under the pointer.
-        const sel = selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
+        const sel =
+          selected === undefined ? undefined : (elements[selected] as KumidrawElement | undefined);
         if (sel !== undefined && sel.kind === "box") {
           const name = handleAt(p, sel);
           if (name !== undefined) {
