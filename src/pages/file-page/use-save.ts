@@ -61,8 +61,8 @@ function useFilePageSave({
   const [saveError, setSaveError] = useState<string | undefined>();
   const [loadError, setLoadError] = useState<string | undefined>();
   const [manualSaveOnly, setManualSaveOnly] = useState(false);
-  // Mirror the toggle in a ref so the unmount cleanup below reads the current
-  // value (the cleanup closure only sees the initial render otherwise).
+  // The unmount cleanup only sees the first render's closure, so mirror the
+  // toggle in a ref to read its live value there.
   const manualSaveOnlyRef = useRef(manualSaveOnly);
   manualSaveOnlyRef.current = manualSaveOnly;
 
@@ -78,27 +78,20 @@ function useFilePageSave({
   savedContentRef.current = savedContent;
   const metaRef = useRef(meta);
   metaRef.current = meta;
-  // Keep a ref to doSave so the unmount cleanup below can call it without
-  // referencing the useCallback const before it is defined.
+  // doSave is defined below; route calls through a ref so the cleanup can run
+  // before that const is initialized without use-before-define errors.
   const doSaveRef = useRef<(currentContent: string, isRaw?: boolean) => Promise<void>>(
     async () => undefined,
   );
-  // doSave is assigned after its useCallback definition below; declare the
-  // cleanup reference lazily through doSaveRef so there are no use-before-
-  // define errors while still calling the latest doSave at unmount.
+  // FilePage remounts on every route change, so this cleanup runs on each
+  // navigate. Flush pending edits so nothing is lost, unless auto-save is
+  // disabled (manualSaveOnly) - then never write on navigate.
   useMountEffect(() => (): void => {
     isMountedRef.current = false;
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = undefined;
     }
-    // This cleanup runs when FilePage tears down, which happens on every route
-    // change (the route keys FilePage by rawPath). Clear the pending debounced
-    // auto-save timer, then flush any unsaved edits so navigating away never
-    // drops changes. exitEdit() also saves, but it is only wired to the Read
-    // button, so sidebar/wiki-link/breadcrumb navigation needs this fallback.
-    // Respect the "auto-save disabled" toggle: if it is on, never write on
-    // navigate either, matching the no-auto-save contract.
     if (isDirtyRef.current && !manualSaveOnlyRef.current) {
       void doSaveRef.current(rawContentRef.current, true);
     }

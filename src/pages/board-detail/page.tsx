@@ -172,32 +172,8 @@ function BoardDetailPage(): JSX.Element {
     });
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (!config || !name) {
-      return;
-    }
-    setSaving(true);
-    try {
-      // Normalize ids to storage format (lowercase with hyphens)
-      const storageConfig = {
-        ...config,
-        columns: config.columns.map((col) => ({
-          ...col,
-          id: col.id.toLowerCase().replaceAll(/\s+/gu, "-"),
-        })),
-      };
-      const yaml = boardToYaml(storageConfig);
-      await putFile(`${name}.yaml`, yaml);
-      savedYamlRef.current = yaml;
-      toast.success("Board saved");
-    } catch {
-      toast.error("Failed to save board");
-    } finally {
-      setSaving(false);
-    }
-  }, [config, name]);
-
-  // Normalize the working config to its storage YAML, mirroring handleSave.
+  // Normalize the working config to its storage YAML (ids become lowercase
+  // with hyphens). Both handleSave and goBack use this, so they never differ.
   const storageYaml = useCallback(
     (cfg: BoardConfig): string =>
       boardToYaml({
@@ -210,8 +186,25 @@ function BoardDetailPage(): JSX.Element {
     [],
   );
 
+  const handleSave = useCallback(async () => {
+    if (!config || !name) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const yaml = storageYaml(config);
+      await putFile(`${name}.yaml`, yaml);
+      savedYamlRef.current = yaml;
+      toast.success("Board saved");
+    } catch {
+      toast.error("Failed to save board");
+    } finally {
+      setSaving(false);
+    }
+  }, [config, name, storageYaml]);
+
   // Navigate back to the board list, flushing any unsaved edits so they are
-  // not silently dropped (the Save button is easy to miss before leaving).
+  // not silently dropped by leaving without pressing Save.
   const goBack = useCallback(async (): Promise<void> => {
     const cfg = configRef.current;
     if (cfg && name) {
@@ -222,9 +215,6 @@ function BoardDetailPage(): JSX.Element {
           savedYamlRef.current = yaml;
         }
       } catch {
-        // If the flush fails, still leave so the user is not stuck. The
-        // unsaved copy remains visible in the board list after a reload is
-        // out of scope here; the Save button is the reliable path.
         toast.error("Failed to save board on exit");
       }
     }
