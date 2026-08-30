@@ -61,6 +61,10 @@ function useFilePageSave({
   const [saveError, setSaveError] = useState<string | undefined>();
   const [loadError, setLoadError] = useState<string | undefined>();
   const [manualSaveOnly, setManualSaveOnly] = useState(false);
+  // Mirror the toggle in a ref so the unmount cleanup below reads the current
+  // value (the cleanup closure only sees the initial render otherwise).
+  const manualSaveOnlyRef = useRef(manualSaveOnly);
+  manualSaveOnlyRef.current = manualSaveOnly;
 
   const autoSaveTimer = useRef(undefined as ReturnType<typeof setTimeout> | undefined);
   const isMountedRef = useRef(true);
@@ -93,7 +97,9 @@ function useFilePageSave({
     // auto-save timer, then flush any unsaved edits so navigating away never
     // drops changes. exitEdit() also saves, but it is only wired to the Read
     // button, so sidebar/wiki-link/breadcrumb navigation needs this fallback.
-    if (isDirtyRef.current) {
+    // Respect the "auto-save disabled" toggle: if it is on, never write on
+    // navigate either, matching the no-auto-save contract.
+    if (isDirtyRef.current && !manualSaveOnlyRef.current) {
       void doSaveRef.current(rawContentRef.current, true);
     }
   });
