@@ -64,13 +64,6 @@ function useFilePageSave({
 
   const autoSaveTimer = useRef(undefined as ReturnType<typeof setTimeout> | undefined);
   const isMountedRef = useRef(true);
-  useMountEffect(() => (): void => {
-    isMountedRef.current = false;
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-  });
-
   const savePromiseRef = useRef<Promise<void>>(Promise.resolve());
   const isDirtyRef = useRef(false);
   const contentRef = useRef(content);
@@ -81,6 +74,29 @@ function useFilePageSave({
   savedContentRef.current = savedContent;
   const metaRef = useRef(meta);
   metaRef.current = meta;
+  // Keep a ref to doSave so the unmount cleanup below can call it without
+  // referencing the useCallback const before it is defined.
+  const doSaveRef = useRef<(currentContent: string, isRaw?: boolean) => Promise<void>>(
+    async () => undefined,
+  );
+  // doSave is assigned after its useCallback definition below; declare the
+  // cleanup reference lazily through doSaveRef so there are no use-before-
+  // define errors while still calling the latest doSave at unmount.
+  useMountEffect(() => (): void => {
+    isMountedRef.current = false;
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = undefined;
+    }
+    // This cleanup runs when FilePage tears down, which happens on every route
+    // change (the route keys FilePage by rawPath). Clear the pending debounced
+    // auto-save timer, then flush any unsaved edits so navigating away never
+    // drops changes. exitEdit() also saves, but it is only wired to the Read
+    // button, so sidebar/wiki-link/breadcrumb navigation needs this fallback.
+    if (isDirtyRef.current) {
+      void doSaveRef.current(rawContentRef.current, true);
+    }
+  });
 
   const loadDoc = useCallback(
     async (path: string) => {
@@ -195,6 +211,9 @@ function useFilePageSave({
     },
     [filePath, reloadTree],
   );
+  // Keep doSaveRef in sync so the unmount cleanup flushes with the latest
+  // doSave (which closes over the current filePath).
+  doSaveRef.current = doSave;
 
   const toggleManualSaveOnly = useCallback(() => {
     setManualSaveOnly((prev) => !prev);
