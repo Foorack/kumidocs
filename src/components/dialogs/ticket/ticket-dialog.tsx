@@ -115,7 +115,14 @@ function TicketDialog({
   // Last-persisted editable values, used to detect unsaved edits so closing
   // (Esc, backdrop, Close) can warn before discarding them. Comparing against
   // the ticket prop is unreliable because it changes after a save.
-  const cleanRef = useRef<{ assignee: string; body: string; bookmarks: string[]; column: string; golden: boolean; title: string }>({
+  const cleanRef = useRef<{
+    assignee: string;
+    body: string;
+    bookmarks: string[];
+    column: string;
+    golden: boolean;
+    title: string;
+  }>({
     assignee: "",
     body: "",
     bookmarks: [],
