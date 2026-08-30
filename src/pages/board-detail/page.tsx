@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, JSX } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,11 @@ function BoardDetailPage(): JSX.Element {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  // YAML snapshot of the last persisted board state, used to detect unsaved
+  // edits so navigating away can flush them first.
+  const savedYamlRef = useRef<string | undefined>(undefined);
+  const configRef = useRef<BoardConfig | undefined>(undefined);
+  configRef.current = config;
 
   useEffect(() => {
     if (name === "") {
@@ -66,6 +71,7 @@ function BoardDetailPage(): JSX.Element {
             id: displayColumnId(col.id),
           }));
           setConfig(parsed);
+          savedYamlRef.current = boardToYaml(parsed);
         }
       } catch {
         // Board not found or invalid YAML
@@ -182,6 +188,7 @@ function BoardDetailPage(): JSX.Element {
       };
       const yaml = boardToYaml(storageConfig);
       await putFile(`${name}.yaml`, yaml);
+      savedYamlRef.current = yaml;
       toast.success("Board saved");
     } catch {
       toast.error("Failed to save board");
@@ -189,6 +196,40 @@ function BoardDetailPage(): JSX.Element {
       setSaving(false);
     }
   }, [config, name]);
+
+  // Normalize the working config to its storage YAML, mirroring handleSave.
+  const storageYaml = useCallback(
+    (cfg: BoardConfig): string =>
+      boardToYaml({
+        ...cfg,
+        columns: cfg.columns.map((col) => ({
+          ...col,
+          id: col.id.toLowerCase().replaceAll(/\s+/gu, "-"),
+        })),
+      }),
+    [],
+  );
+
+  // Navigate back to the board list, flushing any unsaved edits so they are
+  // not silently dropped (the Save button is easy to miss before leaving).
+  const goBack = useCallback(async (): Promise<void> => {
+    const cfg = configRef.current;
+    if (cfg && name) {
+      try {
+        const yaml = storageYaml(cfg);
+        if (yaml !== savedYamlRef.current) {
+          await putFile(`${name}.yaml`, yaml);
+          savedYamlRef.current = yaml;
+        }
+      } catch {
+        // If the flush fails, still leave so the user is not stuck. The
+        // unsaved copy remains visible in the board list after a reload is
+        // out of scope here; the Save button is the reliable path.
+        toast.error("Failed to save board on exit");
+      }
+    }
+    navigate("/bm");
+  }, [name, navigate, storageYaml]);
 
   const handleDelete = useCallback(async () => {
     if (!name || !config) {
@@ -269,7 +310,7 @@ function BoardDetailPage(): JSX.Element {
           type="button"
           className="flex items-center gap-1 hover:opacity-70"
           onClick={() => {
-            void navigate("/bm");
+            void goBack();
           }}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
