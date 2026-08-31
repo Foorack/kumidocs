@@ -363,6 +363,16 @@ function BoardPage(): JSX.Element {
         return;
       }
 
+      const fromColumn = dragActiveTicket.column;
+
+      // Move the card in the UI immediately so the drop feels instant, then
+      // persist to git in the background. Revert the card if the save fails.
+      setTickets((prev) =>
+        prev.map((tic) =>
+          `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: targetColId } : tic,
+        ),
+      );
+
       try {
         const now = new Date().toISOString();
         const userEmail = user?.email ?? user?.name ?? "unknown";
@@ -378,7 +388,7 @@ function BoardPage(): JSX.Element {
             timeline: [
               ...(dragActiveTicket.timeline ?? []),
               {
-                from: dragActiveTicket.column,
+                from: fromColumn,
                 timestamp: now,
                 to: targetColId,
                 type: "status" as const,
@@ -389,16 +399,16 @@ function BoardPage(): JSX.Element {
           dragDefaultColId,
         );
         await putFile(path, yaml);
+      } catch {
+        // Save failed: put the card back where it was so the UI stays honest.
         setTickets((prev) =>
           prev.map((tic) =>
-            `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: targetColId } : tic,
+            `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: fromColumn } : tic,
           ),
         );
-      } catch {
-        // will revert on next reload
       }
     },
-    [tickets, boardSlug, columns],
+    [tickets, boardSlug, columns, user],
   );
 
   if (loading) {
