@@ -106,7 +106,9 @@ function BoardSidebarContent({
             }}
             className={cn(
               "w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm font-bold transition-colors",
-              selectedBoardSlug === undefined ? "bg-neutral text-foreground" : "hover:bg-accent/60 hover:text-foreground",
+              selectedBoardSlug === undefined
+                ? "bg-neutral text-foreground"
+                : "hover:bg-accent/60 hover:text-foreground",
             )}
           >
             <EmojiIcon fileType="home" size={16} className="shrink-0" />
@@ -133,7 +135,9 @@ function BoardSidebarContent({
                 }}
                 className={cn(
                   "w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors",
-                  active ? "bg-neutral text-foreground font-bold" : "hover:bg-accent/60 hover:text-foreground",
+                  active
+                    ? "bg-neutral text-foreground font-bold"
+                    : "hover:bg-accent/60 hover:text-foreground",
                 )}
               >
                 {entry.config.icon !== undefined && entry.config.icon !== "" ? (
