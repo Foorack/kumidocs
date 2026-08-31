@@ -86,23 +86,23 @@
   --muted-foreground: oklch(0.52 0.015 264);
   --accent: oklch(0.94 0.015 264);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.637 0.208 25.331); /* red-500 */
-  --red: oklch(0.637 0.208 25.331); /* red-500 */
-  --orange: oklch(0.705 0.213 47.604); /* orange-500 */
-  --amber: oklch(0.769 0.188 70.08); /* amber-500 */
-  --yellow: oklch(0.795 0.184 86.047); /* yellow-500 */
-  --lime: oklch(0.768 0.233 130.85); /* lime-500 */
-  --green: oklch(0.623 0.214 149.214); /* green-500 */
-  --teal: oklch(0.6 0.183 184.704); /* teal-500 */
-  --cyan: oklch(0.647 0.189 197.137); /* cyan-500 */
-  --sky: oklch(0.685 0.169 237.323); /* sky-500 */
-  --blue: oklch(0.623 0.214 259.815); /* blue-500 */
-  --indigo: oklch(0.585 0.233 277.117); /* indigo-500 */
-  --violet: oklch(0.606 0.25 292.717); /* violet-500 */
-  --purple: oklch(0.627 0.265 303.9); /* purple-500 */
-  --pink: oklch(0.656 0.241 354.308); /* pink-500 */
-  --rose: oklch(0.645 0.246 16.439); /* rose-500 */
-  --neutral: oklch(0.5 0 0);
+  --destructive: #f5222d; /* antd red-6 */
+  --red: #f5222d; /* antd red-6 */
+  --orange: #fa8c16; /* antd orange-6 */
+  --amber: #faad14; /* antd gold-6 */
+  --yellow: #fadb14; /* antd yellow-6 */
+  --lime: #a0d911; /* antd lime-6 */
+  --green: #52c41a; /* antd green-6 */
+  --teal: #13c2c2; /* antd cyan-6 */
+  --cyan: #13c2c2; /* antd cyan-6 */
+  --sky: #69b1ff; /* antd blue-4 */
+  --blue: #1677ff; /* antd blue-6 */
+  --indigo: #2f54eb; /* antd geekblue-6 */
+  --violet: #722ed1; /* antd purple-6 */
+  --purple: #9254de; /* antd purple-5 */
+  --pink: #eb2f96; /* antd magenta-6 */
+  --rose: #f759ab; /* antd magenta-5 */
+  --neutral: #8c8c8c; /* antd grey-7 */
   --border: var(--neutral);
   --input: var(--neutral);
   --ring: var(--blue);
@@ -136,23 +136,23 @@
   --muted-foreground: oklch(0.65 0.015 264);
   --accent: oklch(0.25 0.015 264);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325); /* red-600 */
-  --red: oklch(0.577 0.245 27.325); /* red-600 */
-  --orange: oklch(0.646 0.222 41.116); /* orange-600 */
-  --amber: oklch(0.666 0.179 58.318); /* amber-600 */
-  --yellow: oklch(0.681 0.162 75.834); /* yellow-600 */
-  --lime: oklch(0.648 0.2 131.684); /* lime-600 */
-  --green: oklch(0.527 0.154 150.069); /* green-600 */
-  --teal: oklch(0.511 0.096 186.391); /* teal-600 */
-  --cyan: oklch(0.585 0.12 198.359); /* cyan-600 */
-  --sky: oklch(0.62 0.119 229.57); /* sky-600 */
-  --blue: oklch(0.546 0.245 262.881); /* blue-600 */
-  --indigo: oklch(0.511 0.262 276.966); /* indigo-600 */
-  --violet: oklch(0.541 0.281 293.009); /* violet-600 */
-  --purple: oklch(0.558 0.288 302.321); /* purple-600 */
-  --pink: oklch(0.592 0.249 0.584); /* pink-600 */
-  --rose: oklch(0.586 0.253 17.585); /* rose-600 */
-  --neutral: oklch(0.65 0 0);
+  --destructive: #ff4d4f; /* antd red-5 */
+  --red: #ff4d4f; /* antd red-5 */
+  --orange: #ffa940; /* antd orange-5 */
+  --amber: #ffc53d; /* antd gold-5 */
+  --yellow: #ffec3d; /* antd yellow-5 */
+  --lime: #bae637; /* antd lime-5 */
+  --green: #73d13d; /* antd green-5 */
+  --teal: #36cfc9; /* antd cyan-5 */
+  --cyan: #36cfc9; /* antd cyan-5 */
+  --sky: #91caff; /* antd blue-3 */
+  --blue: #4096ff; /* antd blue-5 */
+  --indigo: #5b8ff9; /* antd geekblue-5 */
+  --violet: #9254de; /* antd purple-5 */
+  --purple: #b37feb; /* antd purple-4 */
+  --pink: #f759ab; /* antd magenta-5 */
+  --rose: #ff7a45; /* antd volcano-5 */
+  --neutral: #bfbfbf; /* antd grey-6 */
   --border: var(--neutral);
   --input: var(--neutral);
   --ring: var(--blue);
@@ -188,23 +188,23 @@
   --muted-foreground: oklch(0.52 0.015 264);
   --accent: oklch(0.94 0.015 264);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.637 0.208 25.331); /* red-500 */
-  --red: oklch(0.637 0.208 25.331); /* red-500 */
-  --orange: oklch(0.705 0.213 47.604); /* orange-500 */
-  --amber: oklch(0.769 0.188 70.08); /* amber-500 */
-  --yellow: oklch(0.795 0.184 86.047); /* yellow-500 */
-  --lime: oklch(0.768 0.233 130.85); /* lime-500 */
-  --green: oklch(0.623 0.214 149.214); /* green-500 */
-  --teal: oklch(0.6 0.183 184.704); /* teal-500 */
-  --cyan: oklch(0.647 0.189 197.137); /* cyan-500 */
-  --sky: oklch(0.685 0.169 237.323); /* sky-500 */
-  --blue: oklch(0.623 0.214 259.815); /* blue-500 */
-  --indigo: oklch(0.585 0.233 277.117); /* indigo-500 */
-  --violet: oklch(0.606 0.25 292.717); /* violet-500 */
-  --purple: oklch(0.627 0.265 303.9); /* purple-500 */
-  --pink: oklch(0.656 0.241 354.308); /* pink-500 */
-  --rose: oklch(0.645 0.246 16.439); /* rose-500 */
-  --neutral: oklch(0.5 0 0);
+  --destructive: #f5222d; /* antd red-6 */
+  --red: #f5222d; /* antd red-6 */
+  --orange: #fa8c16; /* antd orange-6 */
+  --amber: #faad14; /* antd gold-6 */
+  --yellow: #fadb14; /* antd yellow-6 */
+  --lime: #a0d911; /* antd lime-6 */
+  --green: #52c41a; /* antd green-6 */
+  --teal: #13c2c2; /* antd cyan-6 */
+  --cyan: #13c2c2; /* antd cyan-6 */
+  --sky: #69b1ff; /* antd blue-4 */
+  --blue: #1677ff; /* antd blue-6 */
+  --indigo: #2f54eb; /* antd geekblue-6 */
+  --violet: #722ed1; /* antd purple-6 */
+  --purple: #9254de; /* antd purple-5 */
+  --pink: #eb2f96; /* antd magenta-6 */
+  --rose: #f759ab; /* antd magenta-5 */
+  --neutral: #8c8c8c; /* antd grey-7 */
   --border: var(--neutral);
   --input: var(--neutral);
   --ring: var(--blue);
