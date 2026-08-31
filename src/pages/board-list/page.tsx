@@ -12,10 +12,14 @@ import { EmojiIcon } from "@/components/ui/emoji-icon";
 import PageHeaderButton from "@/components/layout/page-header-button";
 
 const HOME_COLUMNS = [
+  { id: "recent", label: "Recent" },
   { id: "created-by-me", label: "Created by me" },
   { id: "assigned-to-me", label: "Assigned to me" },
   { id: "bookmarked", label: "Bookmarked" },
 ] as const;
+
+// Cap on the Recent column so it stays a quick-glance list, not a full backlog.
+const RECENT_LIMIT = 15;
 
 function BoardListPage(): JSX.Element {
   const { user, instanceName } = useUser();
@@ -47,6 +51,7 @@ function BoardListPage(): JSX.Element {
   });
 
   const columns = useMemo(() => {
+    const recent: Record<string, unknown>[] = [];
     const createdByMe: Record<string, unknown>[] = [];
     const assignedToMe: Record<string, unknown>[] = [];
     const bookmarked: Record<string, unknown>[] = [];
@@ -66,6 +71,7 @@ function BoardListPage(): JSX.Element {
         const colColor =
           board.columns.find((colDef) => colDef.id === ticket.column)?.color ?? "#6b7280";
         const enriched = { ...ticket, boardPrefix: board.boardPrefix, cardColor: colColor };
+        recent.push(enriched);
         if (ticket.reporter === userEmail) {
           createdByMe.push(enriched);
         }
@@ -79,10 +85,18 @@ function BoardListPage(): JSX.Element {
       }
     }
 
+    // Most recently updated tickets across all boards, newest first.
+    const sortTime = (t: Record<string, unknown>): string =>
+      (typeof t.updatedAt === "string" && t.updatedAt !== "" ? t.updatedAt : "") ||
+      (typeof t.createdAt === "string" && t.createdAt !== "" ? t.createdAt : "") ||
+      "";
+    recent.sort((left, right) => sortTime(right).localeCompare(sortTime(left)));
+
     return [
-      { column: HOME_COLUMNS[0], tickets: createdByMe },
-      { column: HOME_COLUMNS[1], tickets: assignedToMe },
-      { column: HOME_COLUMNS[2], tickets: bookmarked },
+      { column: HOME_COLUMNS[0], tickets: recent.slice(0, RECENT_LIMIT) },
+      { column: HOME_COLUMNS[1], tickets: createdByMe },
+      { column: HOME_COLUMNS[2], tickets: assignedToMe },
+      { column: HOME_COLUMNS[3], tickets: bookmarked },
     ];
   }, [boards, userEmail, showArchived]);
 
