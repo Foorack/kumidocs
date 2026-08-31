@@ -340,6 +340,10 @@ function BoardPage(): JSX.Element {
     }),
   );
 
+  // Serialize drag saves so rapid consecutive drops never write out of order.
+  // The UI still updates instantly; only the git persist is queued.
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   // Handle drag end (move ticket between columns)
   const handleDragEnd = useCallback(
     async (event: DragEndEvent): Promise<void> => {
@@ -365,48 +369,62 @@ function BoardPage(): JSX.Element {
 
       const fromColumn = dragActiveTicket.column;
 
-      // Move the card in the UI immediately so the drop feels instant, then
-      // persist to git in the background. Revert the card if the save fails.
+      // Move the card in the UI immediately so the drop feels instant.
       setTickets((prev) =>
         prev.map((tic) =>
           `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: targetColId } : tic,
         ),
       );
 
-      try {
-        const now = new Date().toISOString();
-        const userEmail = user?.email ?? user?.name ?? "unknown";
-        const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
-        const fileResp = await getFile(path);
-        const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
-        const yaml = await patchTicketYaml(
-          fileResp.content,
-          dragActiveTicket.boardSlug,
-          dragActiveTicket.id,
-          {
-            column: targetColId,
-            timeline: [
-              ...(dragActiveTicket.timeline ?? []),
-              {
-                from: fromColumn,
-                timestamp: now,
-                to: targetColId,
-                type: "status" as const,
-                user: userEmail,
-              },
-            ],
-          },
-          dragDefaultColId,
-        );
-        await putFile(path, yaml);
-      } catch {
-        // Save failed: put the card back where it was so the UI stays honest.
-        setTickets((prev) =>
-          prev.map((tic) =>
-            `${tic.boardSlug}/${tic.id}` === dragActiveId ? { ...tic, column: fromColumn } : tic,
-          ),
-        );
-      }
+      const now = new Date().toISOString();
+      const userEmail = user?.email ?? user?.name ?? "unknown";
+      const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
+      const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
+
+      // Persist behind any in-flight save so the on-disk column always ends up
+      // matching the last drop. Wait on the previous tail of the queue first,
+      // so rapid consecutive drops never write out of order.
+      const previous = saveQueueRef.current;
+      saveQueueRef.current = (async (): Promise<void> => {
+        try {
+          await previous;
+        } catch {
+          // A previous failure should not block this save.
+        }
+        try {
+          const fileResp = await getFile(path);
+          const yaml = await patchTicketYaml(
+            fileResp.content,
+            dragActiveTicket.boardSlug,
+            dragActiveTicket.id,
+            {
+              column: targetColId,
+              timeline: [
+                ...(dragActiveTicket.timeline ?? []),
+                {
+                  from: fromColumn,
+                  timestamp: now,
+                  to: targetColId,
+                  type: "status" as const,
+                  user: userEmail,
+                },
+              ],
+            },
+            dragDefaultColId,
+          );
+          await putFile(path, yaml);
+        } catch {
+          // Save failed. Revert only if the card has not been dragged again
+          // since this drop; otherwise a newer drop owns the card now.
+          setTickets((prev) =>
+            prev.map((tic) =>
+              `${tic.boardSlug}/${tic.id}` === dragActiveId && tic.column === targetColId
+                ? { ...tic, column: fromColumn }
+                : tic,
+            ),
+          );
+        }
+      })();
     },
     [tickets, boardSlug, columns, user],
   );
