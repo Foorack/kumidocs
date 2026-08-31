@@ -393,6 +393,18 @@ function TicketDialog({
           ];
         }
         const path = `${ticket.boardSlug}/${ticket.ticketId}.yaml`;
+        // Completing the ticket (moving it into a final/done column) stamps its
+        // updatedAt so the archive clock starts from when it was done. Without
+        // this, done cards stayed in the completed column indefinitely.
+        const movedToFinal =
+          column !== ticket.column &&
+          currentColumns.some((col) => col.id === column && col.final === true);
+        let saveUpdatedAt: string | undefined;
+        if (movedToFinal) {
+          saveUpdatedAt = now;
+        } else if (bookmarkDiff.onlyBookmarksChanged) {
+          saveUpdatedAt = updatedAt;
+        }
         const yaml = serializeTicket({
           approvals: approvals.length > 0 ? approvals : undefined,
           assignee: assignee.trim() || undefined,
@@ -405,7 +417,7 @@ function TicketDialog({
           reporter: reporter.trim() || undefined,
           timeline: updatedTimeline.length > 0 ? updatedTimeline : undefined,
           title: title.trim(),
-          updatedAt: bookmarkDiff.onlyBookmarksChanged ? updatedAt : undefined,
+          updatedAt: saveUpdatedAt,
         });
         setTimeline(updatedTimeline);
         await putFile(path, yaml);

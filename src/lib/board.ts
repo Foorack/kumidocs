@@ -454,7 +454,7 @@ async function patchTicketYaml(
     reporter: updates.reporter ?? existing.reporter,
     timeline: updates.timeline ?? existing.timeline,
     title: updates.title ?? existing.title,
-    updatedAt: existing.updatedAt,
+    updatedAt: updates.updatedAt ?? existing.updatedAt,
   });
 }
 

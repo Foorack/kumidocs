@@ -380,6 +380,12 @@ function BoardPage(): JSX.Element {
       const userEmail = user?.email ?? user?.name ?? "unknown";
       const path = `${dragActiveTicket.boardSlug}/${dragActiveTicket.id}.yaml`;
       const dragDefaultColId = columns.find((col) => col.default === true)?.id ?? "";
+      // Completing a ticket (moving it into a final/done column) stamps its
+      // updatedAt so the archive clock starts from when it was done, not from
+      // when it was last edited earlier. This is what hides done cards from
+      // the completed column after the archive window instead of keeping them
+      // there forever.
+      const targetIsFinal = columns.some((col) => col.id === targetColId && col.final === true);
 
       // Persist behind any in-flight save so the on-disk column always ends up
       // matching the last drop. Wait on the previous tail of the queue first,
@@ -399,6 +405,7 @@ function BoardPage(): JSX.Element {
             dragActiveTicket.id,
             {
               column: targetColId,
+              ...(targetIsFinal ? { updatedAt: now } : {}),
               timeline: [
                 ...(dragActiveTicket.timeline ?? []),
                 {
