@@ -4,13 +4,6 @@ import { Kbd } from "@/components/ui/kbd";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import type { TreeNode } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useMountEffect from "@/hooks/use-mount-effect";
@@ -104,39 +97,51 @@ function BoardSidebarContent({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1 py-2 space-y-1">
       {boardEntries.length > 0 && (
-        <div className="px-2">
-          <Select
-            value={selectedBoardSlug ?? ""}
-            onValueChange={(val: string) => {
-              if (val === "") {
-                setSelectedBoardSlug(undefined);
-                navigate("/b/");
-              } else {
-                setSelectedBoardSlug(val);
-                navigate(`/b/${val}`);
+        <div className="px-2 space-y-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedBoardSlug(undefined);
+              navigate("/b/");
+            }}
+            className={cn(
+              "w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors",
+              selectedBoardSlug === undefined
+                ? "bg-accent text-accent-foreground"
+                : "hover:bg-accent/50 hover:text-foreground",
+            )}
+          >
+            <EmojiIcon fileType="home" size={16} className="shrink-0" />
+            <span className="truncate">All boards</span>
+          </button>
+          {boardEntries.map((entry) => (
+            <button
+              key={entry.slug}
+              type="button"
+              onClick={() => {
+                setSelectedBoardSlug(entry.slug);
+                navigate(`/b/${entry.slug}`);
                 try {
-                  localStorage.setItem("kumidocs:last-ticket-board", val);
+                  localStorage.setItem("kumidocs:last-ticket-board", entry.slug);
                 } catch {
                   // localStorage may be unavailable
                 }
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 w-full">
-              <SelectValue placeholder="All boards" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All boards</SelectItem>
-              {boardEntries.map((entry) => (
-                <SelectItem key={entry.slug} value={entry.slug}>
-                  {entry.config.icon !== undefined && entry.config.icon !== "" ? (
-                    <EmojiIcon emoji={entry.config.icon} size={16} className="inline me-1" />
-                  ) : undefined}
-                  {entry.config.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              }}
+              className={cn(
+                "w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors",
+                selectedBoardSlug === entry.slug
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/50 hover:text-foreground",
+              )}
+            >
+              {entry.config.icon !== undefined && entry.config.icon !== "" ? (
+                <EmojiIcon emoji={entry.config.icon} size={16} className="shrink-0" />
+              ) : (
+                <span className="w-4 shrink-0" />
+              )}
+              <span className="truncate">{entry.config.name}</span>
+            </button>
+          ))}
         </div>
       )}
 
