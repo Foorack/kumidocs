@@ -24,21 +24,10 @@ import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
 import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } from "./runtime";
-import { existsSync } from "node:fs";
+import publicDir from "./public-dir";
+import apiEmojiSvg from "./api-emoji";
 
 const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: wss:`;
-
-// Resolve the public directory relative to this module.
-// When bundled into dist/index.js, import.meta.dir = dist/, so dist/public
-// is just public/.  Otherwise (dev) it is src/server/, so ../../dist/public.
-const bundledPublic = path.join(import.meta.dir, "public");
-const publicDir =
-  // oxlint-disable-next-line unicorn/no-process-env
-  process.env.KUMIDOCS_PUBLIC_DIR ??
-  // oxlint-disable-next-line node/no-sync
-  (existsSync(bundledPublic)
-    ? bundledPublic
-    : path.join(import.meta.dir, "..", "..", "dist", "public"));
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
@@ -173,6 +162,13 @@ async function buildRoutes(
     "/api/emojis": {
       GET() {
         return apiEmojis();
+      },
+    },
+
+    "/api/emoji/:file": {
+      async GET(req: Request) {
+        const file = new URL(req.url).pathname.slice("/api/emoji/".length);
+        return apiEmojiSvg(req, file);
       },
     },
     "/api/file": {

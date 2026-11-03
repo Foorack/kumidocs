@@ -1,6 +1,7 @@
 /**
- * Fetches emoji data from /api/emojis, caches in IndexedDB (7-day TTL).
- * Provides emoji -> SVG text lookup.
+ * The full emoji set: fetched from /api/emojis on first use, cached in
+ * IndexedDB (7-day TTL). Only the emoji picker and the /emoji page need it.
+ * Everything else renders single emoji from /api/emoji/:key (see EmojiIcon).
  *
  * The server gzips responses; the browser handles decompression.
  *
@@ -61,9 +62,7 @@ async function loadEmojiData(): Promise<void> {
   }
 }
 
-// Kick off the fetch immediately on module import.
-// oxlint-disable-next-line unicorn/prefer-top-level-await
-const loadPromise: Promise<void> = loadEmojiData();
+let loadPromise: Promise<void> | undefined;
 
 /** Get the SVG text for an emoji character. Returns undefined if not loaded yet. */
 function getEmojiSvg(native: string): string | undefined {
@@ -75,9 +74,10 @@ function isEmojiDataLoaded(): boolean {
   return Object.keys(EMOJI_SVGS).length > 0;
 }
 
-/** Wait for emoji data to be loaded. Useful for the picker or eager init. */
+/** Load the full emoji set (once) and wait for it. */
 // oxlint-disable-next-line typescript/promise-function-async
 function waitForEmojiData(): Promise<void> {
+  loadPromise ??= loadEmojiData();
   return loadPromise;
 }
 

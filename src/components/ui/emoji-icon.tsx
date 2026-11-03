@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import ICONS from "@/components/ui/icon/fluent";
 import { EMOJI_SVGS } from "@/client/emoji-loader";
 import type { FileType } from "@/lib/types";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
+import { emojiSvgUrl } from "@/lib/emoji-key";
 
 // Fluent icon names keyed by file/type; the fallback is QuestionCircle24Color.
 const FLUENT_TYPE_ICONS: Record<string, string> = {
@@ -45,6 +46,57 @@ function getDataUri(emoji: string): string {
   return uri ?? "";
 }
 
+interface EmojiImageProps {
+  emoji: string;
+  size: number | string;
+  wrapStyle: CSSProperties;
+  className?: string;
+}
+
+/**
+ * One emoji as a Fluent SVG. Uses the in-memory set when the picker has loaded
+ * it, otherwise fetches just this emoji from /api/emoji/:key (cached by the
+ * browser). Emoji the set does not cover (some skin tones, flags) fall back
+ * to the native character.
+ */
+function EmojiImage({ emoji, size, wrapStyle, className }: EmojiImageProps): JSX.Element {
+  const [missing, setMissing] = useState(false);
+
+  if (missing) {
+    return (
+      <span
+        style={{
+          ...wrapStyle,
+          fontSize: typeof size === "number" ? size * 0.8 : size,
+          lineHeight: 1,
+        }}
+        className={className}
+      >
+        {emoji}
+      </span>
+    );
+  }
+
+  const dataUri = getDataUri(emoji);
+  return (
+    <span style={wrapStyle} className={className}>
+      <img
+        src={dataUri === "" ? emojiSvgUrl(emoji) : dataUri}
+        alt={emoji}
+        onError={() => {
+          setMissing(true);
+        }}
+        style={{
+          display: "block",
+          height: "100%",
+          margin: 0,
+          width: "100%",
+        }}
+      />
+    </span>
+  );
+}
+
 interface EmojiIconProps {
   /** Emoji character to render (may be overridden to a Color icon). */
   emoji?: string;
@@ -66,38 +118,16 @@ function EmojiIcon({ emoji, fileType, size = 16, className, style }: EmojiIconPr
     width: size,
   };
 
-  // Emoji path: check for overrides first
+  // Emoji path. key={emoji} resets the "missing" state when the emoji changes.
   if (emoji !== undefined && emoji !== "") {
-    const dataUri = getDataUri(emoji);
-    if (dataUri !== "") {
-      return (
-        <span style={wrapStyle} className={className}>
-          <img
-            // oxlint-disable-next-line typescript/no-unsafe-assignment
-            src={dataUri}
-            alt={emoji}
-            style={{
-              display: "block",
-              height: "100%",
-              margin: 0,
-              width: "100%",
-            }}
-          />
-        </span>
-      );
-    }
-    // Fallback: native text for skin-tone variants, flags, etc. not in the bundle
     return (
-      <span
-        style={{
-          ...wrapStyle,
-          fontSize: typeof size === "number" ? size * 0.8 : size,
-          lineHeight: 1,
-        }}
+      <EmojiImage
+        key={emoji}
+        emoji={emoji}
+        size={size}
+        wrapStyle={wrapStyle}
         className={className}
-      >
-        {emoji}
-      </span>
+      />
     );
   }
 

@@ -88,7 +88,8 @@ for (const name of iconPacks) {
 // Favicon
 await Bun.write(join(publicDir, "icon.png"), Bun.file(join(root, "src/icon.png")));
 
-// Emoji data (text file, served gzipped via /api/emojis endpoint)
+// Emoji data, one "<emoji>;<svg>" line each. Served whole (gzipped) by
+// /api/emojis for the picker, and one emoji at a time by /api/emoji/:key.
 await Bun.write(
   join(publicDir, "emojis.txt"),
   Bun.file(join(root, "src/components/ui/emoji/emojis.txt")),

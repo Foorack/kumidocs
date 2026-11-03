@@ -1,4 +1,5 @@
-import { EMOJI_SVGS } from "@/client/emoji-loader";
+import { EMOJI_SVGS, isEmojiDataLoaded, waitForEmojiData } from "@/client/emoji-loader";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import useMountEffect from "@/hooks/use-mount-effect";
 
@@ -26,11 +27,19 @@ function buildDataUri(emoji: string): string {
 const EmojiPage = (): JSX.Element => {
   const { instanceName } = useOutletContext<OutletCtx>();
 
+  const [ready, setReady] = useState(isEmojiDataLoaded);
+
   useMountEffect(() => {
     document.title = `Emoji | ${instanceName}`;
+    if (!ready) {
+      void (async (): Promise<void> => {
+        await waitForEmojiData();
+        setReady(true);
+      })();
+    }
   });
 
-  const entries = Object.entries(EMOJI_SVGS);
+  const entries = ready ? Object.entries(EMOJI_SVGS) : [];
 
   return (
     <div className="flex flex-col h-full">
