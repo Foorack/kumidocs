@@ -10,6 +10,8 @@ const HTTP_UNAUTHORIZED = 401;
 
 interface UserContextValue {
   user?: User;
+  /** Whether the server proxies Gravatar. When false, avatars show initials only. */
+  gravatar: boolean;
   loading: boolean;
   needsEmailSetup: boolean;
   sidebarDefaultDepth: number;
@@ -25,6 +27,7 @@ interface UserContextValue {
 
 const UserContext = createContext<UserContextValue>({
   autoSaveDelay: 5000,
+  gravatar: false,
   headSha: "",
   instanceName: "KumiDocs",
   loading: true,
@@ -43,6 +46,7 @@ const UserContext = createContext<UserContextValue>({
 
 interface FetchMeResult {
   user?: User;
+  gravatar: boolean;
   sidebarDefaultDepth: number;
   slideThemes: SlideThemeMap;
   pageTemplates: PageTemplateMap;
@@ -66,6 +70,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       pageTemplates: pageData,
       sidebarDefaultDepth,
       autoSaveDelay: rawDelay,
+      gravatar: rawGravatar,
       headSha: rawSha,
       instanceName: rawName,
       repoUrl: rawRepoUrl,
@@ -73,6 +78,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
     const user: User = { canEdit, displayName, email, id, name };
     return {
       autoSaveDelay: rawDelay !== undefined && rawDelay !== 0 ? rawDelay : 5000,
+      gravatar: rawGravatar !== false,
       headSha: rawSha ?? "",
       instanceName: rawName ?? "KumiDocs",
       needs401: false,
@@ -86,6 +92,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
     const needs401 = error instanceof ApiError && error.status === HTTP_UNAUTHORIZED;
     return {
       autoSaveDelay: 5000,
+      gravatar: false,
       headSha: "",
       instanceName: "KumiDocs",
       needs401,
@@ -107,6 +114,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
   const [sidebarDefaultDepth, setSidebarDefaultDepth] = useState(0);
   const [instanceName, setInstanceName] = useState("KumiDocs");
   const [autoSaveDelay, setAutoSaveDelay] = useState(5000);
+  const [gravatar, setGravatar] = useState(false);
   const [headSha, setHeadSha] = useState("");
   const [repoUrl, setRepoUrl] = useState<string | undefined>();
 
@@ -121,6 +129,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
         setNeedsEmailSetup(result.needs401);
         setInstanceName(result.instanceName);
         setAutoSaveDelay(result.autoSaveDelay);
+        setGravatar(result.gravatar);
         setHeadSha(result.headSha);
         setRepoUrl(result.repoUrl);
         setLoading(false);
@@ -140,6 +149,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
       setNeedsEmailSetup(result.needs401);
       setInstanceName(result.instanceName);
       setAutoSaveDelay(result.autoSaveDelay);
+      setGravatar(result.gravatar);
       setHeadSha(result.headSha);
       setRepoUrl(result.repoUrl);
     } catch {
@@ -182,6 +192,7 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
     <UserContext.Provider
       value={{
         autoSaveDelay,
+        gravatar,
         headSha,
         instanceName,
         loading,

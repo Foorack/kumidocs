@@ -25,6 +25,7 @@ interface Config {
   pullInterval: number;
   rateLimit: { count: number; windowMs: number };
   readonly: boolean;
+  disableGravatar: boolean;
   /**
    * Optional base64-encoded JWKS for JWT signature verification.
    * When set, incoming JWTs are verified against this key set before
@@ -166,6 +167,15 @@ const OPTIONS: OptionDef[] = [
     env: "KUMIDOCS_READONLY",
     flags: ["--readonly"],
     key: "readonly",
+    needsValue: false,
+  },
+  {
+    coerce: coerceBool,
+    default: false,
+    description: "Never contact Gravatar; always show initials as avatars",
+    env: "KUMIDOCS_DISABLE_GRAVATAR",
+    flags: ["--disable-gravatar"],
+    key: "disableGravatar",
     needsValue: false,
   },
   {

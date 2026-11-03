@@ -28,6 +28,7 @@ interface MeResponse {
   instanceName?: string;
   repoUrl?: string;
   autoSaveDelay?: number;
+  gravatar?: boolean;
   sidebarDefaultDepth?: number;
   slideThemes?: SlideThemeMap;
   pageTemplates?: PageTemplateMap;

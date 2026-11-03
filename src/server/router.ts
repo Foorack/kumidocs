@@ -144,7 +144,7 @@ async function buildRoutes(
     "/api/avatar/:hash": {
       async GET(req: Request) {
         const hash = new URL(req.url).pathname.slice("/api/avatar/".length);
-        return apiAvatarProxy(hash);
+        return apiAvatarProxy(hash, !config.disableGravatar);
       },
     },
 

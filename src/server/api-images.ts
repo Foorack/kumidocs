@@ -344,44 +344,69 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
 // The hash must be a 64-char lowercase hex string (SHA-256).
 // Capped at 200 entries to prevent unbounded memory growth.
 const AVATAR_CACHE_MAX = 200;
-const avatarCache = new Map<string, { body: ArrayBuffer; type: string }>();
+// Most users have no Gravatar. Remember misses so each page load does not
+// ask again, but retry eventually in case one gets added.
+const AVATAR_MISS_TTL_MS = 60 * 60 * 1000;
+const AVATAR_FETCH_TIMEOUT_MS = 3000;
 
-async function apiAvatarProxy(hash: string): Promise<Response> {
-  if (!/^[0-9a-f]{64}$/u.test(hash)) {
-    return new Response("Invalid hash", { status: 400 });
-  }
+type AvatarEntry = { body: ArrayBuffer; type: string } | { missUntil: number };
+const avatarCache = new Map<string, AvatarEntry>();
 
-  const cached = avatarCache.get(hash);
-  if (cached !== undefined) {
-    return new Response(cached.body, {
-      headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Content-Type": cached.type,
-      },
-    });
-  }
-
-  const upstream = await fetch(`https://gravatar.com/avatar/${hash}?s=80&d=404`);
-  if (!upstream.ok) {
-    return new Response(undefined, { status: 404 });
-  }
-
-  const body = await upstream.arrayBuffer();
-  const type = upstream.headers.get("Content-Type") ?? "image/jpeg";
-
-  // Evict oldest entry when at capacity
+function cacheAvatar(hash: string, entry: AvatarEntry): void {
+  // Re-insert so the Map order stays least-recently-stored first
+  avatarCache.delete(hash);
   if (avatarCache.size >= AVATAR_CACHE_MAX) {
     const firstKey = avatarCache.keys().next().value;
     if (firstKey !== undefined) {
       avatarCache.delete(firstKey);
     }
   }
-  avatarCache.set(hash, { body, type });
+  avatarCache.set(hash, entry);
+}
 
-  return new Response(body, {
+const avatarMiss = (): Response =>
+  new Response(undefined, {
+    headers: { "Cache-Control": `private, max-age=${String(AVATAR_MISS_TTL_MS / 1000)}` },
+    status: 404,
+  });
+
+async function fetchGravatar(hash: string): Promise<AvatarEntry> {
+  try {
+    const upstream = await fetch(`https://gravatar.com/avatar/${hash}?s=80&d=404`, {
+      signal: AbortSignal.timeout(AVATAR_FETCH_TIMEOUT_MS),
+    });
+    if (!upstream.ok) {
+      return { missUntil: Date.now() + AVATAR_MISS_TTL_MS };
+    }
+    const body = await upstream.arrayBuffer();
+    return { body, type: upstream.headers.get("Content-Type") ?? "image/jpeg" };
+  } catch {
+    // Offline, blocked by a proxy, or too slow: treat as no avatar.
+    return { missUntil: Date.now() + AVATAR_MISS_TTL_MS };
+  }
+}
+
+async function apiAvatarProxy(hash: string, enabled: boolean): Promise<Response> {
+  if (!/^[0-9a-f]{64}$/u.test(hash)) {
+    return new Response("Invalid hash", { status: 400 });
+  }
+  if (!enabled) {
+    return avatarMiss();
+  }
+
+  let entry = avatarCache.get(hash);
+  if (entry === undefined || ("missUntil" in entry && entry.missUntil <= Date.now())) {
+    entry = await fetchGravatar(hash);
+    cacheAvatar(hash, entry);
+  }
+
+  if ("missUntil" in entry) {
+    return avatarMiss();
+  }
+  return new Response(entry.body, {
     headers: {
       "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Type": type,
+      "Content-Type": entry.type,
     },
   });
 }

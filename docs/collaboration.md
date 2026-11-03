@@ -27,7 +27,7 @@ Sidebar and page header show avatar stacks of who is viewing each page.
 - **Sidebar**: small avatars on the right of each page name.
 - **Page header**: avatar group showing all viewers of the current page.
 
-Avatars use a colour derived from the user's name (djb2 hash → HSL) with Gravatar as the primary source and initials as fallback.
+Avatars use a colour derived from the user's name (djb2 hash → HSL) with Gravatar as the primary source and initials as fallback. The server fetches Gravatar images on the browser's behalf and remembers misses for an hour. Set `KUMIDOCS_DISABLE_GRAVATAR=true` to never contact Gravatar, for example on a network without internet access.
 
 ## Live Reload
 

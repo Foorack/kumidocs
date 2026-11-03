@@ -8,8 +8,24 @@ test.describe("api", () => {
     expect(me).toMatchObject({
       canEdit: true,
       email: "editor@example.com",
+      gravatar: false,
       instanceName: "E2E Docs",
     });
+  });
+
+  test("with Gravatar disabled, avatars are never requested", async ({ page, request }) => {
+    const avatarRequests: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/avatar/")) {
+        avatarRequests.push(req.url());
+      }
+    });
+    await page.goto("/p/notes");
+    await expect(page.getByRole("banner").getByText("ED", { exact: true })).toBeVisible();
+    expect(avatarRequests).toEqual([]);
+
+    const res = await request.get(`/api/avatar/${"a".repeat(64)}`);
+    expect(res.status()).toBe(404);
   });
 
   test("search returns matching pages", async ({ request }) => {

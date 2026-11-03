@@ -6,6 +6,7 @@ import { sha256 } from "@noble/hashes/sha2.js";
 import { useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useActiveUsers } from "@/store/active-users";
+import { useUser } from "@/store/user";
 
 type AvatarSize = "xxs" | "xs" | "sm" | "md" | "lg";
 
@@ -48,18 +49,19 @@ const sha256hex = (input: string): string => {
 const UserAvatar = (allProps: UserAvatarProps): JSX.Element => {
   const { name, email, size = "md", isCurrentUser = false, className, ...rest } = allProps;
   const activeUsers = useActiveUsers();
+  const { gravatar } = useUser();
   const { circle, text } = sizeMap[size];
   const displayInitials = avatarInitials(name);
   const color = avatarColor(name);
   const gravatarHash = useMemo((): string | undefined => {
-    if (email === undefined || email === "") {
+    if (!gravatar || email === undefined || email === "") {
       return undefined;
     }
     if (!email.includes("@")) {
       return undefined;
     }
     return sha256hex(email);
-  }, [email]);
+  }, [email, gravatar]);
 
   const isActive = email !== undefined && email !== "" && activeUsers.has(email);
 

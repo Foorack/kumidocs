@@ -16,6 +16,8 @@ const server = Bun.spawn(["bun", path.join(root, "dist", "index.js"), REPO_DIR],
     GIT_COMMITTER_EMAIL: "kumidocs@localhost",
     GIT_COMMITTER_NAME: "KumiDocs",
     KUMIDOCS_AUTO_SAVE_DELAY: "500",
+    // No outbound calls: tests must not depend on Gravatar being reachable.
+    KUMIDOCS_DISABLE_GRAVATAR: "true",
     KUMIDOCS_PORT: String(PORT),
     // Background pulls would make timing nondeterministic; the remote never changes anyway.
     KUMIDOCS_PULL_INTERVAL: "3600000",

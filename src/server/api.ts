@@ -21,6 +21,7 @@ async function apiMe(user: User, config: Config): Promise<Response> {
   return Response.json({
     ...user,
     autoSaveDelay: config.autoSaveDelay,
+    gravatar: !config.disableGravatar,
     headSha,
     instanceName: perms.instanceName ?? "KumiDocs",
     jwtKids: getJwtKids(),
