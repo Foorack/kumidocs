@@ -1,0 +1,5 @@
+[install]
+# bun-plugin-tailwind lists "bun" as a peer dependency. Installing peers would
+# put an npm copy of Bun (an older version) in node_modules/.bin, and every
+# `bun run` script would then run on it instead of the pinned Bun in .bun-version.
+peer = false
