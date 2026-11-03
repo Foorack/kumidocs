@@ -49,7 +49,13 @@ async function serveSPA(req: Request): Promise<Response> {
     });
   }
   if (await doesFileExist(filePath)) {
-    const content = await readFileBuffer(filePath);
+    // Prefer the precompressed copy written by scripts/build.ts.
+    const gzPath = `${filePath}.gz`;
+    const useGzip =
+      rel !== "index.html" &&
+      (req.headers.get("Accept-Encoding") ?? "").includes("gzip") &&
+      (await doesFileExist(gzPath));
+    const content = await readFileBuffer(useGzip ? gzPath : filePath);
     const headers: Record<string, string> =
       rel === "index.html"
         ? {
@@ -62,6 +68,12 @@ async function serveSPA(req: Request): Promise<Response> {
     const mime = mimeTypeFromPath(filePath);
     if (mime !== undefined && headers["Content-Type"] === undefined) {
       headers["Content-Type"] = mime;
+    }
+    if (useGzip) {
+      headers["Content-Encoding"] = "gzip";
+    }
+    if (rel !== "index.html") {
+      headers.Vary = "Accept-Encoding";
     }
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return new Response(content as unknown as BodyInit, { headers });

@@ -17,7 +17,7 @@
  */
 
 import tailwindPlugin from "bun-plugin-tailwind";
-import { chmod, rm } from "node:fs/promises";
+import { chmod, readdir, rm } from "node:fs/promises";
 
 const join = (...segments: string[]): string => segments.join("/");
 
@@ -65,6 +65,15 @@ for (const log of frontendResult.logs) {
 }
 if (!frontendResult.success) {
   process.exit(1);
+}
+
+// Precompress scripts and styles. The server sends the .gz copy to clients
+// that accept gzip, which is about a third of the size.
+for (const name of await readdir(publicDir)) {
+  if (name.endsWith(".js") || name.endsWith(".css")) {
+    const file = join(publicDir, name);
+    await Bun.write(`${file}.gz`, Bun.gzipSync(await Bun.file(file).bytes(), { level: 9 }));
+  }
 }
 
 // Step 2: Icon packs (combined into a single text file for /api/icons endpoint)

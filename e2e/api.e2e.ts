@@ -56,6 +56,20 @@ test.describe("api", () => {
     }
   });
 
+  test("scripts are served gzip-compressed to clients that accept it", async ({ request }) => {
+    const index = await request.get("/");
+    const html = await index.text();
+    const script = /<script type="module"[^>]*src="\.\/(?<src>[^"]+)"/u.exec(html)?.groups?.src;
+    expect(script).toBeDefined();
+
+    const gzipped = await request.get(`/${String(script)}`, {
+      headers: { "Accept-Encoding": "gzip" },
+    });
+    expect(gzipped.status()).toBe(200);
+    expect(gzipped.headers()["content-encoding"]).toBe("gzip");
+    expect(gzipped.headers().vary).toBe("Accept-Encoding");
+  });
+
   // Regression: these endpoints once reused a single Response object, so the
   // second request crashed the whole server.
   test("emoji and icon data can be fetched repeatedly", async ({ request }) => {
