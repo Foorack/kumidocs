@@ -71,6 +71,7 @@ type WsServerMessage =
       changedByName: string;
     }
   | { type: "page_deleted"; pageId: string }
+  | { type: "page_moved"; from: string; to: string }
   | { type: "page_created"; pageId: string; path: string }
   | { type: "save_conflict_lost"; pageId: string; message: string }
   | { type: "heartbeat_ack" }

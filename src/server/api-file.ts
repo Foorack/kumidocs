@@ -4,6 +4,7 @@ import {
   broadcastPageChanged,
   broadcastPageCreated,
   broadcastPageDeleted,
+  broadcastPageMoved,
   broadcastSyncStatus,
   getEditorForPage,
   getSyncStatus,
@@ -12,6 +13,7 @@ import {
   deleteFileFromRepo,
   getAllPaths,
   getFile,
+  markWritten,
   moveInCache,
   writeFileToRepo,
 } from "./filestore";
@@ -277,6 +279,12 @@ async function apiFileRename(req: Request, user: User, config: Config): Promise<
     relFrom: string;
     relTo: string;
   }
+  // Mark both ends of every move as our own, so the file watcher does not
+  // report the old path as deleted and the new one as changed on disk.
+  for (const op of renameOps) {
+    markWritten(op.relFrom);
+    markWritten(op.relTo);
+  }
   const renameResults = await Promise.allSettled(
     renameOps.map(async (op) => {
       await mkdir(path.dirname(path.join(config.repoPath, op.relTo)), { recursive: true });
@@ -309,9 +317,6 @@ async function apiFileRename(req: Request, user: User, config: Config): Promise<
     updateInIndex(op.relTo);
   }
 
-  const movedPaths = renameOps.map((op) => op.relFrom);
-  const newPaths = renameOps.map((op) => op.relTo);
-
   const msg = `docs: rename ${from} -> ${to} by ${user.displayName}`;
   const extraMoves = subFiles.map((subFile) => ({
     from: subFile,
@@ -328,11 +333,9 @@ async function apiFileRename(req: Request, user: User, config: Config): Promise<
   );
 
   // Broadcast regardless of push status; files are safely on disk and in cache.
-  for (const old of movedPaths) {
-    broadcastPageDeleted(old);
-  }
-  for (const newPath of newPaths) {
-    broadcastPageCreated(newPath, newPath);
+  // A move is not a delete: anyone viewing the old path follows the page.
+  for (const op of renameOps) {
+    broadcastPageMoved(op.relFrom, op.relTo);
   }
 
   if (moveResult.error === "push_failed") {

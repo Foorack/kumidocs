@@ -169,7 +169,10 @@ async function processFileChange(relPath: string): Promise<void> {
   } else {
     removeFromCache(relPath);
     removeFromIndex(relPath);
-    broadcastPageDeleted(relPath);
+    // Deletes and moves made by this server were already broadcast
+    if (!consumeWritten(relPath)) {
+      broadcastPageDeleted(relPath);
+    }
   }
 }
 

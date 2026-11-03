@@ -66,6 +66,10 @@ export default function usePagePresence(
         toast.info(`Page updated by ${msg.changedByName}`);
       }
     }
+    if (msg.type === "page_moved" && msg.from === filePath) {
+      toast.info(`Page moved to ${msg.to}`);
+      void navigate(`/p/${msg.to}`, { replace: true });
+    }
     if (msg.type === "page_deleted" && msg.pageId === filePath) {
       toast.warning("This page was deleted");
       void navigate("/p/README.md");

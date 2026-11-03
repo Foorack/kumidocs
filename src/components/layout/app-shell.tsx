@@ -125,7 +125,12 @@ export default function AppShell(): JSX.Element {
     if (msg.type === "sync_status") {
       setSyncStatus(msg);
     }
-    if (msg.type === "page_created" || msg.type === "page_changed" || msg.type === "page_deleted") {
+    if (
+      msg.type === "page_created" ||
+      msg.type === "page_changed" ||
+      msg.type === "page_deleted" ||
+      msg.type === "page_moved"
+    ) {
       scheduleTreeReload();
     }
     if (msg.type === "config_changed") {

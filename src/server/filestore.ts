@@ -145,6 +145,7 @@ async function writeFileToRepo(filePath: string, content: string, config: Config
 }
 
 async function deleteFileFromRepo(filePath: string, config: Config): Promise<void> {
+  markWritten(filePath); // the caller broadcasts the delete; the watcher must not repeat it
   const fullPath = path.join(config.repoPath, filePath);
   await unlink(fullPath);
   fileCache.delete(filePath);

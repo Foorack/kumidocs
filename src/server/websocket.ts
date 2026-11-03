@@ -319,6 +319,14 @@ function broadcastPageDeleted(pageId: string): void {
   }
 }
 
+/** A page was renamed or moved. Clients viewing `from` follow it to `to`. */
+function broadcastPageMoved(from: string, to: string): void {
+  const msg: WsServerMessage = { from, to, type: "page_moved" };
+  for (const ws of sessions.values()) {
+    send(ws, msg);
+  }
+}
+
 function broadcastPageCreated(pageId: string, path: string): void {
   const msg: WsServerMessage = { pageId, path, type: "page_created" };
   for (const ws of sessions.values()) {
@@ -363,6 +371,7 @@ export {
   broadcastPageChanged,
   broadcastPageDeleted,
   broadcastPageCreated,
+  broadcastPageMoved,
   broadcastSyncStatus,
   getSyncStatus,
   getEditorForPage,

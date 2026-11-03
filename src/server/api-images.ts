@@ -1,5 +1,5 @@
 import { IMAGE_TYPES, MAGIC_BYTES } from "@/lib/filetypes";
-import { addToCache, deleteFileFromRepo, getAllPaths, getFile } from "./filestore";
+import { addToCache, deleteFileFromRepo, getAllPaths, getFile, markWritten } from "./filestore";
 import { gitRemoveAndCommit, gitStageAndCommit } from "./git";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -72,6 +72,7 @@ async function apiUploadImage(req: Request, user: User, config: Config): Promise
   const fullPath = path.join(config.repoPath, repoPath);
 
   await mkdir(path.join(config.repoPath, "images"), { recursive: true });
+  markWritten(repoPath); // our own write: no "changed on disk" broadcast
   await writeFileBytes(fullPath, bytes);
   addToCache(repoPath, "");
 
