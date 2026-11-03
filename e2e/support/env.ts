@@ -13,8 +13,20 @@ const REMOTE_DIR = path.join(FIXTURE_DIR, "remote.git");
 
 const AUTH_HEADER = "X-Auth-Request-User";
 const EDITOR = "editor@example.com";
+const SECOND_EDITOR = "second-editor@example.com";
 const VIEWER = "viewer@example.com";
 
 const asUser = (email: string): Record<string, string> => ({ [AUTH_HEADER]: email });
 
-export { AUTH_HEADER, BASE_URL, EDITOR, FIXTURE_DIR, PORT, REMOTE_DIR, REPO_DIR, VIEWER, asUser };
+export {
+  AUTH_HEADER,
+  BASE_URL,
+  EDITOR,
+  FIXTURE_DIR,
+  PORT,
+  REMOTE_DIR,
+  REPO_DIR,
+  SECOND_EDITOR,
+  VIEWER,
+  asUser,
+};

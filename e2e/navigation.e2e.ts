@@ -62,6 +62,8 @@ test.describe("navigation", () => {
   // Regression: build output directories (like the old public/icons/) shadowed
   // these routes and made the server answer 500.
   test("every app route loads directly", async ({ page }) => {
+    // Includes the icon galleries, which are heavy under parallel load.
+    test.slow();
     for (const route of ["/i", "/emoji", "/icons", "/fluenticons", "/s", "/p", "/welcome"]) {
       const res = await page.goto(route);
       expect(res?.status(), route).toBe(200);

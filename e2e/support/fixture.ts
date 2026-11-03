@@ -8,7 +8,7 @@
  */
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { EDITOR, FIXTURE_DIR, REMOTE_DIR, REPO_DIR } from "./env";
+import { EDITOR, FIXTURE_DIR, REMOTE_DIR, REPO_DIR, SECOND_EDITOR } from "./env";
 
 // 1x1 transparent PNG
 const PIXEL_PNG = Buffer.from(
@@ -18,7 +18,7 @@ const PIXEL_PNG = Buffer.from(
 
 const FILES: Record<string, string | Buffer> = {
   ".kumidocs.json": `${JSON.stringify(
-    { editors: [EDITOR], instanceName: "E2E Docs", sidebarDefaultDepth: 1 },
+    { editors: [EDITOR, SECOND_EDITOR], instanceName: "E2E Docs", sidebarDefaultDepth: 1 },
     undefined,
     2,
   )}\n`,

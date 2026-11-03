@@ -126,7 +126,8 @@ test.describe("rendering", () => {
     await page.goto("/i");
     const main = page.getByRole("main");
     await expect(main.getByRole("heading", { name: "Image Library" })).toBeVisible();
-    await expect(main.getByText("1 image")).toBeVisible();
+    // Other tests upload images, so check for the fixture image, not a count.
+    await expect(main.getByText(/^\d+ images?$/u)).toBeVisible();
     await expect(main.getByRole("img", { name: "logo.png" })).toBeVisible();
   });
 });

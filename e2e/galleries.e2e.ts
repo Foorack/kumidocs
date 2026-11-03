@@ -1,6 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("icon galleries", () => {
+  // Thousands of SVGs: give these pages room when workers run in parallel.
+  test.slow();
+
   for (const { path, heading, min } of [
     { heading: "Icons", min: 1000, path: "/icons" },
     { heading: "Emoji", min: 1000, path: "/emoji" },
