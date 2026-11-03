@@ -259,29 +259,27 @@ function FilePageHeader({
           />
         )}
 
-        {/* Advanced / dangerous actions only */}
-        {user?.canEdit === true && (
-          <HeaderMenu>
-            <PageMenuItems
-              variant="dropdown"
-              href={`/p/${rawPath}`}
-              path={filePath}
-              displayTitle={title}
-              canEdit={user.canEdit}
-              onDuplicate={handlePageDuplicate}
-              onCopyHtml={onCopyHtml}
-              onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
-              onMove={async (movePath) => {
-                try {
-                  await openMove(movePath);
-                } catch (error: unknown) {
-                  console.error("Failed to open move dialog:", error);
-                }
-              }}
-              onDelete={openDelete}
-            />
-          </HeaderMenu>
-        )}
+        {/* PageMenuItems hides create, move and delete from users who cannot edit */}
+        <HeaderMenu>
+          <PageMenuItems
+            variant="dropdown"
+            href={`/p/${rawPath}`}
+            path={filePath}
+            displayTitle={title}
+            canEdit={user?.canEdit === true}
+            onDuplicate={handlePageDuplicate}
+            onCopyHtml={onCopyHtml}
+            onExportPdf={fileType === "doc" && !editMode ? exportPagePdf : undefined}
+            onMove={async (movePath) => {
+              try {
+                await openMove(movePath);
+              } catch (error: unknown) {
+                console.error("Failed to open move dialog:", error);
+              }
+            }}
+            onDelete={openDelete}
+          />
+        </HeaderMenu>
       </div>
     </div>
   );
