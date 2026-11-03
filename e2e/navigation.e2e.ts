@@ -59,6 +59,16 @@ test.describe("navigation", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Guide" }).first()).toBeVisible();
   });
 
+  // Regression: build output directories (like the old public/icons/) shadowed
+  // these routes and made the server answer 500.
+  test("every app route loads directly", async ({ page }) => {
+    for (const route of ["/i", "/emoji", "/icons", "/fluenticons", "/s", "/p", "/welcome"]) {
+      const res = await page.goto(route);
+      expect(res?.status(), route).toBe(200);
+      await expect(page.getByRole("banner"), route).toBeVisible();
+    }
+  });
+
   test("an unknown page shows not found with links to existing pages", async ({ page }) => {
     await page.goto("/p/does-not-exist");
     const main = page.getByRole("main");

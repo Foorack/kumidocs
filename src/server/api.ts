@@ -81,7 +81,7 @@ const iconPackEndpoints = new Map(
   ICON_PACKS.map((name) => [
     name,
     createGzipEndpoint(
-      path.join(publicDir, "icons", `${name}.json`),
+      path.join(publicDir, "icon-packs", `${name}.json`),
       `icon pack ${name}`,
       "application/json",
     ),

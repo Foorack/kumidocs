@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -42,10 +42,11 @@ async function getFileSize(filePath: string): Promise<number> {
 }
 
 /** Check whether a file exists. */
+/** True if `filePath` is a regular file. Directories count as missing. */
 async function doesFileExist(filePath: string): Promise<boolean> {
   try {
-    await access(filePath);
-    return true;
+    const info = await stat(filePath);
+    return info.isFile();
   } catch {
     return false;
   }

@@ -82,7 +82,7 @@ console.log("  [2/3] Icon packs…");
 const iconPacks = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
 for (const name of iconPacks) {
   const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
-  await Bun.write(join(publicDir, "icons", `${name}.json`), Bun.file(src));
+  await Bun.write(join(publicDir, "icon-packs", `${name}.json`), Bun.file(src));
 }
 
 // Favicon
