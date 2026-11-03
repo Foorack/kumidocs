@@ -50,6 +50,10 @@ const frontendResult = await Bun.build({
   minify: true,
   outdir: publicDir,
   plugins: [tailwindPlugin],
+  // Emit dynamic import() targets as separate chunks. Without this every
+  // Shiki language grammar and Mermaid diagram type is inlined into the
+  // entry chunk, which made it about 16 MB.
+  splitting: true,
 });
 
 for (const log of frontendResult.logs) {
