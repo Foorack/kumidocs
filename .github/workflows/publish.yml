@@ -5,15 +5,24 @@ on:
         branches: [main]
     workflow_dispatch:
 
-# Minimal permissions: id-token is the only addition required for OIDC.
 permissions:
     contents: read
-    id-token: write
 
 jobs:
+    # Lint, typecheck, unit and end-to-end tests. Nothing is published
+    # unless this passes.
+    checks:
+        uses: ./.github/workflows/ci.yml
+
     publish:
+        needs: checks
         runs-on: ubuntu-latest
         environment: npm
+        # Minimal permissions: id-token is the only addition required for OIDC.
+        # Scoped to this job so the checks job never gets it.
+        permissions:
+            contents: read
+            id-token: write
         env:
             FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -29,7 +38,7 @@ jobs:
 
             - uses: oven-sh/setup-bun@v2
               with:
-                  bun-version: latest
+                  bun-version-file: .bun-version
 
             # Stamp the datebased version into package.json.
             # Format: 0.YYYYMMDD.<run-number>  (e.g. 0.20260313.42)

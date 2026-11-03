@@ -450,3 +450,4 @@ styles/globals.css
 
 - **Unit**: `bun test`, files in `tests/` (`*.test.ts`).
 - **End-to-end**: Playwright, Chromium only, files in `e2e/` (`*.e2e.ts`). `bun run test:e2e` builds the app and starts `e2e/support/server.ts`, which creates a fresh fixture repo with a bare local remote, then runs `dist/index.js` against it on port 5870. Users are simulated with the `X-Auth-Request-User` header: `editor@example.com` is the only editor, `viewer@example.com` is read-only. Specs verify writes against the remote's git history, not only the UI.
+- **CI**: `.github/workflows/ci.yml` runs all checks and both test suites on pull requests. `publish.yml` runs it first on every push to `main` and publishes to npm only if it passes. Bun is pinned in `.bun-version`.

@@ -36,6 +36,7 @@
 		"start": "NODE_ENV=production bun src/index.ts",
 		"lint": "oxlint src/ e2e/ playwright.config.ts",
 		"format": "oxfmt src/ e2e/ playwright.config.ts",
+		"format:check": "oxfmt --check src/ e2e/ playwright.config.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test",
 		"test:e2e": "playwright test"

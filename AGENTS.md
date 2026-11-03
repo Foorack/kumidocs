@@ -119,6 +119,7 @@ bun run build         # Production build
 bun run start         # Run production build
 bun run lint          # oxlint
 bun run format        # oxfmt
+bun run format:check  # oxfmt, fail on unformatted files (used in CI)
 bun run typecheck     # tsc --noEmit (TypeScript 7 native compiler, no emit)
 bun test              # Unit tests
 bun run test:e2e      # Playwright end-to-end tests (builds first)
@@ -141,6 +142,16 @@ First time on a machine: `bunx playwright install chromium`.
 - Select elements by role and accessible name. If an element has no name, give
   it one in the app (`aria-label`) rather than reaching for CSS selectors.
 - Specs are named `*.e2e.ts` so `bun test` does not pick them up.
+
+### CI
+
+`.github/workflows/ci.yml` runs lint, format check, typecheck, unit tests, build
+and the e2e suite on every pull request. `publish.yml` calls the same workflow on
+every push to `main` and only publishes to npm if it passes. On failure, the
+Playwright report and traces are uploaded as a build artifact.
+
+The Bun version is pinned in `.bun-version`, which CI reads. Bump it there, not in
+the workflows.
 
 ### Startup Flow
 
