@@ -194,17 +194,18 @@ function PageNodeRow({
     setOpen((prev) => !prev);
   };
 
-  const chevron = (
-    <span
-      className={cn(
-        "shrink-0 w-3 h-3 flex items-center justify-center",
-        hasChildren ? "cursor-pointer" : "pointer-events-none opacity-0",
-      )}
-      onClick={hasChildren ? toggleOpen : undefined}
+  const chevron = hasChildren ? (
+    <button
+      type="button"
+      className="shrink-0 w-3 h-3 flex items-center justify-center cursor-pointer"
+      onClick={toggleOpen}
+      aria-label={`${open ? "Collapse" : "Expand"} ${node.displayTitle}`}
+      aria-expanded={open}
     >
-      {hasChildren && open && <ChevronDown className="w-3 h-3" />}
-      {hasChildren && !open && <ChevronRight className="w-3 h-3" />}
-    </span>
+      {open ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+    </button>
+  ) : (
+    <span className="shrink-0 w-3 h-3" />
   );
 
   return (
@@ -247,6 +248,8 @@ function PageNodeRow({
             <DropdownMenu onOpenChange={setDotsOpen}>
               <DropdownMenuTrigger asChild>
                 <button
+                  type="button"
+                  aria-label={`Actions for ${node.displayTitle}`}
                   className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-accent text-current transition-opacity"
                   onClick={(ev) => {
                     ev.stopPropagation();

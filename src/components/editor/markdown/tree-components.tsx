@@ -39,6 +39,8 @@ function PageTreeItem({
           <button
             type="button"
             className="flex items-center justify-center w-4 h-4 p-0 shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label={open ? "Collapse" : "Expand"}
+            aria-expanded={open}
             onClick={() => {
               setOpen(!open);
             }}

@@ -39,6 +39,7 @@ export default function Sidebar({
 }: SidebarProps): JSX.Element {
   const pages = useMemo(() => buildPageTree(tree), [tree]);
   const { user: currentUser, sidebarDefaultDepth } = useUser();
+  const canEdit = currentUser?.canEdit === true;
   const navigate = useNavigate();
   const { openMove, openDelete, dialogs: pageActionDialogs } = usePageActions(reloadTree);
 
@@ -109,8 +110,12 @@ export default function Sidebar({
               {pages.length === 0 ? (
                 <div className="px-3 py-4 text-xs text-foreground text-center">
                   No pages yet.
-                  <br />
-                  Create your first page below.
+                  {canEdit && (
+                    <>
+                      <br />
+                      Create your first page below.
+                    </>
+                  )}
                 </div>
               ) : (
                 pages.map((node) => (
@@ -129,27 +134,31 @@ export default function Sidebar({
               )}
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem onClick={onNewPage}>
-              <Plus className="mr-2 w-4 h-4" />
-              Create page
-            </ContextMenuItem>
-          </ContextMenuContent>
+          {canEdit && (
+            <ContextMenuContent>
+              <ContextMenuItem onClick={onNewPage}>
+                <Plus className="mr-2 w-4 h-4" />
+                Create page
+              </ContextMenuItem>
+            </ContextMenuContent>
+          )}
         </ContextMenu>
 
-        <div className="p-2 border-t border-border shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-1.5 hover:text-foreground h-7"
-            onClick={() => {
-              onNewPage();
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New page
-          </Button>
-        </div>
+        {canEdit && (
+          <div className="p-2 border-t border-border shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-1.5 hover:text-foreground h-7"
+              onClick={() => {
+                onNewPage();
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New page
+            </Button>
+          </div>
+        )}
       </aside>
 
       {pageActionDialogs}

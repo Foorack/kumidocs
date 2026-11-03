@@ -17,7 +17,7 @@ function HeaderMenu({ children, align = "end" }: HeaderMenuProps): JSX.Element {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" variant="ghost" className="h-7 w-7">
+        <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="More actions">
           <MoreHorizontal className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>
