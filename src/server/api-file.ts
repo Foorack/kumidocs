@@ -18,63 +18,9 @@ import {
 import { getHeadSha, gitMoveAndCommit, gitRemoveAndCommit, gitStageAndCommit } from "./git";
 import { mkdir, rename } from "node:fs/promises";
 import { removeFromIndex, updateInIndex } from "./search";
-import { load as parseYaml, dump as stringifyYaml } from "js-yaml";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
-
-/**
- * Check if a file path is a ticket YAML (e.g. "boardName/42.yaml").
- * Ticket YAMLs live in a subdirectory and have a numeric filename.
- */
-const TICKET_YAML_RE = /^.+\/\d+\.yaml$/u;
-
-/** Inject or update createdAt / updatedAt timestamps in a ticket YAML string. */
-function injectTicketTimestamps(content: string, filePath: string, now: string): string {
-  if (!TICKET_YAML_RE.test(filePath)) {
-    return content;
-  }
-
-  // Parse with js-yaml to avoid fragile regex manipulation.
-  let data: unknown;
-  try {
-    data = parseYaml(content);
-  } catch {
-    return content;
-  }
-  if (typeof data !== "object" || data === null) {
-    return content;
-  }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const obj = data as Record<string, unknown>;
-
-  // If updatedAt is already present in the client-provided content, preserve it
-  // (e.g. bookmark-only saves should not bump the timestamp).
-  if (obj.updatedAt !== undefined && obj.updatedAt !== "") {
-    // Still ensure createdAt exists
-    if (obj.createdAt === undefined || obj.createdAt === "") {
-      obj.createdAt = now;
-    }
-    return stringifyYaml(obj, {
-      forceQuotes: false,
-      lineWidth: -1,
-      noRefs: true,
-      sortKeys: true,
-    });
-  }
-
-  obj.updatedAt = now;
-  if (obj.createdAt === undefined || obj.createdAt === "") {
-    obj.createdAt = now;
-  }
-
-  return stringifyYaml(obj, {
-    forceQuotes: false,
-    lineWidth: -1,
-    noRefs: true,
-    sortKeys: true,
-  });
-}
 
 /**
  * After a git push result, broadcast the appropriate sync status:
@@ -158,9 +104,7 @@ async function apiFilePut(url: URL, req: Request, user: User, config: Config): P
     return Response.json({ error: "Content too large (max 200 KB)" }, { status: 413 });
   }
 
-  // Inject timestamps into ticket YAML files (server-side time avoids clock skew)
-  const tsContent = injectTicketTimestamps(content, filePath, new Date().toISOString());
-  await writeFileToRepo(filePath, tsContent, config);
+  await writeFileToRepo(filePath, content, config);
   updateInIndex(filePath);
 
   const msg = `docs(${filePath}): save by ${user.displayName}`;
@@ -219,9 +163,7 @@ async function apiFileCreate(req: Request, user: User, config: Config): Promise<
     return Response.json({ error: "File already exists" }, { status: 409 });
   }
 
-  // Inject timestamps into ticket YAML files (server-side time avoids clock skew)
-  const tsContent = injectTicketTimestamps(content, filePath, new Date().toISOString());
-  await writeFileToRepo(filePath, tsContent, config);
+  await writeFileToRepo(filePath, content, config);
   updateInIndex(filePath);
 
   const msg = `docs(${filePath}): create by ${user.displayName}`;

@@ -12,7 +12,7 @@ interface HeaderMenuProps {
   align?: "start" | "end";
 }
 
-/** Shared hamburger menu trigger for page/board headers. */
+/** Hamburger menu trigger for page headers. Menu items are passed as children. */
 function HeaderMenu({ children, align = "end" }: HeaderMenuProps): JSX.Element {
   return (
     <DropdownMenu>

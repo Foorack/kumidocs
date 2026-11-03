@@ -285,18 +285,6 @@
   line-height: normal;
 }
 
-/* -- Tickets ----------------------------------------------------------------
-   --------------------------------------------------------------------------- */
-
-/* Apply Gold background to golden kanban cards and dialog bodies. */
-.ticket-golden,
-.ticket-golden-body {
-  background-image: radial-gradient(
-    oklch(79.5% 0.184 86.047 / 0.3),
-    oklch(79.5% 0.184 86.047 / 0.8)
-  );
-}
-
 /* -- Slide presentation -------------------------------------------------------
    Slide canvases are fixed 960x540 px boxes scaled to fit the viewer container.
    Themes control bg/fg via --slide-bg / --slide-fg CSS custom properties.

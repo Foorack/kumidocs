@@ -11,7 +11,6 @@ const HTTP_UNAUTHORIZED = 401;
 interface UserContextValue {
   user?: User;
   loading: boolean;
-  mode: "docs" | "board";
   needsEmailSetup: boolean;
   sidebarDefaultDepth: number;
   slideThemes: SlideThemeMap;
@@ -29,7 +28,6 @@ const UserContext = createContext<UserContextValue>({
   headSha: "",
   instanceName: "KumiDocs",
   loading: true,
-  mode: "docs",
   needsEmailSetup: false,
   pageTemplates: {},
   refreshUser: async () => {
@@ -45,7 +43,6 @@ const UserContext = createContext<UserContextValue>({
 
 interface FetchMeResult {
   user?: User;
-  mode: "docs" | "board";
   sidebarDefaultDepth: number;
   slideThemes: SlideThemeMap;
   pageTemplates: PageTemplateMap;
@@ -65,7 +62,6 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       name,
       displayName,
       canEdit,
-      mode,
       slideThemes: themeData,
       pageTemplates: pageData,
       sidebarDefaultDepth,
@@ -78,8 +74,7 @@ const fetchMe = async (): Promise<FetchMeResult> => {
     return {
       autoSaveDelay: rawDelay !== undefined && rawDelay !== 0 ? rawDelay : 5000,
       headSha: rawSha ?? "",
-      instanceName: rawName ?? (mode === "board" ? "KumiBoard" : "KumiDocs"),
-      mode: mode === "board" ? "board" : "docs",
+      instanceName: rawName ?? "KumiDocs",
       needs401: false,
       pageTemplates: pageData ?? {},
       repoUrl: rawRepoUrl,
@@ -93,7 +88,6 @@ const fetchMe = async (): Promise<FetchMeResult> => {
       autoSaveDelay: 5000,
       headSha: "",
       instanceName: "KumiDocs",
-      mode: "docs",
       needs401,
       pageTemplates: {},
       repoUrl: undefined,
@@ -115,7 +109,6 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
   const [autoSaveDelay, setAutoSaveDelay] = useState(5000);
   const [headSha, setHeadSha] = useState("");
   const [repoUrl, setRepoUrl] = useState<string | undefined>();
-  const [mode, setMode] = useState<"docs" | "board">("docs");
 
   useMountEffect(() => {
     void (async (): Promise<void> => {
@@ -130,7 +123,6 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
         setAutoSaveDelay(result.autoSaveDelay);
         setHeadSha(result.headSha);
         setRepoUrl(result.repoUrl);
-        setMode(result.mode);
         setLoading(false);
       } catch {
         setLoading(false);
@@ -150,7 +142,6 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
       setAutoSaveDelay(result.autoSaveDelay);
       setHeadSha(result.headSha);
       setRepoUrl(result.repoUrl);
-      setMode(result.mode);
     } catch {
       // keep current state
     }
@@ -194,7 +185,6 @@ const UserProvider = (allProps: { children: ReactNode }): JSX.Element => {
         headSha,
         instanceName,
         loading,
-        mode,
         needsEmailSetup,
         pageTemplates,
         refreshUser,

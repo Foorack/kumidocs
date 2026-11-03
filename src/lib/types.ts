@@ -9,27 +9,14 @@ interface User {
 type MarkdownType = "doc" | "slide" | "page" | "sheet";
 type FileType =
   | MarkdownType
-  | "activity"
-  | "approval"
   | "archive"
-  | "board"
-  | "bookmark"
   | "code"
-  | "edit"
-  | "golden"
-  | "home"
   | "image"
   | "kumidraw"
   | "mermaid"
   | "other"
   | "pageinfo"
-  | "status"
-  | "toc"
-  | "ticket"
-  | "approve"
-  | "reject"
-  | "outdated"
-  | "version";
+  | "toc";
 
 interface FileEntry {
   path: string;
@@ -53,9 +40,6 @@ interface SearchResult {
   type?: FileType;
   snippet: string;
   score: number;
-  /** Set for ticket results -- navigates to /b/:slug/:ticketId instead of /p/path. */
-  boardSlug?: string;
-  ticketId?: string;
 }
 
 interface PresenceUser {

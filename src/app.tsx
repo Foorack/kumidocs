@@ -1,9 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AppShell from "@/components/layout/app-shell";
-import BoardDetailPage from "@/pages/board-detail/page";
-import BoardListPage from "@/pages/board-list/page";
-import BoardManagerPage from "@/pages/board-manager/page";
-import BoardPage from "@/pages/board/page";
 import EmojiPage from "@/pages/emoji/page";
 import ErrorBoundary from "@/components/ui/error-boundary";
 import FilePageRoute from "@/pages/file-page/route";
@@ -18,7 +14,7 @@ import WelcomePage from "@/pages/welcome/page";
 import { useUser } from "@/store/user";
 
 function AppRoutes(): JSX.Element {
-  const { mode, loading } = useUser();
+  const { loading } = useUser();
 
   if (loading) {
     return (
@@ -30,17 +26,10 @@ function AppRoutes(): JSX.Element {
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<Navigate to={mode === "board" ? "/b/" : "/p/README.md"} replace />}
-      />
+      <Route path="/" element={<Navigate to="/p/README.md" replace />} />
       <Route element={<AppShell />}>
         <Route path="/p" element={<PageThemesPage />} />
         <Route path="/p/*" element={<FilePageRoute />} />
-        <Route path="/b" element={<BoardListPage />} />
-        <Route path="/bm" element={<BoardManagerPage />} />
-        <Route path="/bm/:name" element={<BoardDetailPage />} />
-        <Route path="/b/:name/*" element={<BoardPage />} />
         <Route path="/i" element={<ImageLibraryPage />} />
         <Route path="/i/:filename" element={<ImageLibraryPage />} />
         <Route path="/emoji" element={<EmojiPage />} />

@@ -70,9 +70,8 @@ for (const name of iconPacks) {
 }
 await Bun.write(join(publicDir, "icons.txt"), iconLines.join("\n"));
 
-// Mode icons (board / docs favicon)
-await Bun.write(join(publicDir, "icon.board.png"), Bun.file(join(root, "src/icon.board.png")));
-await Bun.write(join(publicDir, "icon.docs.png"), Bun.file(join(root, "src/icon.docs.png")));
+// Favicon
+await Bun.write(join(publicDir, "icon.png"), Bun.file(join(root, "src/icon.png")));
 
 // Emoji data (text file, served gzipped via /api/emojis endpoint)
 await Bun.write(

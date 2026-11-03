@@ -1,5 +1,4 @@
 import {
-  apiAllTickets,
   apiAvatarProxy,
   apiBacklinks,
   apiFileCreate,
@@ -152,16 +151,6 @@ async function buildRoutes(
       },
     },
 
-    "/api/boards/tickets": {
-      GET(req: Request) {
-        const user = requireUserOr(req);
-        if (user instanceof Response) {
-          return user;
-        }
-        return apiAllTickets(new URL(req.url));
-      },
-    },
-
     "/api/emojis": {
       GET() {
         return apiEmojis();
@@ -308,8 +297,7 @@ async function buildRoutes(
 
     "/favicon.ico": {
       async GET() {
-        const iconFile = config.board ? "icon.board.png" : "icon.docs.png";
-        const filePath = path.join(publicDir, iconFile);
+        const filePath = path.join(publicDir, "icon.png");
         return serveFileResponse(filePath, {
           "Cache-Control": "public, max-age=31536000, immutable",
         });

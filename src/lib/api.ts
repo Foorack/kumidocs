@@ -27,7 +27,6 @@ interface MeResponse {
   headSha?: string;
   instanceName?: string;
   repoUrl?: string;
-  mode?: "docs" | "board";
   autoSaveDelay?: number;
   sidebarDefaultDepth?: number;
   slideThemes?: SlideThemeMap;
@@ -122,23 +121,8 @@ const getMe = async (): Promise<MeResponse> => request<MeResponse>("/api/me");
 
 const getTree = async (): Promise<TreeNode[]> => request<TreeNode[]>("/api/tree");
 
-const searchPages = async (query: string, mode: string): Promise<SearchResult[]> =>
-  request<SearchResult[]>(
-    `/api/search?q=${encodeURIComponent(query)}&mode=${encodeURIComponent(mode)}`,
-  );
-
-interface BoardTicketData {
-  boardName: string;
-  boardPrefix: string;
-  boardSlug: string;
-  columns: { color: string; default?: boolean; final?: boolean; id: string }[];
-  tickets: Record<string, unknown>[];
-}
-
-const getAllTickets = async (boardSlug?: string): Promise<BoardTicketData[]> =>
-  request<BoardTicketData[]>(
-    `/api/boards/tickets${boardSlug === undefined ? "" : `?board=${encodeURIComponent(boardSlug)}`}`,
-  );
+const searchPages = async (query: string): Promise<SearchResult[]> =>
+  request<SearchResult[]>(`/api/search?q=${encodeURIComponent(query)}`);
 
 const getFile = async (path: string): Promise<FileGetResponse> =>
   request<FileGetResponse>(`/api/file?path=${encodeURIComponent(path)}`);
@@ -217,21 +201,13 @@ const duplicatePage = async (
   }
 };
 
-export type {
-  BoardTicketData,
-  DiffData,
-  FileGetResponse,
-  FileSaveResponse,
-  ImageEntry,
-  MeResponse,
-};
+export type { DiffData, FileGetResponse, FileSaveResponse, ImageEntry, MeResponse };
 export {
   ApiError,
   createFile,
   deleteFile,
   deleteImage,
   duplicatePage,
-  getAllTickets,
   getBacklinks,
   getFile,
   getFileDiff,

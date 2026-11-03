@@ -202,12 +202,12 @@ For most cases, prefer these alternatives in order:
 
 ### Shared UI Patterns
 
-Before adding a UI element to one view (doc mode, board mode, etc.), check if the same or a similar element already exists in another view. If it does, extract a shared component instead of duplicating the pattern inline. The same applies to menu items: when the user asks to change items in one mode's hamburger menu, they may want the same treatment in the other mode -- ask or just do it.
+Before adding a UI element to one view (doc page, slide deck, code file, etc.), check if the same or a similar element already exists in another view. If it does, extract a shared component instead of duplicating the pattern inline.
 
-Examples of shared patterns already extracted:
+Examples of shared components already extracted:
 
-- `PageHeaderButton` -- toggle button with icon + label, used in both doc and board headers
-- `HeaderMenu` -- hamburger dropdown trigger wrapper, used in both doc and board headers with different menu items passed as children
+- `PageHeaderButton` -- toggle button with icon + label, used in the file page header
+- `HeaderMenu` -- hamburger dropdown trigger wrapper, menu items passed as children
 
 ---
 
