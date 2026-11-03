@@ -60,11 +60,10 @@ function PageTreeItem({
           <span className="truncate">{node.displayTitle}</span>
         </Link>
       </div>
-      {shouldRenderChildren &&
-        open && (
-          // oxlint-disable-next-line no-use-before-define
-          <PageTreeView nodes={node.children} depth={depth + 1} maxDepth={maxDepth} />
-        )}
+      {shouldRenderChildren && open && (
+        // oxlint-disable-next-line no-use-before-define
+        <PageTreeView nodes={node.children} depth={depth + 1} maxDepth={maxDepth} />
+      )}
     </li>
   );
 }

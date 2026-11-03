@@ -177,20 +177,18 @@ const ThemesGrid = (allProps: ThemesGridProps): JSX.Element => {
     <div className="flex-1 overflow-y-auto p-6">
       <h2 className="text-xs font-bold text-foreground uppercase tracking-wider mb-4">Built-in</h2>
       <div className="grid gap-6 mb-8" style={colStyle}>
-        {BUILTIN_THEMES.map(
-          (theme): JSX.Element => (
-            <ThemeCard
-              key={theme.id}
-              id={theme.id}
-              name={theme.name}
-              description={theme.description}
-              slideThemes={slideThemes}
-              onClick={(): void => {
-                onSelect({ id: theme.id, name: theme.name });
-              }}
-            />
-          ),
-        )}
+        {BUILTIN_THEMES.map((theme): JSX.Element => (
+          <ThemeCard
+            key={theme.id}
+            id={theme.id}
+            name={theme.name}
+            description={theme.description}
+            slideThemes={slideThemes}
+            onClick={(): void => {
+              onSelect({ id: theme.id, name: theme.name });
+            }}
+          />
+        ))}
       </div>
       {customEntries.length > 0 && (
         <>
@@ -198,21 +196,19 @@ const ThemesGrid = (allProps: ThemesGridProps): JSX.Element => {
             Custom (.kumidocs.json)
           </h2>
           <div className="grid gap-6" style={colStyle}>
-            {customEntries.map(
-              ([id, def]): JSX.Element => (
-                <ThemeCard
-                  key={id}
-                  id={id}
-                  name={id}
-                  description={def.bg ?? "Custom theme"}
-                  custom={def}
-                  slideThemes={slideThemes}
-                  onClick={(): void => {
-                    onSelect({ custom: def, id, name: id });
-                  }}
-                />
-              ),
-            )}
+            {customEntries.map(([id, def]): JSX.Element => (
+              <ThemeCard
+                key={id}
+                id={id}
+                name={id}
+                description={def.bg ?? "Custom theme"}
+                custom={def}
+                slideThemes={slideThemes}
+                onClick={(): void => {
+                  onSelect({ custom: def, id, name: id });
+                }}
+              />
+            ))}
           </div>
         </>
       )}

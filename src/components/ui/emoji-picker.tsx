@@ -190,11 +190,9 @@ const EmojiGridInner = (allProps: EmojiGridProps): JSX.Element => {
         className="grid p-1.5 gap-0.5"
         style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))" }}
       >
-        {displayEmojis.map(
-          ({ native, name }): JSX.Element => (
-            <EmojiCell key={native} native={native} name={name} onSelect={onSelect} />
-          ),
-        )}
+        {displayEmojis.map(({ native, name }): JSX.Element => (
+          <EmojiCell key={native} native={native} name={name} onSelect={onSelect} />
+        ))}
       </div>
       {displayEmojis.length === 0 && (
         <p className="py-8 text-center text-xs text-muted-foreground">No results</p>

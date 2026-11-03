@@ -41,31 +41,25 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
       )}
       {activeResults.length > 0 && (
         <CommandGroup heading="Pages">
-          {activeResults.map(
-            (result): JSX.Element => (
-              <CommandItem
-                key={result.path}
-                value={result.path}
-                onSelect={(): void => {
-                  onSelect(result.path);
-                }}
-                className="gap-2"
-              >
-                <span className="shrink-0">
-                  <EmojiIcon
-                    emoji={result.emoji}
-                    fileType={result.type ?? "doc"}
-                    size={EMOJI_SIZE}
-                  />
-                </span>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-medium">{result.title}</span>
-                  <span className="truncate">{result.snippet}</span>
-                </div>
-                <span className="ml-auto shrink-0">{result.path}</span>
-              </CommandItem>
-            ),
-          )}
+          {activeResults.map((result): JSX.Element => (
+            <CommandItem
+              key={result.path}
+              value={result.path}
+              onSelect={(): void => {
+                onSelect(result.path);
+              }}
+              className="gap-2"
+            >
+              <span className="shrink-0">
+                <EmojiIcon emoji={result.emoji} fileType={result.type ?? "doc"} size={EMOJI_SIZE} />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium">{result.title}</span>
+                <span className="truncate">{result.snippet}</span>
+              </div>
+              <span className="ml-auto shrink-0">{result.path}</span>
+            </CommandItem>
+          ))}
         </CommandGroup>
       )}
     </CommandList>
