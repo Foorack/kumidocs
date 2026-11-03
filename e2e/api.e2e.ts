@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import search from "./support/search";
 
 test.describe("api", () => {
   test("/api/me describes the current user and instance", async ({ request }) => {
@@ -33,6 +34,22 @@ test.describe("api", () => {
     expect(res.status()).toBe(200);
     const results: unknown = await res.json();
     expect(results).toEqual([expect.objectContaining({ path: "notes.md", title: "Notes" })]);
+  });
+
+  test("search snippets are plain text, without Markdown syntax", async ({ request }) => {
+    const [hit] = await search(request, "pineapple");
+    expect(hit?.snippet).toContain("The word pineapple only appears on this page.");
+    for (const markup of ["```", "|", "![", "- [x]"]) {
+      expect(hit?.snippet).not.toContain(markup);
+    }
+  });
+
+  test("search finds words inside code blocks and snake_case identifiers", async ({ request }) => {
+    const codeHits = await search(request, "answer");
+    expect(codeHits.map((hit) => hit.path)).toContain("notes.md");
+
+    const [snakeHit] = await search(request, "cache_dir");
+    expect(snakeHit?.path).toBe("guide/setup.md");
   });
 
   test("unknown API paths return a JSON 404", async ({ request }) => {

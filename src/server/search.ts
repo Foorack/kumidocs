@@ -1,6 +1,7 @@
 import type { FileType, SearchResult } from "@/lib/types";
 import { getAllPaths, getFile, parseFileEntry } from "./filestore";
 import MiniSearch from "minisearch";
+import markdownToPlainText from "@/lib/markdown-text";
 import { parseFrontmatter } from "@/lib/frontmatter";
 
 interface DocEntry {
@@ -14,30 +15,24 @@ interface DocEntry {
 
 let docIndex: MiniSearch<DocEntry> | undefined;
 
+/** A page's visible text: frontmatter removed, Markdown markup stripped. */
+function plainTextOf(path: string): string {
+  let body = getFile(path) ?? "";
+  try {
+    body = parseFrontmatter(body).content;
+  } catch {
+    // keep raw content if frontmatter parse fails
+  }
+  return markdownToPlainText(body);
+}
+
 function buildDocs(paths: string[]): DocEntry[] {
   return paths
     .filter((filePath) => filePath.endsWith(".md") && !filePath.startsWith("."))
     .map((path) => {
       const { title, emoji, type } = parseFileEntry(path);
 
-      let body = getFile(path) ?? "";
-      try {
-        const parsed = parseFrontmatter(body);
-        body = parsed.content;
-      } catch {
-        // keep raw content if frontmatter parse fails
-      }
-
-      const stripped = body
-        .replaceAll(/```[\s\S]*?```/gu, " ")
-        .replaceAll(/`[^`]+`/gu, " ")
-        .replaceAll(/^#{1,6}\s+/gmu, "")
-        .replaceAll(/\[(?<text>[^\]]+)\]\([^)]+\)/gu, "$1")
-        .replaceAll(/[*_~>|]/gu, "")
-        .replaceAll(/\s+/gu, " ")
-        .trim();
-
-      return { content: stripped, emoji, id: path, path, title, type };
+      return { content: plainTextOf(path), emoji, id: path, path, title, type };
     });
 }
 
@@ -103,23 +98,18 @@ function removeFromIndex(path: string): void {
 }
 
 function buildSnippet(path: string, query: string): string {
-  const content = getFile(path) ?? "";
-  const body = content.replace(/^---[\s\S]*?---\r?\n/u, "");
+  const body = plainTextOf(path);
   const lowerBody = body.toLowerCase();
   const lowerQuery = query.toLowerCase();
   const idx = lowerBody.includes(lowerQuery)
     ? lowerBody.indexOf(lowerQuery)
     : lowerBody.indexOf((query.split(" ")[0] ?? "").toLowerCase());
   if (idx === -1) {
-    return `${body.replaceAll("\n", " ").slice(0, 140)}…`;
+    return body.length > 140 ? `${body.slice(0, 140)}…` : body;
   }
   const start = Math.max(0, idx - 60);
   const end = Math.min(body.length, idx + 120);
-  return (
-    (start > 0 ? "…" : "") +
-    body.slice(start, end).replaceAll("\n", " ") +
-    (end < body.length ? "…" : "")
-  );
+  return (start > 0 ? "…" : "") + body.slice(start, end) + (end < body.length ? "…" : "");
 }
 
 function searchDocs(query: string, limit: number): SearchResult[] {

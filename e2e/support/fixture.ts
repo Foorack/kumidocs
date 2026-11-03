@@ -81,7 +81,7 @@ Run the installer.
 
 ## Configure
 
-Edit the config file.
+Edit the config file and set the \`cache_dir\` option.
 `,
   "images/logo.png": PIXEL_PNG,
   "notes.md": `# Notes
