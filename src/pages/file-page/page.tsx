@@ -281,7 +281,7 @@ export default function FilePage(): JSX.Element {
               zIndex: -9999,
             }}
           >
-            <MarkdownViewer value={content} className="px-8 py-6" />
+            <MarkdownViewer value={resolvedContent} className="px-8 py-6" />
           </div>
         )}
 

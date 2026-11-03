@@ -16,7 +16,6 @@ import { toast } from "@/components/ui/toaster";
 import { useFilePageSave } from "./use-save";
 import useInfoPanel from "@/hooks/use-info-panel";
 import usePageActions from "@/hooks/use-page-actions";
-import { usePageContext } from "@/lib/page-context";
 import usePagePdfExport from "./use-pdf-export";
 import usePagePresence from "@/hooks/use-page-presence";
 import { useUser } from "@/store/user";
@@ -83,7 +82,7 @@ function useFilePage(): UseFilePageReturn {
   const { "*": rawPath = "" } = useParams();
   const [filePath, setFilePath] = useState(rawPath.includes(".") ? rawPath : `${rawPath}.md`);
   const navigate = useNavigate();
-  const { reloadTree, autoSaveDelay, instanceName } = useOutletContext<OutletCtx>();
+  const { reloadTree, autoSaveDelay, instanceName, tree } = useOutletContext<OutletCtx>();
   const { user, slideThemes, pageTemplates } = useUser();
 
   const [editMode, setEditMode] = useState(false);
@@ -136,7 +135,6 @@ function useFilePage(): UseFilePageReturn {
   }, [title, instanceName, loading]);
 
   const breadcrumb = filePath.replace(/\.md$/u, "").split("/").slice(0, -1);
-  const { tree } = usePageContext();
   const { exportPagePdf, pdfContentRef } = usePagePdfExport(title);
 
   // Wiki-link lookup: build from tree data (already fetched by AppShell)
