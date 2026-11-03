@@ -14,7 +14,7 @@ import {
   SmilePlus,
   Undo2,
 } from "lucide-react";
-import EmojiPicker from "@/components/ui/emoji-picker";
+import EmojiPicker from "@/components/ui/lazy-emoji-picker";
 import { Popover } from "radix-ui";
 import type { ChangeEvent, KeyboardEvent } from "react";
 

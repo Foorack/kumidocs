@@ -2,9 +2,8 @@ import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import { getBacklinks, getFileDiff, getFileHistory } from "@/lib/api";
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import type { BacklinkEntry, CommitEntry } from "@/lib/types";
-import CommitDiffDialog from "./commit-diff-dialog";
 import type { DiffData } from "@/lib/api";
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
@@ -12,6 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/ui/avatar";
 import { emailToDisplayName } from "@/lib/avatar";
 import useMountEffect from "@/hooks/use-mount-effect";
+
+// The diff viewer is only needed once someone opens a commit.
+const CommitDiffDialog = lazy(async () => import("./commit-diff-dialog"));
 
 interface PageInfoPanelProps {
   filePath: string;
@@ -234,12 +236,16 @@ export default function PageInfoPanel({
         </div>
       </ScrollArea>
 
-      <CommitDiffDialog
-        open={diffOpen}
-        onOpenChange={setDiffOpen}
-        diffData={diffData}
-        diffLoading={diffLoading}
-      />
+      {diffOpen && (
+        <Suspense fallback={undefined}>
+          <CommitDiffDialog
+            open={diffOpen}
+            onOpenChange={setDiffOpen}
+            diffData={diffData}
+            diffLoading={diffLoading}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

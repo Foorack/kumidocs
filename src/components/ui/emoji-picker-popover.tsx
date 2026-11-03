@@ -6,7 +6,7 @@
  */
 import { useCallback, useState } from "react";
 import { EmojiIcon } from "./emoji-icon";
-import EmojiPicker from "./emoji-picker";
+import EmojiPicker from "./lazy-emoji-picker";
 import type { FileType } from "@/lib/types";
 import { Popover } from "radix-ui";
 import cn from "@/lib/utils";

@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { HEADING_OPTIONS } from "./editor-utils";
-import EmojiPicker from "@/components/ui/emoji-picker";
+import EmojiPicker from "@/components/ui/lazy-emoji-picker";
 import MarkdownCheatsheet from "./cheatsheet";
 import { Popover } from "radix-ui";
 import type React from "react";
