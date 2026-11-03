@@ -43,6 +43,8 @@ function apiSearch(url: URL): Response {
 }
 
 // Helper: eagerly read + gzip a text file at module init, serve from cache.
+// Only the bytes are cached. A Response body can be read once, so each
+// request needs its own Response.
 function createGzipEndpoint(filePath: string, label: string): () => Response {
   let gzipped: Uint8Array;
   try {
@@ -54,15 +56,15 @@ function createGzipEndpoint(filePath: string, label: string): () => Response {
     console.error(`[kumidocs] Failed to load ${label} from ${filePath}`);
     gzipped = new Uint8Array(0);
   }
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  const resp = new Response(gzipped as unknown as BodyInit, {
-    headers: {
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Encoding": "gzip",
-      "Content-Type": "text/plain; charset=utf-8",
-    },
-  });
-  return (): Response => resp;
+  return (): Response =>
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    new Response(gzipped as unknown as BodyInit, {
+      headers: {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Encoding": "gzip",
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
 }
 
 // Detect bundled vs dev by checking whether dist/public exists next to us.

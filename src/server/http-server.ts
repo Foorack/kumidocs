@@ -15,7 +15,13 @@ import { WebSocketServer } from "ws";
 // ---------------------------------------------------------------------------
 
 /** Write a Web API Response to a Node ServerResponse. */
-function writeNodeResponse(nodeRes: ServerResponse, webRes: Response): void {
+/**
+ * Copy a Web API Response onto a Node ServerResponse. The body is read before
+ * anything is written, so a failure surfaces to the caller as a rejection
+ * (and becomes a 500) instead of an unhandled error that kills the process.
+ */
+async function writeNodeResponse(nodeRes: ServerResponse, webRes: Response): Promise<void> {
+  const buf = await webRes.arrayBuffer();
   nodeRes.statusCode = webRes.status;
   const headerKeys = webRes.headers.keys();
   for (const key of headerKeys) {
@@ -25,9 +31,7 @@ function writeNodeResponse(nodeRes: ServerResponse, webRes: Response): void {
       nodeRes.setHeader(key, value);
     }
   }
-  void webRes.arrayBuffer().then((buf: ArrayBuffer) => {
-    nodeRes.end(Buffer.from(buf));
-  });
+  nodeRes.end(Buffer.from(buf));
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +169,7 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
           const response = await (handler as (req: Request) => Response | Promise<Response>)(
             request,
           );
-          writeNodeResponse(nodeRes, response);
+          await writeNodeResponse(nodeRes, response);
           responded = true;
           break;
         }
@@ -181,7 +185,7 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
       }
 
       if (allowedMethods.size > 0) {
-        writeNodeResponse(
+        await writeNodeResponse(
           nodeRes,
           Response.json(
             { error: "Method not allowed" },
@@ -194,7 +198,7 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
       // Fall through to the fetch handler (SPA, WS upgrade detection, etc.)
       const response = await onRequest(request);
       if (response) {
-        writeNodeResponse(nodeRes, response);
+        await writeNodeResponse(nodeRes, response);
       } else {
         nodeRes.statusCode = 404;
         nodeRes.end("Not found");
