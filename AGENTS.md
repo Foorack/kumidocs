@@ -115,7 +115,7 @@ bun run build         # Production build
 bun run start         # Run production build
 bun run lint          # oxlint
 bun run format        # oxfmt
-bun run typecheck     # tsgo --noEmit (TypeScript check without emit)
+bun run typecheck     # tsc --noEmit (TypeScript 7 native compiler, no emit)
 docker compose up -d  # Full stack (dev mode, host networking)
 ```
 

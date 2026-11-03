@@ -1,4 +1,4 @@
-import type { CSSProperties, JSX } from "react";
+import type { JSX } from "react";
 import type { FileType } from "@/lib/types";
 import { EmojiIcon } from "@/components/ui/emoji-icon";
 import cn from "@/lib/utils";
@@ -36,11 +36,7 @@ function PageHeaderButton({
       <EmojiIcon
         fileType={fileType}
         size={18}
-        style={
-          grayscaleWhenInactive && !active
-            ? ({ filter: "grayscale(1)" } as CSSProperties)
-            : undefined
-        }
+        style={grayscaleWhenInactive && !active ? { filter: "grayscale(1)" } : undefined}
       />
       {label}
     </Button>

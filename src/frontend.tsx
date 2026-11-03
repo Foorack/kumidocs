@@ -40,6 +40,6 @@ if (import.meta.hot === undefined) {
 } else {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const data = import.meta.hot.data as HotData;
-  const root = (data.root ??= createRoot(elem));
-  root.render(app);
+  data.root ??= createRoot(elem);
+  data.root.render(app);
 }

@@ -35,11 +35,11 @@ const CreateSection = (allProps: CreateSectionProps): JSX.Element => {
   const { variant, path, parentDir, onNewSubPage, onNewPage, onDuplicate } = allProps;
   let Item: typeof DropdownMenuItem = DropdownMenuItem;
   if (variant !== "dropdown") {
-    Item = ContextMenuItem as typeof DropdownMenuItem;
+    Item = ContextMenuItem;
   }
   let Sep: typeof DropdownMenuSeparator = DropdownMenuSeparator;
   if (variant !== "dropdown") {
-    Sep = ContextMenuSeparator as typeof DropdownMenuSeparator;
+    Sep = ContextMenuSeparator;
   }
   return (
     <>
@@ -86,11 +86,11 @@ const DangerousSection = (allProps: DangerousSectionProps): JSX.Element => {
   const { variant, path, displayTitle, onMove, onDelete } = allProps;
   let Item: typeof DropdownMenuItem = DropdownMenuItem;
   if (variant !== "dropdown") {
-    Item = ContextMenuItem as typeof DropdownMenuItem;
+    Item = ContextMenuItem;
   }
   let Sep: typeof DropdownMenuSeparator = DropdownMenuSeparator;
   if (variant !== "dropdown") {
-    Sep = ContextMenuSeparator as typeof DropdownMenuSeparator;
+    Sep = ContextMenuSeparator;
   }
   return (
     <>
@@ -139,7 +139,7 @@ const PageMenuItems = (allProps: PageMenuItemsProps): JSX.Element => {
   } = allProps;
   let Item: typeof DropdownMenuItem = DropdownMenuItem;
   if (variant !== "dropdown") {
-    Item = ContextMenuItem as typeof DropdownMenuItem;
+    Item = ContextMenuItem;
   }
   const navigate = useNavigate();
 

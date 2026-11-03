@@ -126,8 +126,7 @@ function CodeViewer({ value, language }: { value: string; language: string }): J
     );
     // oxlint-disable-next-line typescript/no-unnecessary-condition
     if (synced && !cancelled) {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      setResult(synced as never);
+      setResult(synced);
     }
     return (): void => {
       cancelled = true;
