@@ -23,6 +23,17 @@ test.describe("rendering", () => {
       .toBeGreaterThan(0);
   });
 
+  test("inline code is shown without literal backticks", async ({ page }) => {
+    await page.goto("/p/guide/setup");
+    const code = page.getByRole("main").getByRole("code").filter({ hasText: "cache_dir" });
+    await expect(code).toBeVisible();
+    const pseudo = await code.evaluate((el) => [
+      getComputedStyle(el, "::before").content,
+      getComputedStyle(el, "::after").content,
+    ]);
+    expect(pseudo).toEqual(["none", "none"]);
+  });
+
   test("a slide deck renders every slide with page numbers", async ({ page }) => {
     await page.goto("/p/deck");
     const main = page.getByRole("main");

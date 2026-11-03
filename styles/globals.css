@@ -274,6 +274,13 @@
   font-weight: 700;
 }
 
+/* Typography plugin wraps inline code in literal backticks. The code is
+   already drawn as a pill, so the backticks are just noise. */
+.prose code::before,
+.prose code::after {
+  content: none;
+}
+
 /* Typography plugin defaults hr to ~40px margin, which is excessive */
 .prose hr {
   margin-top: 1.5rem;
