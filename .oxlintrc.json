@@ -62,5 +62,13 @@
   "globals": {
     "Bun": "readonly"
   },
-  "ignorePatterns": ["**/*.d.ts", "src/components/ui/emoji/emojis.ts"]
+  "ignorePatterns": ["**/*.d.ts", "src/components/ui/emoji/emojis.ts"],
+  "overrides": [
+    {
+      "files": ["e2e/**"],
+      "rules": {
+        "eslint/no-await-in-loop": "off"
+      }
+    }
+  ]
 }

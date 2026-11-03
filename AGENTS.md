@@ -26,6 +26,7 @@ All code comments, documentation, and this file itself must read as if written b
 | ---------------------------------------- | ----------------------- |
 | `bun run dev` / `bun run build`          | Yes                     |
 | `bun run lint` / `bun run typecheck`     | Yes                     |
+| `bun test` / `bun run test:e2e`          | Yes                     |
 | `git commit` / `git push`                | Yes                     |
 | `docker compose up -d`                   | Yes                     |
 | Edit `.env.example`                      | Yes (placeholders only) |
@@ -78,6 +79,9 @@ src/
   store/                 # State management
 scripts/
   build.ts               # Production build
+tests/                   # Unit tests (bun test)
+e2e/                     # Playwright end-to-end tests (*.e2e.ts)
+  support/               # Fixture repo, test server, shared helpers
 docs/                    # User-facing documentation
 compose.yaml             # Docker Compose (dev + prod)
 SPEC.md                  # Technical spec
@@ -116,8 +120,27 @@ bun run start         # Run production build
 bun run lint          # oxlint
 bun run format        # oxfmt
 bun run typecheck     # tsc --noEmit (TypeScript 7 native compiler, no emit)
+bun test              # Unit tests
+bun run test:e2e      # Playwright end-to-end tests (builds first)
 docker compose up -d  # Full stack (dev mode, host networking)
 ```
+
+### End-to-End Tests
+
+`bun run test:e2e` builds the app, creates a fresh fixture repo with a local bare
+remote in the OS temp dir (`kumidocs-e2e-5870`), and runs the production bundle
+against it on port 5870. Nothing touches a real content repo. The fixture is kept
+after the run for debugging and wiped at the start of the next one.
+
+First time on a machine: `bunx playwright install chromium`.
+
+- Fixture content lives in `e2e/support/fixture.ts`. Specs must not modify it.
+- Tests that create, edit or delete pages make their own pages with
+  `uniqueSlug()` and use the slug in titles too, so parallel runs never collide.
+- Check that an action really reached git with `remoteLog()` / `remoteFile()`.
+- Select elements by role and accessible name. If an element has no name, give
+  it one in the app (`aria-label`) rather than reaching for CSS selectors.
+- Specs are named `*.e2e.ts` so `bun test` does not pick them up.
 
 ### Startup Flow
 
@@ -221,6 +244,7 @@ Examples of shared components already extracted:
 | Hot reload not working | Port conflict                             | Check nothing else is on 5864/5865/5866                     |
 | Search returns nothing | Index not built                           | Restart server; index builds on startup from file tree      |
 | Build fails            | TypeScript errors or missing deps         | Run `bun run typecheck` and `bun install` first             |
+| E2E server won't start | Port 5870 in use or no Chromium           | Free the port; run `bunx playwright install chromium`       |
 
 ---
 

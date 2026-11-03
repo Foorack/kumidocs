@@ -443,3 +443,10 @@ src/
 └── store/theme.tsx / user.tsx / ws.ts
 styles/globals.css
 ```
+
+---
+
+## 16. Testing
+
+- **Unit**: `bun test`, files in `tests/` (`*.test.ts`).
+- **End-to-end**: Playwright, Chromium only, files in `e2e/` (`*.e2e.ts`). `bun run test:e2e` builds the app and starts `e2e/support/server.ts`, which creates a fresh fixture repo with a bare local remote, then runs `dist/index.js` against it on port 5870. Users are simulated with the `X-Auth-Request-User` header: `editor@example.com` is the only editor, `viewer@example.com` is read-only. Specs verify writes against the remote's git history, not only the UI.

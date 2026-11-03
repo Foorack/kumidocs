@@ -34,10 +34,11 @@
 		"prepublishOnly": "bun run build",
 		"dev": "bun --hot src/index.ts",
 		"start": "NODE_ENV=production bun src/index.ts",
-		"lint": "oxlint src/",
-		"format": "oxfmt src/",
+		"lint": "oxlint src/ e2e/ playwright.config.ts",
+		"format": "oxfmt src/ e2e/ playwright.config.ts",
 		"typecheck": "tsc --noEmit",
-		"test": "bun test"
+		"test": "bun test",
+		"test:e2e": "playwright test"
 	},
 	"dependencies": {
 		"@iconify-json/devicon": "1.2.62",
@@ -77,6 +78,7 @@
 		"ws": "8.21.0"
 	},
 	"devDependencies": {
+		"@playwright/test": "1.64.1",
 		"@tailwindcss/typography": "0.5.20",
 		"@types/bun": "1.4.4",
 		"@types/color": "4.2.1",
