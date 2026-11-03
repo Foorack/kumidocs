@@ -109,7 +109,7 @@ const AnchorComponent = (allProps: AnchorProps): JSX.Element => {
   const resolved = resolveAnchor(href, editMode);
   return (
     <a
-      className="wrap-anywhere font-medium text-primary underline"
+      className="wrap-anywhere text-primary underline"
       data-incomplete="false"
       data-streamdown="link"
       href={resolved.href}

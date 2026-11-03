@@ -74,7 +74,7 @@ function ImageDetailPanel({
     <div className="w-72 border-l border-border bg-background flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <span className="flex-1 font-medium truncate" title={image.filename}>
+        <span className="flex-1 font-bold truncate" title={image.filename}>
           {image.filename}
         </span>
         <Link to="/i" replace>

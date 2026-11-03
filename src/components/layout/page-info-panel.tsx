@@ -212,23 +212,23 @@ export default function PageInfoPanel({
         <div className="p-3 space-y-3">
           {/* Title + path */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wider">Title</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Title</p>
             <p className="break-words">{title}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wider">Path</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Path</p>
             <p className="font-mono break-all">{filePath}</p>
           </div>
 
           {/* Backlinks */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wider">Backlinks</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Backlinks</p>
             {backlinksContent}
           </div>
 
           {/* Commit history */}
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wider">Commit history</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Commit history</p>
             {commitHistoryContent}
           </div>
         </div>

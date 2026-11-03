@@ -89,7 +89,7 @@ const ThemeCard = (allProps: ThemeCardProps): JSX.Element => {
       </div>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{name}</p>
+          <p className="font-bold truncate">{name}</p>
           <p className="truncate">{description}</p>
         </div>
         {custom && (

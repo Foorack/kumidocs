@@ -50,7 +50,7 @@ const TemplateCard = (allProps: TemplateCardProps): JSX.Element => {
       </div>
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{name}</p>
+          <p className="font-bold truncate">{name}</p>
           {template.description !== undefined && template.description !== "" && (
             <p className="truncate">{template.description}</p>
           )}

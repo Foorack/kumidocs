@@ -54,7 +54,7 @@ const SearchResultsList = (allProps: SearchResultsListProps): JSX.Element => {
                 <EmojiIcon emoji={result.emoji} fileType={result.type ?? "doc"} size={EMOJI_SIZE} />
               </span>
               <div className="flex flex-col min-w-0">
-                <span className="font-medium">{result.title}</span>
+                <span className="font-bold">{result.title}</span>
                 <span className="truncate">{result.snippet}</span>
               </div>
               <span className="ml-auto shrink-0">{result.path}</span>

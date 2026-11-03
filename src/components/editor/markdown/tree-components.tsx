@@ -122,7 +122,7 @@ function TocItem({ id, text, level, minLevel, active, pageHref }: TocItemProps):
       className={cn(
         "block rounded px-2 py-0.5 text-sm no-underline transition-colors hover:bg-accent/50",
         "text-foreground",
-        active === true && "bg-accent font-medium text-accent-foreground",
+        active === true && "bg-accent font-bold text-accent-foreground",
       )}
       style={{ paddingLeft: `${8 + (level - minLevel) * 16}px` }}
     >
