@@ -50,11 +50,49 @@ test.describe("rendering", () => {
     ).toBeVisible();
   });
 
-  test("a kumidraw file renders as a diagram", async ({ page }) => {
+  test("a kumidraw file renders as a diagram with its icons", async ({ page }) => {
+    const packRequest = page.waitForRequest(/\/api\/icons\/devicon$/u);
     await page.goto("/p/diagram.kumidraw");
     const diagram = page.getByRole("main").locator("svg").filter({ hasText: "Client" });
     await expect(diagram).toBeVisible();
     await expect(diagram).toContainText("Server");
+
+    // Icon packs load on demand, then the diagram redraws with the real icon
+    // instead of the grey fallback.
+    await packRequest;
+    const icon = diagram.locator("image").first();
+    await expect
+      .poll(async () => {
+        const href = (await icon.getAttribute("href")) ?? "";
+        return atob(href.replace(/^data:image\/svg\+xml;base64,/u, ""));
+      })
+      .not.toContain("#94a3b8");
+  });
+
+  test("a mermaid architecture diagram loads only the icon pack it uses", async ({ page }) => {
+    const packRequests: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/icons/")) {
+        packRequests.push(req.url().replace(/^.*\/api\/icons\//u, ""));
+      }
+    });
+    await page.goto("/p/architecture.mermaid");
+    const chart = page.getByRole("img", { name: "Mermaid chart" });
+    await expect(chart).toContainText("Web Server");
+    await expect.poll(() => packRequests).toEqual(["devicon"]);
+  });
+
+  test("a page without diagrams loads no icon packs", async ({ page }) => {
+    const packRequests: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/icons")) {
+        packRequests.push(req.url());
+      }
+    });
+    await page.goto("/p/notes");
+    await expect(page.getByRole("heading", { level: 1, name: "Notes" }).first()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    expect(packRequests).toEqual([]);
   });
 
   test("a mermaid file renders as a chart", async ({ page }) => {

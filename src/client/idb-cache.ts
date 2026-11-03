@@ -85,4 +85,25 @@ async function idbSet<T>(key: string, data: T, ttlMs: number): Promise<void> {
   });
 }
 
-export { idbGet, idbSet };
+async function idbDelete(key: string): Promise<void> {
+  let database: IDBDatabase;
+  try {
+    database = await openDb();
+  } catch {
+    return;
+  }
+  return new Promise((resolve: () => void) => {
+    const tx = database.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(key);
+    tx.addEventListener("complete", () => {
+      database.close();
+      resolve();
+    });
+    tx.addEventListener("error", () => {
+      database.close();
+      resolve();
+    });
+  });
+}
+
+export { idbDelete, idbGet, idbSet };

@@ -2,97 +2,35 @@
  * Registers Iconify icon packs with Mermaid for architecture diagrams.
  * Supports `logos:*`, `devicon:*`, `flag:*`, `fluent-color:*`, `glyphs-poly:*`.
  *
- * Icon data is a gzipped text file from /api/icons.
- * Loaded on demand, cached in IndexedDB (7-day TTL).
- *
- * Call once at app startup:
- *   import { registerMermaidIcons } from "@/lib/register-mermaid-icons";
- *   registerMermaidIcons();
+ * Packs are registered as lazy loaders: Mermaid fetches a pack only when a
+ * diagram uses an icon from it. Must be called on the client (browser) only.
  */
 
-import { idbGet, idbSet } from "./idb-cache";
+import { ICON_PACK_NAMES, loadIconPack } from "./icon-packs";
+import type { IconPack } from "./icon-packs";
 
-const CACHE_KEY = "mermaid-icons";
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+let registered: Promise<void> | undefined;
 
-interface IconPackResult {
-  name: string;
-  icons: { prefix: string; icons: Record<string, { body: string }> };
-}
-
-function parseIconText(text: string): IconPackResult[] {
-  const results: IconPackResult[] = [];
-  for (const line of text.split("\n")) {
-    if (line === "") {
-      continue;
-    }
-    const semiIdx = line.indexOf(";");
-    if (semiIdx === -1) {
-      continue;
-    }
-    const name = line.slice(0, semiIdx);
-    const json = line.slice(semiIdx + 1);
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    const body = JSON.parse(json) as { prefix: string; icons: Record<string, { body: string }> };
-    results.push({ icons: body, name });
-  }
-  return results;
-}
-
-/**
- * Register all icon packs with Mermaid.
- * Safe to call multiple times; Mermaid deduplicates by prefix.
- * Must be called on the client (browser) only.
- */
-let iconsPromise: Promise<void> | undefined;
-
+/** Register the icon pack loaders with Mermaid. Safe to call more than once. */
 // oxlint-disable-next-line import/prefer-default-export
 export async function registerMermaidIcons(): Promise<void> {
-  if (iconsPromise !== undefined) {
-    return iconsPromise;
-  }
-
-  iconsPromise = (async (): Promise<void> => {
+  registered ??= (async (): Promise<void> => {
     const { default: mermaid } = await import("mermaid");
-
     if (typeof mermaid.registerIconPacks !== "function") {
-      console.warn("[kumidocs] Mermaid registerIconPacks not available");
       return;
     }
-
-    // Try IndexedDB cache first.
-    const cached = await idbGet<IconPackResult[]>(CACHE_KEY);
-    if (cached !== undefined && cached.length > 0) {
-      mermaid.registerIconPacks(cached);
-      return;
-    }
-
-    // Fall back to fetch.
-    let text: string;
-    try {
-      const resp = await fetch("/api/icons");
-      if (!resp.ok) {
-        return;
-      }
-      text = await resp.text();
-    } catch {
-      return;
-    }
-
-    const results = parseIconText(text);
-    if (results.length === 0) {
-      return;
-    }
-
-    mermaid.registerIconPacks(results);
-
-    // Store in IndexedDB (fire-and-forget).
-    void idbSet(CACHE_KEY, results, CACHE_TTL_MS);
-
-    console.debug(
-      `[kumidocs] Mermaid icons registered: ${results.map((pack) => `${pack.name} (${Object.keys(pack.icons.icons).length})`).join(", ")}`,
+    mermaid.registerIconPacks(
+      ICON_PACK_NAMES.map((name) => ({
+        loader: async (): Promise<IconPack> => {
+          const pack = await loadIconPack(name);
+          if (pack === undefined) {
+            throw new Error(`Icon pack "${name}" could not be loaded`);
+          }
+          return pack;
+        },
+        name,
+      })),
     );
   })();
-
-  return iconsPromise;
+  return registered;
 }

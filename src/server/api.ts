@@ -46,7 +46,11 @@ function apiSearch(url: URL): Response {
 // Helper: eagerly read + gzip a text file at module init, serve from cache.
 // Only the bytes are cached. A Response body can be read once, so each
 // request needs its own Response.
-function createGzipEndpoint(filePath: string, label: string): () => Response {
+function createGzipEndpoint(
+  filePath: string,
+  label: string,
+  contentType = "text/plain; charset=utf-8",
+): () => Response {
   let gzipped: Uint8Array;
   try {
     // oxlint-disable-next-line node/no-sync
@@ -63,7 +67,7 @@ function createGzipEndpoint(filePath: string, label: string): () => Response {
       headers: {
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Encoding": "gzip",
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": contentType,
       },
     });
 }
@@ -77,9 +81,28 @@ const publicDir = existsSync(bundledPublic)
 
 const apiEmojis = createGzipEndpoint(path.join(publicDir, "emojis.txt"), "emoji data");
 
-const apiIcons = createGzipEndpoint(path.join(publicDir, "icons.txt"), "icon packs");
+// GET /api/icons/:pack, one Iconify pack per request (see src/client/icon-packs.ts)
+const ICON_PACKS = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
+const iconPackEndpoints = new Map(
+  ICON_PACKS.map((name) => [
+    name,
+    createGzipEndpoint(
+      path.join(publicDir, "icons", `${name}.json`),
+      `icon pack ${name}`,
+      "application/json",
+    ),
+  ]),
+);
 
-export { apiBacklinks, apiEmojis, apiIcons, apiMe, apiSearch, apiTree };
+function apiIconPack(name: string): Response {
+  const endpoint = iconPackEndpoints.get(name);
+  if (endpoint === undefined) {
+    return Response.json({ error: "Unknown icon pack" }, { status: 404 });
+  }
+  return endpoint();
+}
+
+export { apiBacklinks, apiEmojis, apiIconPack, apiMe, apiSearch, apiTree };
 export { apiFileCreate, apiFileDelete, apiFileGet, apiFilePut, apiFileRename } from "./api-file";
 export { apiFileDiff, apiFileHistory } from "./api-history";
 export {

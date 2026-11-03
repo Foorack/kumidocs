@@ -1,18 +1,17 @@
 // Client-side Kumidraw icon resolution.
 //
 // Resolves a Kumidraw icon name (e.g. `:nginx`) to real Iconify artwork using
-// the same icon packs Mermaid already registers: devicon, logos, flag,
-// fluent-color, and glyphs-poly. The pack data comes from /api/icons, is
-// cached in IndexedDB (7-day TTL), and is loaded once at startup.
+// the same icon packs Mermaid uses: devicon, logos, flag, fluent-color, and
+// glyphs-poly. Packs load on demand through ./icon-packs, the first time a
+// diagram with icons renders. Components subscribe so they redraw once the
+// packs arrive.
 //
 // A bare name is looked up across the packs in a fixed order and the first
 // match wins. Unknown names draw a plainly visible fallback. Ported from the
 // Mermaid icon flow; must run in the browser only.
 
-import { idbGet, idbSet } from "./idb-cache";
-
-const CACHE_KEY = "kumidraw-icons";
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+import { ICON_PACK_NAMES, loadIconPack } from "./icon-packs";
+import type { IconPack } from "./icon-packs";
 
 // Spec says the fallback must be plainly visible and visually distinct from
 // every valid icon, so a missing name is obvious.
@@ -23,31 +22,9 @@ const FALLBACK_BODY =
 // their recognizable art first.
 const PACK_PRIORITY = ["devicon", "logos", "fluent-color", "glyphs-poly", "flag"];
 
-interface IconPack {
-  prefix: string;
-  width: number;
-  height: number;
-  icons: Record<string, { body: string }>;
-}
-
 let packs: IconPack[] = [];
 let iconsPromise: Promise<void> | undefined;
-
-function parseIconText(text: string): IconPack[] {
-  const results: IconPack[] = [];
-  for (const line of text.split("\n")) {
-    if (line === "") {
-      continue;
-    }
-    const semiIdx = line.indexOf(";");
-    if (semiIdx === -1) {
-      continue;
-    }
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-    results.push(JSON.parse(line.slice(semiIdx + 1)) as IconPack);
-  }
-  return results;
-}
+const listeners = new Set<() => void>();
 
 /** Build a complete SVG string from an Iconify icon body and pack dimensions. */
 function bodyToSvg(body: string, pack: IconPack, size: number): string {
@@ -70,43 +47,26 @@ function getKumidrawIconPacks(): IconPack[] {
 }
 
 /**
- * Load the icon packs. Safe to call multiple times; the load is idempotent.
- * Returns a promise other code can await before first render if needed.
+ * Load all icon packs. Safe to call multiple times; the load is idempotent.
+ * Subscribers are notified once the packs are in.
  */
 async function loadKumidrawIcons(): Promise<void> {
-  if (iconsPromise !== undefined) {
-    return iconsPromise;
-  }
-
-  iconsPromise = (async (): Promise<void> => {
-    const cached = await idbGet<IconPack[]>(CACHE_KEY);
-    if (cached !== undefined && cached.length > 0) {
-      packs = cached;
-      return;
+  iconsPromise ??= (async (): Promise<void> => {
+    const loaded = await Promise.all(ICON_PACK_NAMES.map(async (name) => loadIconPack(name)));
+    packs = loaded.filter((pack): pack is IconPack => pack !== undefined);
+    for (const listener of listeners) {
+      listener();
     }
-
-    let text: string;
-    try {
-      const resp = await fetch("/api/icons");
-      if (!resp.ok) {
-        return;
-      }
-      text = await resp.text();
-    } catch {
-      return;
-    }
-
-    const loaded = parseIconText(text);
-    if (loaded.length === 0) {
-      return;
-    }
-    packs = loaded;
-
-    // Store in IndexedDB (fire-and-forget).
-    void idbSet(CACHE_KEY, loaded, CACHE_TTL_MS);
   })();
-
   return iconsPromise;
+}
+
+/** Subscribe to pack loading. For useSyncExternalStore. */
+function subscribeKumidrawIcons(listener: () => void): () => void {
+  listeners.add(listener);
+  return (): void => {
+    listeners.delete(listener);
+  };
 }
 
 function colorFallback(size: number): string {
@@ -137,4 +97,5 @@ export {
   getKumidrawIconPacks,
   loadKumidrawIcons,
   resolveKumidrawIconHref,
+  subscribeKumidrawIcons,
 };

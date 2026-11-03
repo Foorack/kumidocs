@@ -74,7 +74,7 @@ test.describe("api", () => {
   // second request crashed the whole server.
   test("emoji and icon data can be fetched repeatedly", async ({ request }) => {
     for (let round = 0; round < 3; round++) {
-      for (const endpoint of ["/api/emojis", "/api/icons"]) {
+      for (const endpoint of ["/api/emojis", "/api/icons/devicon"]) {
         const res = await request.get(endpoint);
         expect(res.status(), `${endpoint} round ${String(round)}`).toBe(200);
         const body = await res.body();

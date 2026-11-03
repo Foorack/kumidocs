@@ -15,7 +15,7 @@ const GRID_SIZE = 32;
 
 // Mermaid / Iconify icon gallery. These are the tech-brand and flag icons
 // available to Mermaid and Kumidraw diagrams via the `:name` syntax. The
-// packs load asynchronously from /api/icons, so we trigger that on mount and
+// packs load asynchronously from /api/icons/:pack, so we trigger that on mount and
 // re-render once the packs land.
 interface IconEntry {
   key: string;

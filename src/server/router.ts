@@ -8,7 +8,7 @@ import {
   apiFileHistory,
   apiFilePut,
   apiEmojis,
-  apiIcons,
+  apiIconPack,
   apiFileRename,
   apiImageDelete,
   apiImagesList,
@@ -236,9 +236,10 @@ async function buildRoutes(
       },
     },
 
-    "/api/icons": {
-      GET() {
-        return apiIcons();
+    "/api/icons/:pack": {
+      GET(req: Request) {
+        const pack = new URL(req.url).pathname.slice("/api/icons/".length);
+        return apiIconPack(pack);
       },
     },
 

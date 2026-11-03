@@ -76,17 +76,14 @@ for (const name of await readdir(publicDir)) {
   }
 }
 
-// Step 2: Icon packs (combined into a single text file for /api/icons endpoint)
+// Step 2: Icon packs, one file per pack for /api/icons/:pack. Clients load a
+// pack only when a diagram needs it.
 console.log("  [2/3] Icon packs…");
 const iconPacks = ["devicon", "flag", "fluent-color", "glyphs-poly", "logos"];
-const iconLines: string[] = [];
 for (const name of iconPacks) {
   const src = join(root, "node_modules", "@iconify-json", name, "icons.json");
-  // oxlint-disable-next-line typescript/no-unsafe-assignment
-  const data: unknown = JSON.parse(await Bun.file(src).text());
-  iconLines.push(`${name};${JSON.stringify(data)}`);
+  await Bun.write(join(publicDir, "icons", `${name}.json`), Bun.file(src));
 }
-await Bun.write(join(publicDir, "icons.txt"), iconLines.join("\n"));
 
 // Favicon
 await Bun.write(join(publicDir, "icon.png"), Bun.file(join(root, "src/icon.png")));

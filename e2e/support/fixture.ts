@@ -32,6 +32,7 @@ This is the home page of the fixture repo.
 
 See the [[guide]] for setup steps, or the [[notes]] page.
 `,
+  "architecture.mermaid": "architecture-beta\n  service web(devicon:nginx)[Web Server]\n",
   "data.csv": "name,count\napples,3\npears,5\n",
   "deck.md": `---
 slides: true
@@ -57,7 +58,7 @@ The end.
   "diagram.kumidraw": `# kumidraw v:1 grid:10
 
 box (40, 40) (200, 80) #3498db "Client"
-box (360, 40) (200, 80) #2ecc71 "Server"
+box (360, 40) (200, 80) #2ecc71 :nginx "Server"
 `,
   "flow.mermaid": "graph LR\n  A[Start] --> B[Finish]\n",
   "guide.md": `---

@@ -40,6 +40,7 @@ import type {
   TextElement,
 } from "@/lib/kumidraw/types";
 import { parseKumidraw } from "@/lib/kumidraw/parser";
+import useKumidrawIcons from "@/hooks/use-kumidraw-icons";
 import { serializeKumidraw } from "@/lib/kumidraw/serialize";
 import {
   FONT_SIZE,
@@ -299,6 +300,7 @@ function KumidrawEditor({
 }: KumidrawEditorProps): JSX.Element {
   const parsed = useMemo(() => parseKumidraw(value), [value]);
   const [elements, setElements] = useState<KumidrawElement[]>(parsed.elements);
+  useKumidrawIcons(elements);
   const [selected, setSelected] = useState<number | undefined>(undefined);
   // What is under the cursor, so we can show the right pointer and make it
   // obvious what will be grabbed.

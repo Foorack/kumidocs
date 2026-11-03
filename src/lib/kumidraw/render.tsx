@@ -29,6 +29,7 @@ import type {
   TextElement,
 } from "./types";
 import { resolveKumidrawIconHref } from "@/client/kumidraw-icons";
+import useKumidrawIcons from "@/hooks/use-kumidraw-icons";
 import { useCallback, useId, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 
@@ -371,6 +372,7 @@ interface ViewState {
  * viewBox units that match the format's coordinate space 1:1.
  */
 function KumidrawDiagram({ doc, className }: KumidrawDiagramProps): JSX.Element {
+  useKumidrawIcons(doc.elements);
   const e = docExtents(doc);
   const ids = useId();
   const baseW = Math.max(1, e.maxX - e.minX);
