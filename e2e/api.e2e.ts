@@ -28,7 +28,16 @@ test.describe("api", () => {
   test("a known path with the wrong method returns 405 with Allow", async ({ request }) => {
     const res = await request.delete("/api/me");
     expect(res.status()).toBe(405);
-    expect(res.headers().allow).toBe("GET");
+    expect(res.headers().allow).toBe("GET, HEAD");
+  });
+
+  test("HEAD is answered wherever GET is, without a body", async ({ request }) => {
+    for (const path of ["/api/me", "/favicon.ico", "/p/README.md"]) {
+      const res = await request.head(path);
+      expect(res.status(), path).toBe(200);
+      const body = await res.body();
+      expect(body.length, path).toBe(0);
+    }
   });
 
   // Regression: these endpoints once reused a single Response object, so the

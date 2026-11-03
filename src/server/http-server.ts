@@ -110,6 +110,12 @@ function matchRoute(pattern: string, pathname: string): Record<string, string> |
   return params;
 }
 
+/** HTTP methods a route answers. GET handlers also answer HEAD. */
+function methodsOf(handlers: Record<string, unknown>): string[] {
+  const methods = Object.keys(handlers).filter((name) => typeof handlers[name] === "function");
+  return methods.includes("GET") && !methods.includes("HEAD") ? [...methods, "HEAD"] : methods;
+}
+
 // ---------------------------------------------------------------------------
 // Server entry point
 // ---------------------------------------------------------------------------
@@ -161,7 +167,8 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
         }
         // oxlint-disable-next-line typescript/no-unnecessary-condition -- IncomingMessage.method is typed as string, defensive fallback
         const method = request.method ?? "GET";
-        const handler = handlers[method];
+        // HEAD is answered by the GET handler. Node omits the body for HEAD.
+        const handler = handlers[method] ?? (method === "HEAD" ? handlers.GET : undefined);
         if (typeof handler === "function") {
           // Attach route params to the request context so handlers can
           // access them via the URL (they use new URL(req.url).pathname).
@@ -173,10 +180,8 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
           responded = true;
           break;
         }
-        for (const [routeMethod, routeHandler] of Object.entries(handlers)) {
-          if (typeof routeHandler === "function") {
-            allowedMethods.add(routeMethod);
-          }
+        for (const allowed of methodsOf(handlers)) {
+          allowedMethods.add(allowed);
         }
       }
 
