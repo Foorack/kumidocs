@@ -4,6 +4,8 @@ import {
   loadKumidrawIcons,
 } from "@/client/kumidraw-icons";
 import { useOutletContext } from "react-router-dom";
+import IconGrid from "@/components/ui/icon-grid";
+import type { IconGridItem } from "@/components/ui/icon-grid";
 import useMountEffect from "@/hooks/use-mount-effect";
 import { useState } from "react";
 
@@ -17,10 +19,6 @@ const GRID_SIZE = 32;
 // available to Mermaid and Kumidraw diagrams via the `:name` syntax. The
 // packs load asynchronously from /api/icons/:pack, so we trigger that on mount and
 // re-render once the packs land.
-interface IconEntry {
-  key: string;
-  src: string;
-}
 
 // fluent-color ships every icon at several sizes (question-circle-16, -20,
 // -24, -28, -32, -48...). Pick one representative per base name so the grid
@@ -33,8 +31,8 @@ function prefersSize(candidate: number, current: number): boolean {
   return Math.abs(candidate - 24) < Math.abs(current - 24);
 }
 
-function collectIcons(): IconEntry[] {
-  const entries: IconEntry[] = [];
+function collectIcons(): IconGridItem[] {
+  const entries: IconGridItem[] = [];
   const sizeSuffix = /-(?<size>\d+)$/u;
   for (const pack of getKumidrawIconPacks()) {
     const byBase = new Map<string, { key: string; size: number; src: string }>();
@@ -53,7 +51,7 @@ function collectIcons(): IconEntry[] {
       }
     }
     for (const { key, src } of byBase.values()) {
-      entries.push({ key, src });
+      entries.push({ key, label: key, src });
     }
   }
   entries.sort((left, right) => left.key.localeCompare(right.key));
@@ -62,7 +60,7 @@ function collectIcons(): IconEntry[] {
 
 const IconsPage = (): JSX.Element => {
   const { instanceName } = useOutletContext<OutletCtx>();
-  const [entries, setEntries] = useState<IconEntry[]>([]);
+  const [entries, setEntries] = useState<IconGridItem[]>([]);
 
   useMountEffect(() => {
     document.title = `Icons | ${instanceName}`;
@@ -83,20 +81,7 @@ const IconsPage = (): JSX.Element => {
         {entries.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">Loading icons…</p>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-px bg-border">
-            {entries.map((entry) => (
-              <div
-                key={entry.key}
-                className="aspect-square bg-background flex items-center justify-center p-1 group relative"
-                title={entry.key}
-              >
-                <img src={entry.src} alt={entry.key} className="h-full w-full" />
-                <span className="pointer-events-none absolute left-0 right-0 top-full z-10 hidden whitespace-nowrap rounded bg-popover px-1.5 py-0.5 text-xs font-bold text-popover-foreground shadow group-hover:block">
-                  {entry.key}
-                </span>
-              </div>
-            ))}
-          </div>
+          <IconGrid items={entries} />
         )}
       </div>
     </div>

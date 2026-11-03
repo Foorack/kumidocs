@@ -281,6 +281,12 @@
   content: none;
 }
 
+/* Icon galleries hold thousands of SVGs: skip work for cells off screen */
+.icon-grid-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+}
+
 /* Typography plugin defaults hr to ~40px margin, which is excessive */
 .prose hr {
   margin-top: 1.5rem;

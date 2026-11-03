@@ -1,5 +1,6 @@
 import ICONS from "@/components/ui/icon/fluent";
 import { useOutletContext } from "react-router-dom";
+import IconGrid from "@/components/ui/icon-grid";
 import useMountEffect from "@/hooks/use-mount-effect";
 
 interface OutletCtx {
@@ -43,23 +44,11 @@ const FluentIconsPage = (): JSX.Element => {
         <span className="text-sm text-muted-foreground">{names.length} total</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-2">
-        <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-px bg-border">
-          {names
-            .map((name) => ({ name, src: buildDataUri(name) }))
-            .filter((entry) => entry.src !== "")
-            .map(({ name, src }) => (
-              <div
-                key={name}
-                className="aspect-square bg-background flex items-center justify-center p-1 group relative"
-                title={name}
-              >
-                <img src={src} alt={name} className="h-full w-full" />
-                <span className="pointer-events-none absolute left-0 right-0 top-full z-10 hidden whitespace-nowrap rounded bg-popover px-1.5 py-0.5 text-xs font-bold text-popover-foreground shadow group-hover:block">
-                  {name}
-                </span>
-              </div>
-            ))}
-        </div>
+        <IconGrid
+          items={names
+            .map((name) => ({ key: name, label: name, src: buildDataUri(name) }))
+            .filter((item) => item.src !== "")}
+        />
       </div>
     </div>
   );

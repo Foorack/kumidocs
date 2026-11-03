@@ -1,6 +1,7 @@
 import { EMOJI_SVGS, isEmojiDataLoaded, waitForEmojiData } from "@/client/emoji-loader";
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import IconGrid from "@/components/ui/icon-grid";
 import useMountEffect from "@/hooks/use-mount-effect";
 
 interface OutletCtx {
@@ -51,20 +52,11 @@ const EmojiPage = (): JSX.Element => {
         {entries.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">Loading emoji…</p>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,40px)] gap-px bg-border">
-            {entries
-              .map(([emoji]) => ({ emoji, src: buildDataUri(emoji) }))
-              .filter((entry) => entry.src !== "")
-              .map(({ emoji, src }) => (
-                <div
-                  key={emoji}
-                  className="aspect-square bg-background flex items-center justify-center p-1"
-                  title={emoji}
-                >
-                  <img src={src} alt={emoji} className="h-full w-full" />
-                </div>
-              ))}
-          </div>
+          <IconGrid
+            items={entries
+              .map(([emoji]) => ({ key: emoji, label: emoji, src: buildDataUri(emoji) }))
+              .filter((item) => item.src !== "")}
+          />
         )}
       </div>
     </div>
