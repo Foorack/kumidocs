@@ -31,25 +31,30 @@ Drag-drop editor for pleasant visual placement (the original motivation).
 
 ---
 
-### 3. Clean Search Snippets
+### 3. Lazy-Load Mermaid and KaTeX
 
-Search result snippets are cut from the raw file, so they show Markdown syntax
-(code fences, table pipes, image links). Strip Markdown before building the
-snippet, the same way the index content is stripped.
+The frontend entry chunk is 2.9 MB (0.78 MB gzipped). The largest parts left
+are Mermaid core and KaTeX, which most pages never use. They are imported
+statically by the `@streamdown/mermaid` and `@streamdown/math` plugins, so
+splitting them out means loading those plugins only for pages whose Markdown
+contains a mermaid block or math.
 
 **Files to touch**:
 
-- `src/server/search.ts` -- `buildSnippet()`
+- `src/components/editor/markdown/viewer.tsx`, `src/components/editor/slides/streamdown.tsx`,
+  `src/components/viewer/page-viewer.tsx` -- plugin setup
 
 ---
 
-### 4. Shrink the Frontend Bundle
+### 4. Lighter Icon and Emoji Galleries
 
-The main frontend chunk is about 16 MB. Find out what dominates (likely emoji,
-icon packs, mermaid, shiki) and lazy-load what is not needed on first paint.
+`/icons` loads all five icon packs (19 MB of JSON) and `/emoji` the full emoji
+set (39 MB of SVG text) just to list names. A Kumidraw diagram with any icon
+also loads all five packs, because bare names are searched across every pack.
+A small server-side name index (name -> pack, or emoji list) would let these
+pages and diagrams fetch only what they show.
 
 **Files to touch**:
 
-- `scripts/build.ts` -- enable code splitting, check chunk sizes
-- Large client-side imports -- move behind dynamic `import()`
-
+- `src/server/api.ts` -- name index endpoint
+- `src/client/kumidraw-icons.ts`, `src/pages/icons/page.tsx`, `src/pages/emoji/page.tsx`

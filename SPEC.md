@@ -214,11 +214,11 @@ Grid of all built-in + custom themes. Each card shows a real `ScaledSlide` thumb
 
 Client → server: `hello {pageId, userId}`, `editing_start {pageId}`, `editing_stop {pageId}`, `heartbeat`
 
-Server → client: `presence_update {pageId, viewers[], editor|null}`, `page_changed {pageId, commitSha, changedBy, changedByName}`, `page_deleted {pageId}`, `page_created {pageId, path}`, `save_conflict_lost {pageId, message}`, `heartbeat_ack`
+Server → client: `presence_update {pageId, viewers[], editor|null}`, `page_changed {pageId, commitSha, changedBy, changedByName}`, `page_deleted {pageId}`, `page_moved {from, to}`, `page_created {pageId, path}`, `save_conflict_lost {pageId, message}`, `heartbeat_ack`
 
 **Presence:** sidebar avatar stacks on viewed/edited pages. Page header `AvatarGroup`.
 
-**Live reload:** `page_changed` received → no unsaved changes: silent reload; unsaved changes: conflict banner. `page_deleted` → redirect home + toast.
+**Live reload:** `page_changed` received → no unsaved changes: silent reload; unsaved changes: conflict banner. `page_deleted` → redirect home + toast. `page_moved` → follow the page to its new path + toast.
 
 **Heartbeat:** client every 30s. Server clears presence+lock after 90s silence.
 
@@ -397,26 +397,37 @@ Browser `prefers-color-scheme` default. Toggle in top bar; preference in `localS
 
 ## 14. API Surface
 
-All routes require valid auth header.
+Routes need a valid auth header unless marked "public". Writes also need
+edit rights and are rate limited per user. Unknown `/api/*` paths return a
+JSON 404, a known path with the wrong method a 405 with `Allow`, and HEAD is
+answered wherever GET is.
 
 ```
-GET    /api/me                   → user info + slideThemes
+GET    /api/me                   → user info, slideThemes, gravatar flag
 GET    /api/tree                 → file tree {path, type, emoji, title}
 GET    /api/file?path=           → content + metadata
-PUT    /api/file?path=           → write (editors only)
-POST   /api/file/create          → create {path, content}
-DELETE /api/file?path=           → delete (editors only)
-POST   /api/file/rename          → {from, to}
+PUT    /api/file?path=           → write {content}
+POST   /api/file                 → create {path, content}
+DELETE /api/file?path=           → delete
+POST   /api/file/rename          → move {from, to}
 POST   /api/upload/image         → multipart → {url, path}
 GET    /api/images               → [{filename, path, url, size, usedIn[]}]
-DELETE /api/images/:filename     → delete (editors; 409 if referenced)
+DELETE /api/images/:filename     → delete (409 if referenced)
 GET    /images/:filename         → serve image (Cache-Control: immutable)
-GET    /api/avatar/:sha256hash   → proxy Gravatar
-GET    /api/search?q=            → search results
+GET    /api/search?q=            → [{path, title, emoji, snippet, score}]
+GET    /api/backlinks?path=      → pages linking to a page
 GET    /api/file/history?path=   → git log for a file
 GET    /api/file/diff?path=&sha= → unified diff for a specific commit
+GET    /api/avatar/:sha256hash   → Gravatar proxy, misses cached 1h (public)
+GET    /api/emoji/:key.svg       → one Fluent Emoji SVG, key = code points (public)
+GET    /api/emojis               → every emoji SVG, for the picker (public)
+GET    /api/icons/:pack          → one Iconify pack, loaded on demand (public)
+POST   /api/auth/email           → set the email cookie when no SSO proxy (public)
 WS     /ws                       → WebSocket
 ```
+
+Static frontend files are precompressed at build time and sent gzipped to
+clients that accept it.
 
 ---
 
