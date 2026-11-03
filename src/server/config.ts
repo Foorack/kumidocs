@@ -1,3 +1,4 @@
+import ConfigError from "./config-error";
 import path from "node:path";
 import pkg from "@root/package.json";
 import { runtimeEnv } from "./runtime";
@@ -57,7 +58,7 @@ interface OptionDef {
 const PORT_MAX = 65_535;
 
 const fatal = (message: string): never => {
-  throw new Error(message);
+  throw new ConfigError(message);
 };
 
 const coercePort = (raw: string): number => {
@@ -284,14 +285,16 @@ const loadConfig = (): Config => {
         (cliOverrides as Record<keyof Config, Config[keyof Config]>)[opt.key] = opt.coerce(raw);
         argIdx += 1;
       }
-    } else if (
-      arg !== undefined &&
-      arg !== "" &&
-      !arg.startsWith("-") &&
-      (cliOverrides.repoPath === undefined || cliOverrides.repoPath === "")
-    ) {
+    } else if (arg === undefined || arg === "") {
+      continue;
+    } else if (arg.startsWith("-")) {
+      // A typo like --read-only must not silently start a writable server.
+      fatal(`Unknown option: ${arg}. Run with --help to see all options.`);
+    } else if (cliOverrides.repoPath === undefined || cliOverrides.repoPath === "") {
       // Bare positional argument - treat as --repo
       cliOverrides.repoPath = path.resolve(arg);
+    } else {
+      fatal(`Unexpected argument: ${arg}. Only one repo path can be given.`);
     }
   }
 

@@ -2,6 +2,7 @@ import { existsSync, watch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { parseUser, setJwtJwks, setPermissions, setReadonly } from "./server/auth";
 import { readTextFile, writeFileBytes } from "./server/runtime";
+import ConfigError from "./server/config-error";
 import { loadConfig } from "./server/config";
 import {
   IGNORED_NAMES,
@@ -37,6 +38,11 @@ try {
   if (error instanceof Error && error.name === "ExitRequestError" && "exitCode" in error) {
     // oxlint-disable-next-line unicorn/no-process-exit, typescript/no-unsafe-type-assertion
     process.exit((error as { exitCode: number }).exitCode);
+  }
+  if (error instanceof ConfigError) {
+    console.error(`kumidocs: ${error.message}`);
+    // oxlint-disable-next-line unicorn/no-process-exit
+    process.exit(2);
   }
   throw error;
 }
