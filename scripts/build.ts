@@ -40,7 +40,12 @@ await rm(distDir, { force: true, recursive: true });
 // then serves these files from disk via import.meta.dir, which is CWD-independent.
 console.log("  [1/2] Frontend...");
 const frontendResult = await Bun.build({
-  define: { __VERSION__: JSON.stringify(appVersion) },
+  define: {
+    __VERSION__: JSON.stringify(appVersion),
+    // Without this the bundle ships React's development build, including
+    // StrictMode's double-invoked effects.
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   entrypoints: [join(root, "src/index.html")],
   minify: true,
   outdir: publicDir,

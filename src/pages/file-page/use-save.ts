@@ -86,15 +86,20 @@ function useFilePageSave({
   // FilePage remounts on every route change, so this cleanup runs on each
   // navigate. Flush pending edits so nothing is lost, unless auto-save is
   // disabled (manualSaveOnly) - then never write on navigate.
-  useMountEffect(() => (): void => {
-    isMountedRef.current = false;
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-      autoSaveTimer.current = undefined;
-    }
-    if (isDirtyRef.current && !manualSaveOnlyRef.current) {
-      void doSaveRef.current(rawContentRef.current, true);
-    }
+  useMountEffect(() => {
+    // Set on mount, not only in the initializer: StrictMode runs this effect,
+    // its cleanup, then the effect again, and the ref must end up true.
+    isMountedRef.current = true;
+    return (): void => {
+      isMountedRef.current = false;
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = undefined;
+      }
+      if (isDirtyRef.current && !manualSaveOnlyRef.current) {
+        void doSaveRef.current(rawContentRef.current, true);
+      }
+    };
   });
 
   const loadDoc = useCallback(
