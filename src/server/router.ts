@@ -73,8 +73,15 @@ async function serveSPA(req: Request): Promise<Response> {
 
 type RequireUser = (req: Request) => User | undefined;
 
-/** Serves the SPA entry point in production (bundled) mode. */
+/**
+ * Handles every request no explicit route matched. Unknown API paths get a
+ * JSON 404 so clients see a real error instead of the SPA's index.html.
+ */
 async function serveCatchAll(req: Request): Promise<Response> {
+  const { pathname } = new URL(req.url);
+  if (pathname === "/api" || pathname.startsWith("/api/")) {
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
   return serveSPA(req);
 }
 

@@ -148,6 +148,8 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
 
       // Try explicit routes first
       let responded = false;
+      // Methods supported by routes whose pattern matched, for a 405 response
+      const allowedMethods = new Set<string>();
       for (const [pattern, handlers] of Object.entries(routes)) {
         const params = matchRoute(pattern, pathname);
         if (params === undefined) {
@@ -167,9 +169,25 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
           responded = true;
           break;
         }
+        for (const [routeMethod, routeHandler] of Object.entries(handlers)) {
+          if (typeof routeHandler === "function") {
+            allowedMethods.add(routeMethod);
+          }
+        }
       }
 
       if (responded) {
+        return;
+      }
+
+      if (allowedMethods.size > 0) {
+        writeNodeResponse(
+          nodeRes,
+          Response.json(
+            { error: "Method not allowed" },
+            { headers: { Allow: [...allowedMethods].join(", ") }, status: 405 },
+          ),
+        );
         return;
       }
 
