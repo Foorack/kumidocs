@@ -36,12 +36,18 @@ Repo is **mounted as a Docker volume**. KumiDocs does not clone it. Remote/auth/
 **Env vars:**
 
 ```
-KUMIDOCS_REPO_PATH        (required) Absolute path to mounted git repo
-KUMIDOCS_PORT             (default: 5864)
-KUMIDOCS_AUTH_HEADER      (default: X-Auth-Request-User)
-KUMIDOCS_AUTO_SAVE_DELAY  (default: 5000) ms debounce
-KUMIDOCS_INSTANCE_NAME    (default: KumiDocs)
-KUMIDOCS_PULL_INTERVAL    (default: 60000) ms between background pulls
+KUMIDOCS_REPO_PATH         (default: cwd) path to the git repo
+KUMIDOCS_PORT              (default: 5864)
+KUMIDOCS_AUTH_HEADER       (default: X-Auth-Request-User)
+KUMIDOCS_AUTO_SAVE_DELAY   (default: 5000) ms debounce
+KUMIDOCS_PULL_INTERVAL     (default: 60000) ms between background pulls
+KUMIDOCS_RATE_LIMIT        (default: 30/10000) writes per user per window
+KUMIDOCS_READONLY          (default: false)
+KUMIDOCS_DISABLE_GRAVATAR  (default: false) avatars show initials only
+KUMIDOCS_JWKS_BASE64       (default: unset) verify JWTs in the auth header
+
+Each has a matching CLI flag. Unknown flags are rejected at startup.
+The instance name is `instanceName` in `.kumidocs.json`, not an env var.
 ```
 
 **Startup:** validate repo path → `git pull --rebase` → read `.kumidocs.json` → load file tree into memory → build MiniSearch index → start HTTP+WS server → schedule pull loop.

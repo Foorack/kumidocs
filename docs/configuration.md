@@ -8,13 +8,19 @@ KumiDocs is configured through environment variables and a `.kumidocs.json` file
 
 ## Environment Variables
 
-| Variable                   | Default               | Description                                                    |
-| -------------------------- | --------------------- | -------------------------------------------------------------- |
-| `KUMIDOCS_REPO_PATH`       | _(required)_          | Absolute path to the Git repository                            |
-| `KUMIDOCS_PORT`            | `5864`                | HTTP port to listen on                                         |
-| `KUMIDOCS_AUTH_HEADER`     | `X-Auth-Request-User` | Header name that carries the user identity (email or JWT)      |
-| `KUMIDOCS_AUTO_SAVE_DELAY` | `5000`                | Debounce delay in milliseconds before auto-save fires          |
-| `KUMIDOCS_PULL_INTERVAL`   | `60000`               | Milliseconds between background `git pull --rebase` operations |
+| Variable                    | Default               | Description                                        |
+| --------------------------- | --------------------- | -------------------------------------------------- |
+| `KUMIDOCS_REPO_PATH`        | current directory     | Path to the git repository                         |
+| `KUMIDOCS_PORT`             | `5864`                | HTTP/WS listen port                                |
+| `KUMIDOCS_AUTH_HEADER`      | `X-Auth-Request-User` | Header carrying the user identity (email or JWT)   |
+| `KUMIDOCS_AUTO_SAVE_DELAY`  | `5000`                | Auto-save debounce in ms                           |
+| `KUMIDOCS_PULL_INTERVAL`    | `60000`               | Background `git pull --rebase` interval in ms      |
+| `KUMIDOCS_RATE_LIMIT`       | `30/10000`            | Write requests allowed per user: `count/window_ms` |
+| `KUMIDOCS_READONLY`         | `false`               | Prevent all file edits and git changes             |
+| `KUMIDOCS_DISABLE_GRAVATAR` | `false`               | Never contact Gravatar; avatars show initials only |
+| `KUMIDOCS_JWKS_BASE64`      | _unset_               | Base64 JWKS for verifying JWTs in the auth header  |
+
+Every variable also has a command-line flag (run `bunx kumidocs --help`). Unknown flags are rejected, so a typo cannot silently change behaviour. The instance name is not an environment variable; set `instanceName` in `.kumidocs.json`.
 
 ### KUMIDOCS_AUTH_HEADER
 

@@ -98,14 +98,17 @@ TASKS.md                 # Task backlog
 
 ### Environment Variables
 
-| Variable                   | Default               | Description             |
-| -------------------------- | --------------------- | ----------------------- |
-| `KUMIDOCS_REPO_PATH`       | `cwd`                 | Path to git repo        |
-| `KUMIDOCS_PORT`            | `5864`                | HTTP/WS listen port     |
-| `KUMIDOCS_AUTH_HEADER`     | `X-Auth-Request-User` | User identity header    |
-| `KUMIDOCS_AUTO_SAVE_DELAY` | `5000`                | Auto-save debounce (ms) |
-| `KUMIDOCS_INSTANCE_NAME`   | `KumiDocs`            | Display name            |
-| `KUMIDOCS_PULL_INTERVAL`   | `60000`               | Git pull interval (ms)  |
+| Variable                    | Default               | Description                                        |
+| --------------------------- | --------------------- | -------------------------------------------------- |
+| `KUMIDOCS_REPO_PATH`        | `cwd`                 | Path to the git repository                         |
+| `KUMIDOCS_PORT`             | `5864`                | HTTP/WS listen port                                |
+| `KUMIDOCS_AUTH_HEADER`      | `X-Auth-Request-User` | Header carrying the user identity (email or JWT)   |
+| `KUMIDOCS_AUTO_SAVE_DELAY`  | `5000`                | Auto-save debounce in ms                           |
+| `KUMIDOCS_PULL_INTERVAL`    | `60000`               | Background `git pull --rebase` interval in ms      |
+| `KUMIDOCS_READONLY`         | `false`               | Prevent all file edits and git changes             |
+| `KUMIDOCS_DISABLE_GRAVATAR` | `false`               | Never contact Gravatar; avatars show initials only |
+
+Full list: `bun src/index.ts --help`. The instance name comes from `instanceName` in `.kumidocs.json`.
 
 ---
 

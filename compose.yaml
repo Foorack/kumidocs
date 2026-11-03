@@ -12,7 +12,6 @@ services:
             - NODE_ENV=development
             - KUMIDOCS_REPO_PATH=/repo
             - KUMIDOCS_PORT=5864
-            - KUMIDOCS_INSTANCE_NAME=${KUMIDOCS_INSTANCE_NAME:-KumiDocs}
             - KUMIDOCS_AUTH_HEADER=X-Forwarded-Email
             - KUMIDOCS_AUTO_SAVE_DELAY=5000
             - KUMIDOCS_PULL_INTERVAL=60000

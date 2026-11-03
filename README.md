@@ -36,13 +36,17 @@ bunx kumidocs --repo /path/to/repo --port 8080
 
 All options are also available as environment variables:
 
-| Flag                | Env variable               | Default               | Description                        |
-| ------------------- | -------------------------- | --------------------- | ---------------------------------- |
-| `--repo`            | `KUMIDOCS_REPO_PATH`       | `cwd`                 | Path to the git repository         |
-| `--port`            | `KUMIDOCS_PORT`            | `5864`                | HTTP/WS listen port                |
-| `--auth-header`     | `KUMIDOCS_AUTH_HEADER`     | `X-Auth-Request-User` | Header carrying the user identity  |
-| `--auto-save-delay` | `KUMIDOCS_AUTO_SAVE_DELAY` | `5000`                | Auto-save debounce in ms           |
-| `--pull-interval`   | `KUMIDOCS_PULL_INTERVAL`   | `60000`               | Background git pull interval in ms |
+| Flag                 | Env variable                | Default               | Description                                        |
+| -------------------- | --------------------------- | --------------------- | -------------------------------------------------- |
+| `--repo`             | `KUMIDOCS_REPO_PATH`        | `cwd`                 | Path to the git repository                         |
+| `--port`, `-p`       | `KUMIDOCS_PORT`             | `5864`                | HTTP/WS listen port                                |
+| `--auth-header`      | `KUMIDOCS_AUTH_HEADER`      | `X-Auth-Request-User` | Header carrying the user identity (email or JWT)   |
+| `--auto-save-delay`  | `KUMIDOCS_AUTO_SAVE_DELAY`  | `5000`                | Auto-save debounce in ms                           |
+| `--pull-interval`    | `KUMIDOCS_PULL_INTERVAL`    | `60000`               | Background `git pull --rebase` interval in ms      |
+| `--rate-limit`       | `KUMIDOCS_RATE_LIMIT`       | `30/10000`            | Write requests allowed per user: `count/window_ms` |
+| `--readonly`         | `KUMIDOCS_READONLY`         | `false`               | Prevent all file edits and git changes             |
+| `--disable-gravatar` | `KUMIDOCS_DISABLE_GRAVATAR` | `false`               | Never contact Gravatar; avatars show initials only |
+| `--jwks-base64`      | `KUMIDOCS_JWKS_BASE64`      | _unset_               | Base64 JWKS for verifying JWTs in the auth header  |
 
 ## Production (Docker Compose)
 

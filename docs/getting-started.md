@@ -34,7 +34,6 @@ services:
     command: bunx kumidocs
     environment:
       KUMIDOCS_REPO_PATH: /repo
-      KUMIDOCS_INSTANCE_NAME: My Team Wiki
     volumes:
       - /path/to/your/repo:/repo
     ports:
