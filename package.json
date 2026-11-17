@@ -39,7 +39,7 @@
 		"format:check": "oxfmt --check src/ e2e/ playwright.config.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "bun test",
-		"test:e2e": "bunx playwright test"
+		"test:e2e": "bunx --bun playwright test"
 	},
 	"dependencies": {
 		"@iconify-json/devicon": "1.2.71",
