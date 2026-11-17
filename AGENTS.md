@@ -2,6 +2,11 @@
 
 KumiDocs: developer wiki/docs platform. Zero database, all content in Git. Bun + React + TypeScript.
 
+## Replies
+
+- Keep replies short. Give the verdict first. Three or four lines for a finished task, a review or an audit. Do not recap the plan, list every file, or say the same thing twice.
+- Use the `ask_user` tool when the decision is the owner's. Offer two to four options with the recommendation first. Do not bury a choice in a long reply.
+
 ## Critical Rules
 
 ### 1. Long-Term Over Short-Term
@@ -16,9 +21,12 @@ Everything is worth changing if it is for the long-term benefit. Always prioriti
 
 All code comments, documentation, and this file itself must read as if written by a human Staff Engineer. Clear, direct, no AI writing tics.
 
-- **No AI typography**: Do not use em dashes (---), fancy quotes, or symbols an engineer would not naturally type.
+- **No AI typography**: Never type a Unicode dash. Use the ASCII hyphen `-` only. Check every file you write with `grep -nP '[\x{2010}-\x{2015}\x{2212}]' <file>` and fix each hit. The same goes for fancy quotes and symbols an engineer would not type.
 - **Keep it simple**: Short sentences, plain language. Simple is easier to maintain.
 - **Write for humans**: Read everything back before saving. If it reads like it was generated, rewrite it.
+- **Comments explain why**: do not narrate what the next line does.
+- **Errors are for the person reading a log at 2am**: say what failed and what to do next.
+- **Do not promise what the code does not do**: if a doc or a UI string claims something the code lacks, fix the doc.
 
 ### 3. AI Safety Boundaries
 
@@ -27,7 +35,9 @@ All code comments, documentation, and this file itself must read as if written b
 | `bun run dev` / `bun run build`          | Yes                     |
 | `bun run lint` / `bun run typecheck`     | Yes                     |
 | `bun test` / `bun run test:e2e`          | Yes                     |
-| `git commit` / `git push`                | Yes                     |
+| `git commit`                             | Yes                     |
+| `git add -A` / `git add .`               | Never, stage by name    |
+| `git push` / `git tag`                   | Ask first               |
 | `docker compose up -d`                   | Yes                     |
 | Edit `.env.example`                      | Yes (placeholders only) |
 | Edit `.env`                              | No (secrets live here)  |
@@ -35,6 +45,10 @@ All code comments, documentation, and this file itself must read as if written b
 | `npm publish` / `bun publish`            | Never                   |
 | Modify CI/CD workflows                   | Ask first               |
 | Delete data (files, images, git history) | Ask first               |
+
+A push to `main` runs `publish.yml`, which publishes to npm once the checks pass. A push is a release, so it waits for the owner.
+
+Commit messages are the owner's history. Never add a `Co-authored-by` trailer, "Generated with", or a model name in a commit, a doc, or a comment. Run `git status --short` and stage the files you touched by name, never the whole tree.
 
 If the user asks the AI to deploy or publish, tell them to run it themselves and approve.
 
@@ -44,6 +58,13 @@ If the user asks the AI to deploy or publish, tell them to run it themselves and
 - Real credentials go in `.env` (gitignored).
 - Never log tokens, passwords, or API keys to stdout.
 - Validate configs before restarting services.
+
+### 5. Destructive Actions
+
+- Never delete, rename or merge a file or document the user did not ask about. If a change would remove content the user wrote, ask first.
+- A form answer is not consent. A deletion needs its own yes/no question that names exactly what it removes. Never offer a deletion as one option among several.
+- Kill processes by PID. Never use `pkill` or `killall`, and never stop a dev or prod server the user is running.
+- Keep scratch files out of the repo. Use `/tmp` or the session workspace, and delete them when the work is done.
 
 ---
 
@@ -129,6 +150,13 @@ bun run test:e2e      # Playwright end-to-end tests (builds first)
 docker compose up -d  # Full stack (dev mode, host networking)
 ```
 
+### Testing
+
+- **Verify the claim, not the code.** A test is only useful if it fails before the fix. Revert the fix, watch the test go red, restore it, watch it go green.
+- **Assert on something that only becomes true after the change.** A `toContainText` on text that was already there passes at once and tests nothing. Use `toHaveText` on the specific element, or `expect.poll`.
+- **E2E for what a browser sees, unit tests for what the parser sees.** Do not write a test that restates the implementation.
+- **Keep it focused.** A handful of tests for the behaviour beats a suite that mirrors the code.
+
 ### End-to-End Tests
 
 `bun run test:e2e` builds the app, creates a fresh fixture repo with a local bare
@@ -206,10 +234,6 @@ Markdown documentation may use raw emoji freely.
 
 Do not call `useEffect` directly in components. For the rare case of syncing with an external system on mount, use `useMountEffect` from `src/hooks/use-mount-effect.ts`:
 
-### Font Weight
-
-Never use `font-semibold` or `font-medium`. For bold text, always use `font-bold`. This keeps visual hierarchy consistent across the UI.
-
 ```ts
 import useMountEffect from "@/hooks/use-mount-effect";
 
@@ -226,6 +250,10 @@ For most cases, prefer these alternatives in order:
 4. **`useMountEffect`**: for mount-only effects like DOM integration
 5. **`key` prop for resets**: use `<Component key={id} />` for clean remounts instead of effect choreography
 
+### Font Weight
+
+Never use `font-semibold` or `font-medium`. For bold text, always use `font-bold`. This keeps visual hierarchy consistent across the UI.
+
 ### Component Structure
 
 - Prefer standard **shadcn** components (`Card`, `Badge`, `Separator`, etc.) over excessive Tailwind class usage.
@@ -236,6 +264,8 @@ For most cases, prefer these alternatives in order:
 - Update `SPEC.md` with finalized technical decisions before starting implementation.
 - Keep `TASKS.md` in sync: add tasks as discovered, mark done as completed.
 - Significant deviations from the spec during implementation must be documented back into `SPEC.md`.
+
+`SPEC.md` is the record, not a plan. Read the section before you change a protocol, an API route, a stored format or an auth decision. A decision that is written down is not reopened without the owner.
 
 ### Shared UI Patterns
 
