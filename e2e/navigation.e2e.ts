@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./support/test";
 
 test.describe("navigation", () => {
   test("the root redirects to the README", async ({ page }) => {

@@ -30,6 +30,7 @@ const ThemeToggle = (): JSX.Element => {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
+          aria-label="Toggle theme"
           variant="ghost"
           size="icon"
           className="h-7 w-7 text-white hover:bg-neutral-800"
