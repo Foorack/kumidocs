@@ -75,7 +75,6 @@ const instances = {
 const instanceList: Instance[] = Object.values(instances);
 
 export {
-  AUTH_HEADER,
   BASE_URL,
   EDITOR,
   FIXTURE_DIR,

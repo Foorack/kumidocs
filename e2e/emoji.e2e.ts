@@ -11,11 +11,18 @@ test.describe("emoji", () => {
     await page.goto("/p/README.md");
 
     // 🏠 is the README's page emoji, shown in the sidebar and the page header.
-    const house = page.getByRole("main").getByRole("img", { exact: true, name: "🏠" }).first();
-    await expect(house).toBeVisible();
+    // Both copies are plain <img> loads, so waiting until every one of them has
+    // decoded means the sidebar tree and the page body both rendered. A code
+    // path that pulled the full set would have started by then.
     await expect
-      .poll(async () => house.evaluate((img: HTMLImageElement) => img.naturalWidth))
-      .toBeGreaterThan(0);
+      .poll(async () =>
+        page
+          .getByRole("img", { exact: true, name: "🏠" })
+          .evaluateAll(
+            (images: HTMLImageElement[]) => images.filter((img) => img.naturalWidth > 0).length,
+          ),
+      )
+      .toBeGreaterThanOrEqual(2);
     expect(requests).toContain("/api/emoji/1f3e0.svg");
     expect(requests).not.toContain("/api/emojis");
   });

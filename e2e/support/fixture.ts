@@ -10,12 +10,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EDITOR, instances, SECOND_EDITOR } from "./env";
 import type { Instance } from "./env";
-
-// 1x1 transparent PNG
-const PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-  "base64",
-);
+import PIXEL_PNG from "./images";
 
 const PERMISSIONS = {
   editors: [EDITOR, SECOND_EDITOR],
