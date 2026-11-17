@@ -14,7 +14,7 @@ import {
 } from "./server/filestore";
 import { buildIgnoreChecker } from "./server/git-ignore";
 import { getHeadSha, gitFetchAndRebase, gitPull, gitStageAndCommit } from "./server/git";
-import { initSearch, removeFromIndex, updateInIndex } from "./server/search";
+import { initSearch, rebuildIndex, removeFromIndex, updateInIndex } from "./server/search";
 import {
   broadcastConfigChanged,
   broadcastPageChanged,
@@ -153,6 +153,8 @@ function closeWatcherTree(absDir: string): void {
 async function processFileChange(relPath: string): Promise<void> {
   if (relPath === ".kumidocs.json") {
     await loadPermissions();
+    // hideFiles patterns changed, so drop newly hidden pages from the index.
+    rebuildIndex();
     broadcastConfigChanged();
     console.log("Reloaded .kumidocs.json");
     return;

@@ -70,6 +70,11 @@ function setHiddenPatterns(patterns: string[] | undefined): void {
   invalidateTree();
 }
 
+/** True when a hideFiles pattern from .kumidocs.json covers this path. */
+function isHiddenPath(relPath: string): boolean {
+  return hiddenFilter(relPath);
+}
+
 const IGNORED_NAMES = new Set([".git", "node_modules", ".DS_Store", ".env", "dist", "core"]);
 
 const IGNORED_EXT = new Set([".lock", ".log", ".map"]);
@@ -229,7 +234,7 @@ function buildFileTree(): TreeNode[] {
       !filePath.startsWith(".") &&
       !IGNORED_NAMES.has(filePath.split("/")[0] ?? "") &&
       !filePath.startsWith("images/") &&
-      !hiddenFilter(filePath),
+      !isHiddenPath(filePath),
   );
 
   const root: TreeNode[] = [];
@@ -282,6 +287,7 @@ export {
   getFile,
   getGeneration,
   IGNORED_NAMES,
+  isHiddenPath,
   loadFilestore,
   markWritten,
   moveInCache,

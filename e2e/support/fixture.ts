@@ -8,7 +8,8 @@
  */
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { EDITOR, FIXTURE_DIR, REMOTE_DIR, REPO_DIR, SECOND_EDITOR } from "./env";
+import { EDITOR, instances, SECOND_EDITOR } from "./env";
+import type { Instance } from "./env";
 
 // 1x1 transparent PNG
 const PIXEL_PNG = Buffer.from(
@@ -16,12 +17,13 @@ const PIXEL_PNG = Buffer.from(
   "base64",
 );
 
+const PERMISSIONS = {
+  editors: [EDITOR, SECOND_EDITOR],
+  instanceName: "E2E Docs",
+  sidebarDefaultDepth: 1,
+};
+
 const FILES: Record<string, string | Buffer> = {
-  ".kumidocs.json": `${JSON.stringify(
-    { editors: [EDITOR, SECOND_EDITOR], instanceName: "E2E Docs", sidebarDefaultDepth: 1 },
-    undefined,
-    2,
-  )}\n`,
   "README.md": `---
 emoji: 🏠
 ---
@@ -107,6 +109,28 @@ The word pineapple only appears on this page.
   "script.ts": 'export const greeting = "hello from script";\n',
 };
 
+interface FixtureExtras {
+  /** Extra files written only into this instance's repo. */
+  files?: Record<string, string>;
+  /** Merged over the base .kumidocs.json contents. */
+  permissions?: Record<string, unknown>;
+}
+
+const EXTRAS: Partial<Record<string, FixtureExtras>> = {
+  hiddenFiles: {
+    files: {
+      "hidden-page.md": "# Hidden Page\n\nThe word sasquatch appears only on this page.\n",
+    },
+    // Keep the file out of the tree and the search index, but still on disk.
+    permissions: { hideFiles: ["hidden-page.md"] },
+  },
+  rateLimited: {
+    // The burst test uses a fresh user per attempt so a retry starts with an
+    // empty bucket. An empty editors list makes any of those users an editor.
+    permissions: { editors: [] },
+  },
+};
+
 const GIT_ENV = {
   GIT_AUTHOR_DATE: "2026-01-01T12:00:00Z",
   GIT_AUTHOR_EMAIL: "fixture@example.com",
@@ -129,26 +153,44 @@ async function git(cwd: string, ...args: string[]): Promise<void> {
   }
 }
 
-/** Wipe and recreate the fixture: a bare remote plus a clone with all files committed. */
-async function buildFixture(): Promise<void> {
-  await rm(FIXTURE_DIR, { force: true, recursive: true });
-  await mkdir(REPO_DIR, { recursive: true });
+/** Wipe and recreate one instance's fixture: a bare remote plus a clone with all files committed. */
+async function buildFixture(target: Instance = instances.main): Promise<void> {
+  const extras = EXTRAS[target.name] ?? {};
+  const files: Record<string, string | Buffer> = {
+    ...FILES,
+    ...extras.files,
+    ".kumidocs.json": `${JSON.stringify(
+      { ...PERMISSIONS, ...extras.permissions },
+      undefined,
+      2,
+    )}\n`,
+  };
 
-  await git(FIXTURE_DIR, "init", "--quiet", "--bare", "--initial-branch=main", REMOTE_DIR);
-  await git(REPO_DIR, "init", "--quiet", "--initial-branch=main");
+  await rm(target.fixtureDir, { force: true, recursive: true });
+  await mkdir(target.repoDir, { recursive: true });
+
+  await git(
+    target.fixtureDir,
+    "init",
+    "--quiet",
+    "--bare",
+    "--initial-branch=main",
+    target.remoteDir,
+  );
+  await git(target.repoDir, "init", "--quiet", "--initial-branch=main");
 
   await Promise.all(
-    Object.entries(FILES).map(async ([rel, content]) => {
-      const abs = path.join(REPO_DIR, rel);
+    Object.entries(files).map(async ([rel, content]) => {
+      const abs = path.join(target.repoDir, rel);
       await mkdir(path.dirname(abs), { recursive: true });
       await writeFile(abs, content);
     }),
   );
 
-  await git(REPO_DIR, "add", "--all");
-  await git(REPO_DIR, "commit", "--quiet", "--message", "Initial fixture content");
-  await git(REPO_DIR, "remote", "add", "origin", REMOTE_DIR);
-  await git(REPO_DIR, "push", "--quiet", "--set-upstream", "origin", "main");
+  await git(target.repoDir, "add", "--all");
+  await git(target.repoDir, "commit", "--quiet", "--message", "Initial fixture content");
+  await git(target.repoDir, "remote", "add", "origin", target.remoteDir);
+  await git(target.repoDir, "push", "--quiet", "--set-upstream", "origin", "main");
 }
 
 export default buildFixture;

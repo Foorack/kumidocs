@@ -1,37 +1,69 @@
 /**
- * Entry point for Playwright's webServer: build a fresh fixture repo, then
- * run the production bundle (dist/index.js) against it.
+ * Starts one production server per e2e instance and waits until each answers.
+ * global-setup.ts calls this after a single build, so no two runs race on dist/.
  */
 import path from "node:path";
-import buildFixture from "./fixture";
-import { PORT, REPO_DIR } from "./env";
+import { instanceList } from "./env";
+import type { Instance } from "./env";
 
-await buildFixture();
+const ROOT = path.join(import.meta.dir, "..", "..");
+const STARTUP_TIMEOUT_MS = 60_000;
 
-const root = path.join(import.meta.dir, "..", "..");
-const server = Bun.spawn(["bun", path.join(root, "dist", "index.js"), REPO_DIR], {
-  env: {
-    ...Bun.env,
-    // Server commits need a committer identity even on machines without git config.
-    GIT_COMMITTER_EMAIL: "kumidocs@localhost",
-    GIT_COMMITTER_NAME: "KumiDocs",
-    KUMIDOCS_AUTO_SAVE_DELAY: "500",
-    // No outbound calls: tests must not depend on Gravatar being reachable.
-    KUMIDOCS_DISABLE_GRAVATAR: "true",
-    KUMIDOCS_PORT: String(PORT),
-    // Background pulls would make timing nondeterministic; the remote never changes anyway.
-    KUMIDOCS_PULL_INTERVAL: "3600000",
-    // Parallel workers share one server, so the default limit is far too low.
-    KUMIDOCS_RATE_LIMIT: "10000/10000",
-  },
-  stderr: "inherit",
-  stdout: "inherit",
-});
+interface RunningServer {
+  instance: Instance;
+  process: Bun.Subprocess;
+}
 
-const stop = (): void => {
-  server.kill();
+const startInstance = (instance: Instance): RunningServer => {
+  const child = Bun.spawn(["bun", path.join(ROOT, "dist", "index.js"), instance.repoDir], {
+    env: { ...Bun.env, ...instance.env },
+    stderr: "inherit",
+    stdout: "inherit",
+  });
+  return { instance, process: child };
 };
-process.on("SIGINT", stop);
-process.on("SIGTERM", stop);
 
-process.exitCode = await server.exited;
+const waitUntilReady = async (server: RunningServer): Promise<void> => {
+  const { baseURL, name } = server.instance;
+  const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (server.process.exitCode !== null) {
+      throw new Error(
+        `${name} exited with code ${String(server.process.exitCode)} before answering on ${baseURL}. ` +
+          "Check the server log above; another run may be holding the port.",
+      );
+    }
+    try {
+      const res = await fetch(`${baseURL}/favicon.ico`);
+      if (res.status === 200) {
+        return;
+      }
+    } catch {
+      // Not listening yet.
+    }
+    await Bun.sleep(100);
+  }
+  throw new Error(`${name} did not answer on ${baseURL} within ${String(STARTUP_TIMEOUT_MS)}ms.`);
+};
+
+/** Start every instance, resolve once they all answer, return a stop function. */
+async function startServers(): Promise<() => void> {
+  const servers = instanceList.map((instance) => startInstance(instance));
+  const stop = (): void => {
+    for (const server of servers) {
+      server.process.kill();
+    }
+  };
+  try {
+    for (const server of servers) {
+      await waitUntilReady(server);
+    }
+  } catch (error: unknown) {
+    // Playwright never calls the teardown of a setup that threw.
+    stop();
+    throw error;
+  }
+  return stop;
+}
+
+export default startServers;
