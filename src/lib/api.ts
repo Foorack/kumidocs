@@ -100,10 +100,15 @@ async function request<TResponse>(url: string, init?: RequestInit): Promise<TRes
       }
     }
     inflight.set(url, promise);
-    // Clean up cache when the request settles, regardless of success/failure
+    // Clean up cache when the request settles, regardless of success/failure.
+    // Nothing here awaits this task, so a rejected request would surface as an
+    // unhandled rejection in the browser; the caller gets the failure from the
+    // promise returned below, and this task only needs to drop the cache entry.
     void (async (): Promise<void> => {
       try {
         await promise;
+      } catch {
+        // Handled by whoever awaits the request.
       } finally {
         // Only remove if ours is still the cached entry (avoid clearing a newer request)
         if (inflight.get(url) === promise) {
