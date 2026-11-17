@@ -15,6 +15,8 @@ KumiDocs serves the current directory as its content store. Every save becomes a
 
 > **No Bun?** Install it with `curl -fsSL https://bun.sh/install | bash`
 
+KumiDocs runs on Bun only. The server, the build, the unit tests and the browser suite all run in Bun, and no Node.js code path exists or is supported. `bun` is the one runtime you need.
+
 ## Features
 
 - **Markdown editor**: live split-pane, frontmatter, full history

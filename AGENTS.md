@@ -150,6 +150,8 @@ bun run test:e2e      # Playwright end-to-end tests (builds first)
 docker compose up -d  # Full stack (dev mode, host networking)
 ```
 
+Everything runs on Bun: the server, the build, `bun test` and the Playwright runner. There is no Node.js code path. That matters because `node` on a developer machine is often Bun's shim, so a Bun-only call such as `Bun.file()` or `import.meta.dir` works here and fails in CI. Keep test and support code Bun-native, and let CI prove it.
+
 ### Testing
 
 - **Verify the claim, not the code.** A test is only useful if it fails before the fix. Revert the fix, watch the test go red, restore it, watch it go green.
