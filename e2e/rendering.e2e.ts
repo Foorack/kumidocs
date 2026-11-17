@@ -101,8 +101,16 @@ test.describe("rendering", () => {
       }
     });
     await page.goto("/p/notes");
+    const main = page.getByRole("main");
     await expect(page.getByRole("heading", { level: 1, name: "Notes" }).first()).toBeVisible();
-    await page.waitForLoadState("networkidle");
+
+    // The last block of the page is an image, so waiting for it to decode means
+    // the whole markdown body mounted. Anything in the body that wanted an icon
+    // pack has asked for it by now.
+    const logo = main.getByRole("img", { name: "Logo" });
+    await expect
+      .poll(async () => logo.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
     expect(packRequests).toEqual([]);
   });
 

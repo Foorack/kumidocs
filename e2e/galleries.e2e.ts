@@ -22,7 +22,12 @@ test.describe("icon galleries", () => {
       const first = page.getByRole("main").getByRole("img").first();
       await first.hover();
       const name = await first.getAttribute("alt");
-      await expect(page.getByText(String(name), { exact: true }).first()).toBeVisible();
+      if (name === null || name === "") {
+        throw new Error(
+          `${path}: the first icon has no alt text, so the hover label cannot be checked.`,
+        );
+      }
+      await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
     });
   }
 

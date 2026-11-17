@@ -9,12 +9,7 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EDITOR, FIXTURE_DIR, REMOTE_DIR, REPO_DIR, SECOND_EDITOR } from "./env";
-
-// 1x1 transparent PNG
-const PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-  "base64",
-);
+import PIXEL_PNG from "./images";
 
 const FILES: Record<string, string | Buffer> = {
   ".kumidocs.json": `${JSON.stringify(

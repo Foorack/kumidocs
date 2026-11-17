@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { EDITOR } from "./support/env";
 import search from "./support/search";
 
 test.describe("api", () => {
@@ -8,7 +9,7 @@ test.describe("api", () => {
     const me: unknown = await res.json();
     expect(me).toMatchObject({
       canEdit: true,
-      email: "editor@example.com",
+      email: EDITOR,
       gravatar: false,
       instanceName: "E2E Docs",
     });
@@ -21,7 +22,14 @@ test.describe("api", () => {
         avatarRequests.push(req.url());
       }
     });
+    const meResponse = page.waitForResponse((res) => new URL(res.url()).pathname === "/api/me");
     await page.goto("/p/notes");
+    // The gravatar flag comes from /api/me, so the header cannot build an
+    // avatar URL before this response lands. Waiting for it makes the empty
+    // request list mean something instead of being read too early.
+    const meBody = await meResponse;
+    const me: unknown = await meBody.json();
+    expect(me).toMatchObject({ gravatar: false });
     await expect(page.getByRole("banner").getByText("ED", { exact: true })).toBeVisible();
     expect(avatarRequests).toEqual([]);
 

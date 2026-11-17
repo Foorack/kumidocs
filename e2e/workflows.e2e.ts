@@ -2,12 +2,7 @@ import { expect, test } from "@playwright/test";
 import { SECOND_EDITOR, VIEWER, asUser } from "./support/env";
 import { createPage, uniqueSlug } from "./support/pages";
 import { remoteFile, remoteLog } from "./support/git";
-
-// 1x1 transparent PNG
-const PIXEL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-  "base64",
-);
+import PIXEL_PNG from "./support/images";
 
 test.describe("workflows", () => {
   test("a moved page is followed by everyone viewing it", async ({ browser, page }, testInfo) => {

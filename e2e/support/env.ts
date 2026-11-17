@@ -18,15 +18,4 @@ const VIEWER = "viewer@example.com";
 
 const asUser = (email: string): Record<string, string> => ({ [AUTH_HEADER]: email });
 
-export {
-  AUTH_HEADER,
-  BASE_URL,
-  EDITOR,
-  FIXTURE_DIR,
-  PORT,
-  REMOTE_DIR,
-  REPO_DIR,
-  SECOND_EDITOR,
-  VIEWER,
-  asUser,
-};
+export { BASE_URL, EDITOR, FIXTURE_DIR, PORT, REMOTE_DIR, REPO_DIR, SECOND_EDITOR, VIEWER, asUser };
