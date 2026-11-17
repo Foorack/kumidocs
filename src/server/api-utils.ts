@@ -16,13 +16,35 @@ function checkBodySize(req: Request): Response | undefined {
   return undefined;
 }
 
-/** Try to resolve realpath, falling back to the input on failure (path doesn't exist). */
-function tryRealpath(p: string): string {
+/** realpath, or undefined when the path cannot be resolved (it does not exist). */
+function tryRealpath(p: string): string | undefined {
   try {
     // oxlint-disable-next-line no-sync
     return fs.realpathSync(p);
   } catch {
-    return p;
+    return undefined;
+  }
+}
+
+/**
+ * Realpath of the deepest existing ancestor of `target`, with the missing
+ * tail appended back on. A file that is about to be created has no realpath
+ * of its own, but its parent directory can still be a symlink out of the repo.
+ */
+function resolveExistingAncestor(target: string): string {
+  const missing: string[] = [];
+  let current = target;
+  for (;;) {
+    const real = tryRealpath(current);
+    if (real !== undefined) {
+      return path.join(real, ...missing.toReversed());
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return target;
+    }
+    missing.push(path.basename(current));
+    current = parent;
   }
 }
 
@@ -35,20 +57,13 @@ function tryRealpath(p: string): string {
  * outside would bypass the check since `path.resolve` does not follow symlinks.
  *
  * For paths that don't exist on disk yet (e.g. creating a new file), the
- * parent directory's realpath is used as the base for the final path segment.
+ * deepest existing ancestor is resolved instead, so "link/new.md" cannot
+ * slip past when "link" points outside the repo.
  */
 function isSafePath(repoPath: string, userPath: string): boolean {
-  const safeBase = tryRealpath(path.resolve(repoPath));
+  const safeBase = tryRealpath(path.resolve(repoPath)) ?? path.resolve(repoPath);
   const full = path.resolve(safeBase, userPath);
-
-  // Resolve symlinks in the full path. If the path doesn't exist, resolve
-  // the parent directory's symlinks and append the filename.
-  const realFull =
-    tryRealpath(full) ||
-    ((): string => {
-      const parent = path.dirname(full);
-      return path.join(tryRealpath(parent), path.basename(full));
-    })();
+  const realFull = resolveExistingAncestor(full);
 
   const basePrefix = safeBase.endsWith("/") ? safeBase : `${safeBase}/`;
   return realFull === safeBase || realFull.startsWith(basePrefix);
