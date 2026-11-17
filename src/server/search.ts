@@ -1,5 +1,5 @@
 import type { FileType, SearchResult } from "@/lib/types";
-import { getAllPaths, getFile, parseFileEntry } from "./filestore";
+import { getAllPaths, getFile, isHiddenPath, parseFileEntry } from "./filestore";
 import MiniSearch from "minisearch";
 import markdownToPlainText from "@/lib/markdown-text";
 import { parseFrontmatter } from "@/lib/frontmatter";
@@ -28,7 +28,10 @@ function plainTextOf(path: string): string {
 
 function buildDocs(paths: string[]): DocEntry[] {
   return paths
-    .filter((filePath) => filePath.endsWith(".md") && !filePath.startsWith("."))
+    .filter(
+      (filePath) =>
+        filePath.endsWith(".md") && !filePath.startsWith(".") && !isHiddenPath(filePath),
+    )
     .map((path) => {
       const { title, emoji, type } = parseFileEntry(path);
 

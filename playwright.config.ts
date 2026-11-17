@@ -7,6 +7,8 @@ const isCI = Boolean(process.env.CI);
 export default defineConfig({
   forbidOnly: isCI,
   fullyParallel: true,
+  // Builds once and starts every instance; test:e2e stays a plain playwright run.
+  globalSetup: "./e2e/support/global-setup.ts",
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   reporter: isCI ? [["list"], ["html", { open: "never" }]] : "list",
   retries: isCI ? 1 : 0,
@@ -18,13 +20,5 @@ export default defineConfig({
     // Act as an editor by default; specs override this to test other users.
     extraHTTPHeaders: asUser(EDITOR),
     trace: "retain-on-failure",
-  },
-  webServer: {
-    command: "bun run build && bun e2e/support/server.ts",
-    reuseExistingServer: false,
-    stderr: "pipe",
-    stdout: "pipe",
-    timeout: 120_000,
-    url: `${BASE_URL}/favicon.ico`,
   },
 });
