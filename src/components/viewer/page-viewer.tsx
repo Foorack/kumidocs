@@ -39,12 +39,70 @@ function buildTemplateVars(
   return vars;
 }
 
+const HTML_ESCAPES: Record<string, string> = {
+  '"': "&quot;",
+  "&": "&amp;",
+  "'": "&#39;",
+  "<": "&lt;",
+  ">": "&gt;",
+};
+
+function escapeHtml(value: string): string {
+  return value.replaceAll(/[&<>"']/gu, (char) => HTML_ESCAPES[char] ?? char);
+}
+
+/** Substitute `{{key}}` with escaped values. Only the template's own markup is HTML. */
 function interp(template: string, vars: Record<string, string>): string {
   let result = template;
   for (const [key, val] of Object.entries(vars)) {
-    result = result.replaceAll(`{{${key}}}`, val);
+    result = result.replaceAll(`{{${key}}}`, escapeHtml(val));
   }
   return result;
+}
+
+// Templates are configuration, but `.kumidocs.json` is writable through the
+// app. Strip the constructs that turn an editor into script execution in every
+// viewer's browser. Layout, styling and images are kept.
+const UNSAFE_TEMPLATE_TAGS = new Set([
+  "base",
+  "embed",
+  "form",
+  "iframe",
+  "link",
+  "meta",
+  "object",
+  "script",
+]);
+const URL_ATTRIBUTES = new Set(["action", "formaction", "href", "src", "xlink:href"]);
+// srcdoc always holds an HTML document, so it is never allowed.
+const DROPPED_ATTRIBUTES = new Set(["srcdoc"]);
+const DANGEROUS_URL_RE = /^(?:javascript|vbscript|data:(?!image\/))/iu;
+
+/** Remove script-capable markup from a page template string. */
+function sanitizeTemplate(html: string): string {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const el of doc.body.querySelectorAll("*")) {
+    if (UNSAFE_TEMPLATE_TAGS.has(el.tagName.toLowerCase())) {
+      el.remove();
+      continue;
+    }
+    // Walk backwards by index: the collection is live and attributes are removed.
+    for (let idx = el.attributes.length - 1; idx >= 0; idx -= 1) {
+      const attr = el.attributes.item(idx);
+      if (attr === null) {
+        continue;
+      }
+      const name = attr.name.toLowerCase();
+      const dangerous =
+        name.startsWith("on") ||
+        DROPPED_ATTRIBUTES.has(name) ||
+        (URL_ATTRIBUTES.has(name) && DANGEROUS_URL_RE.test(attr.value.trim()));
+      if (dangerous) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  }
+  return doc.body.innerHTML;
 }
 
 const PageViewer = forwardRef<PageViewerHandle, PageViewerProps>(
@@ -66,7 +124,7 @@ const PageViewer = forwardRef<PageViewerHandle, PageViewerProps>(
           {value}
         </Streamdown>,
       );
-      let result = template.template;
+      let result = sanitizeTemplate(template.template);
       result = interp(result, vars);
       result = result.replace("{{content}}", contentHtml);
       return result;
