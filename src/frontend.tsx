@@ -16,6 +16,16 @@ if (!elemOrNull) {
 }
 const elem = elemOrNull;
 
+// The favicon link lives here rather than in index.html so the page needs no
+// inline script, which lets the CSP drop 'unsafe-inline' from script-src.
+document.head.append(
+  Object.assign(document.createElement("link"), {
+    href: "/favicon.ico",
+    rel: "icon",
+    type: "image/png",
+  }),
+);
+
 const app = (
   <StrictMode>
     <App />

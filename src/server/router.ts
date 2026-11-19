@@ -27,7 +27,9 @@ import { doesFileExist, mimeTypeFromPath, readFileBuffer, serveFileResponse } fr
 import publicDir from "./public-dir";
 import apiEmojiSvg from "./api-emoji";
 
-const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: wss:`;
+// No 'unsafe-inline' or 'unsafe-eval' in script-src: the page ships no inline
+// script, so a missed sanitizer case cannot execute as script.
+const SPA_CSP = `default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self' ws: wss:`;
 
 async function serveSPA(req: Request): Promise<Response> {
   const rel = new URL(req.url).pathname.replace(/^\/+/u, "") || "index.html";
