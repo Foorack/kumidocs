@@ -49,7 +49,14 @@ function resolveExistingAncestor(target: string): string {
 }
 
 /**
- * Returns true if `userPath` resolves to a location inside `repoPath`.
+ * Directories that are never docs content. `.git` holds hooks and config that
+ * git executes, and node_modules holds code the server itself runs. Writing
+ * there turns a page edit into remote code execution.
+ */
+const DENIED_SEGMENTS = new Set([".git", "node_modules"]);
+
+/**
+ * Returns true if `userPath` resolves to a content location inside `repoPath`.
  * Prevents path traversal attacks (e.g. "../../etc/passwd").
  *
  * Uses `fs.realpathSync` to resolve symlinks in both the repo base and
@@ -59,14 +66,22 @@ function resolveExistingAncestor(target: string): string {
  * For paths that don't exist on disk yet (e.g. creating a new file), the
  * deepest existing ancestor is resolved instead, so "link/new.md" cannot
  * slip past when "link" points outside the repo.
+ *
+ * The check runs on the resolved path, so a symlink aimed at `.git` is
+ * rejected too.
  */
 function isSafePath(repoPath: string, userPath: string): boolean {
   const safeBase = tryRealpath(path.resolve(repoPath)) ?? path.resolve(repoPath);
   const full = path.resolve(safeBase, userPath);
   const realFull = resolveExistingAncestor(full);
 
-  const basePrefix = safeBase.endsWith("/") ? safeBase : `${safeBase}/`;
-  return realFull === safeBase || realFull.startsWith(basePrefix);
+  const basePrefix = safeBase.endsWith(path.sep) ? safeBase : `${safeBase}${path.sep}`;
+  if (realFull !== safeBase && !realFull.startsWith(basePrefix)) {
+    return false;
+  }
+
+  const relative = path.relative(safeBase, realFull);
+  return !relative.split(path.sep).some((segment) => DENIED_SEGMENTS.has(segment));
 }
 
 export { checkBodySize, isSafePath };

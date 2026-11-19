@@ -29,6 +29,14 @@ beforeAll(() => {
   symlinkSync(path.join(root, "outside"), path.join(repo, "escape"));
   symlinkSync(path.join(root, "outside.md"), path.join(repo, "escape-file.md"));
   symlinkSync(path.join(repo, "guide"), path.join(repo, "inside-link"));
+
+  // git and the runtime execute what lives here, so these are never content.
+  mkdirSync(path.join(repo, ".git", "hooks"), { recursive: true });
+  writeFileSync(path.join(repo, ".git", "config"), "");
+  mkdirSync(path.join(repo, "node_modules", "pkg"), { recursive: true });
+  writeFileSync(path.join(repo, "node_modules", "pkg", "index.js"), "");
+  symlinkSync(path.join(repo, ".git"), path.join(repo, "gitlink"));
+  writeFileSync(path.join(repo, ".gitignore"), "dist\n");
 });
 
 afterAll(() => {
@@ -83,5 +91,25 @@ describe("isSafePath traversal guard", () => {
     expect(isSafePath(repo, ".")).toBe(true);
     expect(isSafePath(repo, "")).toBe(true);
     expect(isSafePath(repo, repo)).toBe(true);
+  });
+
+  it("rejects writes inside .git", () => {
+    expect(isSafePath(repo, ".git/config")).toBe(false);
+    expect(isSafePath(repo, ".git/hooks/post-checkout")).toBe(false);
+    expect(isSafePath(repo, "guide/../.git/config")).toBe(false);
+  });
+
+  it("rejects writes inside node_modules", () => {
+    expect(isSafePath(repo, "node_modules/pkg/index.js")).toBe(false);
+  });
+
+  it("rejects a symlink that resolves into .git", () => {
+    expect(isSafePath(repo, "gitlink/config")).toBe(false);
+    expect(isSafePath(repo, "gitlink/new-file")).toBe(false);
+  });
+
+  it("accepts a dotfile whose name only starts with .git", () => {
+    expect(isSafePath(repo, ".gitignore")).toBe(true);
+    expect(isSafePath(repo, "guide/.gitattributes")).toBe(true);
   });
 });

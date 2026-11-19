@@ -399,9 +399,10 @@ Browser `prefers-color-scheme` default. Toggle in top bar; preference in `localS
 ## 14. API Surface
 
 Routes need a valid auth header unless marked "public". Writes also need
-edit rights and are rate limited per user. Unknown `/api/*` paths return a
-JSON 404, a known path with the wrong method a 405 with `Allow`, and HEAD is
-answered wherever GET is.
+edit rights and are rate limited per user. A path is writable only when it
+resolves inside the repo and outside `.git/` and `node_modules/`. Unknown
+`/api/*` paths return a JSON 404, a known path with the wrong method a 405
+with `Allow`, and HEAD is answered wherever GET is.
 
 ```
 GET    /api/me                   → user info, slideThemes, gravatar flag
