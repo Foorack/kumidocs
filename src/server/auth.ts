@@ -191,16 +191,14 @@ const resolveJwtEmail = (value: string): string | undefined => {
 
 /** Decode an email string from a raw auth header value (JWT or plain string). */
 const resolveEmail = (value: string): string | undefined => {
+  // With a JWKS configured the operator wants signed identities only. A plain
+  // string in the header is an unverified claim from whoever reached the port.
+  if (jwtKeys !== undefined) {
+    return JWT_REGEX.test(value) ? resolveJwtEmail(value) : undefined;
+  }
   if (JWT_REGEX.test(value)) {
-    const email = resolveJwtEmail(value);
-    if (email !== undefined) {
-      return email;
-    }
-    // Fall through to plain string if JWT verification failed but
-    // no JWKS is configured (backward compatibility).
-    if (jwtKeys !== undefined) {
-      return undefined; // JWKS configured but verification failed -- reject
-    }
+    // Not verifying signatures: fall back to the address if the token parses.
+    return resolveJwtEmail(value) ?? value.trim().toLowerCase();
   }
   return value.trim().toLowerCase();
 };
@@ -216,10 +214,15 @@ const parseUser = (headers: Headers, authHeader: string): User | undefined => {
   // Check the configured auth header first. If absent or empty, fall through
   // to the kumidocs_email cookie (used when no SSO proxy is present).
   const headerVal = headers.get(authHeader);
-  const value =
-    headerVal !== null && headerVal !== "" && headerVal.trim() !== ""
-      ? headerVal
-      : cookieEmail(headers.get("cookie"));
+  const hasHeader = headerVal !== null && headerVal.trim() !== "";
+  // The cookie is a self-chosen identity, so it cannot stand in for a signed
+  // one. When JWKS is configured only the header is trusted.
+  let value: string | undefined;
+  if (hasHeader) {
+    value = headerVal;
+  } else if (jwtKeys === undefined) {
+    value = cookieEmail(headers.get("cookie"));
+  }
   if (value === undefined || value === "") {
     return undefined;
   }

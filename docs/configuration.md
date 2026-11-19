@@ -34,6 +34,8 @@ If the header is missing or unparseable, KumiDocs returns HTTP 401.
 
 In production, set this to whatever header your SSO proxy injects (e.g. `X-Auth-Request-User` for oauth2-proxy, `X-Forwarded-Email` for Authelia).
 
+Set `KUMIDOCS_JWKS_BASE64` to require signed identities. With a JWKS configured, a bare email in the header is rejected and the `kumidocs_email` cookie is ignored; the only accepted value is a JWT that verifies against the key set.
+
 See [[Getting Started]] for the Docker Compose SSO setup example.
 
 ## .kumidocs.json

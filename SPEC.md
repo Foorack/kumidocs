@@ -45,7 +45,8 @@ KUMIDOCS_PULL_INTERVAL     (default: 60000) ms between background pulls
 KUMIDOCS_RATE_LIMIT        (default: 30/10000) writes per user per window
 KUMIDOCS_READONLY          (default: false)
 KUMIDOCS_DISABLE_GRAVATAR  (default: false) avatars show initials only
-KUMIDOCS_JWKS_BASE64       (default: unset) verify JWTs in the auth header
+KUMIDOCS_JWKS_BASE64       (default: unset) verify JWTs in the auth header;
+                           when set, plain emails and the email cookie are rejected
 
 Each has a matching CLI flag. Unknown flags are rejected at startup.
 The instance name is `instanceName` in `.kumidocs.json`, not an env var.
