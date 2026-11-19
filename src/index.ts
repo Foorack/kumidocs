@@ -367,6 +367,8 @@ for (const [, handlerMethods] of Object.entries(routeMap)) {
 const typedRoutes = routes as Record<string, Record<string, unknown>>;
 
 const { url } = await startServer({
+  host: config.host,
+
   async onRequest(req) {
     // All non-API, non-WS paths: serve the SPA catch-all.
     const start = Date.now();

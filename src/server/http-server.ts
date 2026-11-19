@@ -6,6 +6,7 @@
  * WebSocket server support (also compatible with Bun).
  */
 
+import { once } from "node:events";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { WebSocketServer } from "ws";
@@ -130,6 +131,8 @@ interface WebSocketHandlers {
 }
 
 interface HttpServerConfig {
+  /** Address to bind. "0.0.0.0" accepts connections on every interface. */
+  host: string;
   port: number;
   /** Called for every request that doesn't match a route. Return a Response to
    *  send it, or undefined for a 404. */
@@ -143,11 +146,21 @@ interface HttpServerConfig {
 
 interface AppServer {
   url: string;
+  /** Stop listening and drop open connections. */
+  close: () => Promise<void>;
 }
+
+/** Address a person can click. A wildcard bind is only reachable by a concrete name. */
+const displayHost = (host: string): string => {
+  if (host === "" || host === "0.0.0.0" || host === "::") {
+    return "localhost";
+  }
+  return host.includes(":") ? `[${host}]` : host;
+};
 
 /** Start the HTTP/WS server. Returns the server URL after it begins listening. */
 async function startServer(config: HttpServerConfig): Promise<AppServer> {
-  const { onRequest, port, routes, websocket } = config;
+  const { host, onRequest, port, routes, websocket } = config;
 
   const server = createServer(async (nodeReq, nodeRes) => {
     try {
@@ -216,9 +229,8 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
   });
 
   // WebSocket via `ws` library
-  if (websocket) {
-    const wss = new WebSocketServer({ noServer: true });
-
+  const wss = websocket ? new WebSocketServer({ noServer: true }) : undefined;
+  if (websocket && wss) {
     server.on("upgrade", (nodeReq, socket, head) => {
       const url = new URL(nodeReq.url ?? "/", `http://${nodeReq.headers.host ?? "localhost"}`);
 
@@ -271,11 +283,25 @@ async function startServer(config: HttpServerConfig): Promise<AppServer> {
   }
 
   return new Promise<AppServer>((resolve) => {
-    server.listen(port, () => {
+    server.listen(port, host, () => {
       const addr = server.address();
-      const host =
-        typeof addr === "object" && addr ? `http://localhost:${addr.port}` : "http://localhost";
-      resolve({ url: host });
+      const display = displayHost(host);
+      const url =
+        typeof addr === "object" && addr
+          ? `http://${display}:${String(addr.port)}`
+          : `http://${display}`;
+      const close = async (): Promise<void> => {
+        for (const client of wss?.clients ?? []) {
+          client.terminate();
+        }
+        wss?.close();
+        // close() only reports back through its callback or the 'close' event;
+        // wait for the event so callers know the port is free again.
+        const closed = once(server, "close");
+        server.close();
+        await closed;
+      };
+      resolve({ close, url });
     });
   });
 }

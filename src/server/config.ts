@@ -20,6 +20,8 @@ interface JsonWebKeySet {
 interface Config {
   repoPath: string;
   port: number;
+  /** Address to bind. "0.0.0.0" exposes the instance on every interface. */
+  host: string;
   authHeader: string;
   autoSaveDelay: number;
   pullInterval: number;
@@ -70,6 +72,16 @@ const coercePort = (raw: string): number => {
   return parsed;
 };
 
+// A listen address, not a URL. Reject a scheme here so the error names the
+// flag, instead of surfacing later as a DNS failure inside listen().
+const coerceHost = (raw: string): string => {
+  const value = raw.trim();
+  if (value === "" || value.includes("/")) {
+    fatal(`--host expects an IP address or hostname, got: ${JSON.stringify(raw)}`);
+  }
+  return value;
+};
+
 const coerceMs = (flag: string, raw: string): number => {
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 0) {
@@ -108,6 +120,14 @@ const OPTIONS: OptionDef[] = [
     env: "KUMIDOCS_PORT",
     flags: ["--port", "-p"],
     key: "port",
+  },
+  {
+    coerce: coerceHost,
+    default: "0.0.0.0",
+    description: "Address to listen on (0.0.0.0 for every interface)",
+    env: "KUMIDOCS_HOST",
+    flags: ["--host"],
+    key: "host",
   },
   {
     coerce: String,

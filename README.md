@@ -30,10 +30,10 @@ KumiDocs runs on Bun only. The server, the build, the unit tests and the browser
 
 ## Options
 
-Point KumiDocs at a different repo or change the port:
+Point KumiDocs at a different repo, port or listen address:
 
 ```bash
-bunx kumidocs --repo /path/to/repo --port 8080
+bunx kumidocs --repo /path/to/repo --port 8080 --host 127.0.0.1
 ```
 
 All options are also available as environment variables:
@@ -42,6 +42,7 @@ All options are also available as environment variables:
 | -------------------- | --------------------------- | --------------------- | -------------------------------------------------- |
 | `--repo`             | `KUMIDOCS_REPO_PATH`        | `cwd`                 | Path to the git repository                         |
 | `--port`, `-p`       | `KUMIDOCS_PORT`             | `5864`                | HTTP/WS listen port                                |
+| `--host`             | `KUMIDOCS_HOST`             | `0.0.0.0`             | Address to listen on (0.0.0.0 = every interface)   |
 | `--auth-header`      | `KUMIDOCS_AUTH_HEADER`      | `X-Auth-Request-User` | Header carrying the user identity (email or JWT)   |
 | `--auto-save-delay`  | `KUMIDOCS_AUTO_SAVE_DELAY`  | `5000`                | Auto-save debounce in ms                           |
 | `--pull-interval`    | `KUMIDOCS_PULL_INTERVAL`    | `60000`               | Background `git pull --rebase` interval in ms      |

@@ -33,4 +33,18 @@ describe("command-line arguments", () => {
   it("rejects an invalid value", () => {
     expect(() => withArgs("--port", "abc")).toThrow(ConfigError);
   });
+
+  it("accepts a listen address", () => {
+    const config = withArgs("/tmp/repo", "--host", "127.0.0.1");
+    expect(config.host).toBe("127.0.0.1");
+  });
+
+  it("listens on every interface by default", () => {
+    expect(withArgs("/tmp/repo").host).toBe("0.0.0.0");
+  });
+
+  it("rejects a URL passed as a listen address", () => {
+    expect(() => withArgs("--host", "http://127.0.0.1")).toThrow(ConfigError);
+    expect(() => withArgs("--host", "")).toThrow(ConfigError);
+  });
 });

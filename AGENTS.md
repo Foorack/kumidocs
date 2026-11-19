@@ -123,6 +123,7 @@ TASKS.md                 # Task backlog
 | --------------------------- | --------------------- | -------------------------------------------------- |
 | `KUMIDOCS_REPO_PATH`        | `cwd`                 | Path to the git repository                         |
 | `KUMIDOCS_PORT`             | `5864`                | HTTP/WS listen port                                |
+| `KUMIDOCS_HOST`             | `0.0.0.0`             | Address to listen on (0.0.0.0 = every interface)   |
 | `KUMIDOCS_AUTH_HEADER`      | `X-Auth-Request-User` | Header carrying the user identity (email or JWT)   |
 | `KUMIDOCS_AUTO_SAVE_DELAY`  | `5000`                | Auto-save debounce in ms                           |
 | `KUMIDOCS_PULL_INTERVAL`    | `60000`               | Background `git pull --rebase` interval in ms      |

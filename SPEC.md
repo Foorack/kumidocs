@@ -38,6 +38,7 @@ Repo is **mounted as a Docker volume**. KumiDocs does not clone it. Remote/auth/
 ```
 KUMIDOCS_REPO_PATH         (default: cwd) path to the git repo
 KUMIDOCS_PORT              (default: 5864)
+KUMIDOCS_HOST              (default: 0.0.0.0) listen address, every interface by default
 KUMIDOCS_AUTH_HEADER       (default: X-Auth-Request-User)
 KUMIDOCS_AUTO_SAVE_DELAY   (default: 5000) ms debounce
 KUMIDOCS_PULL_INTERVAL     (default: 60000) ms between background pulls
