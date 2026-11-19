@@ -425,7 +425,7 @@ GET    /api/avatar/:sha256hash   → Gravatar proxy, misses cached 1h (public)
 GET    /api/emoji/:key.svg       → one Fluent Emoji SVG, key = code points (public)
 GET    /api/emojis               → every emoji SVG, for the picker (public)
 GET    /api/icons/:pack          → one Iconify pack, loaded on demand (public)
-POST   /api/auth/email           → set the email cookie when no SSO proxy (public)
+POST   /api/auth/email           → set the email cookie when no SSO proxy (public, 403 once an identity header or JWKS is present)
 WS     /ws                       → WebSocket
 ```
 

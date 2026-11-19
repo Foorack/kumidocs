@@ -18,7 +18,7 @@ import {
   apiUploadImage,
   serveRepoAsset,
 } from "./api";
-import { makeUser } from "./auth";
+import { getJwtKids, makeUser } from "./auth";
 import path from "node:path";
 import RateLimiter from "./rate-limit";
 import type { Config } from "./config";
@@ -116,6 +116,14 @@ async function buildRoutes(
     // oxlint-disable sort-keys -- Route patterns must be ordered for match priority, not alphabetically.
     "/api/auth/email": {
       async POST(req: Request) {
+        // The cookie is a fallback identity for instances with no proxy. If the
+        // proxy already supplied one, minting a second would let a read-only
+        // user turn themselves into an editor. The same goes for instances
+        // that require signed JWTs.
+        const forwarded = (req.headers.get(config.authHeader) ?? "").trim();
+        if (forwarded !== "" || getJwtKids() !== undefined) {
+          return new Response("Forbidden", { status: 403 });
+        }
         let body: unknown;
         try {
           body = await req.json();
