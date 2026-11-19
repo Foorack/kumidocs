@@ -11,14 +11,26 @@ class RateLimiter {
   private readonly store = new Map<string, Bucket>();
   private readonly maxRequests: number;
   private readonly windowMs: number;
+  private readonly maxKeys: number;
 
   /**
    * @param maxRequests  Max number of requests allowed within the window.
    * @param windowMs     Window duration in milliseconds.
+   * @param maxKeys      Bucket cap. The key is the user id, which comes from a
+   *                     header, so a caller can invent unlimited identities.
    */
-  public constructor(maxRequests: number, windowMs: number) {
+  public constructor(maxRequests: number, windowMs: number, maxKeys = 10_000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
+    this.maxKeys = maxKeys;
+  }
+
+  /** Drop the least recently added bucket so invented identities cannot grow the map forever. */
+  private evictOldest(): void {
+    const oldest = this.store.keys().next();
+    if (oldest.value !== undefined) {
+      this.store.delete(oldest.value);
+    }
   }
 
   /**
@@ -33,6 +45,9 @@ class RateLimiter {
     const now = Date.now();
     let bucket = this.store.get(key);
     if (bucket === undefined) {
+      if (this.store.size >= this.maxKeys) {
+        this.evictOldest();
+      }
       bucket = { timestamps: [] };
       this.store.set(key, bucket);
     }
@@ -46,10 +61,6 @@ class RateLimiter {
       return true;
     }
 
-    // At or over the limit -- evict the empty bucket if stale and deny.
-    if (bucket.timestamps.length === 0) {
-      this.store.delete(key);
-    }
     return false;
   }
 }
