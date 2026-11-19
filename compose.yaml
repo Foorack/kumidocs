@@ -11,6 +11,9 @@ services:
         environment:
             - NODE_ENV=development
             - KUMIDOCS_REPO_PATH=/repo
+            # Loopback only. The identity header below is trusted, so the port
+            # must never be reachable except through sso-proxy.
+            - KUMIDOCS_HOST=127.0.0.1
             - KUMIDOCS_PORT=5864
             - KUMIDOCS_AUTH_HEADER=X-Forwarded-Email
             - KUMIDOCS_AUTO_SAVE_DELAY=5000
