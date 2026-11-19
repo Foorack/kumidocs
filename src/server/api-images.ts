@@ -1,7 +1,7 @@
 import { IMAGE_TYPES, MAGIC_BYTES } from "@/lib/filetypes";
 import { addToCache, deleteFileFromRepo, getAllPaths, getFile, markWritten } from "./filestore";
 import { gitRemoveAndCommit, gitStageAndCommit } from "./git";
-import { mkdir } from "node:fs/promises";
+import { mkdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { Config } from "./config";
 import type { User } from "@/lib/types";
@@ -319,10 +319,24 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
     return new Response("Not found", { status: 404 });
   }
 
+  // The string check above does not follow symlinks, and git stores symlinks
+  // as-is. Resolve both ends so a link committed as images/x.png cannot be
+  // read from outside the directory (e.g. ../../.git/config or ~/.ssh).
+  let realFile: string;
+  try {
+    const [realDir, real] = await Promise.all([realpath(imagesDir), realpath(fullPath)]);
+    if (!real.startsWith(`${realDir}${path.sep}`)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    realFile = real;
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+
   // SVGs are sanitized in-memory on serve so stored files are never modified.
   // CSP provides defense-in-depth if the sanitizer misses something.
   if (ext === ".svg") {
-    const raw = await readTextFile(fullPath);
+    const raw = await readTextFile(realFile);
     const sanitized = sanitizeSvg(raw);
     return new Response(sanitized, {
       headers: {
@@ -334,7 +348,7 @@ async function serveRepoAsset(assetPath: string, config: Config): Promise<Respon
     });
   }
 
-  return serveFileResponse(fullPath, {
+  return serveFileResponse(realFile, {
     "Cache-Control": "public, max-age=31536000, immutable",
     "Content-Type": mime,
     "X-Content-Type-Options": "nosniff",
